@@ -172,7 +172,7 @@ class Settings(BaseSettings):
     # v1 上线设计 (alembic 0012): assets 路径相对化 — DB question_assets.file_path
     # / material_group_assets.file_path 存 `<paperCode>/assets/<basename>` 相对路径,
     # 物理文件落在 `assets_root / <relative>`. 解决 dev/prod 路径切换 + 题库搬家
-    # 不断的 known issue (CLAUDE.md §12 E). dev 默认 apps/exam-api/var/assets,
+    # 不断的 known issue (CLAUDE.md §12 E). dev 默认 services/api/var/assets,
     # prod 走 env 注入 /var/data/exam-assets/. import 时 service._resolve_assets
     # 把 staging 资产 copy 到此 root, FileResponse 拼回 absolute.
     assets_root: Path = Path("./var/assets")
