@@ -2319,3 +2319,103 @@ PaperExamSectionOutV2.model_rebuild()
 PaperExamBlockOutV2.model_rebuild()
 MaterialGroupOutV2.model_rebuild()
 PracticeSessionStartV2.model_rebuild()
+
+
+# ─── PR-1 MVP: Onboarding status ─────────────────────────────────────────────
+
+class OnboardingStatusV2(CamelModel):
+    """GET /api/v2/me/onboarding-status response.
+
+    FE uses is_onboarded to decide whether to redirect to /study/onboarding.
+    has_goal and has_exam drive which onboarding steps are pre-filled.
+    """
+    has_goal: bool
+    has_exam: bool
+    is_onboarded: bool
+
+
+# ─── PR-3 MVP: Wrong-reason diagnosis ────────────────────────────────────────
+
+_WRONG_REASON_CODES = Literal[
+    "calculation_error",
+    "concept_gap",
+    "careless_mistake",
+    "question_misread",
+    "knowledge_missing",
+    "logic_error",
+    "other",
+]
+
+_WRONG_REASON_SOURCE = Literal["ai", "user"]
+
+
+class WrongReasonUpdateV2(CamelModel):
+    """PATCH /api/v2/practice/sessions/{id}/answers/{answer_id}/diagnosis body.
+
+    wrong_reason_code: one of the 7 canonical diagnosis codes.
+    source: 'ai' (LLM diagnosis) or 'user' (user override). Default 'user'
+    when sent from FE manually; the AI diagnosis pipeline sends 'ai'.
+    """
+    wrong_reason_code: _WRONG_REASON_CODES
+    source: _WRONG_REASON_SOURCE = "user"
+
+
+class WrongReasonOutV2(CamelModel):
+    """Response after patching wrong-reason."""
+    answer_id: int
+    wrong_reason_code: str | None
+    wrong_reason_source: str | None
+
+
+# ─── PR-6 MVP: Progress dashboard ────────────────────────────────────────────
+
+class AccuracyTrendPointV2(CamelModel):
+    """Single day accuracy data point for the trend chart."""
+    date: date
+    accuracy: float  # 0-100 percentage
+    answered: int    # total questions answered that day
+
+
+class AccuracyTrendResponseV2(CamelModel):
+    """GET /api/v2/progress/accuracy-trend response."""
+    days: int
+    points: list[AccuracyTrendPointV2]
+
+
+class WeeklyProgressSummaryV2(CamelModel):
+    """GET /api/v2/progress/weekly response.
+
+    xingce_answered: total xingce questions answered in the week.
+    xingce_accuracy: accuracy rate 0-100 for xingce in the week.
+    essay_submitted: total essay grading submissions in the week.
+    tasks_completed: study plan tasks completed in the week.
+    tasks_total: total study plan tasks for the week.
+    streak_days: current consecutive-day streak at time of request.
+    """
+    week_start: date
+    week_end: date
+    xingce_answered: int
+    xingce_accuracy: float
+    essay_submitted: int
+    tasks_completed: int
+    tasks_total: int
+    streak_days: int
+
+
+# ─── PR-8 MVP: Analytics event ingest ────────────────────────────────────────
+
+class AnalyticsEventPayloadV2(CamelModel):
+    """POST /api/v2/analytics/event body.
+
+    event_name: snake_case event identifier (max 64 chars).
+    properties: arbitrary key-value pairs (max 20 keys, values max 256 chars).
+    session_id: optional FE session/correlation id for grouping.
+    """
+    event_name: Annotated[str, Field(max_length=64, pattern=r"^[a-z][a-z0-9_]*$")]
+    properties: dict[str, str] = {}
+    session_id: str | None = None
+
+
+class AnalyticsEventAckV2(CamelModel):
+    """POST /api/v2/analytics/event response."""
+    received: bool = True
