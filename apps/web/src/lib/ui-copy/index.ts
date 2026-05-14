@@ -48,3 +48,4 @@ export { PRACTICE_CENTER_COPY } from './practice-center';
 export { PROFILE_COPY } from './profile';
 export { NOT_FOUND_COPY } from './not-found';
 export { AUTH_ART_COPY } from './auth-art';
+export { STUDY_COPY } from './study';
