@@ -1,0 +1,1068 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="paper">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>思考 — 错题本 & 笔记 (SIKAO 重设计)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" />
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<style>
+  :root {
+    --paper:#FAF7F0; --paper-2:#F4F0E6; --paper-3:#ECE6D7;
+    --rule:#E2DBC8; --rule-strong:#C9C0A8;
+    --ink:#1A1815; --ink-2:#3A352D; --ink-3:#6B6358; --ink-4:#948A7A;
+    --accent:#9B2F2F; --accent-2:#7A2424; --accent-50:#F5E6E2;
+    --ok:#4A6B3A; --ok-bg:#E7E9D9;
+    --warn:#A66A18; --warn-bg:#F4E5C8;
+    --err:#8B2F2F; --err-bg:#F1DCD7;
+    --serif:'Source Serif 4','Noto Serif SC',Georgia,'Songti SC',serif;
+    --sans:'Inter',system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+    --mono:'JetBrains Mono','SF Mono',ui-monospace,Consolas,monospace;
+    --t-h1:44px; --t-h2:30px; --t-h3:22px; --t-h4:18px;
+    --t-body:15px; --t-sm:13px; --t-cap:12px; --t-eyebrow:11px;
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px;
+    --s5:24px; --s6:32px; --s7:48px; --s8:72px;
+    --r-sm:4px; --r-md:6px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper-2);color:var(--ink);font-family:var(--sans);font-size:var(--t-body);line-height:1.55;-webkit-font-smoothing:antialiased;}
+  em,i{font-style:normal;}
+  b,strong{font-weight:600;}
+  button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;}
+  svg{display:block;}
+  .serif{font-family:var(--serif);letter-spacing:-.01em;}
+  .mono{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+  .eyebrow{font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);}
+
+  /* ==== buttons ==== */
+  .btn{display:inline-flex;align-items:center;gap:var(--s2);height:36px;padding:0 var(--s4);border:1px solid transparent;border-radius:var(--r-sm);font-family:var(--mono);font-size:var(--t-cap);letter-spacing:.08em;text-transform:uppercase;font-weight:500;transition:all 120ms ease;white-space:nowrap;cursor:pointer;}
+  .btn-primary{background:var(--ink);color:var(--paper);}
+  .btn-primary:hover{background:#000;}
+  .btn-secondary{border-color:var(--ink);color:var(--ink);background:var(--paper);}
+  .btn-secondary:hover{background:var(--paper-2);}
+  .btn-ghost{color:var(--ink-2);}
+  .btn-ghost:hover{background:var(--paper-2);}
+  .btn-accent{background:var(--accent);color:var(--paper);}
+  .btn-accent:hover{background:var(--accent-2);}
+  .btn-sm{height:28px;padding:0 12px;font-size:11px;}
+
+  /* ==== stamp / mark ==== */
+  .stamp{display:inline-flex;align-items:center;gap:var(--s2);font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2);}
+  .stamp::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);}
+
+  /* ==== artboard frame ==== */
+  .ab{background:var(--paper);border:1px solid var(--rule);position:relative;}
+
+  /* ==== page header (within artboard) ==== */
+  .ph{padding:40px 56px 28px;border-bottom:1px solid var(--rule);}
+  .ph .eyebrow-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .ph h1{font-family:var(--serif);font-weight:600;font-size:var(--t-h1);line-height:1.05;letter-spacing:-.015em;margin:0;}
+  .ph h1 .light{color:var(--ink-3);font-weight:400;font-style:italic;}
+  .ph .ph-row{display:grid;grid-template-columns:1fr auto;gap:var(--s6);align-items:end;}
+  .ph .lede{color:var(--ink-3);max-width:540px;margin:14px 0 0;font-size:var(--t-sm);line-height:1.6;}
+
+  /* ==== stat strip ==== */
+  .stat-strip{display:flex;background:var(--paper);border:1px solid var(--rule);}
+  .stat-strip .cell{padding:14px 22px;border-left:1px solid var(--rule);min-width:114px;}
+  .stat-strip .cell:first-child{border-left:0;}
+  .stat-strip .k{font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);}
+  .stat-strip .v{font-family:var(--serif);font-weight:600;font-size:28px;line-height:1.1;color:var(--ink);margin-top:4px;}
+  .stat-strip .v .small{font-family:var(--mono);font-weight:500;font-size:13px;color:var(--ink-3);margin-left:4px;}
+  .stat-strip .accent .v{color:var(--accent);}
+
+  /* ==== main grid ==== */
+  .main{padding:32px 56px 64px;}
+
+  /* ==== filters (reused style from main app) ==== */
+  .filters{background:var(--paper);border:1px solid var(--rule);margin-bottom:24px;}
+  .f-row{display:grid;grid-template-columns:96px 1fr;gap:var(--s4);padding:14px 24px;border-bottom:1px solid var(--rule);align-items:center;}
+  .f-row:last-of-type{border-bottom:0;}
+  .f-row .k{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);}
+  .fchip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:1px solid transparent;border-radius:4px;font-size:13px;color:var(--ink-2);transition:all 120ms ease;cursor:pointer;}
+  .fchip:hover{background:var(--paper-2);}
+  .fchip.active{background:var(--ink);color:var(--paper);}
+  .fchip .dot{width:5px;height:5px;border-radius:50%;background:var(--accent);}
+  .fchip .badge{font-family:var(--mono);font-size:10px;opacity:.55;margin-left:2px;}
+  .f-chips{display:flex;flex-wrap:wrap;gap:6px;}
+  .f-foot{display:flex;justify-content:space-between;align-items:center;padding:14px 24px;background:var(--paper-2);border-top:1px solid var(--rule);}
+  .f-sum{display:flex;flex-wrap:wrap;gap:10px;align-items:center;color:var(--ink-3);font-size:13px;}
+  .sum-tag{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;background:var(--paper);border:1px solid var(--rule);font-family:var(--mono);font-size:11px;color:var(--ink-2);letter-spacing:.06em;}
+  .sum-tag .x{color:var(--ink-4);cursor:pointer;}
+  .match-num{font-family:var(--serif);font-weight:600;font-size:18px;color:var(--ink);margin-left:4px;}
+  .reset{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);text-decoration:underline;cursor:pointer;}
+
+  /* ============= 错题本 ============= */
+  .wb-list{background:var(--paper);border:1px solid var(--rule);}
+  .wb-row{display:grid;grid-template-columns:6px 56px 1fr 220px 200px 110px;gap:var(--s5);padding:22px 26px 22px 0;border-bottom:1px solid var(--rule);align-items:center;position:relative;transition:background 120ms ease;}
+  .wb-row:last-child{border-bottom:0;}
+  .wb-row:hover{background:var(--paper-2);}
+  .wb-row .sev{align-self:stretch;background:var(--rule);}
+  .wb-row[data-sev="high"] .sev{background:var(--accent);}
+  .wb-row[data-sev="mid"]  .sev{background:var(--warn);}
+  .wb-row[data-sev="low"]  .sev{background:var(--ink-4);}
+  .wb-row[data-sev="ok"]   .sev{background:var(--ok);}
+  .wb-num{font-family:var(--serif);font-weight:500;font-size:30px;color:var(--ink-4);line-height:1;text-align:center;}
+  .wb-row:hover .wb-num{color:var(--ink);}
+  .wb-body .src{display:flex;align-items:center;gap:8px;margin-bottom:6px;}
+  .wb-body .src .pill{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;border:1px solid var(--rule);padding:2px 6px;color:var(--ink-2);}
+  .wb-body .src .from{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.04em;}
+  .wb-body .q{font-family:var(--serif);font-size:16px;line-height:1.5;color:var(--ink);overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .wb-body .tagrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;}
+  .wb-body .lose{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:3px 7px;border:1px dashed var(--accent);color:var(--accent);}
+  .wb-body .lose.ok{border:1px dashed var(--ok);color:var(--ok);}
+  .wb-score .last{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.06em;text-transform:uppercase;}
+  .wb-score .num{font-family:var(--serif);font-weight:600;font-size:26px;color:var(--ink);line-height:1.1;margin-top:2px;}
+  .wb-score .num.bad{color:var(--accent);}
+  .wb-score .num .of{font-family:var(--mono);font-weight:500;font-size:12px;color:var(--ink-3);margin-left:2px;}
+  .wb-score .when{font-family:var(--mono);font-size:10px;color:var(--ink-4);letter-spacing:.04em;margin-top:4px;}
+  .wb-mast{font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.06em;}
+  .wb-mast .dots{display:inline-flex;gap:3px;vertical-align:middle;margin-right:6px;}
+  .wb-mast .d{width:6px;height:6px;border:1px solid var(--rule-strong);border-radius:50%;}
+  .wb-mast .d.on{background:var(--ink);border-color:var(--ink);}
+  .wb-mast .ok-pill{display:inline-block;background:var(--ok-bg);color:var(--ok);font-size:10px;padding:3px 7px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;}
+  .wb-act{display:flex;flex-direction:column;gap:6px;align-items:flex-end;}
+  .wb-act a{font-family:var(--mono);font-size:11px;color:var(--ink-2);letter-spacing:.1em;text-transform:uppercase;cursor:pointer;display:inline-flex;align-items:center;gap:6px;}
+  .wb-act a:hover{color:var(--accent);}
+  .wb-act a .arr{transition:transform 120ms ease;}
+  .wb-act a:hover .arr{transform:translateX(2px);}
+
+  /* === 错题本 hero (top resume) === */
+  .wb-hero{background:var(--ink);color:var(--paper);padding:24px 28px;display:grid;grid-template-columns:1fr auto;gap:24px;align-items:center;margin-bottom:24px;position:relative;overflow:hidden;}
+  .wb-hero::after{content:"";position:absolute;right:-80px;top:-80px;width:300px;height:300px;background:radial-gradient(circle, rgba(155,47,47,.18) 0%, transparent 60%);pointer-events:none;}
+  .wb-hero .kicker{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:#a09a8c;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+  .wb-hero .kicker::before{content:"";width:5px;height:5px;border-radius:50%;background:var(--accent);}
+  .wb-hero h3{font-family:var(--serif);font-size:22px;font-weight:600;margin:0 0 6px;line-height:1.25;}
+  .wb-hero .meta{font-family:var(--mono);font-size:11px;color:#a09a8c;letter-spacing:.06em;}
+  .wb-hero .meta strong{color:#f3eedf;font-weight:500;}
+  .wb-hero .act{display:flex;gap:10px;align-items:center;}
+  .wb-hero .btn-rev{background:var(--paper);color:var(--ink);border:0;}
+  .wb-hero .btn-rev:hover{background:#fff;}
+
+  /* === overview chart bar === */
+  .wb-overview{display:grid;grid-template-columns:1fr 320px;gap:24px;margin-bottom:24px;}
+  .wb-chart{background:var(--paper);border:1px solid var(--rule);padding:20px 24px;}
+  .wb-chart .ttl{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:18px;}
+  .wb-chart .ttl h4{font-family:var(--serif);font-size:16px;font-weight:600;margin:0;}
+  .wb-chart .ttl .sub{font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.14em;text-transform:uppercase;}
+  .wb-bars{display:flex;align-items:flex-end;gap:14px;height:120px;border-bottom:1px solid var(--rule);padding-bottom:8px;}
+  .wb-bars .b{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;}
+  .wb-bars .bar{width:100%;background:var(--ink);position:relative;}
+  .wb-bars .bar .ok{position:absolute;bottom:0;left:0;right:0;background:var(--ok);}
+  .wb-bars .bar .doing{position:absolute;bottom:0;left:0;right:0;background:var(--warn);}
+  .wb-bars .lbl{font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.06em;}
+  .wb-bars .val{font-family:var(--serif);font-weight:600;font-size:13px;color:var(--ink);}
+  .wb-bars .b:hover .bar{filter:brightness(1.15);}
+  .wb-legend{display:flex;gap:14px;margin-top:14px;font-family:var(--mono);font-size:10px;letter-spacing:.06em;color:var(--ink-3);}
+  .wb-legend .sw{display:inline-flex;align-items:center;gap:5px;}
+  .wb-legend .sw::before{content:"";width:9px;height:9px;}
+  .wb-legend .sw.todo::before{background:var(--ink);}
+  .wb-legend .sw.doing::before{background:var(--warn);}
+  .wb-legend .sw.done::before{background:var(--ok);}
+
+  /* === goal card === */
+  .wb-goal{background:var(--paper);border:1px solid var(--rule);padding:20px 22px;display:flex;flex-direction:column;gap:14px;}
+  .wb-goal h4{font-family:var(--serif);font-size:16px;font-weight:600;margin:0;display:flex;justify-content:space-between;align-items:baseline;}
+  .wb-goal h4 .sub{font-family:var(--mono);font-size:10px;color:var(--ink-3);letter-spacing:.14em;text-transform:uppercase;font-weight:400;}
+  .wb-goal .ring-row{display:flex;gap:18px;align-items:center;}
+  .wb-goal .ring{width:84px;height:84px;position:relative;flex:none;}
+  .wb-goal .ring svg{width:100%;height:100%;transform:rotate(-90deg);}
+  .wb-goal .ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;}
+  .wb-goal .ring .center .n{font-family:var(--serif);font-weight:600;font-size:22px;color:var(--ink);line-height:1;}
+  .wb-goal .ring .center .of{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:2px;letter-spacing:.08em;}
+  .wb-goal .legend{display:flex;flex-direction:column;gap:8px;flex:1;}
+  .wb-goal .legend .li{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ink-2);letter-spacing:.04em;}
+  .wb-goal .legend .li b{color:var(--ink);font-weight:600;font-family:var(--serif);font-size:14px;}
+  .wb-goal .cta{display:inline-flex;justify-content:space-between;align-items:center;padding:10px 12px;background:var(--paper-2);border:1px solid var(--rule);font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);cursor:pointer;}
+  .wb-goal .cta:hover{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+
+  /* ============= 笔记 ============= */
+  .nt-tabs{display:flex;gap:0;background:var(--paper);border:1px solid var(--rule);margin-bottom:24px;}
+  .nt-tabs .tab{flex:1;padding:18px 22px;display:flex;flex-direction:column;gap:6px;border-right:1px solid var(--rule);cursor:pointer;transition:background 120ms ease;position:relative;}
+  .nt-tabs .tab:last-child{border-right:0;}
+  .nt-tabs .tab:hover{background:var(--paper-2);}
+  .nt-tabs .tab.active{background:var(--ink);color:var(--paper);}
+  .nt-tabs .tab .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);}
+  .nt-tabs .tab.active .lbl{color:#a09a8c;}
+  .nt-tabs .tab .ttl{font-family:var(--serif);font-size:18px;font-weight:600;display:flex;justify-content:space-between;align-items:baseline;}
+  .nt-tabs .tab .ttl .n{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--ink-3);}
+  .nt-tabs .tab.active .ttl .n{color:#a09a8c;}
+  .nt-tabs .tab .desc{font-size:11px;color:var(--ink-3);}
+  .nt-tabs .tab.active .desc{color:#a09a8c;}
+
+  .nt-toolbar{display:grid;grid-template-columns:1fr auto auto;gap:14px;margin-bottom:20px;align-items:center;}
+  .nt-search{display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--paper);border:1px solid var(--rule);height:38px;}
+  .nt-search input{flex:1;border:0;outline:0;background:transparent;font-family:var(--sans);font-size:14px;color:var(--ink);}
+  .nt-search input::placeholder{color:var(--ink-4);}
+  .nt-search .hk{font-family:var(--mono);font-size:10px;color:var(--ink-4);border:1px solid var(--rule);padding:2px 6px;letter-spacing:.06em;}
+  .nt-tags{display:flex;flex-wrap:wrap;gap:6px;padding:14px 0 0;}
+  .nt-tag{display:inline-flex;align-items:center;gap:4px;height:24px;padding:0 10px;background:var(--paper);border:1px solid var(--rule);font-family:var(--mono);font-size:11px;color:var(--ink-2);letter-spacing:.04em;cursor:pointer;}
+  .nt-tag:hover{border-color:var(--ink);}
+  .nt-tag.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .nt-tag .n{font-size:10px;opacity:.55;}
+  .view-toggle{display:flex;border:1px solid var(--rule);background:var(--paper);height:38px;}
+  .view-toggle button{padding:0 12px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);border-right:1px solid var(--rule);}
+  .view-toggle button:last-child{border-right:0;}
+  .view-toggle button.active{background:var(--ink);color:var(--paper);}
+
+  /* === note cards === */
+  .nt-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;margin-bottom:32px;}
+  .ncard{background:var(--paper);border:1px solid var(--rule);padding:22px 22px 18px;position:relative;transition:all 120ms ease;cursor:pointer;display:flex;flex-direction:column;gap:14px;min-height:200px;}
+  .ncard:hover{border-color:var(--ink);transform:translateY(-1px);}
+  .ncard .ctype{position:absolute;top:0;left:0;width:3px;height:100%;background:var(--rule);}
+  .ncard[data-type="quote"] .ctype{background:var(--accent);}
+  .ncard[data-type="method"] .ctype{background:var(--ink);}
+  .ncard[data-type="reflect"] .ctype{background:var(--warn);}
+  .ncard[data-type="material"] .ctype{background:var(--ok);}
+  .ncard .head{display:flex;justify-content:space-between;align-items:center;}
+  .ncard .kind{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);display:flex;align-items:center;gap:6px;}
+  .ncard .kind::before{content:"";width:6px;height:6px;}
+  .ncard[data-type="quote"] .kind::before{background:var(--accent);}
+  .ncard[data-type="method"] .kind::before{background:var(--ink);}
+  .ncard[data-type="reflect"] .kind::before{background:var(--warn);}
+  .ncard[data-type="material"] .kind::before{background:var(--ok);}
+  .ncard .ago{font-family:var(--mono);font-size:10px;color:var(--ink-4);letter-spacing:.04em;}
+  .ncard .qbody{font-family:var(--serif);font-size:17px;line-height:1.5;color:var(--ink);position:relative;padding-left:18px;}
+  .ncard .qbody::before{content:"\201C";position:absolute;left:-4px;top:-6px;font-family:var(--serif);font-size:42px;line-height:1;color:var(--accent);font-weight:600;}
+  .ncard .mbody{font-family:var(--serif);font-size:17px;line-height:1.4;color:var(--ink);font-weight:600;}
+  .ncard .msteps{display:flex;flex-direction:column;gap:6px;}
+  .ncard .msteps .st{display:grid;grid-template-columns:20px 1fr;gap:8px;font-size:12px;color:var(--ink-2);line-height:1.45;}
+  .ncard .msteps .st .i{font-family:var(--mono);font-size:10px;font-weight:600;color:var(--accent);}
+  .ncard .rbody{font-family:var(--serif);font-size:15px;line-height:1.55;color:var(--ink-2);}
+  .ncard .mat-line{display:grid;grid-template-columns:auto 1fr;gap:8px;font-size:13px;line-height:1.5;color:var(--ink-2);}
+  .ncard .mat-line .key{font-family:var(--mono);font-size:11px;color:var(--ink-4);text-transform:uppercase;letter-spacing:.06em;padding-top:2px;}
+  .ncard .foot{display:flex;justify-content:space-between;align-items:center;margin-top:auto;padding-top:10px;border-top:1px dashed var(--rule);font-family:var(--mono);font-size:10px;letter-spacing:.04em;color:var(--ink-3);}
+  .ncard .foot .src{display:flex;align-items:center;gap:6px;}
+  .ncard .foot .src::before{content:"→";color:var(--ink-4);}
+  .ncard .tags{display:flex;flex-wrap:wrap;gap:4px;}
+  .ncard .tags span{padding:2px 6px;background:var(--paper-2);font-size:10px;letter-spacing:.04em;color:var(--ink-2);}
+
+  /* === sidebar review module === */
+  .nt-layout{display:grid;grid-template-columns:1fr 280px;gap:28px;align-items:start;}
+  .review-card{background:var(--ink);color:var(--paper);padding:22px 22px;display:flex;flex-direction:column;gap:14px;position:relative;overflow:hidden;}
+  .review-card::after{content:"";position:absolute;right:-60px;bottom:-60px;width:200px;height:200px;background:radial-gradient(circle, rgba(217,160,85,.16) 0%, transparent 65%);pointer-events:none;}
+  .review-card h4{font-family:var(--serif);font-size:18px;font-weight:600;margin:0;display:flex;align-items:baseline;justify-content:space-between;}
+  .review-card h4 .n{font-family:var(--mono);font-size:11px;color:#a09a8c;font-weight:500;letter-spacing:.1em;}
+  .review-card .sub{font-family:var(--mono);font-size:11px;color:#a09a8c;letter-spacing:.06em;}
+  .review-card .stack{position:relative;height:130px;margin:6px 0;}
+  .review-card .ts{position:absolute;left:0;right:0;background:#27241e;border:1px solid #3a352a;padding:12px 14px;}
+  .review-card .ts .tag{font-family:var(--mono);font-size:9px;letter-spacing:.16em;text-transform:uppercase;color:#d9a055;margin-bottom:4px;}
+  .review-card .ts .txt{font-family:var(--serif);font-size:13px;line-height:1.35;color:#e8e2d2;}
+  .review-card .ts-1{top:0;transform:translateY(0) scale(1);z-index:3;}
+  .review-card .ts-2{top:0;transform:translateY(8px) scale(.96);z-index:2;opacity:.7;}
+  .review-card .ts-3{top:0;transform:translateY(16px) scale(.92);z-index:1;opacity:.4;}
+  .review-card .meta-row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:#a09a8c;letter-spacing:.04em;}
+  .review-card .cta-grp{display:flex;gap:8px;}
+  .review-card .cta-grp .btn{flex:1;justify-content:center;}
+  .review-card .btn-rev{background:var(--paper);color:var(--ink);}
+  .review-card .btn-out{background:transparent;color:var(--paper);border:1px solid #4a443a;}
+
+  .sprint-card{background:var(--paper);border:1px solid var(--rule);padding:20px 22px;margin-top:20px;display:flex;flex-direction:column;gap:12px;}
+  .sprint-card h4{font-family:var(--serif);font-size:16px;font-weight:600;margin:0;}
+  .sprint-card .desc{font-size:12px;color:var(--ink-3);line-height:1.55;}
+  .sprint-card .row{display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;color:var(--ink-2);letter-spacing:.04em;}
+  .sprint-card .row b{color:var(--ink);font-weight:600;font-family:var(--serif);font-size:14px;}
+
+  /* === capture flows ============================================ */
+  .cf-wrap{background:var(--paper-2);padding:0;display:grid;grid-template-columns:200px 1fr;min-height:100%;}
+  .cf-side{background:#0f0d09;color:#cbc6bb;padding:18px 14px;font-family:var(--mono);font-size:11px;display:flex;flex-direction:column;gap:6px;}
+  .cf-side .grp{color:#5e5a52;letter-spacing:.2em;text-transform:uppercase;font-size:10px;padding:10px 6px 4px;}
+  .cf-side a{padding:8px 10px;color:#cbc6bb;letter-spacing:.06em;text-decoration:none;}
+  .cf-side a.active{background:#27241e;color:#f3eedf;}
+  .cf-side a .dot{display:inline-block;width:5px;height:5px;background:var(--accent);border-radius:50%;margin-right:6px;}
+  .cf-main{padding:36px 56px;}
+  .cf-crumb{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);margin-bottom:10px;display:flex;gap:8px;align-items:center;}
+  .cf-crumb .sep{color:var(--ink-4);}
+  .cf-title{font-family:var(--serif);font-size:30px;font-weight:600;line-height:1.15;margin:0 0 8px;}
+  .cf-sub{color:var(--ink-3);font-size:13px;margin-bottom:28px;}
+
+  /* answer pane (shared) */
+  .ans-pane{background:var(--paper);border:1px solid var(--rule);padding:28px 30px;font-family:var(--serif);font-size:15px;line-height:1.85;color:var(--ink-2);position:relative;}
+  .ans-pane .pmeta{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;}
+  .ans-pane .pmeta::after{content:"";flex:1;height:1px;background:var(--rule);margin-left:12px;}
+  .ans-pane h4{font-family:var(--serif);font-size:18px;font-weight:600;margin:0 0 14px;color:var(--ink);}
+  .ans-pane p{margin:0 0 14px;}
+  .ans-pane .hl{background:linear-gradient(transparent 62%, var(--accent-50) 62%, var(--accent-50) 95%, transparent 95%);padding:1px 0;cursor:pointer;}
+  .ans-pane .hl.sel{background:linear-gradient(transparent 62%, #f7d9d0 62%, #f7d9d0 95%, transparent 95%);box-shadow:0 0 0 1px var(--accent);}
+  .ans-pane mark.lose{background:#f7d9d0;padding:1px 3px;color:var(--accent-2);border-bottom:1px dashed var(--accent);font-style:normal;font-weight:600;}
+  .ans-pane mark.gain{background:#e7e9d9;padding:1px 3px;color:var(--ok);border-bottom:1px dashed var(--ok);font-style:normal;font-weight:600;}
+
+  /* floating capture bar (variant A) */
+  .cap-bar{position:absolute;background:var(--ink);color:var(--paper);padding:4px 4px;display:flex;gap:0;box-shadow:0 8px 28px -8px rgba(26,24,21,.4);font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;}
+  .cap-bar::after{content:"";position:absolute;bottom:-6px;left:30px;width:0;height:0;border-left:6px solid transparent;border-right:6px solid transparent;border-top:6px solid var(--ink);}
+  .cap-bar button{padding:8px 12px;color:#cbc6bb;display:flex;align-items:center;gap:6px;border-right:1px solid #27241e;}
+  .cap-bar button:last-child{border-right:0;}
+  .cap-bar button:hover{background:#27241e;color:#f3eedf;}
+  .cap-bar button.primary{color:#fff;}
+  .cap-bar button.primary::before{content:"";width:5px;height:5px;background:var(--accent);border-radius:50%;}
+
+  /* toast (variant A) */
+  .toast{position:absolute;top:14px;right:14px;background:var(--ink);color:var(--paper);padding:12px 16px;display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;box-shadow:0 8px 24px -10px rgba(26,24,21,.5);}
+  .toast .ok-dot{width:8px;height:8px;background:var(--accent);border-radius:50%;}
+  .toast a{color:#a09a8c;text-decoration:underline;margin-left:6px;}
+
+  /* drawer (variant B) */
+  .cf-layout-2{display:grid;grid-template-columns:1fr 380px;gap:22px;align-items:start;}
+  .drawer{background:var(--paper);border:1px solid var(--ink);padding:22px 22px;display:flex;flex-direction:column;gap:16px;position:relative;box-shadow:-8px 0 24px -16px rgba(26,24,21,.2);}
+  .drawer .dhead{display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--rule);}
+  .drawer .dhead h5{font-family:var(--serif);font-size:18px;font-weight:600;margin:0;display:flex;align-items:center;gap:8px;}
+  .drawer .dhead .x{font-family:var(--mono);font-size:14px;color:var(--ink-3);cursor:pointer;}
+  .drawer .dtabs{display:flex;gap:0;border:1px solid var(--rule);}
+  .drawer .dtabs button{flex:1;padding:8px 6px;font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);border-right:1px solid var(--rule);}
+  .drawer .dtabs button:last-child{border-right:0;}
+  .drawer .dtabs button.active{background:var(--ink);color:var(--paper);}
+  .drawer .dgroup{display:flex;flex-direction:column;gap:6px;}
+  .drawer .dgroup .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3);}
+  .drawer textarea{width:100%;min-height:120px;padding:12px 14px;border:1px solid var(--rule);background:var(--paper-2);font-family:var(--serif);font-size:14px;line-height:1.6;color:var(--ink);outline:0;resize:vertical;}
+  .drawer textarea:focus{border-color:var(--ink);background:var(--paper);}
+  .drawer .qlink{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--paper-2);border:1px solid var(--rule);font-family:var(--mono);font-size:11px;color:var(--ink-2);letter-spacing:.04em;}
+  .drawer .qlink .num{font-family:var(--serif);font-weight:600;font-size:14px;color:var(--ink);}
+  .drawer .qlink .pill{margin-left:auto;background:var(--accent-50);color:var(--accent);font-size:10px;letter-spacing:.1em;padding:2px 6px;text-transform:uppercase;font-weight:600;}
+  .drawer .chip-pick{display:flex;flex-wrap:wrap;gap:5px;}
+  .drawer .chip-pick .c{height:24px;padding:0 10px;border:1px solid var(--rule);font-family:var(--mono);font-size:11px;letter-spacing:.04em;color:var(--ink-2);display:inline-flex;align-items:center;gap:4px;cursor:pointer;}
+  .drawer .chip-pick .c.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .drawer .chip-pick .c .x{margin-left:2px;opacity:.6;}
+  .drawer .footer{display:flex;gap:8px;margin-top:auto;padding-top:14px;border-top:1px solid var(--rule);}
+  .drawer .footer .btn{flex:1;justify-content:center;}
+
+  /* editor (variant C) */
+  .editor-frame{background:var(--paper);border:1px solid var(--rule);display:grid;grid-template-columns:280px 1fr;min-height:560px;}
+  .ed-side{background:var(--paper-2);padding:24px 22px;border-right:1px solid var(--rule);display:flex;flex-direction:column;gap:22px;}
+  .ed-side .ed-grp{display:flex;flex-direction:column;gap:8px;}
+  .ed-side .ed-grp .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);}
+  .ed-side .type-pick{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;}
+  .ed-side .type-pick .tp{padding:10px 10px;background:var(--paper);border:1px solid var(--rule);font-family:var(--mono);font-size:11px;letter-spacing:.06em;color:var(--ink-2);text-align:left;cursor:pointer;display:flex;flex-direction:column;gap:2px;}
+  .ed-side .type-pick .tp .name{font-family:var(--serif);font-size:14px;font-weight:600;color:var(--ink);}
+  .ed-side .type-pick .tp.on{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .ed-side .type-pick .tp.on .name{color:var(--paper);}
+  .ed-side .tag-input{padding:10px 12px;background:var(--paper);border:1px solid var(--rule);font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.04em;}
+  .ed-side .link-q{display:flex;align-items:center;gap:8px;padding:10px 12px;background:var(--paper);border:1px solid var(--rule);font-family:var(--mono);font-size:11px;color:var(--ink-2);}
+  .ed-side .link-q .num{font-family:var(--serif);font-weight:600;font-size:14px;color:var(--ink);}
+  .ed-side .link-q .add{margin-left:auto;color:var(--ink-3);font-size:14px;cursor:pointer;}
+  .ed-main{padding:28px 32px 24px;display:flex;flex-direction:column;gap:18px;}
+  .ed-titlebar{display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--rule);}
+  .ed-titlebar .stack{display:flex;align-items:center;gap:10px;}
+  .ed-titlebar .stack .ic{width:30px;height:30px;background:var(--accent-50);display:flex;align-items:center;justify-content:center;}
+  .ed-titlebar .stack .ic::before{content:"";width:8px;height:8px;background:var(--accent);}
+  .ed-titlebar .stack .t{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);}
+  .ed-titlebar .acts{display:flex;gap:8px;}
+  .ed-input{border:0;outline:0;background:transparent;font-family:var(--serif);font-size:30px;font-weight:600;color:var(--ink);width:100%;padding:0;line-height:1.1;}
+  .ed-input::placeholder{color:var(--ink-4);}
+  .ed-toolbar{display:flex;gap:4px;padding:6px 8px;background:var(--paper-2);border:1px solid var(--rule);font-family:var(--mono);font-size:11px;color:var(--ink-3);letter-spacing:.06em;}
+  .ed-toolbar button{padding:4px 8px;}
+  .ed-toolbar button:hover{background:var(--paper);color:var(--ink);}
+  .ed-toolbar .sep{width:1px;background:var(--rule);margin:0 4px;}
+  .ed-body{min-height:280px;padding:18px 0;font-family:var(--serif);font-size:15px;line-height:1.85;color:var(--ink-2);outline:0;}
+  .ed-body p{margin:0 0 14px;}
+  .ed-body p.q{font-style:italic;color:var(--ink);position:relative;padding-left:18px;border-left:3px solid var(--accent);font-weight:600;font-size:17px;}
+  .ed-body .placeholder{color:var(--ink-4);}
+  .ed-foot{display:flex;justify-content:space-between;align-items:center;padding-top:14px;border-top:1px solid var(--rule);font-family:var(--mono);font-size:10px;letter-spacing:.08em;color:var(--ink-3);}
+
+  /* canvas */
+  body{padding-bottom:80px;}
+</style>
+</head>
+<body>
+
+<div id="root"></div>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" data-presets="env,react">
+const { useState } = React;
+const { DesignCanvas, DCSection, DCArtboard } = window;
+
+/* ============================================================
+ * (removed) — 错题本 is part of 行测, not 申论
+ * ============================================================ */
+function _Removed_WrongBookPage(){
+  return null; // placeholder; original implementation removed
+}
+function _Unused(){
+  const [activeView, setActiveView] = useState('todo');
+  return (
+    <div style={{display:'none'}}>
+      <div className="ph">
+        <div className="eyebrow-row">
+          <span className="eyebrow">07 · Essay / Review</span>
+          <span className="stamp">截至今日 · 142 道在练</span>
+        </div>
+        <div className="ph-row">
+          <div>
+            <h1 className="serif">错题本<br/><span className="light">把每一处失分练成肌肉记忆</span></h1>
+            <p className="lede">综合 AI 批改、低分阈值与你手动标记的题——按题型分轴、失分维度作筛、掌握度作徽。点开就练，练到三次过线自动毕业。</p>
+          </div>
+          <div className="stat-strip">
+            <div className="cell accent"><div className="k">在练</div><div className="v">142<span className="small">题</span></div></div>
+            <div className="cell"><div className="k">待重做</div><div className="v">38<span className="small">题</span></div></div>
+            <div className="cell"><div className="k">已掌握</div><div className="v">67<span className="small">题</span></div></div>
+            <div className="cell"><div className="k">本周新增</div><div className="v">12<span className="small">题</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div className="main">
+
+        {/* Resume hero */}
+        <div className="wb-hero">
+          <div>
+            <div className="kicker">续答 · 上次中断 · 2 小时前</div>
+            <h3 className="serif">综合分析 / 启示类 · 第 3 题「数字鸿沟"破"与"立"」</h3>
+            <div className="meta">上次得分 <strong>28/40</strong> · 失分点 <strong>要点不全 · 立意偏浅</strong> · 待重做 <strong>2 处批注未读</strong></div>
+          </div>
+          <div className="act">
+            <button className="btn btn-ghost" style={{color:'#a09a8c'}}>稍后</button>
+            <button className="btn btn-rev">继续重做 →</button>
+          </div>
+        </div>
+
+        {/* Overview row */}
+        <div className="wb-overview">
+          <div className="wb-chart">
+            <div className="ttl">
+              <h4 className="serif">按题型分布</h4>
+              <span className="sub">in stock · 142</span>
+            </div>
+            <div className="wb-bars">
+              {[
+                {l:'归纳概括',v:32,o:14,d:6},
+                {l:'综合分析',v:48,o:6, d:2},
+                {l:'提出对策',v:24,o:9, d:4},
+                {l:'公文应用',v:18,o:3, d:1},
+                {l:'大作文',  v:20,o:6, d:3},
+              ].map((b,i)=>{
+                const total = b.v; const okPct = b.o/total*100; const doingPct = b.d/total*100;
+                return (
+                  <div className="b" key={i}>
+                    <div className="val serif">{b.v}</div>
+                    <div className="bar" style={{height: 14 + b.v*1.6}}>
+                      <div className="doing" style={{height: doingPct + '%'}}/>
+                      <div className="ok" style={{height: okPct + '%'}}/>
+                    </div>
+                    <div className="lbl">{b.l}</div>
+                  </div>
+                );
+              })}
+            </div>
+            <div className="wb-legend">
+              <span className="sw todo">待重做</span>
+              <span className="sw doing">进行中</span>
+              <span className="sw done">本周毕业</span>
+            </div>
+          </div>
+
+          <div className="wb-goal">
+            <h4 className="serif">本周毕业目标<span className="sub">/14</span></h4>
+            <div className="ring-row">
+              <div className="ring">
+                <svg viewBox="0 0 84 84">
+                  <circle cx="42" cy="42" r="36" fill="none" stroke="#E2DBC8" strokeWidth="6"/>
+                  <circle cx="42" cy="42" r="36" fill="none" stroke="#1A1815" strokeWidth="6" strokeDasharray="226" strokeDashoffset="65" strokeLinecap="butt"/>
+                </svg>
+                <div className="center"><div className="n serif">9</div><div className="of">/14</div></div>
+              </div>
+              <div className="legend">
+                <div className="li">连续毕业天数 <b>14</b></div>
+                <div className="li">本周毕业 <b>9</b></div>
+                <div className="li">距考试 <b>47</b></div>
+              </div>
+            </div>
+            <div className="cta">推送今日 5 题 <span>→</span></div>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="filters" id="wb-filters">
+          <div className="f-row">
+            <div className="k">视图</div>
+            <div className="f-chips">
+              {[
+                ['all','全部','142'],
+                ['todo','待重做','38'],
+                ['doing','进行中','37'],
+                ['ok','已掌握','67'],
+                ['new','本周新增','12'],
+              ].map(([k,l,n])=>(
+                <button key={k} className={'fchip' + (activeView===k?' active':'')} onClick={()=>setActiveView(k)}>
+                  {k==='new' && <span className="dot"/>}
+                  {l}
+                  <span className="badge">{n}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="f-row">
+            <div className="k">题型</div>
+            <div className="f-chips">
+              {['全部','归纳概括','综合分析','提出对策','公文应用','大作文'].map((l,i)=>(
+                <button key={i} className={'fchip' + (i===0?' active':'')}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <div className="f-row">
+            <div className="k">失分维度</div>
+            <div className="f-chips">
+              {['要点漏失','结构混乱','语言不准','字数失控','立意偏浅','审题偏'].map((l,i)=>(
+                <button key={i} className="fchip">{l}</button>
+              ))}
+            </div>
+          </div>
+          <div className="f-row">
+            <div className="k">掌握度</div>
+            <div className="f-chips">
+              {['全部','◇◇◇ 仅做过一次','◆◇◇','◆◆◇ 接近毕业','◆◆◆ 已毕业'].map((l,i)=>(
+                <button key={i} className={'fchip' + (i===0?' active':'')}>{l}</button>
+              ))}
+            </div>
+          </div>
+          <div className="f-foot">
+            <div className="f-sum">
+              <span>当前筛选</span>
+              <span className="sum-tag">视图 · 待重做 <span className="x">×</span></span>
+              <span>匹配</span>
+              <span className="match-num">38</span>
+              <span>题</span>
+            </div>
+            <button className="reset">重置</button>
+          </div>
+        </div>
+
+        {/* List */}
+        <div className="wb-list">
+          {[
+            {sev:'high',num:'01',pill:'综合分析',from:'2023 国考 · 副省级 · 第 三 题',q:'根据"给定资料 3",谈谈对划线句"治理之"细",其要害在于"实"与"准"的看法。(20 分)',lose:['要点漏失','立意偏浅'],last:38,of:40,bad:true,when:'8 天前 · 1 次',mast:1,act:['看 AI 批改','重做 ↻','写反思 ✒']},
+            {sev:'mid',num:'02',pill:'归纳概括',from:'专项 · 单一概括 · 自选题',q:'结合"给定资料 1",请概括 H 县在乡风文明建设方面的主要做法。要求:全面、准确,不超过 150 字。',lose:['结构混乱','语言不准'],last:14,of:20,bad:true,when:'昨天 · 2 次',mast:2,act:['看上次答案','重做 ↻','写反思 ✒']},
+            {sev:'high',num:'03',pill:'大作文',from:'2022 北京市考 · 第 五 题',q:'以"在守护"老味道"中走向新生"为题,联系实际写一篇议论文。(40 分) 要求:观点明确;思路清晰、结构完整;1000~1200 字。',lose:['立意偏浅','字数失控'],last:23,of:40,bad:true,when:'3 周前 · 1 次',mast:1,act:['看范文对比','重做 ↻','写反思 ✒']},
+            {sev:'low',num:'04',pill:'提出对策',from:'2021 江苏 · A 类 · 第 二 题',q:'针对"给定资料 2"反映的快递包装过度问题,提出具体可行的解决措施。要求:针对性强,有可行性,400 字以内。',lose:['要点漏失'],last:24,of:30,bad:false,when:'1 个月前 · 2 次',mast:2,act:['看 AI 批改','重做 ↻','写反思 ✒']},
+            {sev:'ok',num:'05',pill:'公文应用',from:'2020 山东 · A 类 · 第 三 题',q:'假如你是 S 市文旅局工作人员,根据"给定资料 4",拟写一份关于推进非遗进校园工作的倡议书。(20 分)',lose:['已掌握'],loseOk:true,last:18,of:20,bad:false,when:'本周毕业',mast:3,ok:true,act:['查看记录','移出错题本 ✓','保留范文 ✒']},
+          ].map((row,i)=>(
+            <div key={i} className="wb-row" data-sev={row.sev}>
+              <div className="sev"/>
+              <div className="wb-num">{row.num}</div>
+              <div className="wb-body">
+                <div className="src">
+                  <span className="pill">{row.pill}</span>
+                  <span className="from">{row.from}</span>
+                </div>
+                <div className="q serif">{row.q}</div>
+                <div className="tagrow">
+                  {row.lose.map((l,j)=>(<span key={j} className={'lose' + (row.loseOk?' ok':'')}>{row.loseOk && <span>✓</span>}{l}</span>))}
+                </div>
+              </div>
+              <div className="wb-score">
+                <div className="last">上次得分</div>
+                <div className={'num serif' + (row.bad?' bad':'')}>{row.last}<span className="of">/{row.of}</span></div>
+                <div className="when">{row.when}</div>
+              </div>
+              <div className="wb-mast">
+                {row.ok ? (
+                  <span className="ok-pill">已毕业</span>
+                ) : (
+                  <>
+                    <span className="dots">
+                      {[0,1,2].map(k=>(<span key={k} className={'d' + (k < row.mast ? ' on':'')}/>))}
+                    </span>
+                    掌握度 {row.mast}/3
+                  </>
+                )}
+              </div>
+              <div className="wb-act">
+                {row.act.map((a,j)=>(<a key={j}>{a} <span className="arr">→</span></a>))}
+              </div>
+            </div>
+          ))}
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+ * 2 · 笔记 主页（卡片盒 + 复习侧栏）
+ * ============================================================ */
+function NotesPage(){
+  const [activeTab, setActiveTab] = useState('all');
+  const cards = [
+    {type:'quote', kind:'金句',  ago:'今天',
+     body:'治理之"细",其要害在于"实"与"准"——"实"是脚踏实地的工夫,"准"是有的放矢的眼力。',
+     src:'2023 国考 副省级 第三题 · 参考答案', tags:['过渡句','治理','收尾']},
+    {type:'method', kind:'方法论', ago:'昨天',
+     mttl:'归纳概括 · 三步法',
+     msteps:[['01','审题:锁定对象、范围、字数三要素'],['02','切片:逐段标关键词、做要点切分'],['03','合并:同类项归并,按主体/层次重排']],
+     src:'归纳概括 · 全部混合刷题中提炼', tags:['题型方法','归纳概括','三步']},
+    {type:'reflect', kind:'反思', ago:'3 天前',
+     body:'这次失分是因为审题时把"做法"看成"问题"——以后开题前必须先把题干主语圈出来,再决定是写"是什么"还是"怎么做"。',
+     src:'错题 #02 · 归纳概括 · 单一概括', tags:['审题','失分复盘']},
+    {type:'material', kind:'素材', ago:'4 天前',
+     mat:[['人物','张桂梅 · 华坪女子高级中学 · 大山深处点亮 2000 余名女孩'],['案例','华坪模式 · 政府+社会+个人三方合力'],['可用题型','大作文 / 提出对策']],
+     src:'人民日报 · 2024.03 · 时代楷模', tags:['人物素材','教育','女性']},
+    {type:'quote', kind:'金句', ago:'5 天前',
+     body:'让"小切口"撬动"大变革",于细微处见真章——这是新时代治理者的方法论。',
+     src:'人民日报评论员 · 2024.05', tags:['治理','收尾','金句']},
+    {type:'method', kind:'方法论', ago:'1 周前',
+     mttl:'综合分析 · 评价类四要素',
+     msteps:[['01','表态:总句先亮观点,辩证一句'],['02','分析:从原因/影响/本质三选二'],['03','落地:接对策或启示,呼应主旨']],
+     src:'综合分析 · 评价分析 整理', tags:['题型方法','综合分析','评价']},
+  ];
+  const filtered = activeTab === 'all' ? cards : cards.filter(c => c.type === activeTab);
+  return (
+    <div className="ab" style={{minHeight:1480}}>
+      <div className="ph">
+        <div className="eyebrow-row">
+          <span className="eyebrow">08 · Essay / Notes</span>
+          <span className="stamp">238 条 · 12 类标签</span>
+        </div>
+        <div className="ph-row">
+          <div>
+            <h1 className="serif">笔记本<br/><span className="light">把读过的、想到的、改对的,都钉在这里</span></h1>
+            <p className="lede">四类卡片为骨——金句、方法论、反思、素材;答题中划词存、看批改时随手写、考前抽卡盲背。复习卡每日推送 5 张,考前进入冲刺模式。</p>
+          </div>
+          <div className="stat-strip">
+            <div className="cell"><div className="k">总数</div><div className="v">238<span className="small">条</span></div></div>
+            <div className="cell accent"><div className="k">本周新增</div><div className="v">23<span className="small">条</span></div></div>
+            <div className="cell"><div className="k">今日复习</div><div className="v">5<span className="small">/5</span></div></div>
+            <div className="cell"><div className="k">连续</div><div className="v">21<span className="small">天</span></div></div>
+          </div>
+        </div>
+      </div>
+
+      <div className="main">
+
+        {/* Type tabs */}
+        <div className="nt-tabs">
+          {[
+            ['all','01','全部','238','跨四类合并视图'],
+            ['quote','02','金句','86','politely 政策话术 · 过渡句 · 收尾句'],
+            ['method','03','方法论','42','题型解法 · 行文骨架'],
+            ['reflect','04','反思','58','错题复盘 · 失分原因'],
+            ['material','05','素材','52','人物 · 案例 · 数据'],
+          ].map(([k,l,n,c,d])=>(
+            <div key={k} className={'tab' + (activeTab===k?' active':'')} onClick={()=>setActiveTab(k)}>
+              <div className="lbl">{l} · {l==='01'?'ALL':l==='02'?'QUOTE':l==='03'?'METHOD':l==='04'?'REFLECT':'MATERIAL'}</div>
+              <div className="ttl serif">{n}<span className="n">{c}</span></div>
+              <div className="desc">{d}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Toolbar */}
+        <div className="nt-toolbar">
+          <div className="nt-search">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+            <input placeholder="搜索全文 · 标签 · 来源题目..." defaultValue=""/>
+            <span className="hk">⌘ K</span>
+          </div>
+          <div className="view-toggle">
+            <button className="active">网格</button>
+            <button>列表</button>
+            <button>时间线</button>
+          </div>
+          <button className="btn btn-primary">＋ 新建笔记</button>
+        </div>
+
+        {/* Tag cloud */}
+        <div className="nt-tags">
+          {[
+            ['治理',24],['过渡句',18],['收尾',14],['审题',12],['失分复盘',11],
+            ['题型方法',10],['归纳概括',9],['综合分析',9],['人物素材',8],['教育',7],
+            ['乡村振兴',6],['数字化',5],['+ 13']
+          ].map(([t,n],i)=>(
+            <button key={i} className={'nt-tag' + (i===0?' active':'')}>{t}{typeof n==='number' && <span className="n">{n}</span>}</button>
+          ))}
+        </div>
+
+        {/* Main + side layout */}
+        <div className="nt-layout" style={{marginTop:24}}>
+
+          <div className="nt-grid">
+            {filtered.map((c,i)=>(
+              <div className="ncard" data-type={c.type} key={i}>
+                <span className="ctype"/>
+                <div className="head">
+                  <span className="kind">{c.kind}</span>
+                  <span className="ago">{c.ago}</span>
+                </div>
+                {c.type==='quote' && <div className="qbody serif">{c.body}</div>}
+                {c.type==='method' && (
+                  <>
+                    <div className="mbody serif">{c.mttl}</div>
+                    <div className="msteps">
+                      {c.msteps.map((s,j)=>(<div className="st" key={j}><span className="i">{s[0]}</span><span>{s[1]}</span></div>))}
+                    </div>
+                  </>
+                )}
+                {c.type==='reflect' && <div className="rbody serif">{c.body}</div>}
+                {c.type==='material' && (
+                  <div style={{display:'flex',flexDirection:'column',gap:8}}>
+                    {c.mat.map((m,j)=>(<div className="mat-line" key={j}><span className="key">{m[0]}</span><span>{m[1]}</span></div>))}
+                  </div>
+                )}
+                <div className="foot">
+                  <span className="src">{c.src}</span>
+                  <div className="tags">
+                    {c.tags.slice(0,3).map((t,j)=>(<span key={j}>#{t}</span>))}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div>
+            <div className="review-card">
+              <h4 className="serif">今日复习<span className="n">5 张 · 间隔重复</span></h4>
+              <div className="sub">基于遗忘曲线为你抽取的卡片 — 完成才能保持连续</div>
+              <div className="stack">
+                <div className="ts ts-3"/>
+                <div className="ts ts-2"/>
+                <div className="ts ts-1">
+                  <div className="tag">金句 · 2 天前存</div>
+                  <div className="txt serif">"治理之细,其要害在于实与准——实是脚踏实地的工夫,准是有的放矢的眼力。"</div>
+                </div>
+              </div>
+              <div className="meta-row">
+                <span>1 / 5</span>
+                <span>← 没记住  ·  记住了 →</span>
+              </div>
+              <div className="cta-grp">
+                <button className="btn btn-out">跳过</button>
+                <button className="btn btn-rev">开始 5 张</button>
+              </div>
+            </div>
+
+            <div className="sprint-card">
+              <h4 className="serif">考前冲刺模式</h4>
+              <div className="desc">距考试 47 天 — 将开启高频金句 / 方法论的密集抽卡,每日 20 张直至考前。</div>
+              <div className="row">高频金句池 <b>62</b></div>
+              <div className="row">方法论卡片 <b>42</b></div>
+              <div className="row">建议每日 <b>20 张 · 25 分钟</b></div>
+              <button className="btn btn-secondary" style={{marginTop:4,justifyContent:'center'}}>D-30 开启 · 暂未到期</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+ * 3 · 捕获流程 A · 选中文本浮条
+ * ============================================================ */
+function FlowA(){
+  return (
+    <div className="ab" style={{minHeight:880}}>
+      <div className="cf-wrap">
+        <div className="cf-side">
+          <div className="grp">复盘</div>
+          <a className="active"><span className="dot"/>错题本</a>
+          <a>笔记</a>
+          <a>学情数据</a>
+        </div>
+        <div className="cf-main">
+          <div className="cf-crumb">
+            <span>错题本</span><span className="sep">›</span><span>#01</span><span className="sep">›</span><span>看参考答案</span>
+          </div>
+          <h2 className="cf-title">流程 A · 选中即存 ─ 看答案场景</h2>
+          <p className="cf-sub">最低摩擦:用户在阅读参考答案时划词,浮条立刻给出"存为金句 / 加批注"两个动作。无需切走当前页面。</p>
+
+          <div className="ans-pane" style={{maxWidth:780,position:'relative'}}>
+            <div className="pmeta"><span>2023 国考副省级 · 第 三 题 · 参考答案</span><span>40 分</span></div>
+            <h4 className="serif">治理之细,要害在"实"与"准"</h4>
+            <p>当前社会治理的复杂性,要求政府部门把更多精力投入到细微处,从一砖一瓦、一人一事的具体场景中,提炼可推广、可复制的"小切口"经验。</p>
+            <p><span className="hl sel">治理之"细",其要害在于"实"与"准"——"实"是脚踏实地的工夫,"准"是有的放矢的眼力。</span>没有"实",细就成了形式;没有"准",细就成了瞎忙。</p>
+
+            <div className="cap-bar" style={{top:142,left:24}}>
+              <button className="primary">存为金句</button>
+              <button>加批注</button>
+              <button>关联反思</button>
+              <button>取消</button>
+            </div>
+
+            <p>具体来说,基层工作者既要俯下身、贴近民意,把"实"字写进田间地头;又要善用数据、识别症结,把"准"字落到办事流程。唯有如此,"细"才能从口号变为实效。</p>
+            <p><span className="hl">让"小切口"撬动"大变革",于细微处见真章——这是新时代治理者的方法论。</span></p>
+          </div>
+
+          <div className="toast">
+            <span className="ok-dot"/>已存入金句库
+            <a>查看 →</a>
+          </div>
+
+          <div style={{marginTop:32,maxWidth:780,padding:'18px 24px',background:'var(--paper)',border:'1px dashed var(--rule-strong)'}}>
+            <div className="eyebrow" style={{marginBottom:8}}>设计说明</div>
+            <div style={{fontSize:13,lineHeight:1.7,color:'var(--ink-2)'}}>
+              ① 用户长按或拖选文本 → 浮条出现在选区上方 6 px 偏移。<br/>
+              ② <b>已自动识别为「金句」</b>类型(因当前在"看答案"场景);用户也可手动改类型。<br/>
+              ③ 来源(题号/位置)自动写入,无需用户填。Tag 推荐 3 个(治理、过渡句、收尾)由 AI 预选,可一键采纳或修改。<br/>
+              ④ 右上角 toast 4 秒后自动消失,"查看"按钮跳到笔记本对应卡片。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+ * 4 · 捕获流程 B · 右侧抽屉(AI 批改场景)
+ * ============================================================ */
+function FlowB(){
+  return (
+    <div className="ab" style={{minHeight:880}}>
+      <div className="cf-wrap">
+        <div className="cf-side">
+          <div className="grp">复盘</div>
+          <a className="active"><span className="dot"/>错题本</a>
+          <a>笔记</a>
+          <a>学情数据</a>
+        </div>
+        <div className="cf-main">
+          <div className="cf-crumb">
+            <span>错题本</span><span className="sep">›</span><span>#01</span><span className="sep">›</span><span>AI 批改 · 抽屉模式</span>
+          </div>
+          <h2 className="cf-title">流程 B · 边看批改边记 ─ 反思场景</h2>
+          <p className="cf-sub">看 AI 批改时右侧固定抽屉,默认在"反思"tab,可切到金句/方法论/素材。关联题号、tag、AI 推荐反思角度都已预填。</p>
+
+          <div className="cf-layout-2">
+
+            <div className="ans-pane">
+              <div className="pmeta"><span>我的答案 · AI 批改 · 28 / 40</span><span>失分点 3 处</span></div>
+              <h4 className="serif">关于"老味道"与新生</h4>
+              <p>城市发展过程中,<mark className="lose">许多老字号、老手艺因"跟不上节奏"而被淘汰</mark>。我们应当采取多种措施保护它们,例如政府扶持、宣传推广、培养接班人等。<mark className="lose">这些措施都很重要</mark>。</p>
+              <p>另一方面,<mark className="gain">守护"老味道"不应止于保留外形,更要在工艺与精神层面延续</mark>。<mark className="lose">老字号要想真正活下去,需要靠创新</mark>,与现代消费场景结合,才能在新时代焕发活力。</p>
+              <p style={{color:'var(--ink-4)',fontSize:13,fontFamily:'var(--mono)',letterSpacing:'.04em'}}>...(以下省略 420 字)</p>
+            </div>
+
+            <div className="drawer">
+              <div className="dhead">
+                <h5 className="serif"><span style={{width:5,height:5,background:'var(--accent)',borderRadius:'50%',display:'inline-block'}}/> 记一条笔记</h5>
+                <span className="x">×</span>
+              </div>
+              <div className="dtabs">
+                <button>金句</button>
+                <button>方法论</button>
+                <button className="active">反思</button>
+                <button>素材</button>
+              </div>
+
+              <div className="dgroup">
+                <div className="lbl">关联题目</div>
+                <div className="qlink">
+                  <span className="num">#01</span>
+                  <span>大作文 · "老味道"与新生</span>
+                  <span className="pill">28 / 40</span>
+                </div>
+              </div>
+
+              <div className="dgroup">
+                <div className="lbl">AI 建议反思角度</div>
+                <div className="chip-pick">
+                  <span className="c on">立意偏浅 ✓</span>
+                  <span className="c">论据空洞</span>
+                  <span className="c">缺乏案例</span>
+                </div>
+              </div>
+
+              <div className="dgroup">
+                <div className="lbl">本次反思</div>
+                <textarea defaultValue={'这次失分主要因为论据停留在「应当」「需要」层面，没有具体案例支撑。下次应至少安排两个案例：一近一远，一正一反。'}></textarea>
+              </div>
+
+              <div className="dgroup">
+                <div className="lbl">标签</div>
+                <div className="chip-pick">
+                  <span className="c on">#立意 <span className="x">×</span></span>
+                  <span className="c on">#论据 <span className="x">×</span></span>
+                  <span className="c">+ 新标签</span>
+                </div>
+              </div>
+
+              <div className="footer">
+                <button className="btn btn-ghost">存为草稿</button>
+                <button className="btn btn-primary">存入 · 关联错题</button>
+              </div>
+            </div>
+
+          </div>
+
+          <div style={{marginTop:24,padding:'18px 24px',background:'var(--paper)',border:'1px dashed var(--rule-strong)'}}>
+            <div className="eyebrow" style={{marginBottom:8}}>设计说明</div>
+            <div style={{fontSize:13,lineHeight:1.7,color:'var(--ink-2)'}}>
+              ① 抽屉打开时左侧批改区不缩窄,保证阅读不被打断(380 px 固定宽,屏幕窄于 1100 时改为浮层)。<br/>
+              ② 进入"反思"tab 默认勾选 AI 检测到的最严重失分维度(此处"立意偏浅"已 ✓)。<br/>
+              ③ "存入·关联错题"会把笔记 ID 和错题 #01 互相挂上链,下次打开错题就能看到这条反思。<br/>
+              ④ 切换到金句 tab,抽屉变成简短的 1 行输入 + 来源选择,适合不同类型笔记的形态。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+ * 5 · 捕获流程 C · 独立笔记编辑器
+ * ============================================================ */
+function FlowC(){
+  return (
+    <div className="ab" style={{minHeight:880}}>
+      <div className="cf-wrap">
+        <div className="cf-side">
+          <div className="grp">复盘</div>
+          <a>错题本</a>
+          <a className="active"><span className="dot"/>笔记</a>
+          <a>学情数据</a>
+        </div>
+        <div className="cf-main">
+          <div className="cf-crumb">
+            <span>笔记</span><span className="sep">›</span><span>新建</span><span className="sep">›</span><span>独立整理模式</span>
+          </div>
+          <h2 className="cf-title">流程 C · 独立整理 ─ 笔记编辑器</h2>
+          <p className="cf-sub">不在做题/批改场景下的"主动整理"——左侧固定元数据,右侧专注书写;支持引用 / 高亮 / 关联错题。</p>
+
+          <div className="editor-frame">
+
+            <div className="ed-side">
+              <div className="ed-grp">
+                <span className="lbl">笔记类型</span>
+                <div className="type-pick">
+                  <button className="tp"><span className="name">金句</span><span>politely 政策话术</span></button>
+                  <button className="tp on"><span className="name">方法论</span><span>题型解法</span></button>
+                  <button className="tp"><span className="name">反思</span><span>错题复盘</span></button>
+                  <button className="tp"><span className="name">素材</span><span>人物·案例·数据</span></button>
+                </div>
+              </div>
+
+              <div className="ed-grp">
+                <span className="lbl">挂载到题型</span>
+                <div className="tag-input">综合分析 · 启示类</div>
+              </div>
+
+              <div className="ed-grp">
+                <span className="lbl">关联错题（可选）</span>
+                <div className="link-q">
+                  <span className="num">#01</span>
+                  <span>数字鸿沟"破"与"立"</span>
+                  <span className="add">＋</span>
+                </div>
+                <div className="link-q">
+                  <span className="num">#03</span>
+                  <span>老味道与新生</span>
+                  <span className="add">×</span>
+                </div>
+                <button className="btn btn-ghost btn-sm" style={{justifyContent:'flex-start',padding:'0 4px'}}>＋ 再添加</button>
+              </div>
+
+              <div className="ed-grp">
+                <span className="lbl">标签</span>
+                <div className="chip-pick" style={{display:'flex',flexWrap:'wrap',gap:5}}>
+                  <span style={{padding:'4px 8px',background:'var(--ink)',color:'var(--paper)',fontFamily:'var(--mono)',fontSize:11}}>#启示类</span>
+                  <span style={{padding:'4px 8px',background:'var(--paper)',border:'1px solid var(--rule)',fontFamily:'var(--mono)',fontSize:11,color:'var(--ink-2)'}}>#四步法</span>
+                  <span style={{padding:'4px 8px',background:'var(--paper)',border:'1px solid var(--rule)',fontFamily:'var(--mono)',fontSize:11,color:'var(--ink-4)'}}>＋ 添加</span>
+                </div>
+              </div>
+
+              <div className="ed-grp">
+                <span className="lbl">可见性</span>
+                <div style={{display:'flex',gap:4}}>
+                  <button className="btn btn-secondary btn-sm" style={{flex:1,justifyContent:'center'}}>仅自己</button>
+                  <button className="btn btn-ghost btn-sm" style={{flex:1,justifyContent:'center'}}>同组可见</button>
+                </div>
+              </div>
+            </div>
+
+            <div className="ed-main">
+              <div className="ed-titlebar">
+                <div className="stack">
+                  <div className="ic"/>
+                  <div>
+                    <div className="t">方法论 · 新建中</div>
+                    <div style={{fontFamily:'var(--mono)',fontSize:10,color:'var(--ink-4)',letterSpacing:'.04em',marginTop:2}}>草稿 · 自动保存于 14:23</div>
+                  </div>
+                </div>
+                <div className="acts">
+                  <button className="btn btn-ghost btn-sm">存为模板</button>
+                  <button className="btn btn-primary btn-sm">保存 ⌘S</button>
+                </div>
+              </div>
+
+              <input className="ed-input" defaultValue="启示类综合分析 · 四步骨架法"/>
+
+              <div className="ed-toolbar">
+                <button>B</button><button><i>I</i></button><button>U</button>
+                <span className="sep"/>
+                <button>H1</button><button>H2</button>
+                <span className="sep"/>
+                <button>引用</button><button>列表</button><button>分隔</button>
+                <span className="sep"/>
+                <button>引错题</button><button>引金句</button>
+                <span className="sep"/>
+                <button style={{color:'var(--accent)'}}>＋ AI 协写</button>
+              </div>
+
+              <div className="ed-body serif">
+                <p className="q">启示类题目本质上是从材料抽取"做法/经验",再迁移到一般原则上,既要"忠于材料",也要"高于材料"。</p>
+                <p><b>第一步 · 拆。</b> 把材料按主体、做法、效果三栏拆分。常见主体:政府、企业、社会组织、群众;做法是动词短语,效果是结果性描述。</p>
+                <p><b>第二步 · 抽。</b> 对每个"做法"问三个问题:它解决了什么矛盾?它依赖什么前提?它有何普适性?</p>
+                <p><b>第三步 · 升。</b> 把具体做法上升到方法论:从"做了 X"变成"任何 Y 情境下都应 X"。</p>
+                <p className="placeholder">第四步 · 排······</p>
+              </div>
+
+              <div className="ed-foot">
+                <span>字数 218 · 预计 3 分钟读完</span>
+                <span>引用:错题 #01 #03 · 金句 2 条</span>
+              </div>
+            </div>
+
+          </div>
+
+          <div style={{marginTop:24,padding:'18px 24px',background:'var(--paper)',border:'1px dashed var(--rule-strong)'}}>
+            <div className="eyebrow" style={{marginBottom:8}}>设计说明</div>
+            <div style={{fontSize:13,lineHeight:1.7,color:'var(--ink-2)'}}>
+              ① 左栏元数据全部可改,挂载题型决定这条方法论会在哪些题面"可被引用"。<br/>
+              ② 工具栏的"引错题/引金句"会唤起选择器,把错题片段或金句作为引用块嵌入正文。<br/>
+              ③ "AI 协写"按当前光标位置补一段;不喜欢可一键回退。<br/>
+              ④ 草稿自动保存,关闭页面不丢;返回时回到上次光标位。
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ============================================================
+ * Root canvas
+ * ============================================================ */
+function App(){
+  return (
+    <DesignCanvas title="申论 · 笔记本 · 重设计" subtitle="SIKAO 系统延续">
+      <DCSection id="overview" title="主页">
+        <DCArtboard id="notes" label="笔记本 · 主页" width={1280} height={1480}>
+          <NotesPage/>
+        </DCArtboard>
+      </DCSection>
+      <DCSection id="flows" title="笔记捕获流程 · 三种入口">
+        <DCArtboard id="flow-a" label="A · 选中即存(看答案)" width={1280} height={920}>
+          <FlowA/>
+        </DCArtboard>
+        <DCArtboard id="flow-b" label="B · 右侧抽屉(看批改)" width={1280} height={920}>
+          <FlowB/>
+        </DCArtboard>
+        <DCArtboard id="flow-c" label="C · 编辑器(独立整理)" width={1280} height={920}>
+          <FlowC/>
+        </DCArtboard>
+      </DCSection>
+    </DesignCanvas>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+
+</body>
+</html>

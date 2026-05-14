@@ -1,0 +1,47 @@
+/*
+ * Breakpoints — Mobile and Tablet Pack §vii SSOT (PR6, 2026-05-13).
+ *
+ * 与 Mobile and Tablet Pack New §vii 保持一致, 由 PR6 拷入仓的
+ * docs/design/Mobile and Tablet Pack New.html / docs/design/handoff/
+ * Mobile and Tablet · Handoff.md §2 SSOT 驱动。
+ *
+ * 4 档断点 — 不允许扩档 (CLAUDE.md §3.7 硬约束: 不许加 --bp-xxs / --bp-xxl):
+ *   --bp-sm = 360px   小手机
+ *   --bp-md = 768px   小平板竖 / 大手机横
+ *   --bp-lg = 1024px  平板横 / 小桌面
+ *   --bp-xl = 1280px  桌面
+ *
+ * mobile-first 策略:
+ *   - 默认 (无 media query) = mobile 样式
+ *   - md (≥768)   小平板竖屏 / 大手机横屏 开始切大屏
+ *   - lg (≥1024)  平板横 / 桌面退路开始
+ *   - xl (≥1280)  桌面主线
+ *
+ * useDevice() / useOrientation() (frontend/src/hooks/) 提供 JS 切片;
+ * .is-* utility 提供 CSS 切片. 两者契约严格对齐 (mobile <1024, tablet
+ * 1024-1279, desktop ≥1280; .is-tablet-up 切点 768 是 CSS 单独决策,
+ * 跟 useDevice 'tablet' 切点 1024 不冲突 — CSS 切大屏样式比 JS 切组件
+ * 更早, 是设计稿规则).
+ */
+:root {
+  --bp-sm: 360px;
+  --bp-md: 768px;
+  --bp-lg: 1024px;
+  --bp-xl: 1280px;
+}
+
+/* 全局响应式 utility — 显式 display 控制元素出现/消失.
+ * mobile-first 默认: 仅 .is-mobile-only 显示, 其他隐藏.
+ * ≥md 切到 tablet/desktop 默认: .is-mobile-only 隐藏, .is-tablet-up 显示.
+ * ≥xl 桌面: .is-desktop-up 也显示. */
+.is-mobile-only { display: revert; }
+.is-tablet-up { display: none; }
+.is-desktop-up { display: none; }
+
+@media (min-width: 768px) {
+  .is-mobile-only { display: none; }
+  .is-tablet-up { display: revert; }
+}
+@media (min-width: 1280px) {
+  .is-desktop-up { display: revert; }
+}

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 320" fill="none" stroke="#0b1120" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- 500 — server error: rack + smoke + spanner gear -->
+  <g transform="translate(120 80)">
+    <rect x="0" y="0" width="160" height="180" rx="6" fill="#f8fafc"/>
+    <rect x="12" y="16" width="136" height="36" rx="3"/>
+    <rect x="12" y="64" width="136" height="36" rx="3"/>
+    <rect x="12" y="112" width="136" height="36" rx="3"/>
+    <circle cx="28" cy="34" r="3" fill="#3f7ef1" stroke="none"/>
+    <circle cx="40" cy="34" r="3" fill="#0b1120" stroke="none"/>
+    <path d="M60 34h70M60 82h70M60 130h70" stroke="#cbd5e1"/>
+    <circle cx="28" cy="82" r="3" fill="#0b1120" stroke="none"/>
+    <circle cx="28" cy="130" r="3" fill="#0b1120" stroke="none"/>
+    <path d="M40 160h80" stroke="#3f7ef1" stroke-width="2"/>
+  </g>
+  <g stroke="#94a3b8">
+    <path d="M170 70c4-12-6-16-2-28s-6-16-2-28"/>
+    <path d="M200 70c4-12-6-16-2-28s-6-16-2-28"/>
+    <path d="M230 70c4-12-6-16-2-28s-6-16-2-28"/>
+  </g>
+  <g transform="translate(320 170)" stroke="#0b1120">
+    <circle cx="40" cy="40" r="28" fill="#ffffff"/>
+    <circle cx="40" cy="40" r="10"/>
+    <path d="M40 4v14M40 62v14M4 40h14M62 40h14M14 14l10 10M56 56l10 10M14 66l10-10M56 24l10-10" stroke-width="2"/>
+  </g>
+  <g font-family="'Source Serif 4', 'Songti SC', 'Noto Serif SC', Georgia, serif">
+    <text x="60" y="290" font-size="44" font-style="italic" font-weight="600" fill="#0b1120" stroke="none">500</text>
+    <text x="120" y="290" font-size="18" fill="#64748b" stroke="none">服务暂时不在状态</text>
+  </g>
+</svg>

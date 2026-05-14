@@ -1,0 +1,2648 @@
+<!doctype html>
+<!--
+================================================================
+SIKAO · 移动端原型 · 2026-05-12 (lhr 自治授权)
+================================================================
+Token SSOT (字符级 mirror):
+  - design/tokens.css (warm paper · ink-first · blue accent · serif Source Serif 4)
+  - frontend/src/styles/tokens.css
+  - element/colors_and_type.css
+
+Viewport: iPhone 14 (390 × 844)
+8 artboard (canvas 2×4 grid, 桌面 hifi `SIKAO Redesign.html` mobile 取舍):
+  01 登录 / 注册       /login
+  02 Dashboard         /dashboard
+  03 学习计划周视图    /plan
+  04 套卷题库          /papers
+  05 错题本            /wrong-book
+  06 笔记              /notes
+  07 个人中心          /profile
+  08 答题屏 (沉浸)     /practice/session
+
+Mobile 取舍:
+  · 3-col / 双栏 → 1-col 堆叠 (mobile 单手刷)
+  · sidebar 删 → 底部 Bottom Tab Bar 4 项 (首页/错题/数据/我的)
+  · 长 list 横滚 filter chip + 大 tap target (≥44px)
+  · /practice 沉浸模式: 不渲染 tabbar (mobile-style-guide §2.4)
+  · reader-first 答题: serif 大字 + 大间距 + 单 CTA, 不显工具栏
+  · ink-first / 蓝 accent 仅 focus / link / 单一关键 CTA / think tag
+  · brand 4+1: 标语"让备考从~~刷题~~变成思考" · logo 田字 stroke 1.4
+================================================================
+-->
+<html lang="zh-CN" data-theme="paper">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>思考 SIKAO · 移动端原型 2026-05-12</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600&family=Noto+Serif+SC:wght@400;500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" />
+
+<style>
+/* ============================================================
+ * §1 · TOKEN SSOT (mirror design/tokens.css)
+ * 仅 SIKAO core token, 不引 alias 层 (alias 是 react app 兼容用)
+ * ============================================================ */
+:root {
+  /* paper / ink */
+  --paper:       #FAF7F0;
+  --paper-2:     #F4F0E6;
+  --paper-3:     #ECE6D7;
+  --rule:        #E2DBC8;
+  --rule-strong: #C9C0A8;
+  --ink:         #1A1815;
+  --ink-2:       #3A352D;
+  --ink-3:       #6B6358;
+  --ink-4:       #948A7A;
+
+  /* accent · 蓝 (ink-first, 一屏最多 1-2 处) */
+  --accent:    #3f7ef1;
+  --accent-2:  #245fd6;
+  --accent-50: #eaf2ff;
+
+  /* semantic */
+  --ok:     #4F7A4F;
+  --ok-bg:  #E8EFE2;
+  --warn:   #B47A1F;
+  --warn-bg:#F4ECDC;
+  --bad:    #9B2F2F;
+  --bad-bg: #F5E6E2;
+  /* exam-accent: 答题"当前题"信号 (不是 错误信号) */
+  --exam-accent:    #B42318;
+  --exam-accent-50: #F5E6E2;
+
+  /* type families */
+  --serif: 'Source Serif 4', 'Noto Serif SC', Georgia, 'Songti SC', serif;
+  --sans:  'Inter', system-ui, -apple-system, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+  --mono:  'JetBrains Mono', 'SF Mono', ui-monospace, Consolas, monospace;
+
+  /* type scale (mobile · 比桌面降一档, 适配 390 宽) */
+  --t-display: 56px;  /* 桌面 88 → mobile 56 (登录 countdown 数字) */
+  --t-h1:      36px;  /* 桌面 56 → mobile 36 */
+  --t-h2:      24px;  /* 桌面 36 → mobile 24 */
+  --t-h3:      18px;  /* 桌面 22 → mobile 18 */
+  --t-body:    15px;
+  --t-small:   13px;
+  --t-cap:     12px;
+  --t-eyebrow: 11px;
+
+  /* spacing */
+  --s1: 4px;  --s2: 8px;  --s3: 12px; --s4: 16px;
+  --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px;
+
+  /* radii (paper 风格, 几乎不大圆角) */
+  --r-xs:   2px;
+  --r-sm:   4px;
+  --r-md:   6px;
+  --r-lg:   10px;
+  --r-xl:   14px;
+  --r-pill: 9999px;
+
+  /* shadows (rgba 是 var(--ink) #1A1815 at 4-22%, mirror design/tokens.css §shadow) */
+  --shadow-1: 0 1px 0 rgba(26,24,21,.04), 0 1px 2px rgba(26,24,21,.04);
+  --shadow-2: 0 6px 24px -8px rgba(26,24,21,.16), 0 2px 6px rgba(26,24,21,.05);
+  --shadow-3: 0 24px 48px -16px rgba(26,24,21,.22);
+
+  /* on-ink: paper at low opacity for ink-bg surfaces (mirror 桌面 hifi --on-ink) */
+  --on-ink:    #F3EEDF;
+  --on-ink-2:  #A09A8C;
+}
+
+/* ============================================================
+ * §2 · SHARED LAYOUT (canvas + phone frame)
+ * canvas 上有 8 artboard, 每个 artboard = label + phone-frame (390×844)
+ * ============================================================ */
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+em, i { font-style: normal; }
+body {
+  background: var(--paper-3);
+  color: var(--ink);
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+button { font: inherit; cursor: pointer; }
+svg { display: block; }
+
+/* canvas (展示画布) */
+.canvas-header {
+  padding: var(--s7) var(--s7) var(--s5);
+  max-width: 1840px;
+  margin: 0 auto;
+}
+.canvas-header h1 {
+  font-family: var(--serif);
+  font-size: 36px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--s2);
+}
+.canvas-header small {
+  font-family: var(--mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.canvas {
+  display: grid;
+  grid-template-columns: repeat(4, 390px);
+  gap: var(--s7);
+  padding: var(--s5) var(--s7) var(--s8);
+  max-width: 1840px;
+  margin: 0 auto;
+  justify-content: center;
+}
+
+/* artboard label */
+.artboard { display: flex; flex-direction: column; gap: var(--s3); }
+.artboard .label {
+  display: flex;
+  align-items: baseline;
+  gap: var(--s3);
+  font-family: var(--mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.artboard .label .num {
+  font-weight: 600;
+  color: var(--ink);
+}
+.artboard .label .name {
+  color: var(--ink-2);
+  font-family: var(--sans);
+  font-size: var(--t-small);
+  letter-spacing: 0;
+  text-transform: none;
+}
+.artboard .label .size {
+  margin-left: auto;
+  color: var(--ink-4);
+}
+
+/* phone frame */
+.phone-frame {
+  width: 390px;
+  height: 844px;
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  border-radius: 36px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: var(--shadow-2);
+  display: flex;
+  flex-direction: column;
+}
+.phone-frame .notch {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 110px;
+  height: 30px;
+  background: var(--ink);
+  border-radius: var(--r-pill);
+  z-index: 50;
+}
+.phone-frame .status-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--s5);
+  font-family: var(--mono);
+  font-size: var(--t-cap);
+  color: var(--ink);
+  z-index: 40;
+  pointer-events: none;
+}
+.phone-frame .status-bar .time {
+  font-weight: 600;
+}
+.phone-frame .status-bar .ind {
+  width: 56px; height: 12px; position: relative;
+  display: flex; align-items: center; justify-content: flex-end; gap: 6px;
+}
+/* signal bars (4 short bars 用 conic gradient) */
+.phone-frame .status-bar .ind::before {
+  content: ''; width: 14px; height: 9px; flex-shrink: 0;
+  background:
+    linear-gradient(to top, currentColor 30%, transparent 30%) 0    100% / 2px 4px no-repeat,
+    linear-gradient(to top, currentColor 50%, transparent 50%) 4px  100% / 2px 6px no-repeat,
+    linear-gradient(to top, currentColor 70%, transparent 70%) 8px  100% / 2px 7px no-repeat,
+    linear-gradient(to top, currentColor 90%, transparent 90%) 12px 100% / 2px 9px no-repeat;
+}
+/* battery */
+.phone-frame .status-bar .ind::after {
+  content: ''; width: 18px; height: 8px; flex-shrink: 0;
+  border: 1px solid currentColor; border-radius: 2px;
+  background: linear-gradient(currentColor, currentColor) center / 60% 60% no-repeat;
+  box-shadow: 1px 0 0 currentColor;
+}
+
+/* main: 主体内容区 (44 顶 statusbar + 56 底 tabbar + safe-area mock) */
+.phone-main {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-y: auto;
+  padding-bottom: 84px;        /* tabbar 56 + safe-area-bottom 28 */
+  background: var(--paper);
+}
+.phone-main.immersive {
+  padding-bottom: 0;            /* /practice 沉浸: 无 tabbar 占位 */
+}
+
+/* Bottom Tab Bar */
+.tab-bar {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 84px;                /* 56 tabbar + 28 safe-area-bottom */
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-top: 1px solid var(--rule);
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  padding: 0 var(--s2);
+  z-index: 30;
+}
+.tab-bar .tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: 10px;
+  gap: 4px;
+  color: var(--ink-3);
+  text-decoration: none;
+  font-size: 10px;
+  font-family: var(--sans);
+  letter-spacing: 0.04em;
+  background: transparent;
+  border: 0;
+}
+.tab-bar .tab svg {
+  width: 22px;
+  height: 22px;
+  color: currentColor;
+  stroke-width: 1.5;
+  /* fall through use href: 给 use 走 currentColor */
+}
+.tab-bar .tab svg use { color: inherit; }
+.tab-bar .tab.active { color: var(--ink); }
+.tab-bar .tab.active svg { stroke-width: 1.8; }
+
+/* iOS home-indicator mock (底部细线) */
+.home-indicator {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 130px;
+  height: 4px;
+  background: var(--ink);
+  border-radius: var(--r-pill);
+  opacity: 0.85;
+  z-index: 60;
+}
+
+/* ============================================================
+ * §3 · PRIMITIVE (跟桌面 SSOT 一致, mobile 稍降字号)
+ * ============================================================ */
+.serif { font-family: var(--serif); letter-spacing: -0.01em; }
+.sans  { font-family: var(--sans); }
+.mono  { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.eyebrow {
+  font-family: var(--mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* logo mark (田字 + stroke 1.4, 跟桌面 hifi 一致) */
+.logo-mark {
+  width: 28px;
+  height: 28px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: var(--r-md);
+  display: inline-grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+.logo-mark svg { width: 60%; height: 60%; stroke-width: 1.5; }
+.logo-mark.lg { width: 40px; height: 40px; border-radius: var(--r-md); }
+.logo-mark.xl { width: 56px; height: 56px; border-radius: var(--r-lg); }
+.logo-row {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+/* chip / pill */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-family: var(--sans);
+  font-size: var(--t-cap);
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: var(--paper-2);
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  white-space: nowrap;
+}
+.chip.active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+.chip.accent {
+  background: var(--accent-50);
+  color: var(--accent-2);
+  border-color: var(--accent-50);
+}
+.chip.ok    { background: var(--ok-bg);  color: var(--ok);  border-color: var(--ok-bg); }
+.chip.warn  { background: var(--warn-bg);color: var(--warn);border-color: var(--warn-bg); }
+.chip.bad   { background: var(--bad-bg); color: var(--bad); border-color: var(--bad-bg); }
+
+/* card (paper-2 内嵌) */
+.card {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  padding: var(--s5);
+}
+.card.flat {
+  background: var(--paper);
+  border-radius: var(--r-md);
+}
+
+/* button */
+.btn-primary {
+  background: var(--ink);
+  color: var(--paper);
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: var(--t-body);
+  padding: 12px 18px;
+  border: 0;
+  border-radius: var(--r-md);
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+  text-decoration: none;
+}
+.btn-primary.lg { font-size: 16px; padding: 14px 20px; min-height: 48px; }
+.btn-primary.w-full { width: 100%; }
+.btn-ghost {
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  font-weight: 500;
+  padding: 10px 16px;
+  min-height: 44px;
+  border-radius: var(--r-md);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s2);
+}
+.btn-link {
+  background: transparent;
+  border: 0;
+  color: var(--accent);
+  font-family: var(--sans);
+  font-size: var(--t-small);
+  text-decoration: none;
+  padding: 0;
+}
+
+/* ============================================================
+ * §3.x · ICON BTN (mirror /practice/session pb-btn 风格, 全局复用)
+ * mobile 屏幕小 → 优先 icon-only, icon 依据文字设计, aria-label 中文
+ * 44×44 touch target (Apple HIG); primary 52×52 ink bg 视觉权重区分
+ * ============================================================ */
+.icon-btn {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-md);
+  color: var(--ink-2);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background 0.15s ease, color 0.15s ease;
+  position: relative;
+  text-decoration: none;
+}
+.icon-btn:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+.icon-btn:disabled,
+.icon-btn[aria-disabled="true"] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.icon-btn svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 1.5;
+  color: currentColor;
+}
+.icon-btn.ghost {
+  border: 1px solid var(--rule);
+  background: var(--paper);
+}
+.icon-btn.ghost:hover {
+  border-color: var(--ink-3);
+  background: var(--paper-2);
+}
+.icon-btn.primary {
+  width: 52px;
+  height: 52px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: var(--r-md);
+}
+.icon-btn.primary:hover {
+  background: color-mix(in srgb, var(--ink) 88%, var(--paper));
+}
+.icon-btn.primary svg { width: 24px; height: 24px; }
+/* danger: 退出 / 删除 */
+.icon-btn.danger {
+  color: var(--bad);
+}
+.icon-btn.danger:hover {
+  background: var(--bad-bg);
+  color: var(--bad);
+}
+/* row of icon-btns (登录辅助 / 计划助手 等横排) */
+.icon-btn-row {
+  display: flex;
+  gap: var(--s5);
+  align-items: center;
+  justify-content: center;
+}
+.icon-btn-row.right { justify-content: flex-end; gap: var(--s2); }
+/* tooltip via long-press: mobile :active 1s 后显示, desktop hover 显示 */
+.icon-btn[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--sans);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--paper);
+  background: var(--ink);
+  padding: 4px 8px;
+  border-radius: var(--r-sm);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s ease;
+  z-index: 30;
+}
+.icon-btn[data-tip]:hover::after,
+.icon-btn[data-tip]:focus-visible::after {
+  opacity: 1;
+}
+
+/* think tag (AI / accent 用) */
+.think-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
+  background: var(--accent-50);
+}
+.think-tag::before {
+  content: '';
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+/* serif num (大字数据强调, font-variant: tabular) */
+.num {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+
+/* hair divider */
+.hr {
+  height: 1px;
+  background: var(--rule);
+  margin: 0;
+  border: 0;
+}
+
+/* mock input */
+.inp {
+  width: 100%;
+  height: 48px;
+  padding: 0 var(--s4);
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  background: var(--paper);
+  border: 1px solid var(--rule-strong);
+  border-radius: var(--r-md);
+  color: var(--ink);
+}
+.inp::placeholder { color: var(--ink-4); }
+.inp:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: var(--accent); }
+.lbl-stack { display: flex; flex-direction: column; gap: 6px; margin-bottom: var(--s4); }
+.lbl-stack label {
+  font-family: var(--sans);
+  font-size: var(--t-small);
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+/* horizontal scroll chip row */
+.chip-row {
+  display: flex;
+  gap: var(--s2);
+  overflow-x: auto;
+  padding: var(--s2) var(--s4);
+  margin: 0 calc(-1 * var(--s4));
+  scrollbar-width: none;
+}
+.chip-row::-webkit-scrollbar { display: none; }
+.chip-row > .chip { flex-shrink: 0; }
+
+/* metric strip */
+.metric-strip {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  border-radius: var(--r-md);
+}
+.metric-strip .cell {
+  padding: var(--s3) var(--s2);
+  border-left: 1px solid var(--rule);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.metric-strip .cell:first-child { border-left: 0; }
+.metric-strip .k {
+  font-family: var(--sans);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.metric-strip .v {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 20px;
+  line-height: 1.1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.metric-strip .v .sub {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-3);
+  margin-left: 2px;
+}
+
+/* ============================================================
+ * §4 · ARTBOARD-SPECIFIC STYLES
+ * ============================================================ */
+
+/* ---- 01 · LOGIN ---- */
+/* 顶 art panel (mobile 收缩到 1/3 高度, 倒计时大字) + form */
+.login-art {
+  background: var(--ink);
+  color: var(--paper);
+  padding: var(--s7) var(--s5) var(--s5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s4);
+  position: relative;
+  overflow: hidden;
+}
+.login-art .brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+.login-art .brand .logo-mark {
+  background: var(--paper);
+  color: var(--ink);
+}
+.login-art .countdown {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.login-art .countdown .lbl {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--on-ink) 60%, transparent);
+}
+.login-art .countdown .n {
+  font-family: var(--serif);
+  font-size: 48px;
+  font-weight: 500;
+  letter-spacing: -0.025em;
+  line-height: 1;
+}
+.login-art .countdown .n .unit {
+  font-size: 18px;
+  margin-left: var(--s2);
+  color: color-mix(in srgb, var(--on-ink) 70%, transparent);
+  font-weight: 400;
+}
+.login-art .quote {
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.55;
+  color: color-mix(in srgb, var(--on-ink) 85%, transparent);
+  font-weight: 400;
+}
+.login-art .quote .strike {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
+  color: color-mix(in srgb, var(--on-ink) 40%, transparent);
+}
+.login-art .quote .accent { color: var(--accent); font-weight: 500; }
+.login-art .foot {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--on-ink) 45%, transparent);
+  margin-top: var(--s2);
+}
+
+.login-form {
+  padding: var(--s6) var(--s5) var(--s7);
+  display: flex;
+  flex-direction: column;
+}
+.login-form .eyebrow { margin-bottom: var(--s2); }
+.login-form h2 {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--s2);
+}
+.login-form .sub {
+  font-family: var(--sans);
+  font-size: var(--t-small);
+  color: var(--ink-3);
+  margin: 0 0 var(--s5);
+}
+.login-form .helpers {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--s4);
+  font-size: var(--t-small);
+  color: var(--ink-3);
+}
+.login-form .helpers a { color: var(--accent); text-decoration: none; }
+
+/* ---- 02 · DASHBOARD ---- */
+.dash-greeting {
+  padding: var(--s5) var(--s5) var(--s4);
+}
+.dash-greeting .eyebrow { margin-bottom: var(--s2); }
+.dash-greeting h1 {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  margin: 0;
+  color: var(--ink);
+}
+
+.focus-card {
+  margin: 0 var(--s5) var(--s4);
+  background: var(--ink);
+  color: var(--paper);
+  padding: var(--s5);
+  border-radius: var(--r-lg);
+  position: relative;
+  overflow: hidden;
+}
+.focus-card::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 180px;
+  height: 180px;
+  background: radial-gradient(circle, color-mix(in srgb, var(--on-ink) 6%, transparent) 0, transparent 60%);
+  pointer-events: none;
+}
+.focus-card .kick {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--on-ink) 55%, transparent);
+  margin-bottom: var(--s3);
+}
+.focus-card h3 {
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 500;
+  line-height: 1.3;
+  margin: 0 0 var(--s2);
+  color: var(--paper);
+}
+.focus-card .desc {
+  font-family: var(--sans);
+  font-size: var(--t-small);
+  color: color-mix(in srgb, var(--on-ink) 65%, transparent);
+  line-height: 1.55;
+  margin: 0 0 var(--s4);
+}
+.focus-card .btn-primary {
+  background: var(--paper);
+  color: var(--ink);
+}
+.focus-card .btn-primary:hover { background: color-mix(in srgb, var(--paper) 92%, transparent); }
+
+.dash-section { margin: 0 var(--s5) var(--s4); }
+.dash-section .head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: var(--s3);
+}
+.dash-section .head h4 {
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0;
+  color: var(--ink);
+}
+.dash-section .head .meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--ink-3);
+}
+
+.ai-card {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  padding: var(--s4);
+  border-radius: var(--r-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s3);
+}
+.ai-card .body {
+  font-family: var(--serif);
+  font-size: var(--t-body);
+  color: var(--ink);
+  line-height: 1.55;
+  margin: 0;
+}
+.ai-card .quote {
+  font-family: var(--serif);
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  border-left: 2px solid var(--accent);
+  padding: 6px 10px;
+  background: var(--paper);
+}
+
+/* ---- 03 · PLAN ---- */
+.plan-head { padding: var(--s5) var(--s5) var(--s4); }
+.plan-head .eyebrow { margin-bottom: var(--s2); }
+.plan-head h1 {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  margin: 0 0 var(--s3);
+  line-height: 1.15;
+}
+.plan-head h1 .num-inline {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.plan-head .row {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: var(--t-cap);
+  color: var(--ink-3);
+  padding-top: var(--s3);
+  border-top: 1px solid var(--rule);
+}
+.plan-head .row .ok-text { color: var(--ok); }
+
+.plan-days { padding: 0 var(--s5); display: flex; flex-direction: column; gap: var(--s2); }
+.plan-day {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  align-items: center;
+  gap: var(--s3);
+  padding: var(--s3) var(--s4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+}
+.plan-day .d {
+  font-family: var(--mono);
+  font-size: var(--t-cap);
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+.plan-day .d .day { color: var(--ink); font-size: 16px; font-weight: 600; }
+.plan-day .task {
+  font-family: var(--sans);
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  line-height: 1.4;
+}
+.plan-day.today {
+  border-color: var(--ink);
+  border-width: 2px;
+  background: var(--paper-2);
+}
+.plan-day.done {
+  background: var(--paper-2);
+}
+.plan-day.done .d .day { color: var(--ink-3); }
+.plan-day.done .task { color: var(--ink-3); text-decoration: line-through; text-decoration-color: var(--ink-4); }
+.plan-day .badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.plan-day.today .badge { color: var(--ink); font-weight: 600; }
+.plan-day.done .badge { color: var(--ok); }
+
+.plan-assistant {
+  margin: var(--s5) var(--s5) 0;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-lg);
+  padding: var(--s5);
+}
+.plan-assistant p {
+  font-family: var(--serif);
+  font-size: var(--t-body);
+  line-height: 1.55;
+  color: var(--ink);
+  margin: var(--s3) 0 var(--s4);
+}
+.plan-assistant .acts { display: flex; gap: var(--s2); }
+.plan-assistant .acts > * { flex: 1; }
+
+/* ---- 04 · PAPERS ---- */
+.papers-head { padding: var(--s5) var(--s5) var(--s3); }
+.papers-head h1 {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--s2);
+}
+.papers-head .sub {
+  font-family: var(--sans);
+  font-size: var(--t-small);
+  color: var(--ink-3);
+  margin: 0;
+}
+
+.paper-list { padding: var(--s3) var(--s5); display: flex; flex-direction: column; gap: var(--s3); }
+.paper-card {
+  display: grid;
+  grid-template-columns: 56px 1fr auto;
+  gap: var(--s3);
+  padding: var(--s4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  align-items: center;
+}
+.paper-card .yr {
+  font-family: var(--serif);
+  font-weight: 500;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.paper-card .yr .yr-sub {
+  display: block;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+.paper-card .body { min-width: 0; }
+.paper-card .ttl {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--ink);
+  margin: 0 0 4px;
+  line-height: 1.3;
+}
+.paper-card .meta {
+  font-family: var(--mono);
+  font-size: var(--t-cap);
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+.paper-card .status-pill {
+  display: inline-flex;
+  align-items: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: 4px 8px;
+  background: var(--paper-2);
+  border-radius: var(--r-pill);
+  border: 1px solid var(--rule);
+}
+.paper-card .status-pill.done { color: var(--ok); background: var(--ok-bg); border-color: var(--ok-bg); }
+/* paper-card 右列: status-pill 上 / play IconBtn 下 (状态 + 动作分层) */
+.paper-card .right-col {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.pagination {
+  margin: var(--s5) var(--s5) 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px var(--s3);
+  background: var(--paper-2);
+  border-radius: var(--r-md);
+  font-family: var(--mono);
+  font-size: var(--t-cap);
+  color: var(--ink-3);
+  gap: var(--s3);
+}
+.pagination .page-info {
+  font-family: var(--mono);
+  font-size: var(--t-cap);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
+}
+
+/* ---- 05 · WRONG BOOK ---- */
+.wrong-hero { padding: var(--s5) var(--s5) var(--s4); }
+.wrong-hero h1 {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--s2);
+}
+.wrong-hero .sub {
+  font-family: var(--serif);
+  font-size: var(--t-body);
+  color: var(--ink-3);
+  margin: 0;
+  line-height: 1.55;
+}
+
+.standout-card {
+  margin: var(--s4) var(--s5) 0;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--accent);
+  border-radius: var(--r-md);
+  padding: var(--s4);
+}
+.standout-card .h {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--s2);
+}
+.standout-card .h h4 {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0;
+}
+.standout-card .desc {
+  font-family: var(--sans);
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  line-height: 1.55;
+  margin: 0 0 var(--s3);
+}
+
+.smart-review {
+  margin: var(--s3) var(--s5) 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--s4);
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: var(--r-md);
+}
+.smart-review .lhs { display: flex; flex-direction: column; gap: 6px; }
+.smart-review .lhs .ttl {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 500;
+}
+.smart-review .lhs .sub {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--on-ink) 55%, transparent);
+}
+.smart-review .arrow { color: var(--paper); }
+
+.wrong-list { padding: var(--s4) var(--s5) 0; display: flex; flex-direction: column; gap: var(--s2); }
+.wrong-item {
+  display: grid;
+  grid-template-columns: 3px 36px 1fr 24px;
+  align-items: stretch;
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.wrong-item .sev {
+  background: var(--exam-accent);
+}
+.wrong-item .ix {
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  display: grid;
+  place-items: center;
+  border-right: 1px solid var(--rule);
+}
+.wrong-item .body { padding: var(--s3) var(--s2); display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.wrong-item .body .meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  color: var(--ink-3);
+}
+.wrong-item .body .stem {
+  font-family: var(--serif);
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.wrong-item .body .mastery {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+}
+.wrong-item .body .mastery .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--rule-strong);
+}
+.wrong-item .body .mastery .dot.on { background: var(--ink); }
+.wrong-item .cta {
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+  border-left: 1px solid var(--rule);
+  background: var(--paper-2);
+  border: 0;
+  cursor: pointer;
+  padding: 0;
+}
+.wrong-item .cta:hover { color: var(--ink); background: var(--paper); }
+.wrong-item .cta svg { width: 16px; height: 16px; stroke-width: 1.5; }
+
+/* ---- 06 · NOTES ---- */
+.notes-head { padding: var(--s5) var(--s5) var(--s3); }
+.notes-head h1 {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--s2);
+}
+.notes-head .sub {
+  font-family: var(--sans);
+  font-size: var(--t-small);
+  color: var(--ink-3);
+  margin: 0;
+}
+
+.note-list { padding: var(--s3) var(--s5) 0; display: flex; flex-direction: column; gap: var(--s3); }
+.note-card {
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  padding: var(--s4);
+}
+.note-card.quote-note {
+  border-left: 3px solid var(--ink);
+  padding-left: calc(var(--s4) - 3px);
+}
+.note-card .meta-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--s2);
+}
+.note-card .type-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.note-card .time {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-4);
+}
+.note-card .body {
+  font-family: var(--serif);
+  font-size: var(--t-body);
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0 0 var(--s2);
+}
+.note-card.quote-note .body {
+  font-style: normal; /* CJK 禁 italic */
+  font-weight: 400;
+}
+.note-card .source {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-3);
+  letter-spacing: 0.04em;
+}
+.note-card .tags { display: flex; gap: 6px; flex-wrap: wrap; margin-top: var(--s3); }
+/* note 操作区: tags 左 / IconBtn 右 (编辑 + 删除) */
+.note-card .actions-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--s3);
+  gap: var(--s3);
+}
+.note-card .actions-row .tags { margin-top: 0; flex: 1; }
+.note-card .actions-row .acts { display: flex; gap: 4px; flex-shrink: 0; }
+.note-card .actions-row .acts .icon-btn { width: 36px; height: 36px; }
+.note-card .actions-row .acts .icon-btn svg { width: 18px; height: 18px; }
+
+.fab {
+  position: absolute;
+  right: var(--s5);
+  bottom: 104px;       /* 84 tabbar + 20 间距 */
+  width: 56px;
+  height: 56px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 50%;
+  border: 0;
+  display: grid;
+  place-items: center;
+  box-shadow: var(--shadow-2);
+  z-index: 20;
+}
+.fab svg { width: 24px; height: 24px; stroke-width: 1.8; }
+.logo-mark svg { width: 60%; height: 60%; }
+
+/* ---- 07 · PROFILE ---- */
+.profile-head {
+  padding: var(--s7) var(--s5) var(--s5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--s3);
+  text-align: center;
+  border-bottom: 1px solid var(--rule);
+}
+.profile-head .av {
+  width: 72px;
+  height: 72px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-size: 30px;
+  font-weight: 500;
+}
+.profile-head h2 {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 500;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.profile-head .handle {
+  font-family: var(--mono);
+  font-size: var(--t-cap);
+  color: var(--ink-3);
+}
+
+.profile-stats {
+  margin: var(--s4) var(--s5) 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  border: 1px solid var(--rule);
+  background: var(--paper);
+  border-radius: var(--r-md);
+}
+.profile-stats .cell {
+  padding: var(--s3) var(--s2);
+  border-left: 1px solid var(--rule);
+  text-align: center;
+}
+.profile-stats .cell:first-child { border-left: 0; }
+.profile-stats .v {
+  font-family: var(--serif);
+  font-weight: 600;
+  font-size: 20px;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink);
+}
+.profile-stats .k {
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+.profile-section { margin: var(--s5) var(--s5) 0; }
+.profile-section .head {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: var(--s2);
+  padding-left: var(--s2);
+}
+.profile-section .items {
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+.profile-section .item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px var(--s4);
+  border-bottom: 1px solid var(--rule);
+  font-family: var(--sans);
+  font-size: var(--t-body);
+  color: var(--ink);
+  min-height: 48px;
+}
+.profile-section .item:last-child { border-bottom: 0; }
+.profile-section .item .r {
+  display: flex;
+  align-items: center;
+  gap: var(--s2);
+  color: var(--ink-3);
+  font-size: var(--t-small);
+}
+.profile-section .item.danger { color: var(--bad); }
+
+/* ---- 08 · PRACTICE (沉浸) ---- */
+.practice-top {
+  padding: var(--s4) var(--s5);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--paper) 92%, transparent);
+  backdrop-filter: blur(8px);
+}
+.practice-top .num-text {
+  font-family: var(--mono);
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  letter-spacing: 0.04em;
+}
+.practice-top .num-text em { color: var(--ink-3); font-style: normal; }
+.practice-top .dots {
+  display: flex;
+  gap: 3px;
+}
+.practice-top .dots .dot {
+  width: 6px;
+  height: 2px;
+  background: var(--rule-strong);
+  border-radius: 1px;
+}
+.practice-top .dots .dot.on { background: var(--ink); }
+
+.practice-body { padding: var(--s5); }
+.practice-body .kicker {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin-bottom: var(--s4);
+}
+.practice-body .stem {
+  font-family: var(--serif);
+  font-size: 19px;
+  line-height: 1.7;
+  color: var(--ink);
+  margin: 0 0 var(--s6);
+  letter-spacing: -0.005em;
+}
+.practice-body .stem strong { font-weight: 600; }
+.practice-body .stem .kw {
+  border-bottom: 1.5px solid var(--ink);
+  padding-bottom: 1px;
+}
+
+.opt-list { display: flex; flex-direction: column; gap: var(--s3); margin-bottom: var(--s6); }
+.opt {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: var(--s3);
+  align-items: flex-start;
+  padding: 14px var(--s4);
+  background: var(--paper);
+  border: 1px solid var(--rule);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  min-height: 56px;
+}
+.opt .letter {
+  width: 28px;
+  height: 28px;
+  border: 1.4px solid var(--ink-3);
+  color: var(--ink-2);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.opt .text {
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 1.55;
+  color: var(--ink);
+  padding-top: 3px;
+}
+.opt.selected {
+  background: var(--ink);
+  border-color: var(--ink);
+}
+.opt.selected .letter {
+  background: var(--paper);
+  border-color: var(--paper);
+  color: var(--ink);
+}
+.opt.selected .text { color: var(--paper); }
+
+/* /practice/session bottom-bar: 6 IconBtn 横排 (5 ghost + 1 primary 提交)
+   设计原则: SVG-only, 0 文字 label, 44×44 touch target, 提交 52×52 ink bg 视觉权重区分 */
+.practice-bottom-bar {
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s2);
+  padding: 10px var(--s4) calc(var(--s4) + 12px); /* 12px safe-area-bottom */
+  background: color-mix(in srgb, var(--paper) 96%, transparent);
+  backdrop-filter: blur(8px);
+  border-top: 1px solid var(--rule);
+}
+.practice-bottom-bar .pb-btn {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-md);
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  flex-shrink: 0;
+}
+.practice-bottom-bar .pb-btn:hover {
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink);
+}
+.practice-bottom-bar .pb-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.practice-bottom-bar .pb-btn.is-on {
+  color: var(--ink);
+}
+.practice-bottom-bar .pb-btn.pb-submit {
+  width: 52px;
+  height: 52px;
+  background: var(--ink);
+  color: var(--paper);
+  border-radius: var(--r-md);
+}
+.practice-bottom-bar .pb-btn.pb-submit:hover {
+  background: color-mix(in srgb, var(--ink) 88%, var(--paper));
+}
+
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SVG SYMBOL DEFS · 复用 (tab-bar 4 icon, chevron-right, plus, close, arrow-right)
+     ============================================================ -->
+<svg width="0" height="0" style="position: absolute;" aria-hidden="true">
+  <defs>
+    <symbol id="i-home" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/>
+    </symbol>
+    <symbol id="i-bookmark" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M5 3v18l7-4 7 4V3z"/>
+    </symbol>
+    <symbol id="i-chart" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M4 19V8M10 19V4M16 19v-7M22 19H2"/>
+    </symbol>
+    <symbol id="i-user" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>
+    </symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+      <path d="M9 18l6-6-6-6"/>
+    </symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 5v14M5 12h14"/>
+    </symbol>
+    <symbol id="i-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M18 6 6 18M6 6l12 12"/>
+    </symbol>
+    <symbol id="i-arrow-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <path d="M5 12h14M13 6l6 6-6 6"/>
+    </symbol>
+    <symbol id="i-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <rect x="3" y="3" width="18" height="18" rx="1.5"/><path d="M3 12h18M12 3v18"/>
+    </symbol>
+    <!-- /practice/session bottom-bar 6 IconBtn (mirror 桌面 FbBottomDock) -->
+    <symbol id="i-chev-l" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </symbol>
+    <symbol id="i-chev-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="9 18 15 12 9 6"/>
+    </symbol>
+    <symbol id="i-grid-cells" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+      <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+      <rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/>
+    </symbol>
+    <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+      <polygon points="12 2.5 14.85 8.6 21.5 9.3 16.4 13.9 17.95 20.5 12 17 6.05 20.5 7.6 13.9 2.5 9.3 9.15 8.6"/>
+    </symbol>
+    <symbol id="i-star-fill" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round">
+      <polygon points="12 2.5 14.85 8.6 21.5 9.3 16.4 13.9 17.95 20.5 12 17 6.05 20.5 7.6 13.9 2.5 9.3 9.15 8.6"/>
+    </symbol>
+    <symbol id="i-pen" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 4l6 6-9 9-6 1 1-6 9-9z"/><path d="M13 5l6 6"/>
+    </symbol>
+    <symbol id="i-check-bold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </symbol>
+    <!-- 新增 IconBtn 用 SVG (8 new symbol) -->
+    <!-- envelope: 邮箱注册 -->
+    <symbol id="i-mail" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="3" y="5" width="18" height="14" rx="2"/>
+      <path d="M3.5 6.5l8.5 6 8.5-6"/>
+    </symbol>
+    <!-- phone: 手机号注册 -->
+    <symbol id="i-phone" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="6" y="2.5" width="12" height="19" rx="2.5"/>
+      <line x1="11" y1="18.5" x2="13" y2="18.5"/>
+    </symbol>
+    <!-- help (?): 忘记密码 -->
+    <symbol id="i-help" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <circle cx="12" cy="12" r="9"/>
+      <path d="M9.5 9a2.5 2.5 0 0 1 5 0c0 1.5-2.5 2-2.5 4"/>
+      <circle cx="12" cy="17" r="0.6" fill="currentColor"/>
+    </symbol>
+    <!-- refresh / replay: 复习 / 调整计划 -->
+    <symbol id="i-refresh" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M3 12a9 9 0 0 1 15.6-6.1L21 8"/>
+      <polyline points="21 3 21 8 16 8"/>
+      <path d="M21 12a9 9 0 0 1-15.6 6.1L3 16"/>
+      <polyline points="3 21 3 16 8 16"/>
+    </symbol>
+    <!-- sign-out: 退出登录 -->
+    <symbol id="i-sign-out" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M9 4H5a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h4"/>
+      <polyline points="16 17 21 12 16 7"/>
+      <line x1="21" y1="12" x2="9" y2="12"/>
+    </symbol>
+    <!-- trash: 删除 -->
+    <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="4 7 20 7"/>
+      <path d="M9 7V4.5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1V7"/>
+      <path d="M6 7l1 12.5a2 2 0 0 0 2 1.85h6a2 2 0 0 0 2-1.85L18 7"/>
+    </symbol>
+    <!-- play: 开始练习 (forward triangle) -->
+    <symbol id="i-play" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <polygon points="6 4 20 12 6 20"/>
+    </symbol>
+    <!-- chev-l (前页) — 复用 §practice symbol, 这里别名 i-prev 给 pagination 引用清晰 -->
+    <symbol id="i-prev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 18 9 12 15 6"/>
+    </symbol>
+  </defs>
+</svg>
+
+<!-- ============================================================
+     CANVAS HEADER
+     ============================================================ -->
+<header class="canvas-header">
+  <h1>思考 SIKAO · 移动端原型</h1>
+  <small>2026-05-12 · 8 artboard · iPhone 14 (390×844) · mobile reader-first</small>
+</header>
+
+<!-- ============================================================
+     CANVAS (4×2 grid, 8 artboard)
+     ============================================================ -->
+<div class="canvas">
+
+  <!-- ============================================================
+       01 · 登录 / 注册
+       桌面参考: SIKAO Redesign §06-01 (login-shell · 左 art panel + 右 form)
+       mobile 取舍: art panel 收缩到顶部 1/3, form 占下 2/3 (单手输入友好)
+       ============================================================ -->
+  <article class="artboard">
+    <div class="label">
+      <span class="num">01</span>
+      <span class="name">登录 / 注册</span>
+      <span class="size">/login</span>
+    </div>
+    <div class="phone-frame" data-view="login">
+      <!-- iOS notch + status bar -->
+      <div class="notch"></div>
+      <div class="status-bar" style="color:var(--paper);">
+        <span class="time">9:41</span>
+        <span class="ind">
+          <!-- 信号 + wifi + 电池 mock -->
+          <svg viewBox="0 0 16 12" fill="none"><rect x="1" y="8" width="2" height="3" fill="currentColor"/><rect x="4" y="6" width="2" height="5" fill="currentColor"/><rect x="7" y="4" width="2" height="7" fill="currentColor"/><rect x="10" y="2" width="2" height="9" fill="currentColor"/></svg>
+          <svg viewBox="0 0 16 12" fill="none" stroke="currentColor" stroke-width="1.4"><path d="M2 5a8 8 0 0 1 12 0M4 7a5 5 0 0 1 8 0M8 9.5h.01"/></svg>
+          <svg viewBox="0 0 22 12" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="1" y="2" width="18" height="8" rx="2"/><rect x="3" y="4" width="14" height="4" fill="currentColor"/><path d="M20.5 5v2"/></svg>
+        </span>
+      </div>
+
+      <main class="phone-main" style="padding-bottom: 0;">
+        <!-- art panel (1/3 高度): brand + countdown + slogan -->
+        <section class="login-art" style="padding-top: 60px; min-height: 320px;">
+          <div class="brand"><span class="logo-mark"><svg><use href="#i-logo"/></svg></span><span>SIKAO</span></div>
+
+          <div class="countdown">
+            <span class="lbl">距 2026 国考</span>
+            <span class="n">208<span class="unit">天</span></span>
+          </div>
+
+          <p class="quote">让备考从<span class="strike">刷题</span>变成<span class="accent">思考</span>。</p>
+
+          <div class="foot">A QUIET COMPANION · 国考 · 省考 · 选调</div>
+        </section>
+
+        <!-- form (2/3 高度) -->
+        <section class="login-form">
+          <span class="eyebrow">SIGN IN</span>
+          <h2>欢迎回来。</h2>
+          <p class="sub">用邮箱或手机号登录。</p>
+
+          <div class="lbl-stack">
+            <label>邮箱 / 手机</label>
+            <input class="inp" type="text" value="lin@sikao.app" />
+          </div>
+          <div class="lbl-stack">
+            <label>密码</label>
+            <input class="inp" type="password" value="••••••••••" />
+          </div>
+
+          <!-- 主 CTA · svg + 文字双形态 (登录是用户决策核心动作, CLAUDE.md §4 第 5 条 svg-only 例外允许) -->
+          <button class="btn-primary lg w-full" style="margin-top: 4px;">
+            <svg width="18" height="18" aria-hidden="true"><use href="#i-arrow-r"/></svg>
+            <span>登录</span>
+          </button>
+
+          <!-- 副 link 改 icon-only · 横排 3 IconBtn (邮箱注册 / 手机注册 / 忘记密码) -->
+          <div class="icon-btn-row" style="margin-top: var(--s5);">
+            <button type="button" class="icon-btn" aria-label="用邮箱注册" data-tip="邮箱注册">
+              <svg aria-hidden="true"><use href="#i-mail"/></svg>
+            </button>
+            <button type="button" class="icon-btn" aria-label="用手机号注册" data-tip="手机注册">
+              <svg aria-hidden="true"><use href="#i-phone"/></svg>
+            </button>
+            <button type="button" class="icon-btn" aria-label="忘记密码" data-tip="忘记密码">
+              <svg aria-hidden="true"><use href="#i-help"/></svg>
+            </button>
+          </div>
+        </section>
+      </main>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       02 · DASHBOARD
+       桌面参考: SIKAO Redesign §06-02 (sidebar + main 1920 grid)
+       mobile 取舍: 删 sidebar, greeting → FOCUS card → 4 metric →
+                   AI 提示 → Bottom Tab Bar
+       ============================================================ -->
+  <article class="artboard">
+    <div class="label">
+      <span class="num">02</span>
+      <span class="name">Dashboard · 学习主入口</span>
+      <span class="size">/dashboard</span>
+    </div>
+    <div class="phone-frame" data-view="dashboard">
+      <div class="notch"></div>
+      <div class="status-bar"><span class="time">9:41</span><span class="ind"></span></div>
+
+      <main class="phone-main">
+        <!-- greeting -->
+        <section class="dash-greeting">
+          <div class="eyebrow">TUESDAY · 12 MAY · WEEK 19 · 距 208 天</div>
+          <h1>深夜好，林墨。</h1>
+        </section>
+
+        <!-- FOCUS card -->
+        <section class="focus-card">
+          <div class="kick">FOCUS · 资料分析 / 增长率与基期</div>
+          <h3>今天先想清楚 "间隔年份" 为什么少算一年。</h3>
+          <p class="desc">从一道熟悉题入手 · 上次在 #14 停了 · 约 30 分钟。</p>
+          <!-- icon-only primary (右下角 forward-arrow, paper bg on ink card) · 主 CTA 视觉权重 -->
+          <div style="display: flex; justify-content: flex-end;">
+            <button type="button" class="icon-btn primary" aria-label="继续今日训练 · 资料分析 #14" data-tip="继续 · 资料分析 #14" style="background: var(--paper); color: var(--ink);">
+              <svg aria-hidden="true"><use href="#i-play"/></svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- 4 metric strip -->
+        <section class="dash-section">
+          <div class="metric-strip">
+            <div class="cell">
+              <span class="k">今日</span>
+              <span class="v">12<span class="sub">题</span></span>
+            </div>
+            <div class="cell">
+              <span class="k">本周</span>
+              <span class="v">86<span class="sub">%</span></span>
+            </div>
+            <div class="cell">
+              <span class="k">连续</span>
+              <span class="v">47<span class="sub">天</span></span>
+            </div>
+            <div class="cell">
+              <span class="k">累计</span>
+              <span class="v">3.1<span class="sub">k</span></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- AI 提示 -->
+        <section class="dash-section">
+          <div class="head">
+            <h4>AI · 今日提示</h4>
+            <span class="think-tag">SIKAO 思考</span>
+          </div>
+          <div class="ai-card">
+            <p class="body">你最近三次"基期还原"都把<strong>间隔年份算少了一年</strong>。这是公式记忆和题面解读的脱节。</p>
+            <p class="quote">"较 2018 年前"指的是 2017 年；"2018 年的 5 年前"才是 2013 年。</p>
+          </div>
+        </section>
+
+        <!-- 本周节奏 (简版, sparkline mock) -->
+        <section class="dash-section">
+          <div class="head">
+            <h4>本周节奏</h4>
+            <span class="meta">12.4 H · +2.1 H VS W18</span>
+          </div>
+          <div class="card flat" style="padding: var(--s4); display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; align-items: end; min-height: 80px;">
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width: 100%; height: 32px; background: var(--paper-2); border-bottom: 1.5px solid var(--ink-3);"></div>
+              <span style="font-family:var(--mono);font-size:9px;color:var(--ink-3);">M</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width: 100%; height: 24px; background: var(--paper-2); border-bottom: 1.5px solid var(--ink-3);"></div>
+              <span style="font-family:var(--mono);font-size:9px;color:var(--ink-3);">T</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width: 100%; height: 48px; background: var(--paper-2); border-bottom: 1.5px solid var(--ink-3);"></div>
+              <span style="font-family:var(--mono);font-size:9px;color:var(--ink-3);">W</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width: 100%; height: 6px; background: var(--paper-2); border-bottom: 1.5px dashed var(--ink-4);"></div>
+              <span style="font-family:var(--mono);font-size:9px;color:var(--ink-4);">T</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width: 100%; height: 20px; background: var(--ink); border-bottom: 1.5px solid var(--ink);"></div>
+              <span style="font-family:var(--mono);font-size:9px;color:var(--ink);font-weight:600;">今</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width: 100%; height: 4px; background: transparent; border-bottom: 1.5px dashed var(--rule-strong);"></div>
+              <span style="font-family:var(--mono);font-size:9px;color:var(--ink-4);">S</span>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:4px;">
+              <div style="width: 100%; height: 4px; background: transparent; border-bottom: 1.5px dashed var(--rule-strong);"></div>
+              <span style="font-family:var(--mono);font-size:9px;color:var(--ink-4);">S</span>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <!-- Bottom Tab Bar (首页 active) -->
+      <nav class="tab-bar">
+        <button class="tab active">
+          <svg><use href="#i-home"/></svg>
+          <span>首页</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-bookmark"/></svg>
+          <span>错题</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-chart"/></svg>
+          <span>数据</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-user"/></svg>
+          <span>我的</span>
+        </button>
+      </nav>
+      <div class="home-indicator"></div>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       03 · 学习计划 周视图
+       桌面参考: SIKAO Redesign §06-07 (plan-track 多周横排 7-col)
+       mobile 取舍: 周列表纵向堆叠 (1 周 1 list), days 也纵向 (1 day 1 row)
+                   计算量大于桌面但 mobile 必须单列
+       ============================================================ -->
+  <article class="artboard">
+    <div class="label">
+      <span class="num">03</span>
+      <span class="name">学习计划 · 周视图</span>
+      <span class="size">/plan</span>
+    </div>
+    <div class="phone-frame" data-view="plan">
+      <div class="notch"></div>
+      <div class="status-bar"><span class="time">9:41</span><span class="ind"></span></div>
+
+      <main class="phone-main">
+        <section class="plan-head">
+          <div class="eyebrow">2026 国考 · WEEK 19 OF 49</div>
+          <h1>距 <span class="num-inline">12 月 6 日</span><br/>还有 <span class="num-inline">208 天</span>。</h1>
+          <div class="row">
+            <span>本周 <span class="ok-text">3 / 7</span> 天已完成</span>
+            <span class="mono">49 WEEKS · 343 D</span>
+          </div>
+        </section>
+
+        <!-- 当前周 7 day stack -->
+        <section class="plan-days">
+          <div class="plan-day done">
+            <div class="d">MON<br/><span class="day">5</span></div>
+            <div class="task">资料分析 · 增长率</div>
+            <span class="badge">完成</span>
+          </div>
+          <div class="plan-day done">
+            <div class="d">TUE<br/><span class="day">6</span></div>
+            <div class="task">言语 · 主旨概括</div>
+            <span class="badge">完成</span>
+          </div>
+          <div class="plan-day done">
+            <div class="d">WED<br/><span class="day">7</span></div>
+            <div class="task">申论 · 归纳概括</div>
+            <span class="badge">完成</span>
+          </div>
+          <div class="plan-day today">
+            <div class="d">TUE<br/><span class="day">12</span></div>
+            <div class="task">资料 · 基期还原 (继续)</div>
+            <span class="badge">今天</span>
+          </div>
+          <div class="plan-day">
+            <div class="d">WED<br/><span class="day">13</span></div>
+            <div class="task">数量关系 · 行程</div>
+            <span class="badge">待开始</span>
+          </div>
+          <div class="plan-day">
+            <div class="d">THU<br/><span class="day">14</span></div>
+            <div class="task">判断推理 · 类比</div>
+            <span class="badge">待开始</span>
+          </div>
+          <div class="plan-day">
+            <div class="d">FRI<br/><span class="day">15</span></div>
+            <div class="task">模考 #08 + 复盘</div>
+            <span class="badge">待开始</span>
+          </div>
+        </section>
+
+        <section class="plan-assistant">
+          <span class="think-tag">PLAN ASSISTANT</span>
+          <p>本周节奏比上周快了 14%。资料分析连续三天没安排，是不是该把周日的复盘换成基期还原专项？</p>
+          <!-- 2 IconBtn 横排 right-aligned: 保持(close) / 采纳(refresh primary) -->
+          <div class="icon-btn-row right">
+            <button type="button" class="icon-btn ghost" aria-label="保持原计划" data-tip="保持原计划">
+              <svg aria-hidden="true"><use href="#i-close"/></svg>
+            </button>
+            <button type="button" class="icon-btn primary" aria-label="采纳建议 · 调整计划" data-tip="采纳建议">
+              <svg aria-hidden="true"><use href="#i-refresh"/></svg>
+            </button>
+          </div>
+        </section>
+      </main>
+
+      <nav class="tab-bar">
+        <button class="tab active">
+          <svg><use href="#i-home"/></svg>
+          <span>首页</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-bookmark"/></svg>
+          <span>错题</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-chart"/></svg>
+          <span>数据</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-user"/></svg>
+          <span>我的</span>
+        </button>
+      </nav>
+      <div class="home-indicator"></div>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       04 · 套卷题库
+       桌面参考: SIKAO Redesign §06-06 (paper grid 3-col), Home §1 整合视图
+       mobile 取舍: 1-col 卡片列表 + 横滚 filter chip (大类 + 年份)
+       ============================================================ -->
+  <article class="artboard">
+    <div class="label">
+      <span class="num">04</span>
+      <span class="name">套卷题库</span>
+      <span class="size">/papers</span>
+    </div>
+    <div class="phone-frame" data-view="papers">
+      <div class="notch"></div>
+      <div class="status-bar"><span class="time">9:41</span><span class="ind"></span></div>
+
+      <main class="phone-main">
+        <section class="papers-head">
+          <h1>套卷题库</h1>
+          <p class="sub">947 套 · 按地区 / 年份筛选</p>
+        </section>
+
+        <!-- 横滚 filter chip row (类型) -->
+        <div class="chip-row">
+          <span class="chip active">全部 947</span>
+          <span class="chip">国考 124</span>
+          <span class="chip">省考 412</span>
+          <span class="chip">选调 89</span>
+          <span class="chip">公考 322</span>
+        </div>
+
+        <!-- 横滚 filter chip row (年份) -->
+        <div class="chip-row">
+          <span class="chip active">2026</span>
+          <span class="chip">2025</span>
+          <span class="chip">2024</span>
+          <span class="chip">2023</span>
+          <span class="chip">2022</span>
+          <span class="chip">更早</span>
+        </div>
+
+        <!-- paper list (5 item) · 每卡右下 play IconBtn = 开始练习 -->
+        <section class="paper-list">
+          <article class="paper-card">
+            <div class="yr">24<span class="yr-sub">2024</span></div>
+            <div class="body">
+              <h4 class="ttl">广东省考 · 行测 A 类</h4>
+              <span class="meta">100 题 · 已练 2 次 · 86%</span>
+            </div>
+            <div class="right-col">
+              <span class="status-pill done">在练</span>
+              <button type="button" class="icon-btn" aria-label="开始练习广东省考 行测 A 类" data-tip="开始练习">
+                <svg aria-hidden="true"><use href="#i-play"/></svg>
+              </button>
+            </div>
+          </article>
+
+          <article class="paper-card">
+            <div class="yr">24<span class="yr-sub">2024</span></div>
+            <div class="body">
+              <h4 class="ttl">国考 · 行测 · 副省级</h4>
+              <span class="meta">135 题 · 待练</span>
+            </div>
+            <div class="right-col">
+              <span class="status-pill">TODO</span>
+              <button type="button" class="icon-btn" aria-label="开始练习国考 行测 副省级" data-tip="开始练习">
+                <svg aria-hidden="true"><use href="#i-play"/></svg>
+              </button>
+            </div>
+          </article>
+
+          <article class="paper-card">
+            <div class="yr">24<span class="yr-sub">2024</span></div>
+            <div class="body">
+              <h4 class="ttl">联考 · 申论 · 综合 A</h4>
+              <span class="meta">5 题 · 待练</span>
+            </div>
+            <div class="right-col">
+              <span class="status-pill">TODO</span>
+              <button type="button" class="icon-btn" aria-label="开始练习联考 申论 综合 A" data-tip="开始练习">
+                <svg aria-hidden="true"><use href="#i-play"/></svg>
+              </button>
+            </div>
+          </article>
+
+          <article class="paper-card">
+            <div class="yr">23<span class="yr-sub">2023</span></div>
+            <div class="body">
+              <h4 class="ttl">山东省考 · 行测</h4>
+              <span class="meta">100 题 · 已练 1 次 · 78%</span>
+            </div>
+            <div class="right-col">
+              <span class="status-pill done">在练</span>
+              <button type="button" class="icon-btn" aria-label="开始练习山东省考 行测" data-tip="开始练习">
+                <svg aria-hidden="true"><use href="#i-play"/></svg>
+              </button>
+            </div>
+          </article>
+
+          <article class="paper-card">
+            <div class="yr">23<span class="yr-sub">2023</span></div>
+            <div class="body">
+              <h4 class="ttl">国考 · 申论 · 地市级</h4>
+              <span class="meta">4 题 · 待练</span>
+            </div>
+            <div class="right-col">
+              <span class="status-pill">TODO</span>
+              <button type="button" class="icon-btn" aria-label="开始练习国考 申论 地市级" data-tip="开始练习">
+                <svg aria-hidden="true"><use href="#i-play"/></svg>
+              </button>
+            </div>
+          </article>
+        </section>
+
+        <!-- pagination · icon-only ← prev / 数字 / next → -->
+        <nav class="pagination" aria-label="分页">
+          <button type="button" class="icon-btn" aria-label="上一页" data-tip="上一页" aria-disabled="true">
+            <svg aria-hidden="true"><use href="#i-prev"/></svg>
+          </button>
+          <span class="page-info">20 / 947</span>
+          <button type="button" class="icon-btn" aria-label="下一页" data-tip="下一页">
+            <svg aria-hidden="true"><use href="#i-chevron"/></svg>
+          </button>
+        </nav>
+      </main>
+
+      <nav class="tab-bar">
+        <button class="tab active">
+          <svg><use href="#i-home"/></svg>
+          <span>首页</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-bookmark"/></svg>
+          <span>错题</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-chart"/></svg>
+          <span>数据</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-user"/></svg>
+          <span>我的</span>
+        </button>
+      </nav>
+      <div class="home-indicator"></div>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       05 · 错题本
+       桌面参考: xingce-wrongbook.html (6-col 表格 row)
+       mobile 取舍: 简化 6-col → 1-col 紧凑卡 (sev | ix | body | cta).
+                   横滚 7 chip filter 替桌面 sidebar
+       ============================================================ -->
+  <article class="artboard">
+    <div class="label">
+      <span class="num">05</span>
+      <span class="name">错题本</span>
+      <span class="size">/wrong-book</span>
+    </div>
+    <div class="phone-frame" data-view="wrong-book">
+      <div class="notch"></div>
+      <div class="status-bar"><span class="time">9:41</span><span class="ind"></span></div>
+
+      <main class="phone-main">
+        <section class="wrong-hero">
+          <h1>错题本。</h1>
+          <p class="sub">把每一处失分练成肌肉记忆。</p>
+        </section>
+
+        <!-- 4 metric strip -->
+        <section style="padding: 0 var(--s5);">
+          <div class="metric-strip">
+            <div class="cell">
+              <span class="k">在练</span>
+              <span class="v">42</span>
+            </div>
+            <div class="cell">
+              <span class="k">待重做</span>
+              <span class="v">12</span>
+            </div>
+            <div class="cell">
+              <span class="k">险题</span>
+              <span class="v">7</span>
+            </div>
+            <div class="cell">
+              <span class="k">已毕业</span>
+              <span class="v">128</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- 横滚 7 chip filter -->
+        <div class="chip-row" style="margin-top: var(--s4);">
+          <span class="chip active">全部 42</span>
+          <span class="chip">待重做 12</span>
+          <span class="chip">进行中 18</span>
+          <span class="chip">险题 7</span>
+          <span class="chip">蒙对 4</span>
+          <span class="chip">已毕业</span>
+          <span class="chip">本周新增 5</span>
+        </div>
+
+        <!-- standout (毕业候选) · 右下 forward-arrow IconBtn -->
+        <section class="standout-card">
+          <div class="h">
+            <h4>毕业候选 · 3 道</h4>
+            <span class="eyebrow">STANDOUT</span>
+          </div>
+          <p class="desc">这 3 道已连对 2 次，再做对 1 次自动毕业。</p>
+          <div style="display: flex; justify-content: flex-end;">
+            <button type="button" class="icon-btn ghost" aria-label="通向复盘 · 现在做一遍" data-tip="通向复盘">
+              <svg aria-hidden="true"><use href="#i-arrow-r"/></svg>
+            </button>
+          </div>
+        </section>
+
+        <!-- smart review · 整卡 link, 右侧 IconBtn forward-arrow (icon-only 配 aria-label "进入复盘 5 mode") -->
+        <a class="smart-review" href="#" style="text-decoration: none;" aria-label="进入智能复盘 · 5 种模式 · 自动出题">
+          <div class="lhs">
+            <span class="ttl">智能复盘</span>
+            <span class="sub">5 种模式 · 自动出题</span>
+          </div>
+          <span class="arrow" aria-hidden="true"><svg width="22" height="22"><use href="#i-arrow-r"/></svg></span>
+        </a>
+
+        <!-- wrong question list · 每行右侧 refresh IconBtn = 重做这题 -->
+        <section class="wrong-list">
+          <article class="wrong-item">
+            <div class="sev"></div>
+            <div class="ix">01</div>
+            <div class="body">
+              <span class="meta">2024 国考 · 资料 · #12 · 3 天前</span>
+              <p class="stem">2023 年 1-11 月，全国规模以上工业企业实现利润总额 6.99 万亿元，同比下降 4.4%。2022 年同期约为：</p>
+              <div class="mastery">
+                <span class="dot on"></span><span class="dot"></span><span class="dot"></span>
+              </div>
+            </div>
+            <button type="button" class="cta" aria-label="重做这题 · 2024 国考 资料 #12">
+              <svg aria-hidden="true"><use href="#i-refresh"/></svg>
+            </button>
+          </article>
+
+          <article class="wrong-item">
+            <div class="sev" style="background: var(--warn);"></div>
+            <div class="ix">02</div>
+            <div class="body">
+              <span class="meta">2023 国考 · 资料 · #27 · 5 天前</span>
+              <p class="stem">下列说法中，能由资料推出的是：</p>
+              <div class="mastery">
+                <span class="dot on"></span><span class="dot on"></span><span class="dot"></span>
+              </div>
+            </div>
+            <button type="button" class="cta" aria-label="重做这题 · 2023 国考 资料 #27">
+              <svg aria-hidden="true"><use href="#i-refresh"/></svg>
+            </button>
+          </article>
+
+          <article class="wrong-item">
+            <div class="sev"></div>
+            <div class="ix">03</div>
+            <div class="body">
+              <span class="meta">2024 联考 · 数量 · #8 · 1 周前</span>
+              <p class="stem">甲、乙两人从 A、B 两地相向而行，相遇时甲比乙多走 4 公里。两地距离为：</p>
+              <div class="mastery">
+                <span class="dot on"></span><span class="dot"></span><span class="dot"></span>
+              </div>
+            </div>
+            <button type="button" class="cta" aria-label="重做这题 · 2024 联考 数量 #8">
+              <svg aria-hidden="true"><use href="#i-refresh"/></svg>
+            </button>
+          </article>
+        </section>
+      </main>
+
+      <nav class="tab-bar">
+        <button class="tab">
+          <svg><use href="#i-home"/></svg>
+          <span>首页</span>
+        </button>
+        <button class="tab active">
+          <svg><use href="#i-bookmark"/></svg>
+          <span>错题</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-chart"/></svg>
+          <span>数据</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-user"/></svg>
+          <span>我的</span>
+        </button>
+      </nav>
+      <div class="home-indicator"></div>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       06 · 笔记
+       桌面参考: notes/essay-review-notes.html (多 card 4 类型)
+       mobile 取舍: 1-col 笔记卡 (quote / knowledge / mistake 三 variant) +
+                   右下 FAB "+" (Cmd+N mobile 等价)
+       ============================================================ -->
+  <article class="artboard">
+    <div class="label">
+      <span class="num">06</span>
+      <span class="name">笔记</span>
+      <span class="size">/notes</span>
+    </div>
+    <div class="phone-frame" data-view="notes">
+      <div class="notch"></div>
+      <div class="status-bar"><span class="time">9:41</span><span class="ind"></span></div>
+
+      <main class="phone-main">
+        <section class="notes-head">
+          <h1>我的笔记</h1>
+          <p class="sub">42 篇 · 按 type / source / tag 筛选</p>
+        </section>
+
+        <!-- 横滚 type tab -->
+        <div class="chip-row">
+          <span class="chip active">全部 42</span>
+          <span class="chip">知识 14</span>
+          <span class="chip">经验 9</span>
+          <span class="chip">易错 12</span>
+          <span class="chip">模板 7</span>
+        </div>
+
+        <!-- 横滚 tag cloud -->
+        <div class="chip-row">
+          <span class="chip">#资料分析</span>
+          <span class="chip">#基期还原</span>
+          <span class="chip">#申论写作</span>
+          <span class="chip">#归纳概括</span>
+          <span class="chip">#类比推理</span>
+        </div>
+
+        <!-- note list -->
+        <section class="note-list">
+          <!-- quote variant -->
+          <article class="note-card quote-note">
+            <div class="meta-row">
+              <span class="type-label">QUOTE · 经验</span>
+              <span class="time">12 MAY</span>
+            </div>
+            <p class="body">把"较"和"的"在题面里圈出来，再代入。</p>
+            <div class="actions-row">
+              <span class="source">— 2024 国考 #12 解析</span>
+              <div class="acts">
+                <button type="button" class="icon-btn" aria-label="编辑笔记" data-tip="编辑">
+                  <svg aria-hidden="true"><use href="#i-pen"/></svg>
+                </button>
+                <button type="button" class="icon-btn danger" aria-label="删除笔记" data-tip="删除">
+                  <svg aria-hidden="true"><use href="#i-trash"/></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- knowledge variant -->
+          <article class="note-card">
+            <div class="meta-row">
+              <span class="type-label">KNOWLEDGE · 知识</span>
+              <span class="time">10 MAY</span>
+            </div>
+            <p class="body">资料分析「间隔年份」陷阱：题面里若说"较 X 年前"，指的是 X-1 年；若说"X 年的 Y 年前"，指的是 X-Y 年。两个结构需要分开识别。</p>
+            <div class="actions-row">
+              <div class="tags">
+                <span class="chip">#资料分析</span>
+                <span class="chip">#基期还原</span>
+              </div>
+              <div class="acts">
+                <button type="button" class="icon-btn" aria-label="编辑笔记" data-tip="编辑">
+                  <svg aria-hidden="true"><use href="#i-pen"/></svg>
+                </button>
+                <button type="button" class="icon-btn danger" aria-label="删除笔记" data-tip="删除">
+                  <svg aria-hidden="true"><use href="#i-trash"/></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- mistake variant -->
+          <article class="note-card">
+            <div class="meta-row">
+              <span class="type-label">MISTAKE · 易错</span>
+              <span class="time">8 MAY</span>
+            </div>
+            <p class="body" style="font-family: var(--serif); color: var(--ink-2);">
+              <span style="font-family: var(--mono); font-size: 10px; color: var(--ink-3);">REF · 2025 模考 #65</span><br/>
+              错因：把"概念外延差异"误认为"以偏概全"。这两个谬误最近合错过 3 次。
+            </p>
+            <div class="actions-row">
+              <div class="tags">
+                <span class="chip bad">#概念混淆</span>
+                <span class="chip">#判断推理</span>
+              </div>
+              <div class="acts">
+                <button type="button" class="icon-btn" aria-label="编辑笔记" data-tip="编辑">
+                  <svg aria-hidden="true"><use href="#i-pen"/></svg>
+                </button>
+                <button type="button" class="icon-btn danger" aria-label="删除笔记" data-tip="删除">
+                  <svg aria-hidden="true"><use href="#i-trash"/></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+
+          <!-- template variant -->
+          <article class="note-card">
+            <div class="meta-row">
+              <span class="type-label">TEMPLATE · 模板</span>
+              <span class="time">5 MAY</span>
+            </div>
+            <p class="body">归纳概括三段式：<br/>1) 总观点（一句话）<br/>2) 分论点（3 条 · 名 + 动）<br/>3) 落脚（呼应材料）</p>
+            <div class="actions-row">
+              <div class="tags">
+                <span class="chip">#申论</span>
+                <span class="chip">#归纳概括</span>
+              </div>
+              <div class="acts">
+                <button type="button" class="icon-btn" aria-label="编辑笔记" data-tip="编辑">
+                  <svg aria-hidden="true"><use href="#i-pen"/></svg>
+                </button>
+                <button type="button" class="icon-btn danger" aria-label="删除笔记" data-tip="删除">
+                  <svg aria-hidden="true"><use href="#i-trash"/></svg>
+                </button>
+              </div>
+            </div>
+          </article>
+        </section>
+      </main>
+
+      <!-- FAB -->
+      <button class="fab" aria-label="新建笔记"><svg><use href="#i-plus"/></svg></button>
+
+      <nav class="tab-bar">
+        <button class="tab">
+          <svg><use href="#i-home"/></svg>
+          <span>首页</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-bookmark"/></svg>
+          <span>错题</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-chart"/></svg>
+          <span>数据</span>
+        </button>
+        <button class="tab active">
+          <svg><use href="#i-user"/></svg>
+          <span>我的</span>
+        </button>
+      </nav>
+      <div class="home-indicator"></div>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       07 · 个人中心
+       桌面参考: SIKAO Redesign §06-08 (profile-grid 280 sidebar + main)
+       mobile 取舍: avatar 居中 + 3-col stat strip + section list
+                   (沿用 mobile-style-guide §3.5 简洁)
+       ============================================================ -->
+  <article class="artboard">
+    <div class="label">
+      <span class="num">07</span>
+      <span class="name">个人中心</span>
+      <span class="size">/profile</span>
+    </div>
+    <div class="phone-frame" data-view="profile">
+      <div class="notch"></div>
+      <div class="status-bar"><span class="time">9:41</span><span class="ind"></span></div>
+
+      <main class="phone-main">
+        <!-- profile head -->
+        <section class="profile-head">
+          <div class="av">林</div>
+          <h2>林墨</h2>
+          <span class="handle">@LINMO · 加入于 2026-01-12</span>
+        </section>
+
+        <!-- 3 stat strip -->
+        <section class="profile-stats">
+          <div class="cell">
+            <div class="v">47</div>
+            <div class="k">连续打卡</div>
+          </div>
+          <div class="cell">
+            <div class="v">128 H</div>
+            <div class="k">累计时长</div>
+          </div>
+          <div class="cell">
+            <div class="v">3 128</div>
+            <div class="k">累计题量</div>
+          </div>
+        </section>
+
+        <!-- ACCOUNT -->
+        <section class="profile-section">
+          <div class="head">ACCOUNT</div>
+          <div class="items">
+            <a class="item" href="#">
+              基本资料
+              <span class="r">林墨
+                <svg width="14" height="14"><use href="#i-chevron"/></svg>
+              </span>
+            </a>
+            <a class="item" href="#">
+              账户安全
+              <span class="r">已绑邮箱
+                <svg width="14" height="14"><use href="#i-chevron"/></svg>
+              </span>
+            </a>
+          </div>
+        </section>
+
+        <!-- LEARNING -->
+        <section class="profile-section">
+          <div class="head">学习与工具</div>
+          <div class="items">
+            <a class="item" href="#">
+              学情数据
+              <span class="r">
+                <svg width="14" height="14"><use href="#i-chevron"/></svg>
+              </span>
+            </a>
+            <a class="item" href="#">
+              学习计划
+              <span class="r">2026 国考
+                <svg width="14" height="14"><use href="#i-chevron"/></svg>
+              </span>
+            </a>
+            <a class="item" href="#">
+              申论批改
+              <span class="r">Premium
+                <svg width="14" height="14"><use href="#i-chevron"/></svg>
+              </span>
+            </a>
+            <a class="item" href="#">
+              AI 问答
+              <span class="r">
+                <svg width="14" height="14"><use href="#i-chevron"/></svg>
+              </span>
+            </a>
+          </div>
+        </section>
+
+        <!-- PREFERENCE -->
+        <section class="profile-section">
+          <div class="head">偏好</div>
+          <div class="items">
+            <div class="item">
+              主题
+              <span class="r">
+                <span class="chip active">静读</span>
+                <span class="chip">素白</span>
+                <span class="chip">夜读</span>
+              </span>
+            </div>
+          </div>
+        </section>
+
+        <!-- LOGOUT · icon-only sign-out (退出登录) 居中放置 (用户决策 + IconBtn 视觉权重) -->
+        <section class="profile-section" style="margin-bottom: var(--s7); display: flex; justify-content: center; padding-top: var(--s4);">
+          <button type="button" class="icon-btn danger" aria-label="退出登录" data-tip="退出登录" style="width: 52px; height: 52px;">
+            <svg aria-hidden="true" style="width: 24px; height: 24px;"><use href="#i-sign-out"/></svg>
+          </button>
+        </section>
+      </main>
+
+      <nav class="tab-bar">
+        <button class="tab">
+          <svg><use href="#i-home"/></svg>
+          <span>首页</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-bookmark"/></svg>
+          <span>错题</span>
+        </button>
+        <button class="tab">
+          <svg><use href="#i-chart"/></svg>
+          <span>数据</span>
+        </button>
+        <button class="tab active">
+          <svg><use href="#i-user"/></svg>
+          <span>我的</span>
+        </button>
+      </nav>
+      <div class="home-indicator"></div>
+    </div>
+  </article>
+
+  <!-- ============================================================
+       08 · 答题屏 (沉浸模式)
+       桌面参考: xingce-exam/行测答题.html (sticky topbar + list 答题卡)
+       mobile 取舍: §3.1 reader-first · 隐藏 tabbar / 隐藏倒计时 /
+                   隐藏底 dock · 题干 serif 大字 · 4 OptionRow 大间距 ·
+                   底单 CTA "提交" 拉满宽
+       ============================================================ -->
+  <article class="artboard">
+    <div class="label">
+      <span class="num">08</span>
+      <span class="name">答题屏 · 沉浸</span>
+      <span class="size">/practice/session · immersive</span>
+    </div>
+    <div class="phone-frame" data-view="practice">
+      <div class="notch"></div>
+      <div class="status-bar"><span class="time">9:41</span><span class="ind"></span></div>
+
+      <main class="phone-main immersive" style="display: flex; flex-direction: column;">
+        <!-- minimal top bar: close + 题号 + progress dots -->
+        <section class="practice-top">
+          <button aria-label="退出" style="background: transparent; border: 0; padding: 0; color: var(--ink-2);"><svg width="22" height="22"><use href="#i-close"/></svg></button>
+          <span class="num-text">题 <strong style="font-weight: 600;">12</strong> <em>/ 50</em></span>
+          <div class="dots">
+            <span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span>
+            <span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span>
+            <span class="dot on"></span><span class="dot on"></span><span class="dot on"></span><span class="dot on"></span>
+            <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+            <span class="dot"></span><span class="dot"></span>
+          </div>
+        </section>
+
+        <!-- 题干区 -->
+        <section class="practice-body" style="flex: 1;">
+          <div class="kicker">言语理解 · 逻辑填空</div>
+          <p class="stem">在大数据时代，信息的<span class="kw">真伪</span>往往比信息的<span class="kw">多少</span>更值得关注。<strong>填入划线部分最恰当的一项是：</strong></p>
+
+          <div class="opt-list">
+            <div class="opt">
+              <span class="letter">A</span>
+              <span class="text">数量 / 速度</span>
+            </div>
+            <div class="opt selected">
+              <span class="letter">B</span>
+              <span class="text">真伪 / 多少</span>
+            </div>
+            <div class="opt">
+              <span class="letter">C</span>
+              <span class="text">来源 / 类型</span>
+            </div>
+            <div class="opt">
+              <span class="letter">D</span>
+              <span class="text">价值 / 时效</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- sticky bottom-bar: 6 IconBtn 横排 (mirror 桌面 FbBottomDock + mobile 增 收藏/笔记 取代 long-press)
+             5 ghost (44×44) + 1 primary 提交 (52×52 ink bg). 0 文字 label, 全 SVG, 每 btn aria-label 中文. -->
+        <nav class="practice-bottom-bar" aria-label="答题工具栏">
+          <button type="button" class="pb-btn" aria-label="上一题" data-tip="上一题">
+            <svg width="24" height="24" aria-hidden="true"><use href="#i-chev-l"/></svg>
+          </button>
+          <button type="button" class="pb-btn" aria-label="答题卡 22 / 35" data-tip="答题卡">
+            <svg width="24" height="24" aria-hidden="true"><use href="#i-grid-cells"/></svg>
+          </button>
+          <button type="button" class="pb-btn is-on" aria-label="已收藏" aria-pressed="true" data-tip="已收藏">
+            <svg width="24" height="24" aria-hidden="true"><use href="#i-star-fill"/></svg>
+          </button>
+          <button type="button" class="pb-btn" aria-label="笔记" data-tip="笔记">
+            <svg width="24" height="24" aria-hidden="true"><use href="#i-pen"/></svg>
+          </button>
+          <button type="button" class="pb-btn" aria-label="下一题" data-tip="下一题">
+            <svg width="24" height="24" aria-hidden="true"><use href="#i-chev-r"/></svg>
+          </button>
+          <button type="button" class="pb-btn pb-submit" aria-label="交卷" data-tip="交卷">
+            <svg width="26" height="26" aria-hidden="true"><use href="#i-check-bold"/></svg>
+          </button>
+        </nav>
+      </main>
+
+      <!-- 沉浸模式: 不渲染 tab-bar (mobile-style-guide §2.4) -->
+      <div class="home-indicator"></div>
+    </div>
+  </article>
+
+</div>
+
+</body>
+</html>

@@ -1,0 +1,63 @@
+/*
+ * QuestionBadge styles — SSOT: design/SIKAO/icon-spec/composite-icons-spec.md §D.2.
+ * 4 状态 locked/pending/writing/submitted, color 全走 token.
+ */
+
+.q-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-content: center;
+  padding: 6px 8px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-tiny);
+  background: transparent;
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+}
+
+.q-badge svg {
+  display: block;
+  width: 32px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+.q-badge[data-status='locked'] {
+  color: var(--ink-4);
+  pointer-events: none;
+}
+
+.q-badge[data-status='pending'] {
+  color: var(--ink-3);
+}
+
+.q-badge[data-status='writing'] {
+  border-color: var(--accent-1);
+  color: var(--accent-1);
+}
+
+.q-badge[data-status='submitted'] {
+  border-color: var(--ok);
+  background: var(--ok-bg);
+  color: var(--ok);
+}
+
+.q-badge:hover {
+  background: var(--paper-2);
+}
+
+.q-badge[data-status='submitted']:hover {
+  background: var(--ok-bg);
+  filter: brightness(0.98);
+}
+
+.q-badge:focus-visible {
+  outline: 2px solid var(--accent-1);
+  outline-offset: 2px;
+}

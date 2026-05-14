@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>思考 · UI Kit</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { margin: 0; background: var(--bg-alt); }
+  dc-canvas { background: #eef0f3; }
+
+  /* 文档专用辅助样式 */
+  .doc-h { font-size: 40px; font-weight: 800; letter-spacing: -0.02em; line-height: 1.1; color: var(--ink); margin: 0; }
+  .doc-h em { color: var(--brand); font-style: normal; }
+  .doc-lead { font-size: 16px; line-height: 1.65; color: var(--ink-muted); margin: 12px 0 0; max-width: 720px; }
+  .doc-eyebrow { font-size: 11px; color: var(--brand); font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; }
+
+  /* swatch */
+  .sw { border-radius: 12px; padding: 16px; display: flex; flex-direction: column; justify-content: space-between; min-height: 120px; font-family: var(--mono); font-size: 11px; }
+  .sw .name { font-family: var(--sans); font-weight: 700; font-size: 14px; }
+  .sw .hex { opacity: .8; }
+
+  /* spec rule */
+  .spec { display: flex; align-items: baseline; gap: 16px; padding: 14px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .spec b { font-weight: 600; color: var(--ink); min-width: 120px; }
+  .spec .v { font-family: var(--mono); color: var(--ink-muted); }
+  .spec .d { color: var(--muted); margin-left: auto; font-size: 12px; }
+
+  /* uikit-card framing */
+  .uk-card { background: var(--bg); border: 1px solid var(--line); border-radius: 16px; padding: 28px; }
+  .uk-card .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 4px; }
+
+  /* dot grid bg for spec demos */
+  .dot-bg { background-image: radial-gradient(circle, rgba(15,23,42,.08) 1px, transparent 1px); background-size: 8px 8px; }
+
+  /* mini code-style label */
+  .tok { font-family: var(--mono); font-size: 11px; padding: 2px 7px; border-radius: 5px; background: var(--bg-alt); color: var(--ink-muted); border: 1px solid var(--line); }
+
+  /* anatomy callout line */
+  .ano-line { position: absolute; border-top: 1px dashed var(--line-strong); }
+  .ano-tag { position: absolute; font-family: var(--mono); font-size: 10px; color: var(--muted); background: var(--bg); padding: 2px 6px; border-radius: 4px; border: 1px solid var(--line); white-space: nowrap; }
+</style>
+</head>
+<body data-theme="light">
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script type="text/babel" src="uikit/foundations.jsx"></script>
+<script type="text/babel" src="uikit/components.jsx"></script>
+<script type="text/babel" src="uikit/exam-and-data.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const { useEffect } = React;
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "theme": "light"
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  useEffect(() => {
+    document.body.dataset.theme = tweaks.theme;
+  }, [tweaks.theme]);
+
+  return (
+    <>
+      <DesignCanvas
+        title="思考 · UI Kit"
+        subtitle="规范文档 — 品牌 / 颜色 / 字体 / 间距 / 组件 / 答题专用 / 数据可视化"
+      >
+        <DCSection id="brand" title="01 · 品牌">
+          <DCArtboard id="cover" label="封面" width={1280} height={720}><Cover/></DCArtboard>
+          <DCArtboard id="logo" label="名称由来 · Logo · 应用" width={1280} height={760}><BrandLogo/></DCArtboard>
+          <DCArtboard id="principles" label="设计原则 5 条" width={1280} height={760}><Principles/></DCArtboard>
+          <DCArtboard id="tone" label="调性关键词" width={1280} height={680}><ToneWords/></DCArtboard>
+          <DCArtboard id="voice" label="Voice & Tone · 用词例子" width={1280} height={760}><VoiceTone/></DCArtboard>
+        </DCSection>
+
+        <DCSection id="foundations" title="02 · 基础 Foundations">
+          <DCArtboard id="color-brand" label="颜色 · 品牌" width={1280} height={680}><ColorBrand/></DCArtboard>
+          <DCArtboard id="color-neutral" label="颜色 · 中性" width={1280} height={620}><ColorNeutral/></DCArtboard>
+          <DCArtboard id="color-semantic" label="颜色 · 语义" width={1280} height={680}><ColorSemantic/></DCArtboard>
+          <DCArtboard id="type-stack" label="字体 · 字体栈" width={1280} height={580}><TypeStack/></DCArtboard>
+          <DCArtboard id="type-scale" label="字体 · 阶梯 · 行高" width={1280} height={820}><TypeScale/></DCArtboard>
+          <DCArtboard id="space" label="间距 · 阶梯" width={1280} height={620}><Spacing/></DCArtboard>
+          <DCArtboard id="radii" label="圆角" width={1280} height={500}><Radii/></DCArtboard>
+          <DCArtboard id="shadow" label="阴影" width={1280} height={500}><Shadows/></DCArtboard>
+          <DCArtboard id="icons" label="图标 · lucide" width={1280} height={760}><Icons/></DCArtboard>
+        </DCSection>
+
+        <DCSection id="components" title="03 · 组件 Components">
+          <DCArtboard id="buttons" label="Button · 多状态" width={1280} height={720}><Buttons/></DCArtboard>
+          <DCArtboard id="chips" label="Chip / Badge" width={1280} height={520}><Chips/></DCArtboard>
+          <DCArtboard id="inputs" label="Input · 多状态" width={1280} height={720}><Inputs/></DCArtboard>
+          <DCArtboard id="cards" label="Card" width={1280} height={680}><Cards/></DCArtboard>
+          <DCArtboard id="nav" label="Sidebar · Topbar · Tabs" width={1280} height={760}><NavBits/></DCArtboard>
+        </DCSection>
+
+        <DCSection id="exam" title="04 · 答题专用">
+          <DCArtboard id="opt" label="Option · 多状态" width={1280} height={680}><OptionStates/></DCArtboard>
+          <DCArtboard id="timer" label="Timer · 计时器" width={1280} height={520}><Timer/></DCArtboard>
+          <DCArtboard id="progress" label="Progress · 进度条" width={1280} height={520}><ProgressBars/></DCArtboard>
+          <DCArtboard id="score" label="Score Ring · 环形分数" width={1280} height={580}><ScoreRing/></DCArtboard>
+          <DCArtboard id="answercard" label="Answer Card · 答题卡格子" width={1280} height={580}><AnswerCard/></DCArtboard>
+        </DCSection>
+
+        <DCSection id="data" title="05 · 数据可视化">
+          <DCArtboard id="charts" label="Bar / Line / Radar / Heatmap" width={1280} height={760}><Charts/></DCArtboard>
+        </DCSection>
+
+        <DCSection id="states" title="06 · 状态">
+          <DCArtboard id="states-page" label="Empty · Loading · Error · Success" width={1280} height={760}><StatesGrid/></DCArtboard>
+        </DCSection>
+
+        <DCSection id="motion" title="07 · 动效">
+          <DCArtboard id="motion-tokens" label="Motion tokens · 时长 / 缓动" width={1280} height={680}><MotionTokens/></DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection title="主题">
+          <TweakRadio label="模式" value={tweaks.theme} options={[{value:'light',label:'浅'},{value:'dark',label:'深'}]} onChange={v => setTweak('theme', v)}/>
+        </TweakSection>
+        <TweakSection title="提示">
+          <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>
+            点击 artboard 标签进入聚焦模式 · 拖动右下角调整画布缩放
+          </div>
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

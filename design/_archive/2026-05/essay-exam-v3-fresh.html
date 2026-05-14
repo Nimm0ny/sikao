@@ -1,0 +1,3000 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>申论考场 V3 · 思考版原型</title>
+<style>
+/* ==========================================================
+   思考 · ink-first design tokens (与 design/tokens.css 1:1)
+   ========================================================== */
+:root {
+  --ink: #0b1120;
+  --ink-muted: #334155;
+  --muted: #64748b;
+  --placeholder: #94a3b8;
+  --bg: #ffffff;
+  --bg-alt: #f8fafc;
+  --bg-tint-2: #eef2f7;
+  --line: #e5e7eb;
+  --line-strong: #cbd5e1;
+
+  --accent: #3f7ef1;
+  --accent-50: #eff6ff;
+  --success: #16a34a;
+  --success-bg: #dcfce7;
+  --success-deep: #15803d;
+  --warn: #f59e0b;
+  --warn-bg: #fef3c7;
+  --danger: #dc2626;
+  --danger-bg: #fee2e2;
+
+  /* Paper-specific (新增) */
+  --paper: #faf8f1;
+  --paper-line: #e6dfd0;
+  --paper-line-strong: #c9beac;
+  --paper-shadow: 0 1px 2px rgba(15,23,42,.04), 0 8px 24px -12px rgba(15,23,42,.10);
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 9999px;
+
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --serif: 'Source Serif 4', 'Songti SC', 'Noto Serif SC', Georgia, 'Times New Roman', serif;
+  --mono: 'SF Mono','Monaco','Cascadia Code','Roboto Mono',Consolas,'Courier New',monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--bg-alt);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================================
+   Doc shell
+   ========================================================== */
+.doc {
+  max-width: 1640px;
+  margin: 0 auto;
+  padding: 56px 56px 120px;
+}
+.doc-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.doc-title {
+  font-family: var(--serif);
+  font-size: 44px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin: 0 0 16px;
+}
+.doc-lede {
+  font-size: 16px;
+  color: var(--ink-muted);
+  max-width: 760px;
+  line-height: 1.65;
+  margin: 0 0 36px;
+}
+.decisions {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 24px 28px;
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 14px 24px;
+  font-size: 13px;
+  margin-bottom: 56px;
+}
+.decisions h3 {
+  font-size: 12px;
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+  padding-top: 2px;
+}
+.decisions p { margin: 0; color: var(--ink-muted); line-height: 1.7; }
+.decisions p b { color: var(--ink); font-weight: 700; }
+.decisions code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  background: var(--bg-alt);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--ink);
+}
+
+.scene { margin-top: 64px; }
+.scene-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.scene-num {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--muted);
+}
+.scene-title {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.005em;
+}
+.scene-sub {
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.frame {
+  width: 1480px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  box-shadow: 0 18px 48px -28px rgba(15,23,42,.18);
+}
+
+/* ==========================================================
+   Exam shell
+   ========================================================== */
+.exam {
+  display: grid;
+  grid-template-rows: 56px 1fr 64px;
+  height: 900px;
+  background: var(--bg);
+}
+
+/* ── Bottom dock (题号圆按钮 + 题干 + 操作) ── */
+.dock {
+  background: var(--bg);
+  border-top: 1px solid var(--line);
+  padding: 0 24px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 64px;
+}
+.dock-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--placeholder);
+  flex-shrink: 0;
+}
+.dock-qs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.dq {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1.5px solid var(--line);
+  background: var(--bg);
+  display: inline-grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, padding .2s ease;
+  flex-shrink: 0;
+}
+.dq:hover {
+  border-color: var(--line-strong);
+  background: var(--bg-alt);
+}
+.dq.done {
+  border-color: var(--success);
+  color: var(--success-deep);
+}
+.dq.active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+  width: auto;
+  padding: 0 14px 0 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border-radius: var(--r-pill);
+}
+.dq-active-no {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: .02em;
+}
+.dq-active-info {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+.dq-active-info .row1 {
+  font-size: 12px;
+  font-weight: 700;
+}
+.dq-active-info .row2 {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: rgba(255,255,255,.65);
+  margin-top: 2px;
+  letter-spacing: .02em;
+}
+.dock-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--line);
+  flex-shrink: 0;
+}
+
+/* ── TopBar ─────────────────────────────────────── */
+.tb1 {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+}
+.brand { display: flex; align-items: center; gap: 10px; }
+.brand-mark {
+  width: 28px; height: 28px;
+  background: var(--ink);
+  color: #fff;
+  display: grid; place-items: center;
+  border-radius: var(--r-sm);
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 14px;
+}
+.brand-name {
+  font-size: 13px; font-weight: 700; color: var(--ink);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.brand-tag {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  background: var(--accent-50);
+  color: var(--accent);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+.brand-paper { font-size: 11px; color: var(--muted); margin-top: 1px; }
+
+.spacer { flex: 1; }
+
+.saved {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+.saved-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--placeholder); }
+
+.clock-wrap {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  gap: 1px;
+}
+.clock {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--bg-alt);
+  color: var(--ink);
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: .04em;
+}
+.clock-sub {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--placeholder);
+  letter-spacing: .08em;
+  margin-top: 2px;
+}
+
+.btn-base {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 7px 14px;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  color: var(--ink-muted);
+}
+.btn-base:hover { background: var(--bg-alt); }
+.btn-base.primary {
+  background: var(--ink); color: #fff; border-color: var(--ink);
+}
+.btn-base.primary:hover { background: #000; }
+
+/* ── Question rings (修过几何) ───────────────────── */
+.qrow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+}
+.qrow-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--placeholder);
+  flex-shrink: 0;
+}
+.qring-list {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+.qring {
+  display: inline-flex;
+  align-items: center;
+  height: 36px;
+  padding: 0 4px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  cursor: pointer;
+  color: var(--ink-muted);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background .15s ease, border-color .15s ease, color .15s ease, padding .2s ease;
+}
+.qring:hover { background: var(--bg-alt); border-color: var(--line-strong); }
+.qring-ring {
+  position: relative;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+}
+.qring-ring svg {
+  position: absolute;
+  inset: 0;
+  transform: rotate(-90deg);
+}
+.qring-ring .lbl {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.qring.done .qring-ring .lbl { color: var(--success-deep); }
+
+.qring.active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+  padding: 0 14px 0 4px;
+}
+.qring.active .qring-ring .lbl { color: #fff; }
+.qring-info {
+  margin-left: 6px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  line-height: 1.15;
+}
+.qring-info .row1 {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+.qring-info .row2 {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: rgba(255,255,255,.62);
+  margin-top: 2px;
+  letter-spacing: .02em;
+}
+
+.qrow-tail { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+.qrow-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 11px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  cursor: pointer;
+  background: var(--bg);
+}
+.qrow-pill:hover { background: var(--bg-alt); }
+
+/* ==========================================================
+   Body 3-col
+   ========================================================== */
+.exam-body {
+  display: grid;
+  grid-template-columns: 360px 1fr 360px;
+  min-height: 0;
+}
+.col {
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.col:last-child { border-right: 0; }
+
+/* ──────────── Materials panel ──────────── */
+.mp-head {
+  padding: 14px 18px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.mp-title { display: flex; align-items: baseline; gap: 8px; }
+.mp-title-name { font-family: var(--serif); font-size: 14px; font-weight: 700; }
+.mp-title-count { font-family: var(--mono); font-size: 11px; color: var(--placeholder); }
+.mp-actions { display: flex; align-items: center; gap: 4px; }
+.mp-iconbtn {
+  width: 28px; height: 28px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  display: grid; place-items: center;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+}
+.mp-iconbtn:hover {
+  color: var(--ink);
+  border-color: var(--line-strong);
+  background: var(--bg-alt);
+}
+.mp-iconbtn.on { background: var(--ink); color: #fff; border-color: var(--ink); }
+.mp-iconbtn svg { width: 14px; height: 14px; }
+
+/* Materials tabs (横滚) */
+.matabs {
+  position: relative;
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+.matabs-scroll {
+  display: flex;
+  overflow-x: auto;
+  scrollbar-width: none;
+  scroll-behavior: smooth;
+  padding: 0 28px;
+}
+.matabs-scroll::-webkit-scrollbar { display: none; }
+.matab {
+  flex: 0 0 84px;
+  padding: 13px 0;
+  text-align: center;
+  font-family: var(--serif);
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--muted);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  position: relative;
+  white-space: nowrap;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  letter-spacing: .02em;
+}
+.matab.active { color: var(--ink); font-weight: 700; }
+.matab-hits {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  background: var(--warn);
+  color: #fff;
+  padding: 0 4px;
+  height: 14px;
+  min-width: 14px;
+  border-radius: 999px;
+  display: inline-grid;
+  place-items: center;
+  letter-spacing: 0;
+}
+.matab-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--ink);
+  display: inline-block;
+}
+.matabs-line {
+  position: absolute;
+  bottom: 0;
+  height: 2px;
+  background: var(--ink);
+  border-radius: 2px;
+  pointer-events: none;
+  transition: left .25s cubic-bezier(.4,0,.2,1), width .25s cubic-bezier(.4,0,.2,1);
+}
+.matabs-fade {
+  position: absolute;
+  top: 0;
+  bottom: 1px;
+  width: 28px;
+  pointer-events: none;
+  z-index: 1;
+}
+.matabs-fade.left {
+  left: 0;
+  background: linear-gradient(to right, var(--bg), rgba(255,255,255,0));
+}
+.matabs-fade.right {
+  right: 0;
+  background: linear-gradient(to left, var(--bg), rgba(255,255,255,0));
+}
+.matabs-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+  cursor: pointer;
+  z-index: 3;
+  box-shadow: 0 2px 6px rgba(15,23,42,.08);
+  padding: 0;
+}
+.matabs-arrow:hover { color: var(--ink); border-color: var(--line-strong); }
+.matabs-arrow.left { left: 4px; }
+.matabs-arrow.right { right: 4px; }
+.matabs-arrow svg { width: 11px; height: 11px; }
+
+/* meta row (compact: 标题 + 字数 + 划线 + 已读 + 划线 toggle, 单行 ~44px) */
+.mp-meta {
+  padding: 12px 22px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.mp-meta-title {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+  white-space: nowrap;
+}
+.mp-meta-stats {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: .02em;
+  white-space: nowrap;
+}
+.mp-meta-stats b { color: var(--ink); font-weight: 700; }
+.mp-meta .spacer { flex: 1; }
+.tool-btn {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 12px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.tool-btn:hover { background: var(--bg-alt); }
+.tool-btn.on {
+  background: var(--accent-50);
+  color: var(--accent);
+  border-color: rgba(63,126,241,.4);
+}
+.tool-btn svg { width: 12px; height: 12px; }
+
+.mp-body {
+  flex: 1; overflow-y: auto;
+  padding: 4px 22px 28px;
+  font-family: var(--serif);
+  font-size: 15px;
+  line-height: 1.85;
+  color: var(--ink-muted);
+  text-align: justify;
+}
+.mp-body p { margin: 0 0 14px; }
+.mp-body mark.hl {
+  background: rgba(63,126,241,.10);
+  box-shadow: inset 0 -2px 0 rgba(63,126,241,.45);
+  color: var(--ink);
+  padding: 0 1px;
+  cursor: grab;
+}
+.mp-body mark.hl:hover {
+  background: rgba(63,126,241,.18);
+}
+
+/* ==========================================================
+   Paper grid (核心 — 25×20 真稿纸)
+   ========================================================== */
+.ans {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: linear-gradient(180deg, var(--bg-alt) 0%, var(--bg-tint-2) 100%);
+  position: relative;
+}
+.ans-head {
+  background: var(--bg);
+  border-bottom: 1px solid var(--line);
+  padding: 14px 28px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+.ans-head-no {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: var(--placeholder);
+  text-transform: uppercase;
+}
+.ans-head-stem {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.55;
+  margin-top: 4px;
+  color: var(--ink);
+  max-width: 600px;
+}
+.ans-head-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  white-space: nowrap;
+  text-align: right;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: flex-end;
+}
+.ans-head-meta .num { font-size: 18px; font-weight: 700; color: var(--ink); }
+.ans-head-meta .lbl { color: var(--placeholder); margin-left: 4px; }
+
+.paper-stage {
+  flex: 1;
+  overflow: auto;
+  padding: 32px 32px 40px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.paper-card {
+  position: relative;
+  width: 696px;
+  background: var(--paper);
+  border: 1px solid var(--paper-line-strong);
+  border-radius: 4px;
+  padding: 28px 32px 22px;
+  box-shadow: var(--paper-shadow);
+}
+.paper-card::before {
+  /* 纸张左上角折角 hint */
+  content: '';
+  position: absolute;
+  top: 0; left: 0;
+  width: 24px; height: 24px;
+  background: linear-gradient(135deg, transparent 50%, rgba(15,23,42,.05) 50%);
+  border-bottom-right-radius: 4px;
+}
+
+.paper-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 14px;
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.paper-head .pno {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.paper-head .pno b { color: var(--ink); font-size: 13px; font-weight: 700; }
+.paper-head .info { color: var(--placeholder); }
+
+.paper-grid {
+  display: grid;
+  grid-template-columns: repeat(25, 1fr);
+  border: 1px solid var(--paper-line-strong);
+  background: var(--paper-line);
+  gap: 1px;
+  font-family: var(--serif);
+}
+.paper-grid > .cell {
+  background: var(--paper);
+  aspect-ratio: 1 / 1.08;
+  display: grid;
+  place-items: center;
+  font-size: 17px;
+  color: var(--ink);
+  line-height: 1;
+  user-select: none;
+  position: relative;
+}
+.paper-grid > .cell.cursor {
+  background: var(--paper);
+}
+.paper-grid > .cell.cursor::after {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 18%;
+  bottom: 18%;
+  width: 1.5px;
+  background: var(--ink);
+  animation: caret-blink 1s steps(2) infinite;
+}
+@keyframes caret-blink {
+  50% { opacity: 0; }
+}
+
+.paper-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.paper-foot-arrow {
+  width: 28px; height: 28px;
+  border: 1px solid var(--paper-line-strong);
+  background: var(--paper);
+  border-radius: var(--r-sm);
+  color: var(--ink-muted);
+  cursor: pointer;
+  display: grid; place-items: center;
+}
+.paper-foot-arrow:hover { background: rgba(11,17,32,.04); color: var(--ink); }
+.paper-foot-arrow:disabled { color: var(--placeholder); cursor: not-allowed; opacity: .5; }
+.paper-foot-arrow svg { width: 12px; height: 12px; }
+
+.paper-foot-pages {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+  font-weight: 600;
+  letter-spacing: .04em;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.paper-foot-pages b { color: var(--ink); font-size: 13px; }
+
+.paper-foot-bar {
+  flex: 1;
+  height: 4px;
+  background: rgba(11,17,32,.06);
+  border-radius: 999px;
+  position: relative;
+  overflow: hidden;
+}
+.paper-foot-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  border-radius: 999px;
+}
+.paper-foot-count {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.paper-foot-count b { color: var(--ink); font-size: 13px; }
+
+/* 第二页边角 hint (虚影显示下一页) */
+.paper-stack { position: relative; }
+.paper-card.stack-back {
+  position: absolute;
+  inset: 6px -4px -4px 4px;
+  background: var(--paper);
+  border: 1px solid var(--paper-line-strong);
+  z-index: -1;
+  opacity: .65;
+}
+
+/* ==========================================================
+   Scratch panel
+   ========================================================== */
+.sc { background: var(--bg); display: flex; flex-direction: column; }
+.sc-head {
+  padding: 14px 18px 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+}
+.sc-head-title { display: flex; align-items: baseline; gap: 8px; }
+.sc-head-name { font-family: var(--serif); font-size: 14px; font-weight: 700; }
+.sc-head-tag { font-family: var(--mono); font-size: 10px; color: var(--placeholder); letter-spacing: .1em; }
+
+/* 立意 sticky card */
+.sc-intent {
+  margin: 14px 18px 0;
+  padding: 14px 16px;
+  background: linear-gradient(180deg, rgba(11,17,32,.04), rgba(11,17,32,.01));
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sc-intent-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.sc-intent-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.sc-intent-tag .dot { width: 6px; height: 6px; background: var(--ink); border-radius: 50%; }
+.sc-intent-edit {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--accent);
+  cursor: pointer;
+  font-weight: 600;
+}
+.sc-intent-body {
+  font-family: var(--serif);
+  font-size: 14.5px;
+  font-weight: 600;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.sc-intent-body b { font-weight: 700; }
+
+/* 卡片墙 list */
+.sc-list-head {
+  padding: 18px 18px 8px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.sc-list-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.sc-list-eyebrow b { color: var(--ink); font-weight: 700; margin-right: 4px; }
+.sc-filter {
+  display: inline-flex;
+  gap: 4px;
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--placeholder);
+}
+.sc-filter button {
+  background: transparent;
+  border: 0;
+  padding: 2px 5px;
+  border-radius: 4px;
+  color: var(--placeholder);
+  cursor: pointer;
+}
+.sc-filter button.on {
+  background: var(--ink);
+  color: #fff;
+}
+
+.sc-cards {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sc-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: relative;
+  cursor: grab;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+.sc-card:hover {
+  border-color: var(--line-strong);
+  box-shadow: 0 4px 12px -8px rgba(15,23,42,.15);
+}
+.sc-card.tagged {
+  border-left-width: 3px;
+  border-left-color: var(--ink);
+  padding-left: 11px;
+}
+.sc-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.sc-card-tag {
+  display: inline-grid;
+  place-items: center;
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--ink);
+  color: #fff;
+  flex-shrink: 0;
+  letter-spacing: 0;
+}
+.sc-card-cite {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: .04em;
+}
+.sc-card-cite b { color: var(--ink); font-weight: 700; }
+.sc-card-time {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--placeholder);
+  letter-spacing: .04em;
+}
+.sc-card-body {
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.sc-card-body.serif {
+  font-family: var(--serif);
+}
+.sc-card-actions {
+  display: flex;
+  gap: 4px;
+}
+.sc-card-action {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.sc-card-action:hover { background: var(--bg-alt); color: var(--ink); }
+
+/* 自由打字卡 (区分于带出处的 "拖入" 卡) */
+.sc-card.free {
+  background: var(--bg-alt);
+  border-style: dashed;
+}
+.sc-card.free .sc-card-tag {
+  background: var(--bg);
+  color: var(--muted);
+  border: 1px solid var(--line-strong);
+}
+
+.sc-tools {
+  padding: 12px 18px 16px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  gap: 8px;
+}
+.sc-tools .tool-btn { flex: 1; justify-content: center; }
+.sc-tools .tool-btn.primary {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+.sc-tools .tool-btn.primary:hover { background: #000; }
+
+/* ── View toggle (卡片 / 大纲) ── */
+.sc-view-toggle {
+  display: inline-flex;
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  padding: 1px;
+  flex-shrink: 0;
+}
+.sc-view-toggle button {
+  padding: 3px 9px;
+  font-family: var(--mono);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-pill);
+  cursor: pointer;
+  height: 22px;
+}
+.sc-view-toggle button.on {
+  background: var(--ink);
+  color: #fff;
+}
+
+/* ── Outline view (大纲视图) ── */
+.sc-outline {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.outline-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.outline-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  cursor: pointer;
+}
+.outline-head .chev {
+  width: 12px; height: 12px;
+  color: var(--muted);
+  transition: transform .15s ease;
+  flex-shrink: 0;
+}
+.outline-head.expanded .chev { transform: rotate(90deg); }
+.outline-head-no {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--placeholder);
+}
+.outline-head-name {
+  font-family: var(--serif);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  flex: 1;
+  letter-spacing: -0.005em;
+}
+.outline-head-count {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 600;
+}
+.outline-head.unassigned {
+  background: rgba(11,17,32,.02);
+  border-style: dashed;
+}
+.outline-head.unassigned .outline-head-name { color: var(--muted); font-weight: 500; }
+
+.outline-cards {
+  padding-left: 14px;
+  border-left: 1px dashed var(--line-strong);
+  margin-left: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.outline-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 8px 10px;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  cursor: grab;
+}
+.outline-card:hover { border-color: var(--line-strong); }
+.outline-card-tag {
+  display: inline-grid;
+  place-items: center;
+  width: 18px; height: 18px;
+  border-radius: 4px;
+  background: var(--ink);
+  color: #fff;
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.outline-card.untagged .outline-card-tag {
+  background: var(--bg);
+  color: var(--placeholder);
+  border: 1px dashed var(--line-strong);
+}
+.outline-card-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.outline-card-cite {
+  font-family: var(--mono);
+  font-size: 9.5px;
+  color: var(--muted);
+  letter-spacing: .04em;
+  font-weight: 600;
+}
+.outline-card-cite b { color: var(--ink); font-weight: 700; }
+.outline-card-text {
+  font-family: var(--serif);
+  font-size: 12.5px;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.outline-card-handle {
+  color: var(--placeholder);
+  flex-shrink: 0;
+  width: 12px;
+  display: grid;
+  place-items: center;
+  margin-top: 4px;
+}
+.outline-card-handle svg { width: 10px; height: 10px; }
+.outline-section-empty {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--placeholder);
+  padding: 8px 14px;
+  letter-spacing: .04em;
+}
+
+/* Outline-mode AI 建议条 */
+.outline-aitip {
+  margin-top: 4px;
+  background: var(--bg);
+  border: 1px dashed var(--accent);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.outline-aitip-icon {
+  width: 18px; height: 18px;
+  background: var(--accent-50);
+  color: var(--accent);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.outline-aitip-icon svg { width: 10px; height: 10px; }
+.outline-aitip-text {
+  font-size: 11.5px;
+  color: var(--ink-muted);
+  line-height: 1.5;
+  flex: 1;
+}
+.outline-aitip-text b { color: var(--ink); font-weight: 700; }
+.outline-aitip-action {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  color: var(--accent);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* ==========================================================
+   Decision card list (top of doc)
+   ========================================================== */
+.innov-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+  margin-top: 12px;
+}
+.innov {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.innov-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.innov-tag .num {
+  display: inline-grid; place-items: center;
+  width: 16px; height: 16px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 4px;
+  font-size: 10px;
+}
+.innov h5 {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.005em;
+}
+.innov p {
+  font-size: 12.5px;
+  line-height: 1.6;
+  color: var(--ink-muted);
+  margin: 0;
+}
+
+/* ==========================================================
+   Scene B — 划线 → 草稿 流程 3 帧
+   ========================================================== */
+.flow-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.flow-step {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 22px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.flow-step-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.flow-step-num {
+  display: grid; place-items: center;
+  width: 26px; height: 26px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: 50%;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+}
+.flow-step-head h5 {
+  font-family: var(--serif);
+  font-size: 15px;
+  font-weight: 700;
+  margin: 0;
+}
+.flow-step .desc {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  line-height: 1.6;
+}
+.flow-stage {
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 14px;
+  min-height: 200px;
+  position: relative;
+  overflow: hidden;
+  font-family: var(--serif);
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--ink-muted);
+}
+.flow-stage mark.hl {
+  background: rgba(63,126,241,.10);
+  box-shadow: inset 0 -2px 0 rgba(63,126,241,.45);
+  color: var(--ink);
+  padding: 0 1px;
+}
+.flow-stage mark.hl.selected {
+  background: rgba(11,17,32,.12);
+  box-shadow: inset 0 -2px 0 var(--ink);
+  outline: 1px dashed var(--ink-muted);
+  outline-offset: 1px;
+}
+
+/* 拖动 ghost */
+.flow-ghost {
+  position: absolute;
+  top: 70px;
+  right: 14px;
+  background: var(--bg);
+  border: 1px solid var(--ink);
+  border-radius: var(--r-sm);
+  padding: 8px 12px;
+  font-family: var(--serif);
+  font-size: 12px;
+  color: var(--ink);
+  box-shadow: 0 12px 32px -12px rgba(15,23,42,.30);
+  max-width: 180px;
+  transform: rotate(-4deg);
+}
+.flow-ghost-cursor {
+  position: absolute;
+  bottom: -6px;
+  right: -4px;
+  width: 16px; height: 16px;
+}
+
+.flow-card {
+  background: var(--bg);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+.flow-card-head { display: flex; align-items: center; gap: 6px; }
+.flow-card-cite {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  font-weight: 700;
+}
+.flow-card-cite b { color: var(--ink); }
+.flow-card-body {
+  font-family: var(--serif);
+  font-size: 13px;
+  color: var(--ink);
+  line-height: 1.6;
+}
+.flow-card-tags {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.flow-tag-chip {
+  display: inline-grid; place-items: center;
+  width: 22px; height: 22px;
+  border-radius: 4px;
+  border: 1px solid var(--line-strong);
+  font-family: var(--serif);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink-muted);
+  background: var(--bg);
+  cursor: pointer;
+}
+.flow-tag-chip:hover { background: var(--bg-alt); }
+.flow-tag-chip.on {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+
+/* ==========================================================
+   Scene C — 翻页 4 帧
+   ========================================================== */
+.flip-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  perspective: 1800px;
+}
+.flip-step {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 18px 18px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.flip-step-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: var(--muted);
+  display: inline-flex;
+  gap: 6px;
+}
+.flip-step-tag b { color: var(--ink); }
+.flip-step h5 {
+  font-family: var(--serif);
+  font-size: 14px;
+  font-weight: 700;
+  margin: 0;
+}
+.flip-stage {
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 24px 16px;
+  min-height: 200px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  perspective: 1500px;
+  perspective-origin: 50% 50%;
+}
+.flip-paper {
+  width: 220px;
+  height: 160px;
+  background: var(--paper);
+  border: 1px solid var(--paper-line-strong);
+  border-radius: 4px;
+  position: relative;
+  transform-origin: left center;
+  transform-style: preserve-3d;
+  box-shadow: var(--paper-shadow);
+}
+.flip-paper.next {
+  position: absolute;
+  z-index: -1;
+  transform: translateX(2px);
+}
+.flip-paper-content {
+  padding: 12px 14px;
+  font-family: var(--serif);
+  font-size: 9px;
+  color: var(--paper-line-strong);
+  line-height: 1.4;
+  display: grid;
+  grid-template-columns: repeat(15, 1fr);
+  gap: 1px;
+  background: var(--paper-line);
+  border: 1px solid var(--paper-line-strong);
+  margin: 12px;
+}
+.flip-paper-content > span {
+  background: var(--paper);
+  aspect-ratio: 1 / 1.08;
+  display: grid; place-items: center;
+  font-size: 9px;
+  color: var(--ink);
+}
+.flip-paper-pno {
+  position: absolute;
+  bottom: 4px;
+  right: 8px;
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--placeholder);
+  font-weight: 700;
+}
+.flip-paper.s2 { transform: rotateY(-45deg); box-shadow: 6px 6px 18px -8px rgba(15,23,42,.2); }
+.flip-paper.s3 { transform: rotateY(-135deg); box-shadow: 14px 6px 24px -8px rgba(15,23,42,.25); }
+.flip-paper.s3 .flip-paper-content { opacity: .15; filter: blur(.5px); }
+.flip-paper.s4 { transform: rotateY(-180deg); }
+.flip-paper.s4 .flip-paper-content {
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--placeholder);
+  letter-spacing: .14em;
+  padding: 0;
+  border: 0;
+  /* 背面镜像 */
+  transform: rotateY(180deg);
+}
+
+/* ==========================================================
+   Scene D — 考场态细节
+   ========================================================== */
+.state-grid {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 1fr;
+  gap: 16px;
+}
+.state-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 22px 22px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.state-card h5 {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+}
+.state-card p { font-size: 12.5px; color: var(--ink-muted); line-height: 1.6; margin: 0; }
+.state-stage {
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 28px 20px;
+  min-height: 220px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 暂停状态 */
+.pause-overlay {
+  position: relative;
+  width: 100%;
+  background: rgba(255,255,255,.8);
+  backdrop-filter: blur(4px);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 28px 32px;
+  box-shadow: 0 18px 48px -28px rgba(15,23,42,.30);
+}
+.pause-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 6px;
+}
+.pause-title {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+  line-height: 1.3;
+}
+.pause-sub {
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  margin-bottom: 14px;
+  line-height: 1.6;
+}
+.pause-input {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  padding: 12px 14px;
+  font-family: var(--serif);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--bg);
+  outline: none;
+  resize: none;
+  line-height: 1.6;
+}
+.pause-input:focus { border-color: var(--ink); }
+.pause-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
+.pause-skip {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  background: transparent;
+  border: 0;
+  padding: 8px 12px;
+  cursor: pointer;
+  letter-spacing: .04em;
+}
+.pause-skip:hover { color: var(--ink); }
+.pause-resume {
+  background: var(--ink);
+  color: #fff;
+  border: 0;
+  padding: 8px 18px;
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Ambient 完成题反馈 */
+.ambient {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: var(--r-md);
+  border-left: 3px solid var(--success);
+  padding: 12px 14px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: 220px;
+  box-shadow: 0 18px 32px -12px rgba(15,23,42,.40);
+}
+.ambient-tag {
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: rgba(255,255,255,.6);
+  text-transform: uppercase;
+}
+.ambient-title {
+  font-family: var(--serif);
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.005em;
+}
+.ambient-meta {
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: rgba(255,255,255,.7);
+  letter-spacing: .04em;
+}
+.ambient-meta b { color: #fff; font-weight: 700; }
+
+/* Final 5 min hint */
+.final5 {
+  position: absolute;
+  bottom: 16px;
+  left: 16px;
+  background: var(--bg);
+  border: 1px solid var(--warn);
+  border-left-width: 3px;
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 12px 24px -12px rgba(15,23,42,.20);
+  max-width: 240px;
+}
+.final5-icon {
+  width: 24px; height: 24px;
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-radius: 50%;
+  display: grid; place-items: center;
+  flex-shrink: 0;
+}
+.final5-icon svg { width: 12px; height: 12px; }
+.final5-text {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.5;
+}
+.final5-text b { font-weight: 700; }
+
+/* ==========================================================
+   Question button variants (4 方向 · 替代圆环)
+   ========================================================== */
+.qbtn-variants {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.qbtn-variant {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 22px 22px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.qbtn-variant-label {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+.qbtn-variant-label .num {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  color: var(--placeholder);
+}
+.qbtn-variant-label h5 {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 700;
+  margin: 0;
+  letter-spacing: -0.005em;
+}
+.qbtn-variant-desc {
+  font-size: 12.5px;
+  color: var(--muted);
+  line-height: 1.55;
+  margin: 0;
+}
+.qbtn-variant-stage {
+  background: var(--bg-alt);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  padding: 20px;
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+}
+
+/* V1 — 整条 stepper bar */
+.qstep {
+  display: flex;
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  background: var(--bg);
+}
+.qstep-seg {
+  padding: 8px 14px;
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  position: relative;
+  background: var(--bg);
+  min-width: 0;
+}
+.qstep-seg:last-child { border-right: 0; }
+.qstep-seg.active { background: var(--ink); }
+.qstep-row1 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.qstep-seg.done .qstep-row1 { color: var(--success-deep); }
+.qstep-seg.active .qstep-row1 { color: #fff; }
+.qstep-row1 .no {
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--bg-alt);
+  display: inline-grid; place-items: center;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.qstep-seg.done .qstep-row1 .no { background: var(--success-bg); color: var(--success-deep); }
+.qstep-seg.active .qstep-row1 .no { background: rgba(255,255,255,.18); color: #fff; }
+.qstep-row2 {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: .04em;
+}
+.qstep-seg.done .qstep-row2 { color: var(--success-deep); }
+.qstep-seg.active .qstep-row2 { color: rgba(255,255,255,.65); }
+.qstep-bar {
+  position: absolute;
+  bottom: 0; left: 0;
+  height: 2px;
+  background: var(--ink);
+}
+.qstep-seg.active .qstep-bar { background: rgba(255,255,255,.55); }
+
+/* V2 — 极简 tabs + 独立进度 bar */
+.qtab-block { width: 100%; }
+.qtab-row { display: flex; gap: 6px; }
+.qtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  height: 32px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--line);
+  background: var(--bg);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  min-width: 0;
+  justify-content: flex-start;
+  overflow: hidden;
+}
+.qtab .qtab-no {
+  display: inline-grid; place-items: center;
+  width: 18px; height: 18px;
+  border-radius: 50%;
+  background: var(--bg-alt);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--ink);
+  flex-shrink: 0;
+}
+.qtab.done { color: var(--success-deep); }
+.qtab.done .qtab-no { background: var(--success-bg); color: var(--success-deep); }
+.qtab.active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+.qtab.active .qtab-no { background: rgba(255,255,255,.18); color: #fff; }
+.qtab .qtab-meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 600;
+  color: rgba(255,255,255,.7);
+  letter-spacing: .04em;
+  margin-left: auto;
+}
+.qtab-bars {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+.qtab-bar {
+  height: 2px;
+  background: var(--bg-tint-2);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.qtab-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+  border-radius: 999px;
+}
+
+/* V3 — Serif 中文数字 文字主导 */
+.qchn {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  flex-wrap: wrap;
+  font-family: var(--serif);
+}
+.qchn-item {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.qchn-item.done { color: var(--success-deep); }
+.qchn-item.active {
+  background: var(--ink);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: var(--r-pill);
+  font-weight: 700;
+  align-items: center;
+}
+.qchn-item .ko {
+  font-family: var(--serif);
+  font-size: 17px;
+  font-weight: 700;
+}
+.qchn-item .meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--placeholder);
+  letter-spacing: .04em;
+  font-weight: 600;
+}
+.qchn-item.active .meta { color: rgba(255,255,255,.65); }
+.qchn-item.done .meta { color: var(--success); }
+
+/* V4 — 3 张独立卡片 */
+.qcards-row {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  align-items: stretch;
+}
+.qcardv {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+  background: var(--bg);
+  cursor: pointer;
+  min-width: 0;
+}
+.qcardv-no {
+  width: 36px;
+  flex-shrink: 0;
+  background: var(--bg-alt);
+  display: grid; place-items: center;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  border-right: 1px solid var(--line);
+}
+.qcardv.done .qcardv-no { background: var(--success-bg); color: var(--success-deep); }
+.qcardv-body {
+  flex: 1;
+  padding: 6px 12px 8px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  position: relative;
+  min-width: 0;
+}
+.qcardv-kind {
+  font-family: var(--serif);
+  font-size: 12.5px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+.qcardv-meta {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--muted);
+  letter-spacing: .04em;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qcardv-bar {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 2px;
+  background: var(--bg-tint-2);
+}
+.qcardv-bar > i {
+  display: block;
+  height: 100%;
+  background: var(--ink);
+}
+.qcardv.active { background: var(--ink); border-color: var(--ink); }
+.qcardv.active .qcardv-no {
+  background: rgba(255,255,255,.16);
+  color: #fff;
+  border-right-color: rgba(255,255,255,.14);
+}
+.qcardv.active .qcardv-kind { color: #fff; }
+.qcardv.active .qcardv-meta { color: rgba(255,255,255,.7); }
+.qcardv.active .qcardv-bar { background: rgba(255,255,255,.14); }
+.qcardv.active .qcardv-bar > i { background: rgba(255,255,255,.55); }
+
+.variant-rec {
+  margin-top: 18px;
+  padding: 16px 20px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--ink);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: 12.5px;
+  color: var(--ink-muted);
+  line-height: 1.7;
+}
+.variant-rec b { color: var(--ink); font-weight: 700; }
+
+@media (max-width: 1640px) {
+  .doc { padding: 56px 32px 120px; }
+}
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+<!-- ============================================================
+     Header
+     ============================================================ -->
+<div class="doc-eyebrow">design / essay-exam / v3 fresh · 思考版</div>
+<h1 class="doc-title">申论考场 V3 · 思考版</h1>
+<p class="doc-lede">
+从头来。主调真考紧迫（真倒计时 / 不打扰主流程），UI 上集中发力 4 处差异化（真稿纸 / 智能草稿 / 翻页 / 资料"纸"质感），平板和键盘双适配。划线只划线（取消 tag），分类挪到草稿卡环节。
+</p>
+
+<div class="decisions">
+  <h3>主调</h3>
+  <p>
+    <b>真考紧迫为主</b>。真倒计时（不温和）、答题主流程不打弹窗。<b>UI 上发力差异化</b>（A 优先），评分内容后补。平板用户偏多但电脑键盘 type 也是亮眼方向，<b>双适配</b>。
+  </p>
+
+  <h3>4 个核心 wow</h3>
+  <p style="margin-bottom: 4px;">差异化集中在这 4 处，其它都是 supporting。</p>
+  <div class="innov-grid">
+    <div class="innov">
+      <span class="innov-tag"><span class="num">1</span>视觉锤</span>
+      <h5>真 25×20 稿纸 + 翻页动画</h5>
+      <p>键盘 type 字进格，写满 fold-page 翻页。500 字 / 页，1000 字大作文 = 2 页。视觉直接喊出"申论 = 写"。</p>
+    </div>
+    <div class="innov">
+      <span class="innov-tag"><span class="num">2</span>智能草稿</span>
+      <h5>草稿 = 卡片墙 + 自动出处</h5>
+      <p>拖材料文字进草稿区 → 自动落卡 with <code>资料 N · §M</code>。自由打字也能成卡。整理时给卡选 论 / 据 / 数 / 策 分类。</p>
+    </div>
+    <div class="innov">
+      <span class="innov-tag"><span class="num">3</span>纸质感</span>
+      <h5>资料区"纸"质 + 翻书页码</h5>
+      <p>暖白底（#faf8f1）+ 米色格线 + 真翻页（动画 600ms 3D rotateY）。强化考场感，区别于"网页阅读器"。</p>
+    </div>
+    <div class="innov">
+      <span class="innov-tag"><span class="num">4</span>双手感</span>
+      <h5>平板触摸 + 键盘 hot keys</h5>
+      <p>平板：swipe 切资料 / 双指上滑翻页 / 长按拖卡片。键盘：⌘← 前页、⌘→ 下页、⌘D 拖入草稿、⌘1-4 整理 tag。</p>
+    </div>
+  </div>
+
+  <h3>不做的</h3>
+  <p>
+    立意 sheet 不在主流程弹（暂停时才出）；划线<b>不</b>强制选 tag；倒计时<b>不</b>温和；思考引导<b>不</b>打断答题。<br>
+    思考反馈分级：<b>被动确认型</b>（完成题统计 / 字数里程碑）默认 on，<b>主动弹窗型</b>（立意 prompt）默认 off，仅暂停时弹。
+  </p>
+
+  <h3>实现细节</h3>
+  <p>
+    稿纸：<code>25×20 = 500 字 / 页</code>，cell 约 26×28px，serif 17px。<br>
+    输入法：候选词浮窗优先在格上方（避免遮挡写入区）。<br>
+    中英 / 数字 / 标点：均强制 1 格（拟真考场习惯）。<br>
+    平板软键盘弹出时稿纸压缩 + 上滚保持 cursor 可见。
+  </p>
+</div>
+
+<!-- ============================================================
+     Scene A — 主界面
+     ============================================================ -->
+<section class="scene">
+  <div class="scene-head">
+    <span class="scene-num">SCENE A</span>
+    <h2 class="scene-title">答题主界面 · 真稿纸 + 智能草稿 + 真考调</h2>
+    <span class="scene-sub">1480×900 · 第三题大作文进行中</span>
+  </div>
+
+  <div class="frame">
+    <div class="exam">
+
+      <!-- ── TopBar Row 1 ── -->
+      <div class="tb1">
+        <div class="brand">
+          <div class="brand-mark">思</div>
+          <div>
+            <div class="brand-name">申论模拟考场 <span class="brand-tag">V3</span></div>
+            <div class="brand-paper">FBSL-5254772 · 2025 国考副省级</div>
+          </div>
+        </div>
+        <div class="spacer"></div>
+
+        <div class="saved">
+          <span class="saved-dot"></span>
+          已自动保存 · 13s 前
+        </div>
+
+        <div class="clock-wrap">
+          <div class="clock">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2M9 2h6"/></svg>
+            59:29
+          </div>
+          <div class="clock-sub">已专注 32 分</div>
+        </div>
+
+        <button class="btn-base">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>
+          暂停
+        </button>
+      </div>
+
+      <!-- ── Body 3 col ── -->
+      <div class="exam-body">
+
+        <!-- ─── Left: Materials ─── -->
+        <div class="col">
+          <div class="mp-head">
+            <div class="mp-title">
+              <span class="mp-title-name">给定资料</span>
+              <span class="mp-title-count">7 篇</span>
+            </div>
+            <div class="mp-actions">
+              <button class="mp-iconbtn" title="搜索 ⌘F"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.35-4.35"/></svg></button>
+              <button class="mp-iconbtn" title="总览 ⌘O"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg></button>
+              <button class="mp-iconbtn" title="收起资料栏 ⌘/"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/><path d="M21 4v16"/></svg></button>
+            </div>
+          </div>
+
+          <div class="matabs">
+            <button class="matabs-arrow left" title="上一页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg></button>
+            <span class="matabs-fade left"></span>
+            <div class="matabs-scroll">
+              <button class="matab active">资料一</button>
+              <button class="matab">资料二<span class="matab-hits">3</span></button>
+              <button class="matab">资料三</button>
+              <button class="matab">资料四<span class="matab-dot"></span></button>
+              <button class="matab">资料五</button>
+              <button class="matab">资料六</button>
+              <button class="matab">资料七</button>
+            </div>
+            <span class="matabs-fade right"></span>
+            <button class="matabs-arrow right" title="下一页"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg></button>
+            <span class="matabs-line" style="left: 28px; width: 84px;"></span>
+          </div>
+
+          <div class="mp-meta">
+            <span class="mp-meta-title">水电协调发展</span>
+            <span class="mp-meta-stats"><b>3,240</b> 字 · <b>2</b> 处划线 · 已读 <b>64%</b></span>
+            <span class="spacer"></span>
+            <button class="tool-btn on" title="点击退出划线模式 · ⌘D 选中文字拖入草稿">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/></svg>
+              划线中 · 2 处
+            </button>
+          </div>
+
+          <div class="mp-body">
+            <p>2025 年 7 月，在高温和经济发展等多重因素推动下，我国单月用电量首次突破 1 万亿千瓦时，这在全球也属首次。"<mark class="hl">1 万亿千瓦时</mark>"，相当于东盟国家全年的用电量总和。</p>
+            <p>面对屡创新高、体量巨大的负荷考验，今夏为何不必担心缺电？浙江宁波北仑区，我国最大火电厂新机组投产，单台年发电量 60 亿千瓦时；青藏高原，我国海拔最高单机容量最大风电项目并网，年上网电量预计接近 14 亿千瓦时。</p>
+            <p>截至 7 月底，全国累计发电装机容量 36.7 亿千瓦，相当于 160 多个三峡电站的装机容量。电力供应"含绿量"也在不断提升，全社会用电量中"<mark class="hl">每 3 度电就有 1 度绿电</mark>"。</p>
+          </div>
+        </div>
+
+        <!-- ─── Center: Paper grid (核心) ─── -->
+        <div class="ans">
+          <div class="ans-head">
+            <div>
+              <div class="ans-head-no">第三题 · 大作文 · 1000 字</div>
+              <div class="ans-head-stem">"给定资料 4" 中提到 "电源结构正在重塑"，请结合资料，以 "电源重塑与发展之路" 为题写一篇文章。</div>
+            </div>
+            <div class="ans-head-meta">
+              <div><span class="num">440</span><span class="lbl">/ 1000</span></div>
+              <div>用时 32:29 · 第 1 / 2 页</div>
+            </div>
+          </div>
+
+          <div class="paper-stage">
+            <div class="paper-stack">
+              <div class="paper-card stack-back" aria-hidden="true"></div>
+
+              <div class="paper-card">
+                <div class="paper-head">
+                  <div class="pno">第 <b>1</b> 页 · 共 <b>2</b> 页</div>
+                  <div class="info">25 列 × 20 行 · 500 字 / 页</div>
+                </div>
+
+                <div class="paper-grid" id="paperGrid"></div>
+
+                <div class="paper-foot">
+                  <button class="paper-foot-arrow" disabled title="第一页">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>
+                  </button>
+                  <span class="paper-foot-pages"><b>1</b> / 2</span>
+                  <div class="paper-foot-bar"><i style="width: 44%"></i></div>
+                  <span class="paper-foot-count"><b>440</b> / 1000 字</span>
+                  <button class="paper-foot-arrow" title="下一页">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ─── Right: Scratch ─── -->
+        <div class="col sc">
+          <div class="sc-head">
+            <div class="sc-head-title">
+              <span class="sc-head-name">草稿</span>
+            </div>
+            <div class="sc-view-toggle" title="切换视图">
+              <button class="on">卡片</button>
+              <button>大纲</button>
+            </div>
+            <div class="mp-actions">
+              <button class="mp-iconbtn" title="收起草稿 ⌘\\">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/><path d="M3 4v16"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="sc-intent">
+            <div class="sc-intent-head">
+              <div class="sc-intent-tag"><span class="dot"></span>立意 · 一句话观点</div>
+              <button class="sc-intent-edit">编辑</button>
+            </div>
+            <div class="sc-intent-body">
+              能源结构的每次重塑，本质是 <b>从"监管"走向"治理"</b> 的理念升级。
+            </div>
+          </div>
+
+          <div class="sc-list-head">
+            <div class="sc-list-eyebrow"><b>5</b>张草稿卡 · 3 已分类</div>
+            <div class="sc-filter">
+              <button class="on">全</button>
+              <button>论</button>
+              <button>据</button>
+              <button>数</button>
+              <button>策</button>
+            </div>
+          </div>
+
+          <div class="sc-cards">
+
+            <div class="sc-card tagged">
+              <div class="sc-card-head">
+                <span class="sc-card-tag">据</span>
+                <span class="sc-card-cite">资 <b>1</b> · §<b>1</b></span>
+                <span class="sc-card-time">2 分钟前</span>
+              </div>
+              <div class="sc-card-body serif">1 万亿千瓦时 = 东盟国家全年用电量总和</div>
+              <div class="sc-card-actions">
+                <button class="sc-card-action">导入答题</button>
+              </div>
+            </div>
+
+            <div class="sc-card tagged">
+              <div class="sc-card-head">
+                <span class="sc-card-tag">数</span>
+                <span class="sc-card-cite">资 <b>1</b> · §<b>3</b></span>
+                <span class="sc-card-time">5 分钟前</span>
+              </div>
+              <div class="sc-card-body serif">每 3 度电就有 1 度绿电 · 累计装机 36.7 亿千瓦</div>
+              <div class="sc-card-actions">
+                <button class="sc-card-action">导入答题</button>
+              </div>
+            </div>
+
+            <div class="sc-card tagged">
+              <div class="sc-card-head">
+                <span class="sc-card-tag">策</span>
+                <span class="sc-card-cite">资 <b>4</b> · §<b>2</b></span>
+                <span class="sc-card-time">8 分钟前</span>
+              </div>
+              <div class="sc-card-body serif">推动跨区域绿电流转通道 · 顶层设计先行</div>
+              <div class="sc-card-actions">
+                <button class="sc-card-action">导入答题</button>
+              </div>
+            </div>
+
+            <div class="sc-card free">
+              <div class="sc-card-head">
+                <span class="sc-card-tag">?</span>
+                <span class="sc-card-cite">自由记录</span>
+                <span class="sc-card-time">12 分钟前</span>
+              </div>
+              <div class="sc-card-body">三段结构：现状 - 难点 - 路径。结尾回扣"发展之路"</div>
+              <div class="sc-card-actions">
+                <button class="sc-card-action">分类</button>
+                <button class="sc-card-action">导入</button>
+              </div>
+            </div>
+
+            <div class="sc-card free">
+              <div class="sc-card-head">
+                <span class="sc-card-tag">?</span>
+                <span class="sc-card-cite">自由记录</span>
+                <span class="sc-card-time">刚刚</span>
+              </div>
+              <div class="sc-card-body">关键词：协同 / 颗粒度 / 体感</div>
+            </div>
+
+          </div>
+
+          <div class="sc-tools">
+            <button class="tool-btn">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M6 12h12M9 18h6"/></svg>
+              一键整理
+            </button>
+            <button class="tool-btn primary">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+              导入答题
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ── Bottom dock — 题号圆按钮 + 题干 + 操作 ── -->
+      <div class="dock">
+        <span class="dock-label">本卷题目</span>
+        <div class="dock-qs">
+          <button class="dq done" title="第一题 · 概括 · 200/200 字 · 已完成 (用时 15:42)">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+          </button>
+          <button class="dq" title="第二题 · 应对 · 380/500 字 (76%) · 已用 18:00">02</button>
+          <button class="dq active" title="第三题 · 大作文 · 当前">
+            <span class="dq-active-no">03</span>
+            <span class="dq-active-info">
+              <span class="row1">大作文</span>
+              <span class="row2">440 / 1000 · 32:29</span>
+            </span>
+          </button>
+        </div>
+
+        <span class="dock-divider"></span>
+
+        <button class="btn-base" title="查看题干">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+          题干
+        </button>
+
+        <span class="spacer"></span>
+
+        <button class="btn-base" title="手动保存 ⌘S">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+          保存草稿
+        </button>
+
+        <button class="btn-base primary">
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          交卷
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<!-- ============================================================
+     SCENE A.5 — 草稿区切到 "大纲视图" 的样子
+     ============================================================ -->
+<section class="scene">
+  <div class="scene-head">
+    <span class="scene-num">SCENE A.5</span>
+    <h2 class="scene-title">草稿区 · 大纲视图</h2>
+    <span class="scene-sub">toggle 切到"大纲"后样子 · 同一份卡片数据 · view 切换不丢内容</span>
+  </div>
+
+  <div style="display:grid;grid-template-columns:380px 1fr;gap:36px;align-items:start;">
+
+    <!-- 草稿区 mock (360 实际宽 + 边框模拟容器) -->
+    <div style="border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;background:var(--bg);height:740px;display:flex;flex-direction:column;box-shadow:0 18px 48px -28px rgba(15,23,42,.18);">
+
+      <div class="sc-head">
+        <div class="sc-head-title">
+          <span class="sc-head-name">草稿</span>
+        </div>
+        <div class="sc-view-toggle">
+          <button>卡片</button>
+          <button class="on">大纲</button>
+        </div>
+        <div class="mp-actions">
+          <button class="mp-iconbtn" title="收起">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/><path d="M3 4v16"/></svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="sc-intent">
+        <div class="sc-intent-head">
+          <div class="sc-intent-tag"><span class="dot"></span>立意 · 一句话观点</div>
+          <button class="sc-intent-edit">编辑</button>
+        </div>
+        <div class="sc-intent-body">
+          能源结构的每次重塑，本质是 <b>从"监管"走向"治理"</b> 的理念升级。
+        </div>
+      </div>
+
+      <div class="sc-outline">
+
+        <div class="outline-section">
+          <div class="outline-head expanded">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            <span class="outline-head-no">01</span>
+            <span class="outline-head-name">理念升级</span>
+            <span class="outline-head-count">2 张</span>
+          </div>
+          <div class="outline-cards">
+            <div class="outline-card">
+              <span class="outline-card-tag">据</span>
+              <div class="outline-card-body">
+                <span class="outline-card-cite">资 <b>1</b> · §<b>1</b></span>
+                <span class="outline-card-text">1 万亿千瓦时 = 东盟全年用电量总和</span>
+              </div>
+              <span class="outline-card-handle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r=".8"/><circle cx="15" cy="6" r=".8"/><circle cx="9" cy="12" r=".8"/><circle cx="15" cy="12" r=".8"/><circle cx="9" cy="18" r=".8"/><circle cx="15" cy="18" r=".8"/></svg>
+              </span>
+            </div>
+            <div class="outline-card">
+              <span class="outline-card-tag">数</span>
+              <div class="outline-card-body">
+                <span class="outline-card-cite">资 <b>1</b> · §<b>3</b></span>
+                <span class="outline-card-text">每 3 度电 1 度绿电 · 累计 36.7 亿千瓦</span>
+              </div>
+              <span class="outline-card-handle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r=".8"/><circle cx="15" cy="6" r=".8"/><circle cx="9" cy="12" r=".8"/><circle cx="15" cy="12" r=".8"/><circle cx="9" cy="18" r=".8"/><circle cx="15" cy="18" r=".8"/></svg>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="outline-section">
+          <div class="outline-head">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            <span class="outline-head-no">02</span>
+            <span class="outline-head-name">结构重塑</span>
+            <span class="outline-head-count">1 张</span>
+          </div>
+        </div>
+
+        <div class="outline-section">
+          <div class="outline-head">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            <span class="outline-head-no">03</span>
+            <span class="outline-head-name" style="color:var(--placeholder);font-weight:500;">待补充</span>
+            <span class="outline-head-count">0 张</span>
+          </div>
+        </div>
+
+        <div class="outline-section">
+          <div class="outline-head expanded unassigned">
+            <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M9 18l6-6-6-6"/></svg>
+            <span class="outline-head-no">∅</span>
+            <span class="outline-head-name">未分配</span>
+            <span class="outline-head-count">1 张</span>
+          </div>
+          <div class="outline-cards">
+            <div class="outline-card untagged">
+              <span class="outline-card-tag">?</span>
+              <div class="outline-card-body">
+                <span class="outline-card-cite">自由记录 · 12 分钟前</span>
+                <span class="outline-card-text">关键词：协同 / 颗粒度 / 体感</span>
+              </div>
+              <span class="outline-card-handle">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="9" cy="6" r=".8"/><circle cx="15" cy="6" r=".8"/><circle cx="9" cy="12" r=".8"/><circle cx="15" cy="12" r=".8"/><circle cx="9" cy="18" r=".8"/><circle cx="15" cy="18" r=".8"/></svg>
+              </span>
+            </div>
+          </div>
+          <div class="outline-aitip">
+            <span class="outline-aitip-icon">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4"/></svg>
+            </span>
+            <span class="outline-aitip-text">
+              AI 建议：<b>"关键词"</b> 看起来属于 <b>分论 3</b>
+            </span>
+            <button class="outline-aitip-action">采纳</button>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="sc-tools">
+        <button class="tool-btn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M6 12h12M9 18h6"/></svg>
+          一键整理
+        </button>
+        <button class="tool-btn primary">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+          导入答题
+        </button>
+      </div>
+    </div>
+
+    <!-- 文字说明 -->
+    <div style="padding-top:14px;display:flex;flex-direction:column;gap:20px;font-size:13px;line-height:1.7;color:var(--ink-muted);">
+      <div>
+        <div class="doc-eyebrow" style="margin-bottom:6px;">数据 vs 视图</div>
+        <p style="margin:0;">同一份草稿数据，两种 view：<b style="color:var(--ink)">卡片视图</b>（默认，扁平自由）+ <b style="color:var(--ink)">大纲视图</b>（结构化按分论点分组）。切换不丢任何卡，只换组织方式。</p>
+      </div>
+      <div>
+        <div class="doc-eyebrow" style="margin-bottom:6px;">大纲层级</div>
+        <p style="margin:0;">立意（已写一句话）→ 3 个分论点 slot（用户自己命名，空 = "待补充"）→ 各分论点下嵌套素材卡 → 底部 <b style="color:var(--ink)">未分配</b> 区收纳无归属的卡。</p>
+      </div>
+      <div>
+        <div class="doc-eyebrow" style="margin-bottom:6px;">交互</div>
+        <p style="margin:0;">分论点头折叠 / 展开（chevron）。素材卡 <b style="color:var(--ink)">拖动 handle</b> 在分论点之间移动。"未分配"区允许自由打字 + 拖入素材。</p>
+      </div>
+      <div>
+        <div class="doc-eyebrow" style="margin-bottom:6px;">AI 建议 · 克制</div>
+        <p style="margin:0;">未分配卡 ≥1 张时显示 AI 建议条："…看起来属于 分论 N"。一键 <b style="color:var(--ink)">采纳</b> 自动归属，否则用户手动拖。不主动重排已分配卡。</p>
+      </div>
+      <div>
+        <div class="doc-eyebrow" style="margin-bottom:6px;">分论点上限</div>
+        <p style="margin:0;">默认 3 个分论点 slot（申论大作文标准三段结构）。需要更多再扩展（按"+ 添加分论点"）。立意写好 + 3 分论点 + 各论点下素材 = 完整答题大纲。</p>
+      </div>
+      <div style="padding:14px 18px;background:var(--bg);border:1px solid var(--line);border-left:3px solid var(--ink);border-radius:0 var(--r-sm) var(--r-sm) 0;">
+        <p style="margin:0;font-size:12.5px;color:var(--ink);"><b>取舍：</b>这个方案保住 v3 的自由度（卡片视图就是当前样子），同时给 reference 的大纲结构（切到大纲视图就是 reference 那种分类层级）。一键整理在两种 view 都能用，差别是大纲视图直接按"立意 → 分论 → 素材"输出结构化大纲，可一键导入答题。</p>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+  <div class="qbtn-variants">
+
+    <!-- V1 整条 stepper -->
+    <div class="qbtn-variant">
+      <div class="qbtn-variant-label">
+        <span class="num">V1</span>
+        <h5>整条 stepper · 字数权重分段</h5>
+      </div>
+      <p class="qbtn-variant-desc">
+        一道贯穿整卷的 stepper bar，段宽 = 题字数权重（200 : 500 : 1000 = 1 : 1.25 : 3）。一眼看完整卷整体进度，像答题卡浓缩版。Active 段 ink fill。
+      </p>
+      <div class="qbtn-variant-stage">
+        <div class="qstep">
+          <div class="qstep-seg done" style="flex:1;">
+            <div class="qstep-row1">
+              <span class="no">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+              </span>
+              <span>概括</span>
+            </div>
+            <div class="qstep-row2">200 / 200</div>
+            <div class="qstep-bar" style="width:100%"></div>
+          </div>
+          <div class="qstep-seg" style="flex:1.25;">
+            <div class="qstep-row1">
+              <span class="no">2</span>
+              <span>应对</span>
+            </div>
+            <div class="qstep-row2">380 / 500 · 76%</div>
+            <div class="qstep-bar" style="width:76%"></div>
+          </div>
+          <div class="qstep-seg active" style="flex:3;">
+            <div class="qstep-row1">
+              <span class="no">3</span>
+              <span>大作文</span>
+            </div>
+            <div class="qstep-row2">440 / 1000 · 32:29</div>
+            <div class="qstep-bar" style="width:44%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- V2 极简 tabs + 独立 bar -->
+    <div class="qbtn-variant">
+      <div class="qbtn-variant-label">
+        <span class="num">V2</span>
+        <h5>极简 tabs + 独立进度条</h5>
+      </div>
+      <p class="qbtn-variant-desc">
+        IDE-style 圆角矩形 tabs 横排，宽度按字数比；下方一道独立 ink 进度 bar 段式对齐。最 minimal 工具感强。Active tab ink fill 显示题型 + 进度。
+      </p>
+      <div class="qbtn-variant-stage">
+        <div class="qtab-block">
+          <div class="qtab-row">
+            <button class="qtab done" style="flex:1">
+              <span class="qtab-no">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+              </span>
+              概括
+            </button>
+            <button class="qtab" style="flex:1.25">
+              <span class="qtab-no">2</span>
+              应对
+            </button>
+            <button class="qtab active" style="flex:3">
+              <span class="qtab-no">3</span>
+              大作文
+              <span class="qtab-meta">440/1000 · 32:29</span>
+            </button>
+          </div>
+          <div class="qtab-bars">
+            <div class="qtab-bar" style="flex:1"><i style="width:100%"></i></div>
+            <div class="qtab-bar" style="flex:1.25"><i style="width:76%"></i></div>
+            <div class="qtab-bar" style="flex:3"><i style="width:44%"></i></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- V3 serif 中文数字 -->
+    <div class="qbtn-variant">
+      <div class="qbtn-variant-label">
+        <span class="num">V3</span>
+        <h5>Serif 中文数字 · 文字主导</h5>
+      </div>
+      <p class="qbtn-variant-desc">
+        "一·概括" "二·应对" "三·大作文" — 用 serif 中文数字 + 题型，文字主导。无圆环、无 progress bar，极简文字感，跟"思考"产品调性最贴。Active ink pill 包裹。
+      </p>
+      <div class="qbtn-variant-stage">
+        <div class="qchn">
+          <span class="qchn-item done">
+            <span class="ko">一</span>
+            <span>概括</span>
+            <span class="meta">✓ 200/200</span>
+          </span>
+          <span class="qchn-item">
+            <span class="ko">二</span>
+            <span>应对</span>
+            <span class="meta">380/500 · 76%</span>
+          </span>
+          <span class="qchn-item active">
+            <span class="ko">三</span>
+            <span>大作文</span>
+            <span class="meta">440/1000 · 32:29</span>
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- V4 卡片式 -->
+    <div class="qbtn-variant">
+      <div class="qbtn-variant-label">
+        <span class="num">V4</span>
+        <h5>3 张独立卡片 · 题号方块</h5>
+      </div>
+      <p class="qbtn-variant-desc">
+        每题一张小卡：左侧 ink 数字方块 + 右侧题型 / 进度，卡内底部 1px 进度 bar。卡片 gap 分隔，视觉离散感强，像答题卡缩略图。Active 卡整张 ink fill。
+      </p>
+      <div class="qbtn-variant-stage">
+        <div class="qcards-row">
+          <div class="qcardv done" style="flex:1">
+            <div class="qcardv-no">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5L20 7"/></svg>
+            </div>
+            <div class="qcardv-body">
+              <div class="qcardv-kind">概括</div>
+              <div class="qcardv-meta">200 / 200</div>
+              <div class="qcardv-bar"><i style="width:100%"></i></div>
+            </div>
+          </div>
+          <div class="qcardv" style="flex:1.25">
+            <div class="qcardv-no">2</div>
+            <div class="qcardv-body">
+              <div class="qcardv-kind">应对</div>
+              <div class="qcardv-meta">380/500 · 76%</div>
+              <div class="qcardv-bar"><i style="width:76%"></i></div>
+            </div>
+          </div>
+          <div class="qcardv active" style="flex:3">
+            <div class="qcardv-no">3</div>
+            <div class="qcardv-body">
+              <div class="qcardv-kind">大作文</div>
+              <div class="qcardv-meta">440/1000 · 32:29</div>
+              <div class="qcardv-bar"><i style="width:44%"></i></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <div class="variant-rec">
+    <b>我的推荐：V1（整条 stepper）</b> — 字数权重段宽一目了然，跟申论"卷"的整体感最匹配。<br>
+    V3（中文数字）最 minimal 但牺牲进度可见性。V2（tabs）最 IDE 工具感但占 2 行高度。V4（卡片）像答题卡缩略图但视觉离散。<br>
+    回 <code>V1 / V2 / V3 / V4</code> 任一个，我把它做到 Scene A 主界面替换圆环。
+  </div>
+</section>
+
+
+<!-- ============================================================
+     Scene B — 划线 → 草稿 流程 3 帧
+     ============================================================ -->
+<section class="scene">
+  <div class="scene-head">
+    <span class="scene-num">SCENE B</span>
+    <h2 class="scene-title">划线 → 拖入草稿 · 流程 3 帧</h2>
+    <span class="scene-sub">取消划线 tag · 分类放草稿卡（拖入时选）</span>
+  </div>
+
+  <div class="flow-grid">
+
+    <div class="flow-step">
+      <div class="flow-step-head">
+        <span class="flow-step-num">1</span>
+        <h5>选中材料文字</h5>
+      </div>
+      <div class="desc">阅读时直接划线一键完成，不弹任何 picker。划线动作纯净，零摩擦。</div>
+      <div class="flow-stage">
+        <p>面对屡创新高的负荷考验，今夏为何不必担心缺电？浙江宁波，<mark class="hl selected">我国最大火电厂新机组投产，单台年发电量 60 亿千瓦时</mark>；青藏高原……</p>
+        <p>截至 7 月底，全国累计发电装机容量 36.7 亿千瓦。</p>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-step-head">
+        <span class="flow-step-num">2</span>
+        <h5>拖入草稿区</h5>
+      </div>
+      <div class="desc">⌘D 快捷键 / 鼠标拖动 / 平板长按拖动。ghost 元素跟随 cursor，drop 区域高亮。</div>
+      <div class="flow-stage">
+        <p>……今夏为何不必担心缺电？浙江宁波，<mark class="hl">我国最大火电厂新机组投产，单台年发电量 60 亿千瓦时</mark>；青藏高原……</p>
+        <div class="flow-ghost">
+          我国最大火电厂新机组投产，单台年发电量 60 亿千瓦时
+          <svg class="flow-ghost-cursor" viewBox="0 0 16 16" fill="var(--ink)"><path d="M0 0l5 12 2-5 5-2z"/></svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="flow-step">
+      <div class="flow-step-head">
+        <span class="flow-step-num">3</span>
+        <h5>落卡 + 选分类</h5>
+      </div>
+      <div class="desc">drop 后自动落卡 with 出处 <code>资 1 · §2</code>。卡上 4 chip 让你选 论 / 据 / 数 / 策（可不选保持 untagged）。</div>
+      <div class="flow-stage" style="background:var(--bg);border-color:var(--ink-muted);border-style:dashed">
+        <div class="flow-card">
+          <div class="flow-card-head">
+            <span class="flow-card-cite">资 <b>1</b> · §<b>2</b></span>
+            <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--placeholder)">刚刚</span>
+          </div>
+          <div class="flow-card-body">我国最大火电厂新机组投产，单台年发电量 60 亿千瓦时</div>
+          <div class="flow-card-tags">
+            <button class="flow-tag-chip" title="论点">论</button>
+            <button class="flow-tag-chip on" title="论据">据</button>
+            <button class="flow-tag-chip" title="数据">数</button>
+            <button class="flow-tag-chip" title="对策">策</button>
+          </div>
+        </div>
+        <div style="margin-top: 14px; font-family: var(--mono); font-size: 10px; color: var(--placeholder); letter-spacing: .1em; text-align: center;">⌘1 = 论 · ⌘2 = 据 · ⌘3 = 数 · ⌘4 = 策</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ============================================================
+     Scene C — 翻页 4 帧
+     ============================================================ -->
+<section class="scene">
+  <div class="scene-head">
+    <span class="scene-num">SCENE C</span>
+    <h2 class="scene-title">稿纸翻页 · 600ms 4 帧</h2>
+    <span class="scene-sub">CSS 3D rotateY · transform-origin 左中 · 模拟书页 fold</span>
+  </div>
+
+  <div class="flip-grid">
+
+    <div class="flip-step">
+      <div class="flip-step-tag">FRAME <b>0%</b> · 0ms</div>
+      <h5>当前页贴在视图</h5>
+      <div class="flip-stage">
+        <div class="flip-paper">
+          <div class="flip-paper-content">
+            <span>智</span><span>能</span><span>监</span><span>管</span><span>助</span><span>力</span><span>执</span><span>法</span><span>转</span><span>型</span><span>升</span><span>级</span><span>。</span><span>第</span><span>一</span>
+            <span>，</span><span>数</span><span>据</span><span>驱</span><span>动</span><span>精</span><span>准</span><span>执</span><span>法</span><span>。</span><span>第</span><span>二</span><span>，</span><span>服</span><span>务</span>
+            <span>理</span><span>念</span><span>前</span><span>置</span><span>指</span><span>导</span><span>。</span><span>第</span><span>三</span><span>，</span><span>标</span><span>准</span><span>化</span><span>与</span><span>人</span>
+            <span>性</span><span>化</span><span>并</span><span>重</span><span>。</span><span>最</span><span>终</span><span>实</span><span>现</span><span>监</span><span>管</span><span>创</span><span>新</span><span>治</span><span>理</span>
+          </div>
+          <div class="flip-paper-pno">第 1 页</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flip-step">
+      <div class="flip-step-tag">FRAME <b>20%</b> · 120ms</div>
+      <h5>左上角微翘</h5>
+      <div class="flip-stage">
+        <div class="flip-paper s2">
+          <div class="flip-paper-content">
+            <span>智</span><span>能</span><span>监</span><span>管</span><span>助</span><span>力</span><span>执</span><span>法</span><span>转</span><span>型</span><span>升</span><span>级</span><span>。</span><span>第</span><span>一</span>
+            <span>，</span><span>数</span><span>据</span><span>驱</span><span>动</span><span>精</span><span>准</span><span>执</span><span>法</span><span>。</span><span>第</span><span>二</span><span>，</span><span>服</span><span>务</span>
+            <span>理</span><span>念</span><span>前</span><span>置</span><span>指</span><span>导</span><span>。</span><span>第</span><span>三</span><span>，</span><span>标</span><span>准</span><span>化</span><span>与</span><span>人</span>
+            <span>性</span><span>化</span><span>并</span><span>重</span><span>。</span><span>最</span><span>终</span><span>实</span><span>现</span><span>监</span><span>管</span><span>创</span><span>新</span><span>治</span><span>理</span>
+          </div>
+          <div class="flip-paper-pno">第 1 页</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flip-step">
+      <div class="flip-step-tag">FRAME <b>50%</b> · 300ms</div>
+      <h5>翻到一半 · 看到边缘</h5>
+      <div class="flip-stage">
+        <div class="flip-paper s3">
+          <div class="flip-paper-content">
+            <span>智</span><span>能</span><span>监</span><span>管</span><span>助</span><span>力</span><span>执</span><span>法</span><span>转</span><span>型</span><span>升</span><span>级</span><span>。</span><span>第</span><span>一</span>
+            <span>，</span><span>数</span><span>据</span><span>驱</span><span>动</span><span>精</span><span>准</span><span>执</span><span>法</span><span>。</span><span>第</span><span>二</span><span>，</span><span>服</span><span>务</span>
+            <span>理</span><span>念</span><span>前</span><span>置</span><span>指</span><span>导</span><span>。</span><span>第</span><span>三</span><span>，</span><span>标</span><span>准</span><span>化</span><span>与</span><span>人</span>
+            <span>性</span><span>化</span><span>并</span><span>重</span><span>。</span><span>最</span><span>终</span><span>实</span><span>现</span><span>监</span><span>管</span><span>创</span><span>新</span><span>治</span><span>理</span>
+          </div>
+          <div class="flip-paper-pno">第 1 页</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="flip-step">
+      <div class="flip-step-tag">FRAME <b>100%</b> · 600ms</div>
+      <h5>翻完 · 显示空白下页</h5>
+      <div class="flip-stage">
+        <div class="flip-paper">
+          <div class="flip-paper-content" style="background:var(--paper);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--placeholder);letter-spacing:.14em;padding:0;border:0;">
+            空白 · 待写
+          </div>
+          <div class="flip-paper-pno">第 2 页</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+
+<!-- ============================================================
+     Scene D — 考场态细节 (3 例)
+     ============================================================ -->
+<section class="scene">
+  <div class="scene-head">
+    <span class="scene-num">SCENE D</span>
+    <h2 class="scene-title">考场态细节 · 不打扰主流程的 3 处反馈</h2>
+    <span class="scene-sub">暂停 / 完成题 ambient / 最后 5 分钟提醒</span>
+  </div>
+
+  <div class="state-grid">
+
+    <!-- 暂停 + 立意 prompt -->
+    <div class="state-card">
+      <h5>暂停态 · 立意 prompt</h5>
+      <p>用户主动按"暂停"才弹（默认 off）。不打断答题主流程，只在用户已停下时给思考引导。可跳过。</p>
+      <div class="state-stage" style="background: rgba(11,17,32,.04); padding: 24px;">
+        <div class="pause-overlay">
+          <div class="pause-eyebrow">暂停 · 已停 0:08</div>
+          <h3 class="pause-title">趁着停下，<br>写一句你这次想说的</h3>
+          <div class="pause-sub">立意 prompt — 一句话观点钉在草稿顶部，每段写完弹"这段对应它吗?"。可跳过。</div>
+          <textarea class="pause-input" rows="2" placeholder="比如：从'监管'走向'治理'，治理理念的升级才是发展之路…"></textarea>
+          <div class="pause-actions">
+            <button class="pause-skip">跳过</button>
+            <button class="pause-resume">写完，继续答题</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Ambient 完成题反馈 -->
+    <div class="state-card">
+      <h5>完成一题 · ambient 反馈</h5>
+      <p>切换到下一题时，右下角微卡片闪 1.5s 自动消失。"被动确认型"默认 on，温和不打扰。</p>
+      <div class="state-stage" style="padding: 0; min-height: 240px; background: var(--bg-alt); position: relative;">
+        <div style="font-family: var(--mono); font-size: 11px; color: var(--placeholder); padding: 24px; opacity: .5; letter-spacing: .08em;">
+          [第三题大作文进行中…]
+        </div>
+        <div class="ambient">
+          <span class="ambient-tag">第 2 题 完成</span>
+          <span class="ambient-title">应对题 · 用时 28:15</span>
+          <span class="ambient-meta"><b>5</b> 处划线 / <b>3</b> 处草稿引用</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 最后 5 分钟 -->
+    <div class="state-card">
+      <h5>最后 5 分钟 · 检查提醒</h5>
+      <p>剩 5 分钟时左下提示一次（自动消失）。倒计时本身不变红 / 不闪 — 紧迫感由数字本身传达。</p>
+      <div class="state-stage" style="padding: 0; min-height: 240px; background: var(--bg-alt); position: relative;">
+        <div style="font-family: var(--mono); font-size: 11px; color: var(--placeholder); padding: 24px; opacity: .5; letter-spacing: .08em;">
+          [大作文还差 200 字…]
+        </div>
+        <div class="final5">
+          <div class="final5-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+          </div>
+          <div class="final5-text">
+            最后 <b>5 分钟</b><br>
+            <span style="font-size: 11px; color: var(--muted); font-weight: 500;">建议预留 2 分钟检查整卷</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<footer style="margin-top: 80px; padding-top: 28px; border-top: 1px solid var(--line); font-family: var(--mono); font-size: 11px; color: var(--placeholder); letter-spacing: .08em;">
+  v3 fresh · 思考 · 申论考场 · 真稿纸 25×20 · 智能草稿 · 不打扰主流程 · 2026-05-07
+</footer>
+
+</div>
+
+<script>
+// 生成稿纸 25×20 = 500 cells, 前 440 已填字, cursor 在 441 位置
+(function fillPaperGrid() {
+  const seg = '智能监管助力执法转型升级。第一，数据驱动精准执法。第二，服务理念前置指导。第三，标准化与人性化并重。最终实现监管创新治理升级。';
+  const text = (seg.repeat(8)).slice(0, 440);
+  const total = 25 * 20;
+  const grid = document.getElementById('paperGrid');
+  if (!grid) return;
+  const html = [];
+  for (let i = 0; i < total; i++) {
+    if (i < text.length) {
+      html.push('<span class="cell filled">' + text[i] + '</span>');
+    } else if (i === text.length) {
+      html.push('<span class="cell cursor"></span>');
+    } else {
+      html.push('<span class="cell"></span>');
+    }
+  }
+  grid.innerHTML = html.join('');
+})();
+</script>
+
+</body>
+</html>

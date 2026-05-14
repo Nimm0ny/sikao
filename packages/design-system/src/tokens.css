@@ -1,0 +1,334 @@
+/*
+ * Design tokens — Sikao Frontend Style Guide v1 (2026-05-12 落地).
+ *
+ * **SSOT** (CLAUDE.md §4 硬约束): 本文件是 sikao 设计 token 的单一权威源.
+ * 运行时由 apps/web/src/styles/tokens.css shim 通过 @import 注入到 React app.
+ *
+ * 规范本体: docs/vault/04-design/Frontend Style Guide.html (2026-05-12 交付).
+ *
+ * v1 核心改动 (lhr 2026-05-12 拍板, 完全按规范走不许创新):
+ *   - accent 蓝 #3f7ef1 → #2A56C8 (deep editorial blue)
+ *   - type scale 全站压缩 ~45% (display 88→44 / h1 56→32 / h2 36→24 / h3 22→18 / body 15→14)
+ *   - button radius 10 → 4 (--r-tiny, alias 经 --r-btn 走过)
+ *   - dark accent 琥珀 #D9A055 → #C68A3E (同色相微调)
+ *   - paper-1 #FAF7F0 → #FAF7EF / ink-1 #1A1815 → #1A1714 (1 单位 hex diff)
+ *   - --r-pill 9999 → 999 (数学等价)
+ *
+ * Alias 兼容层 (本文件末尾): 把旧 token 名 (--brand / --paper-deep / --ink-muted / --line /
+ * --success / --shadow-card / --r-btn / --tracking-* …) 全部映射到新 token,
+ * 防止现有代码 import token 时出现未定义变量 → 渲染破图. PR2 grep-replace 后会清理.
+ *
+ * Themes:
+ *   :root              纸读 default (warm paper + editorial blue accent)
+ *   [data-theme="pure"]   素白 (蓝色 accent — 旧 ink-first fallback)
+ *   [data-theme="dark"]   夜读 (暗 paper + 暖金 accent, 取代 night)
+ *   [data-theme="night"]  alias 到 dark (兼容旧 toggle)
+ *
+ * Density / reading-size:
+ *   [data-density="compact"|"cozy"]   行间距与卡片 padding
+ *   [data-reading="md"|"lg"|"xl"]      阅读区字号
+ */
+
+:root {
+  /* ── paper (surface ladder, warm ivory) ───────────────────────────── */
+  --paper-1: #FAF7EF;
+  --paper-2: #F4F0E6;
+  --paper-3: #ECE6D7;
+
+  /* ── ink (text ladder) ────────────────────────────────────────────── */
+  --ink-1: #1A1714;
+  --ink-2: #3A352D;
+  --ink-3: #6B6358;
+  --ink-4: #948A7A;
+
+  /* ── line (border ladder) ─────────────────────────────────────────── */
+  --line-1: #E2DBC7;
+  --line-2: #D9D1BE;
+  --line-3: #BDB29A;
+
+  /* ── accent (single editorial blue; CTA + focus only) ─────────────── */
+  --accent-1:  #2A56C8;
+  --accent-2:  #245fd6;
+  --accent-50: #eaf2ff;
+
+  /* ── semantic (functional only · never decoration) ────────────────── */
+  --ok:   #1F7A4D;
+  --warn: #9E5D14;
+  --err:  #A22A2A;
+
+  /* exam-accent — 答题"当前题/做题状态"信号色, 跟 --err (错误语义) 解耦.
+     来源: design/design_handoff_xingce_exam/TOKENS.md §1 建议. lhr 2026-05-11 批准. */
+  --exam-accent:     #B42318;
+  --exam-accent-50:  #F5E6E2;
+
+  /* data scale — heatmap / density viz 6 档色阶 (浅纸 → 深海军 accent).
+     来源: design/SIKAO/handoff/modules/xingce-wrongbook/xingce-wrongbook.html
+     行 465-470 + README §2 "热图蓝色色阶". lhr 2026-05-12 批准
+     (docs/plan/sikao-wave5-roadmap-2026-05-12.md:93).
+     调性: SIKAO ink-first paper-tint, data-0 取 paper 同族暖底, data-5 落到深海军
+     accent. 中段 data-1..data-4 蓝色饱和度渐进, 视觉等距而非 hex 等距. */
+  --data-0: #EEEAE0;
+  --data-1: #D6E2EC;
+  --data-2: #A8C2D4;
+  --data-3: #6E94AC;
+  --data-4: #3B5F7A;
+  --data-5: #1E3445;
+
+  /* ── spacing (8px base · also 4 / 12 / 16 / 24 / 32 / 48 / 64 / 96) ─ */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 24px;
+  --sp-6: 32px;
+  --sp-7: 48px;
+  --sp-8: 64px;
+  --sp-9: 96px;
+
+  /* ── radius (enforced by lint:radius-token) ───────────────────────── */
+  --r-1:       2px;
+  --r-tiny:    4px;
+  --r-2:       6px;
+  --r-card:    10px;
+  --r-card-lg: 14px;
+  --r-pill:    999px;
+
+  /* ── shadow (only on elevated cards · no decoration shadow) ───────── */
+  --shadow-card: 0 1px 0 rgba(20,18,14,.04), 0 6px 18px -10px rgba(20,18,14,.18);
+  --shadow-pop:  0 12px 32px -16px rgba(20,18,14,.32);
+
+  /* ── type scale ───────────────────────────────────────────────────── */
+  --t-display: 44px;
+  --t-h1:      32px;
+  --t-h2:      24px;
+  --t-h3:      18px;
+  --t-body:    14px;
+  --t-small:   13px;
+  --t-meta:    12px;
+  --t-tiny:    11px;
+
+  /* ── z-index (single ladder) ──────────────────────────────────────── */
+  --z-nav:     20;
+  --z-popover: 40;
+  --z-modal:   60;
+  --z-toast:   80;
+
+  /* ── font families ────────────────────────────────────────────────── */
+  --font-serif: 'Source Serif 4', 'Songti SC', serif;
+  --font-sans:  'Inter', -apple-system, system-ui, sans-serif;
+  --font-mono:  'JetBrains Mono', ui-monospace, monospace;
+
+  /* ── semantic surface tints (Frontend Style Guide v1) ───────────────
+   * ok/warn/err 的 background tint, 走 token 不 inline hex.
+   * 跟 ok / warn / err 文字色配对 (e.g. EmptyState OK-banner 用
+   * bg-ok-bg + text-ok). dark mode 在 [data-theme='dark'] 区段重写. */
+  --ok-bg:   #E8EFE2;
+  --warn-bg: #F4ECDC;
+  --bad-bg:  #F5E6E2;
+
+  /* sidebar always-dark 面板专属 (frontend AppShell 仍是 dark sidebar) */
+  --sidebar:          #020617;
+  --sidebar-fg:       #cbd5e1;
+  --sidebar-fg-muted: #94a3b8;
+  --sidebar-fg-dim:   #64748b;
+  --sidebar-line:     #1e293b;
+  --sidebar-hover:    #1e293b;
+
+  /* motion (SIKAO 没有 motion token, 跟规范字号轴正交) */
+  --motion-fast: 150ms;
+  --motion-base: 200ms;
+  --motion-slow: 300ms;
+  --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* legacy type scale (px) — tailwind utility `text-xs..text-5xl` 仍按
+   * 历史 px 阶梯映射, 跟规范 t-* 8 档轴 (--t-display..--t-tiny) 并存.
+   * 规范官在 PR4 起转移消费侧到 t-* (text-display / text-h1 / ...);
+   * 在那之前先保 200+ view 视觉稳定. */
+  --fs-xs:   12px;
+  --fs-sm:   13px;
+  --fs-base: 14px;
+  --fs-md:   16px;
+  --fs-lg:   18px;
+  --fs-xl:   20px;
+  --fs-2xl:  24px;
+  --fs-3xl:  30px;
+  --fs-4xl:  36px;
+  --fs-5xl:  48px;
+
+  /* 语义 type ramp (marketing landing 用) */
+  --fs-h-card:    22px;
+  --fs-h-section: 28px;
+  --fs-h-mkt:     42px;
+  --fs-display:   64px;
+
+  /* line-height */
+  --lh-tight:   1.2;
+  --lh-snug:    1.35;
+  --lh-normal:  1.5;
+  --lh-relaxed: 1.65;
+
+  /* tracking 7 档 (CLAUDE.md §4 SSOT, lint:hardcode 巡检) */
+  --tracking-tight:   -0.02em;
+  --tracking-normal:  0;
+  --tracking-loose:   0.06em;
+  --tracking-eyebrow: 0.08em;
+  --tracking-wide:    0.10em;
+  --tracking-wider:   0.12em;
+  --tracking-widest:  0.14em;
+}
+
+/*
+ * ── Focus ring (global a11y, Frontend Style Guide v1) ────────────────
+ * 任何 interactive element 在键盘 focus 时显示 2px deep blue ring + 2px offset.
+ */
+*:focus-visible {
+  outline: 2px solid var(--accent-2);
+  outline-offset: 2px;
+}
+
+/* THEME · pure (素白 — 蓝色 accent, 旧 ink-first fallback) */
+[data-theme='pure'] {
+  --paper-1: #FFFFFF;
+  --paper-2: #F7F7F8;
+  --paper-3: #EFEFF1;
+  --line-1:  #E5E5E8;
+  --line-2:  #E5E5E8;
+  --line-3:  #CFCFD3;
+  --ink-1:   #0A0A0B;
+  --ink-2:   #2D2D31;
+  --ink-3:   #5C5C63;
+  --ink-4:   #8A8A92;
+  --accent-1:  #1F4FD8;
+  --accent-2:  #1839A0;
+  --accent-50: #E7EDFD;
+  --font-serif: 'Source Serif 4', Georgia, serif;
+}
+
+/* THEME · dark (夜读 paper, 取代旧 night, Frontend Style Guide v1) */
+[data-theme='dark'], :root[data-theme='dark'] {
+  --paper-1: #15130F;
+  --paper-2: #1F1B16;
+  --paper-3: #28231C;
+  --ink-1:   #E8E2D2;
+  --ink-2:   #C9C0AC;
+  --ink-3:   #9B917D;
+  --ink-4:   #6B6253;
+  --line-1:  #2D2820;
+  --line-2:  #3A3328;
+  --line-3:  #5A4F3D;
+  --accent-1:  #C68A3E;
+  --accent-2:  #B07F36;
+  --accent-50: #2A1F12;
+
+  /* semantic 反相微调 (dark 上 ok/warn/err 提亮) */
+  --ok:   #9DB37C;
+  --warn: #D9A055;
+  --err:  #D88A8A;
+
+  /* data scale 反相: 暗 paper-3 → 暖金 accent (调性跟 light 同, 反方向) */
+  --data-0: #2D2823;
+  --data-1: #4A3F2E;
+  --data-2: #6E5A3A;
+  --data-3: #957744;
+  --data-4: #B88B4D;
+  --data-5: #D9A055;
+
+  /* shadow alpha 在暗底要更深 */
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 0 rgb(0 0 0 / 0.4);
+  --shadow-pop:  0 10px 30px -10px rgb(0 0 0 / 0.6);
+
+  /* semantic surface tints (dark 真值跟 light tone 不同, light bg-* 提亮反相) */
+  --ok-bg:   #2A2E1F;
+  --warn-bg: #3A2E1C;
+  --bad-bg:  #3A2E1C;
+}
+
+/*
+ * THEME · night (旧 frontend night theme 的兼容入口, alias 到 dark)
+ *
+ * 历史 toggle 用 [data-theme='night'] 切夜读; v1 后统一 dark, night 保留 alias.
+ */
+[data-theme='night'] {
+  --paper-1: #15130F;
+  --paper-2: #1F1B16;
+  --paper-3: #28231C;
+  --ink-1:   #E8E2D2;
+  --ink-2:   #C9C0AC;
+  --ink-3:   #9B917D;
+  --ink-4:   #6B6253;
+  --line-1:  #2D2820;
+  --line-2:  #3A3328;
+  --line-3:  #5A4F3D;
+  --accent-1:  #C68A3E;
+  --accent-2:  #B07F36;
+  --accent-50: #2A1F12;
+  --ok:   #9DB37C;
+  --warn: #D9A055;
+  --err:  #D88A8A;
+  --data-0: #2D2823;
+  --data-1: #4A3F2E;
+  --data-2: #6E5A3A;
+  --data-3: #957744;
+  --data-4: #B88B4D;
+  --data-5: #D9A055;
+  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 0 rgb(0 0 0 / 0.4);
+  --shadow-pop:  0 10px 30px -10px rgb(0 0 0 / 0.6);
+  --ok-bg:   #2A2E1F;
+  --warn-bg: #3A2E1C;
+  --bad-bg:  #3A2E1C;
+}
+
+/* DENSITY 切换 */
+[data-density='compact'] {
+  --row-y: 8px;
+  --card-pad: 14px;
+}
+[data-density='cozy'] {
+  --row-y: 14px;
+  --card-pad: 22px;
+}
+
+/* OPT STYLE — fb 答题考场态 letter 形状 (Phase 3 P3a, 2026-05-11).
+   非 brand token (答题专用 fb scope). 用 CSS variable + html dataset 模式跟 [data-density]
+   同位置, 不引新约束. */
+[data-opt-style='circle'] {
+  --letter-radius: 9999px;
+}
+[data-opt-style='square'] {
+  --letter-radius: 4px;
+}
+
+/* READING SIZE — SIKAO tweak protocol */
+[data-reading='md'] { --read-fs: 15px; --read-lh: 1.7; }
+[data-reading='lg'] { --read-fs: 17px; --read-lh: 1.78; }
+[data-reading='xl'] { --read-fs: 19px; --read-lh: 1.85; }
+
+/* base reset (SIKAO no-italic policy) */
+em, i { font-style: normal; }
+
+/* SIKAO utility classes */
+.serif { font-family: var(--font-serif); }
+.sans  { font-family: var(--font-sans); }
+.mono  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: var(--t-tiny);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/*
+ * Phase 3.5 fenbi-merge — 答题阅读区字号偏好.
+ *
+ * data-practice-font 由 useFontSizeStore 在进入 practice 路由时打到 <html>;
+ * 离开页面 attribute 移除. PracticeDeck 容器读 var(--practice-reading-fs)
+ * 让题干 / 选项 / 材料 全部跟着变 (font-size CSS 属性 inherit 子树).
+ *
+ * 字号挡位 (sm 13 / md 16 / lg 19) 是公考行业经验: 13 适合压缩屏长卷,
+ * 16 是默认舒适, 19 给老花 / 二屏 / 视疲劳用户.
+ */
+:root { --practice-reading-fs: 16px; }
+[data-practice-font='sm'] { --practice-reading-fs: 13px; }
+[data-practice-font='md'] { --practice-reading-fs: 16px; }
+[data-practice-font='lg'] { --practice-reading-fs: 19px; }

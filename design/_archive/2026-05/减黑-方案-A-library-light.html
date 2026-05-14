@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>减黑方案 A · Library Light — sidebar 改 bg-alt + main 错落 (2026-05-08)</title>
+<link rel="stylesheet" href="./tokens.css" />
+<style>
+/*
+ * 方案 A — "Library Light"
+ *
+ * 设计理由 (跟 brand 调性):
+ * - "图书馆隔壁桌": 浅灰 sidebar 像图书馆桌面木色质感, 不再是黑底压迫
+ * - 黑色保留主 CTA + h1 + active sidebar item 反衬, ink-first 锚点不丢
+ * - main + sidebar 都用 --bg-alt, 但 cards 白底浮起 = "在浅灰桌面上铺白纸"
+ * - 黑色面积估 60% → 12% (sidebar 100%->0%, hero 0%->0%, stat 减黑)
+ *
+ * 视觉权重重分布:
+ * - 黑色: 主 CTA "开始练习" + h1 "学习中心" + active sidebar item
+ * - 浅灰 (--bg-alt): sidebar 全 + main bg, 占 ~60% 面积 (替代现 60% 黑)
+ * - 白 (--bg): cards / hero card / 推荐套卷 grid, 占 ~30%
+ * - accent 蓝: 仅 focus ring + 链接 hover, 占 ~3%
+ * - 留白增 ~25% (cards 之间间距 32px, 之前 24px)
+ */
+:root {
+  --frame-w: 1480px;
+  --frame-h: 900px;
+  --canvas-bg: #e8eaee;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--canvas-bg);
+  padding: 32px;
+}
+
+.doc-head {
+  max-width: 1400px;
+  margin: 0 auto 24px;
+}
+.doc-head h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+}
+.doc-head p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.frame {
+  width: var(--frame-w);
+  height: var(--frame-h);
+  margin: 0 auto 48px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+}
+
+/* ── Sidebar (light-gray bg + ink-muted text) ─────────────────────── */
+.sb {
+  background: var(--bg-alt);
+  border-right: 1px solid var(--line);
+  padding: 24px 0;
+  overflow-y: auto;
+}
+.sb-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 20px 20px;
+  border-bottom: 1px solid var(--line);
+}
+.sb-brand-logo {
+  width: 36px;
+  height: 36px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--serif);
+  font-size: 18px;
+  font-weight: 700;
+  font-style: italic;
+}
+.sb-brand-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.sb-brand-sub {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  margin-top: 2px;
+}
+
+.sb-group {
+  padding: 16px 0 8px;
+}
+.sb-group-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  padding: 0 20px 8px;
+}
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 20px;
+  font-size: 13.5px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: background var(--motion-fast) var(--motion-ease),
+              color var(--motion-fast) var(--motion-ease);
+}
+.sb-item:hover {
+  background: var(--brand-50);
+  color: var(--ink);
+}
+.sb-item.active {
+  background: var(--ink);
+  color: #fff;
+  position: relative;
+}
+.sb-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--accent);
+}
+.sb-icon {
+  width: 16px;
+  height: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.sb-foot {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.sb-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+}
+.sb-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.sb-user-email {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+/* ── Main (bg-alt + cards 白底浮起) ──────────────────────────────── */
+.main {
+  background: var(--bg-alt);
+  padding: 40px 56px;
+  overflow-y: auto;
+}
+.main-title {
+  font-size: 36px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+.main-sub {
+  font-size: 14px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  margin: 0 0 32px;
+}
+
+/* Hero card 白底, 浮在 bg-alt 上 */
+.hero {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 36px 40px;
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 32px;
+  margin-bottom: 32px;
+  box-shadow: var(--shadow-card);
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--accent-50);
+  color: var(--accent);
+  border: 1px solid var(--accent-50);
+  padding: 4px 11px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: var(--tracking-wide);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.hero-eyebrow i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.hero-h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 12px;
+  line-height: 1.2;
+}
+.hero-meta {
+  font-size: 14px;
+  color: var(--ink-muted);
+  margin-bottom: 24px;
+}
+.hero-actions {
+  display: flex;
+  gap: 12px;
+}
+.hero-btn-primary {
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+  font-size: 14px;
+  padding: 11px 20px;
+  border: 0;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.hero-btn-primary:hover {
+  background: #000;
+}
+.hero-btn-ghost {
+  background: transparent;
+  color: var(--ink-muted);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  cursor: pointer;
+}
+.hero-btn-ghost:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+.hero-illust {
+  background: linear-gradient(
+    135deg,
+    var(--bg-alt) 0%,
+    color-mix(in oklch, var(--bg-alt) 60%, var(--accent-50) 40%) 100%
+  );
+  border-radius: var(--r-md);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--placeholder);
+}
+
+/* Stats 大数字, ink-muted (从 ink 减黑) */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 24px;
+  margin-bottom: 40px;
+}
+.stat {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+}
+.stat-num {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 56px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--ink-muted); /* 减黑: ink → ink-muted */
+  line-height: 1;
+}
+.stat-desc {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+/* 推荐套卷 */
+.section-title {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+}
+.section-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 16px;
+}
+.papers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.paper-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 20px;
+  cursor: pointer;
+  transition: border-color var(--motion-fast) var(--motion-ease),
+              transform var(--motion-fast) var(--motion-ease);
+}
+.paper-card:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-2px);
+}
+.paper-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.paper-code {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  background: var(--bg-alt);
+  padding: 3px 8px;
+  border-radius: var(--r-sm);
+}
+.paper-status {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.paper-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.45;
+  margin: 0 0 12px;
+  min-height: 40px;
+}
+.paper-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 16px;
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+}
+.paper-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.paper-q {
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+.paper-cta {
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--ink);
+  color: #fff;
+  padding: 6px 14px;
+  border-radius: var(--r-sm);
+  border: 0;
+  cursor: pointer;
+}
+
+/* Dashboard preview frame */
+.dash-frame {
+  width: var(--frame-w);
+  height: 540px;
+  margin: 0 auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 240px 1fr;
+}
+.dash-main {
+  background: var(--bg-alt);
+  padding: 32px 48px;
+  overflow-y: auto;
+}
+.dash-h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+.dash-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 24px;
+}
+.dash-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.metric-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 20px 24px;
+  box-shadow: var(--shadow-card);
+}
+.metric-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  margin: 0 0 8px;
+}
+.metric-num {
+  font-family: var(--serif);
+  font-style: italic;
+  font-size: 44px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: var(--ink-muted);
+  line-height: 1;
+  margin: 0 0 4px;
+}
+.metric-trend {
+  font-size: 12px;
+  color: var(--success);
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+}
+
+/* Section divider */
+hr.divider {
+  max-width: 1400px;
+  margin: 24px auto;
+  border: 0;
+  border-top: 1px dashed var(--line-strong);
+}
+.section-head {
+  max-width: 1400px;
+  margin: 0 auto 16px;
+}
+.section-head h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+}
+.section-head p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+</style>
+</head>
+<body>
+
+<div class="doc-head">
+  <h1>减黑方案 A · Library Light</h1>
+  <p>
+    sidebar 改 <code>--bg-alt</code> 浅灰底 + ink-muted 文字 / main 同 bg-alt 让白底 cards 浮起 / stat 大数字 <code>--ink</code> → <code>--ink-muted</code> /
+    主 CTA + h1 + active sidebar item 仍 ink (锚点保留) · 黑色面积 ~60% → ~12% · 调性「图书馆桌面」
+  </p>
+</div>
+
+<!-- ── Frame 1: Home /app ─────────────────────────────────── -->
+<div class="section-head">
+  <h2>1 · Home (/app 学习中心)</h2>
+  <p>主 view: hero 推荐今日 + 4 stat callout + 推荐套卷 3 列</p>
+</div>
+<div class="frame">
+  <!-- Sidebar -->
+  <aside class="sb" style="display: flex; flex-direction: column;">
+    <div class="sb-brand">
+      <div class="sb-brand-logo">思</div>
+      <div>
+        <div class="sb-brand-name">思考</div>
+        <div class="sb-brand-sub">SIKAO · 公考备考</div>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">主练习</div>
+      <div class="sb-item active">
+        <span class="sb-icon">⌂</span>
+        首页
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">≡</span>
+        行测试炼
+      </div>
+      <div class="sb-item" style="padding-left: 48px; font-size: 13px;">
+        专项练习
+      </div>
+      <div class="sb-item" style="padding-left: 48px; font-size: 13px;">
+        套卷练习
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">✎</span>
+        申论试炼
+      </div>
+      <div class="sb-item" style="padding-left: 48px; font-size: 13px;">
+        专项练习
+      </div>
+      <div class="sb-item" style="padding-left: 48px; font-size: 13px;">
+        套卷练习
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">复盘</div>
+      <div class="sb-item">
+        <span class="sb-icon">↺</span>
+        错题本
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">📊</span>
+        学情数据
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">📅</span>
+        考试日历
+      </div>
+    </div>
+
+    <div class="sb-foot">
+      <div class="sb-avatar">L</div>
+      <div>
+        <div class="sb-user-name">LHR</div>
+        <div class="sb-user-email">lhr@sikao.dev</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main /app -->
+  <main class="main">
+    <h1 class="main-title">学习中心</h1>
+    <p class="main-sub">今天做什么 / 数据简报 / 各模块入口都在这里</p>
+
+    <!-- Hero -->
+    <div class="hero">
+      <div>
+        <div class="hero-eyebrow"><i></i>今日计划</div>
+        <h2 class="hero-h1">先做 <span style="font-family: var(--serif); font-style: italic;">3</span> 道行测题</h2>
+        <p class="hero-meta">言语 / 常识 各 1 道, 不计时, 认识题型即可</p>
+        <div class="hero-actions">
+          <button class="hero-btn-primary">
+            去做这个
+            <span style="font-family: var(--serif); font-style: italic;">→</span>
+          </button>
+          <button class="hero-btn-ghost">查看全部题库</button>
+        </div>
+      </div>
+      <div class="hero-illust">illustration · 16:9</div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-label">累计答题</div>
+        <div class="stat-num">847</div>
+        <div class="stat-desc">涵盖所有 session 的答题总量</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">整体正确率</div>
+        <div class="stat-num">62<span style="font-family: var(--sans); font-size: 24px; color: var(--muted);">%</span></div>
+        <div class="stat-desc">累计答对 / 累计答题</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">连续打卡</div>
+        <div class="stat-num">12<span style="font-family: var(--sans); font-size: 24px; color: var(--muted);">天</span></div>
+        <div class="stat-desc">按本地日从今天倒推</div>
+      </div>
+      <div class="stat">
+        <div class="stat-label">已掌握</div>
+        <div class="stat-num">38<span style="font-family: var(--sans); font-size: 24px; color: var(--muted);">/124</span></div>
+        <div class="stat-desc">做对 2 次自动掌握</div>
+      </div>
+    </div>
+
+    <!-- 推荐套卷 -->
+    <h3 class="section-title">推荐套卷</h3>
+    <p class="section-sub">给你挑了 3 卷, 完整 1509 套在套卷题库</p>
+    <div class="papers">
+      <div class="paper-card">
+        <div class="paper-head">
+          <span class="paper-code">FENBI-4990641</span>
+          <span class="paper-status">未做</span>
+        </div>
+        <h4 class="paper-title">2026 年江西省公务员录用考试《行测》题</h4>
+        <p class="paper-meta">省考真题 · 130 题</p>
+        <div class="paper-foot">
+          <span class="paper-q">130 题</span>
+          <button class="paper-cta">开始练习</button>
+        </div>
+      </div>
+
+      <div class="paper-card">
+        <div class="paper-head">
+          <span class="paper-code">FBSL-5254772</span>
+          <span class="paper-status">未做</span>
+        </div>
+        <h4 class="paper-title">2026 年浙江省公考《申论》题（C 卷）</h4>
+        <p class="paper-meta">省考真题 · 3 题</p>
+        <div class="paper-foot">
+          <span class="paper-q">3 题</span>
+          <button class="paper-cta">开始练习</button>
+        </div>
+      </div>
+
+      <div class="paper-card">
+        <div class="paper-head">
+          <span class="paper-code">FENBI-5823069</span>
+          <span class="paper-status" style="color: var(--success);">已做 2 次</span>
+        </div>
+        <h4 class="paper-title">2026 国考《行测》（副省级）</h4>
+        <p class="paper-meta">国考真题 · 135 题</p>
+        <div class="paper-foot">
+          <span class="paper-q">135 题</span>
+          <button class="paper-cta">再练习</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Frame 2: Dashboard preview ────────────────────────── -->
+<div class="section-head">
+  <h2>2 · Dashboard (学情数据)</h2>
+  <p>4 metric card 走 StatCallout SSOT (跟 Home stat 同 ink-muted 配色)</p>
+</div>
+<div class="dash-frame">
+  <aside class="sb" style="display: flex; flex-direction: column;">
+    <div class="sb-brand">
+      <div class="sb-brand-logo">思</div>
+      <div>
+        <div class="sb-brand-name">思考</div>
+        <div class="sb-brand-sub">SIKAO</div>
+      </div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-group-label">主练习</div>
+      <div class="sb-item">
+        <span class="sb-icon">⌂</span>
+        首页
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">≡</span>
+        行测试炼
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">✎</span>
+        申论试炼
+      </div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-group-label">复盘</div>
+      <div class="sb-item">
+        <span class="sb-icon">↺</span>
+        错题本
+      </div>
+      <div class="sb-item active">
+        <span class="sb-icon">📊</span>
+        学情数据
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">📅</span>
+        考试日历
+      </div>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <h1 class="dash-h1">学情数据</h1>
+    <p class="dash-sub">最近 30 天 · 你的进步轨迹</p>
+
+    <div class="dash-metrics">
+      <div class="metric-card">
+        <p class="metric-label">总答题</p>
+        <p class="metric-num">847</p>
+        <p class="metric-trend">+58 / 7 天</p>
+      </div>
+      <div class="metric-card">
+        <p class="metric-label">正确率</p>
+        <p class="metric-num">62<span style="font-family: var(--sans); font-size: 22px; color: var(--muted);">%</span></p>
+        <p class="metric-trend">+3.2 / 7 天</p>
+      </div>
+      <div class="metric-card">
+        <p class="metric-label">已掌握</p>
+        <p class="metric-num">38</p>
+        <p class="metric-trend">+5 / 7 天</p>
+      </div>
+      <div class="metric-card">
+        <p class="metric-label">错题</p>
+        <p class="metric-num">21</p>
+        <p class="metric-trend" style="color: var(--warn);">+2 / 7 天</p>
+      </div>
+    </div>
+
+    <h3 class="section-title">趋势图区域</h3>
+    <p class="section-sub">[chart placeholder · 1180 × 200]</p>
+    <div style="background: var(--bg); border: 1px dashed var(--line-strong); border-radius: var(--r-md); height: 200px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--placeholder);">
+      Recharts / Chart.js · trend line
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

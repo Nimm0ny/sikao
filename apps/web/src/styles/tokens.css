@@ -1,0 +1,9 @@
+/*
+ * Design tokens — sikao apps/web shim.
+ *
+ * 真实 token 定义在 @sikao/design-system/tokens.css (SSOT, CLAUDE.md §4 硬约束).
+ * 本文件保留是为了 apps/web 内 src/index.css 的相对路径 @import 链路不动 (R2 shim).
+ * R2 后续: src/index.css 直接 @import "@sikao/design-system/tokens.css", 本文件删除.
+ */
+
+@import "@sikao/design-system/tokens.css";

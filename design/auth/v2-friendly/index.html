@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>思考 · 登录 · v2 亲和</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="../../tokens.css">
+<style>
+  /* ── v2 friendly: chatgpt 风格 ── 圆角更大 + 微妙阴影渐变 + 多 entry ── */
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: var(--fs-base);
+    color: var(--ink);
+    background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-wrap: pretty;
+  }
+
+  /* Subtle ambient bg blobs (decorative depth, ink-tinted, not gradient cliché) */
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 0;
+    background:
+      radial-gradient(800px 400px at 20% 10%, rgb(63 126 241 / .04), transparent 60%),
+      radial-gradient(600px 600px at 90% 90%, rgb(15 23 42 / .03), transparent 60%);
+  }
+
+  /* ── Tabs (design canvas) ───────────────────────────────────────── */
+  .tabs {
+    position: sticky; top: 0; z-index: 10;
+    background: rgb(255 255 255 / .85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    display: flex; gap: 4px; padding: 12px 24px;
+    font-size: var(--fs-sm);
+  }
+  .tabs button {
+    appearance: none; background: transparent; border: 0; cursor: pointer;
+    padding: 8px 14px; border-radius: var(--r-pill);
+    font-family: inherit; font-size: inherit; color: var(--muted);
+    font-weight: 500;
+    transition: all var(--motion-fast) var(--motion-ease);
+  }
+  .tabs button:hover { color: var(--ink); background: var(--bg-alt); }
+  .tabs button.active {
+    color: var(--bg); background: var(--ink);
+  }
+  .tabs .label {
+    margin-left: auto; font-size: var(--fs-xs); color: var(--muted);
+    align-self: center; letter-spacing: .04em;
+  }
+
+  /* ── Page shell ─────────────────────────────────────────────────── */
+  .page {
+    position: relative; z-index: 1;
+    min-height: calc(100vh - 56px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 56px 24px;
+  }
+  .view { display: none; width: 100%; }
+  .view.active { display: block; }
+
+  /* ── Card (bigger, softer, more padding) ────────────────────────── */
+  .card {
+    width: 100%; max-width: 440px;
+    margin: 0 auto;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: 24px;
+    padding: 48px 40px 36px;
+    box-shadow:
+      0 1px 1px rgb(15 23 42 / .04),
+      0 8px 24px -8px rgb(15 23 42 / .12),
+      0 24px 48px -16px rgb(15 23 42 / .08);
+  }
+
+  /* ── Wordmark ───────────────────────────────────────────────────── */
+  .brand-mark {
+    display: flex; align-items: center; justify-content: center;
+    flex-direction: column; gap: 14px; margin-bottom: 24px;
+  }
+  .brand-mark .glyph {
+    width: 48px; height: 48px;
+    background: var(--ink); color: var(--bg);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 22px; letter-spacing: -.02em;
+    box-shadow: 0 8px 16px -8px rgb(15 23 42 / .3);
+  }
+
+  h1.title {
+    margin: 0 0 8px; font-size: var(--fs-2xl);
+    font-weight: 600; letter-spacing: -.02em;
+    color: var(--ink); line-height: 1.25;
+    text-align: center;
+  }
+  p.sub {
+    margin: 0 0 32px; color: var(--muted);
+    font-size: var(--fs-base);
+    text-align: center;
+  }
+
+  /* ── Entry list (chatgpt "Continue with X" pattern) ─────────────── */
+  .entries { display: flex; flex-direction: column; gap: 10px; margin-bottom: 22px; }
+  .entry {
+    display: flex; align-items: center; gap: 12px;
+    width: 100%; padding: 14px 16px;
+    background: var(--bg); color: var(--ink);
+    border: 1px solid var(--line-strong); border-radius: var(--r-md);
+    font-family: inherit; font-size: var(--fs-md); font-weight: 500;
+    cursor: pointer; text-align: left;
+    transition: all var(--motion-fast) var(--motion-ease);
+    text-decoration: none;
+  }
+  .entry:hover {
+    border-color: var(--ink-muted);
+    background: var(--bg-alt);
+  }
+  .entry .icon {
+    width: 22px; height: 22px; flex-shrink: 0;
+    border-radius: 6px;
+    background: var(--bg-alt); color: var(--ink-muted);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700;
+  }
+  .entry .text { flex: 1; }
+  .entry .arrow {
+    color: var(--muted); font-size: var(--fs-md);
+    transition: transform var(--motion-fast) var(--motion-ease);
+  }
+  .entry:hover .arrow { transform: translateX(2px); color: var(--ink); }
+
+  /* Divider */
+  .or {
+    display: flex; align-items: center; gap: 12px;
+    margin: 22px 0; font-size: var(--fs-xs); color: var(--muted);
+    text-transform: uppercase; letter-spacing: .08em;
+  }
+  .or::before, .or::after {
+    content: ""; flex: 1; height: 1px; background: var(--line);
+  }
+
+  /* ── Form fields ─────────────────────────────────────────────────── */
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block; margin-bottom: 8px;
+    font-size: var(--fs-sm); font-weight: 500; color: var(--ink);
+  }
+  .field input {
+    width: 100%; padding: 13px 16px;
+    font-family: inherit; font-size: var(--fs-md);
+    color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line-strong); border-radius: var(--r-md);
+    outline: none; transition: all var(--motion-fast) var(--motion-ease);
+  }
+  .field input::placeholder { color: var(--placeholder); }
+  .field input:hover { border-color: var(--ink-muted); }
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 4px rgb(63 126 241 / .12);
+  }
+  .field .help {
+    margin-top: 6px; font-size: var(--fs-xs); color: var(--muted);
+    line-height: 1.5;
+  }
+  .field-row { display: flex; gap: 10px; }
+  .field-row > .field { flex: 1; margin-bottom: 0; }
+
+  /* ── Buttons ─────────────────────────────────────────────────────── */
+  .btn {
+    width: 100%; padding: 14px 16px;
+    font-family: inherit; font-size: var(--fs-md); font-weight: 600;
+    border-radius: var(--r-md); border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--motion-fast) var(--motion-ease);
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px;
+  }
+  .btn.primary {
+    background: var(--ink); color: #fff;
+    box-shadow:
+      0 1px 2px rgb(15 23 42 / .1),
+      0 6px 12px -6px rgb(15 23 42 / .25);
+  }
+  .btn.primary:hover { background: #1e293b; transform: translateY(-1px); }
+  .btn.primary:active { transform: translateY(0); }
+  .btn.send-code {
+    width: auto; flex: 0 0 auto;
+    padding: 13px 16px; font-size: var(--fs-sm);
+    background: var(--bg); color: var(--ink);
+    border-color: var(--line-strong);
+  }
+  .btn.send-code:hover { background: var(--bg-alt); border-color: var(--ink-muted); }
+  .btn.send-code[disabled] {
+    background: var(--bg-alt); color: var(--muted);
+    cursor: not-allowed; border-color: var(--line);
+  }
+
+  /* ── Links ──────────────────────────────────────────────────────── */
+  .link {
+    color: var(--accent); text-decoration: none;
+    font-weight: 500;
+  }
+  .link:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .auxrow {
+    margin-top: 16px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: var(--fs-sm); color: var(--muted);
+  }
+  .switch-row {
+    margin-top: 28px;
+    text-align: center;
+    font-size: var(--fs-sm); color: var(--muted);
+  }
+
+  /* ── Forgot success ─────────────────────────────────────────────── */
+  .success-bullet {
+    width: 56px; height: 56px;
+    background: var(--success-bg); color: var(--success);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 8px auto 22px;
+    font-size: 26px; font-weight: 700;
+  }
+  .center-block { text-align: center; }
+
+  .footer-text {
+    margin-top: 22px; padding: 0 8px;
+    font-size: var(--fs-xs); color: var(--muted);
+    text-align: center; line-height: 1.6;
+  }
+
+  @media (max-width: 480px) {
+    .page { padding: 24px 16px; }
+    .card { padding: 36px 24px 28px; border-radius: var(--r-lg); }
+    h1.title { font-size: var(--fs-xl); }
+    .tabs { padding: 10px 12px; flex-wrap: wrap; }
+    .tabs .label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="tabs" role="tablist" aria-label="View switcher">
+  <button data-view="login" class="active">登录</button>
+  <button data-view="register-email">邮箱注册</button>
+  <button data-view="register-phone">手机注册</button>
+  <button data-view="forgot">找回密码</button>
+  <span class="label">v2 · chatgpt friendly</span>
+</nav>
+
+<main class="page">
+
+  <!-- ── 1. Login ─────────────────────────────────────────── -->
+  <section class="view active" id="login">
+    <div class="card">
+      <div class="brand-mark">
+        <div class="glyph">思</div>
+      </div>
+      <h1 class="title">欢迎回到思考</h1>
+      <p class="sub">让备考从刷题变成思考。</p>
+
+      <form onsubmit="event.preventDefault()">
+        <div class="field">
+          <label for="login-id">账号</label>
+          <input id="login-id" type="text" autocomplete="username"
+            placeholder="email@example.com">
+          <div class="help">支持邮箱、手机号或用户名</div>
+        </div>
+        <div class="field" style="margin-bottom:22px;">
+          <label for="login-pw">密码</label>
+          <input id="login-pw" type="password" autocomplete="current-password"
+            placeholder="输入密码">
+        </div>
+
+        <button type="submit" class="btn primary">登录</button>
+
+        <div class="auxrow">
+          <span>&nbsp;</span>
+          <a class="link" href="#forgot" onclick="show('forgot')">忘记密码？</a>
+        </div>
+      </form>
+
+      <div class="or">还没账号</div>
+
+      <div class="entries">
+        <a class="entry" href="#register-email" onclick="show('register-email')">
+          <span class="icon">@</span>
+          <span class="text">用邮箱注册</span>
+          <span class="arrow">→</span>
+        </a>
+        <a class="entry" href="#register-phone" onclick="show('register-phone')">
+          <span class="icon">手</span>
+          <span class="text">用手机号注册</span>
+          <span class="arrow">→</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2. Register · Email ──────────────────────────────── -->
+  <section class="view" id="register-email">
+    <div class="card">
+      <div class="brand-mark">
+        <div class="glyph">思</div>
+      </div>
+      <h1 class="title">用邮箱注册</h1>
+      <p class="sub">几秒搞定，开始你的备考节奏。</p>
+
+      <form onsubmit="event.preventDefault()">
+        <div class="field">
+          <label for="reg-email">邮箱</label>
+          <input id="reg-email" type="email" autocomplete="email"
+            placeholder="email@example.com">
+        </div>
+        <div class="field">
+          <label for="reg-name">显示名（可选）</label>
+          <input id="reg-name" type="text" autocomplete="nickname"
+            placeholder="留空自动用邮箱前缀">
+        </div>
+        <div class="field" style="margin-bottom:22px;">
+          <label for="reg-pw">密码</label>
+          <input id="reg-pw" type="password" autocomplete="new-password"
+            placeholder="至少 6 位">
+        </div>
+
+        <button type="submit" class="btn primary">创建账号</button>
+      </form>
+
+      <div class="footer-text">
+        创建账号即视为同意《用户协议》与《隐私政策》。
+      </div>
+
+      <div class="switch-row">
+        已有账号？<a class="link" href="#login" onclick="show('login')">登录</a>
+        ·
+        <a class="link" href="#register-phone" onclick="show('register-phone')">改用手机注册</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3. Register · Phone ──────────────────────────────── -->
+  <section class="view" id="register-phone">
+    <div class="card">
+      <div class="brand-mark">
+        <div class="glyph">思</div>
+      </div>
+      <h1 class="title">用手机注册</h1>
+      <p class="sub">中国大陆手机号，发码 10 分钟内有效。</p>
+
+      <form onsubmit="event.preventDefault()">
+        <div class="field">
+          <label for="reg-phone">手机号</label>
+          <input id="reg-phone" type="tel" autocomplete="tel"
+            placeholder="138 0013 8000" inputmode="numeric">
+        </div>
+
+        <div class="field">
+          <label for="reg-code">验证码</label>
+          <div class="field-row">
+            <div class="field" style="flex:1;">
+              <input id="reg-code" type="text" autocomplete="one-time-code"
+                placeholder="6 位数字" inputmode="numeric" maxlength="6">
+            </div>
+            <button type="button" class="btn send-code">发送验证码</button>
+          </div>
+          <div class="help">发送后 60 秒内有效，未收到可重发。</div>
+        </div>
+
+        <div class="field" style="margin-bottom:22px;">
+          <label for="reg-phone-pw">设置密码</label>
+          <input id="reg-phone-pw" type="password" autocomplete="new-password"
+            placeholder="至少 6 位">
+        </div>
+
+        <button type="submit" class="btn primary">完成注册</button>
+      </form>
+
+      <div class="switch-row">
+        已有账号？<a class="link" href="#login" onclick="show('login')">登录</a>
+        ·
+        <a class="link" href="#register-email" onclick="show('register-email')">改用邮箱注册</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4. Forgot password ───────────────────────────────── -->
+  <section class="view" id="forgot">
+    <div class="card">
+      <div class="brand-mark">
+        <div class="glyph">思</div>
+      </div>
+      <h1 class="title">找回密码</h1>
+      <p class="sub">输入注册邮箱，我们发重置链接给你。</p>
+
+      <form onsubmit="event.preventDefault();this.style.display='none';this.nextElementSibling.style.display='block';">
+        <div class="field" style="margin-bottom:22px;">
+          <label for="forgot-id">邮箱</label>
+          <input id="forgot-id" type="email" autocomplete="email"
+            placeholder="email@example.com">
+          <div class="help">链接 1 小时内有效。</div>
+        </div>
+        <button type="submit" class="btn primary">发送重置链接</button>
+      </form>
+
+      <div style="display:none">
+        <div class="center-block">
+          <div class="success-bullet">✓</div>
+          <h2 class="title" style="font-size:var(--fs-lg);margin-bottom:8px;">已发送</h2>
+          <p class="sub" style="margin-bottom:8px;">
+            如果邮箱已注册，几分钟内会收到重置链接。<br>
+            没收到？检查垃圾邮箱。
+          </p>
+        </div>
+      </div>
+
+      <div class="switch-row">
+        想起来了？<a class="link" href="#login" onclick="show('login')">回登录</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  function show(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById(name).classList.add('active');
+    document.querySelector(`.tabs button[data-view="${name}"]`).classList.add('active');
+    if (history.replaceState) history.replaceState(null, '', '#' + name);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+  document.querySelectorAll('.tabs button').forEach(b =>
+    b.addEventListener('click', () => show(b.dataset.view))
+  );
+  const initial = location.hash.slice(1);
+  if (['login','register-email','register-phone','forgot'].includes(initial)) show(initial);
+</script>
+
+</body>
+</html>

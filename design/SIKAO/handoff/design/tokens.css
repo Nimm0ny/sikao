@@ -1,0 +1,106 @@
+/* ============================================================
+ * SIKAO · Design Tokens (extracted from SIKAO Redesign.html)
+ * Drop into styles/tokens.css. Do NOT redefine in components.
+ * ============================================================ */
+
+:root {
+  /* paper / ink — warm neutrals (default theme · reading) */
+  --paper:        #FAF7F0;
+  --paper-2:      #F4F0E6;
+  --paper-3:      #ECE6D7;
+  --rule:         #E2DBC8;
+  --rule-strong:  #C9C0A8;
+  --ink:          #1A1815;
+  --ink-2:        #3A352D;
+  --ink-3:        #6B6358;
+  --ink-4:        #948A7A;
+
+  /* accent · blue — archived handoff reference, not active token SSOT */
+  --accent:       #3F7EF1;
+  --accent-2:     #1F4FD8;
+  --accent-50:    #E7EDFD;
+
+  /* semantic */
+  --ok:           #4F7A4F;
+  --ok-bg:        #E8EFE2;
+  --warn:         #B47A1F;
+  --warn-bg:      #F4ECDC;
+  --bad:          #B42318;
+  --bad-bg:       #F5E6E2;
+
+  /* type */
+  --serif: 'Source Serif 4', 'Noto Serif SC', Georgia, 'Songti SC', serif;
+  --sans:  'Inter', system-ui, -apple-system, sans-serif;
+  --mono:  'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+  /* type scale */
+  --t-display:  88px;
+  --t-h1:       56px;
+  --t-h2:       36px;
+  --t-h3:       22px;
+  --t-body:     15px;
+  --t-small:    13px;
+  --t-eyebrow:  11px;
+
+  /* spacing */
+  --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px;
+  --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px;
+
+  /* radii — paper 风格 · 几乎不用大圆角 */
+  --r-sm: 4px; --r-md: 6px; --r-lg: 10px; --r-xl: 14px;
+
+  /* shadows */
+  --shadow-1: 0 1px 0 rgba(26,24,21,.04), 0 1px 2px rgba(26,24,21,.04);
+  --shadow-2: 0 6px 24px -8px rgba(26,24,21,.16), 0 2px 6px rgba(26,24,21,.05);
+  --shadow-3: 0 24px 48px -16px rgba(26,24,21,.22);
+}
+
+/* THEME · pure (素白 — 蓝色 accent) */
+[data-theme="pure"] {
+  --paper:#FFFFFF; --paper-2:#F7F7F8; --paper-3:#EFEFF1;
+  --rule:#E5E5E8; --rule-strong:#CFCFD3;
+  --ink:#0A0A0B; --ink-2:#2D2D31; --ink-3:#5C5C63; --ink-4:#8A8A92;
+  --accent:#1F4FD8; --accent-2:#1839A0; --accent-50:#E7EDFD;
+  --serif: 'Source Serif 4', Georgia, serif;
+}
+
+/* THEME · night (夜读) */
+[data-theme="night"] {
+  --paper:#1B1814; --paper-2:#231F1A; --paper-3:#2D2823;
+  --rule:#3A332C; --rule-strong:#544A3F;
+  --ink:#F2EAD8; --ink-2:#D6CDB8; --ink-3:#9B917D; --ink-4:#6E6657;
+  --accent:#D9A055; --accent-2:#B07F36; --accent-50:#3A2E1C;
+  --ok:#9DB37C; --ok-bg:#2A2E1F;
+  --warn:#D9A055; --warn-bg:#3A2E1C;
+  --bad:#D88A8A;
+}
+
+/* DENSITY 切换 */
+[data-density="compact"] {
+  --row-y: 8px;
+  --card-pad: 14px;
+}
+[data-density="cozy"] {
+  --row-y: 14px;
+  --card-pad: 22px;
+}
+
+/* READING SIZE */
+[data-reading="md"] { --read-fs: 15px; --read-lh: 1.7; }
+[data-reading="lg"] { --read-fs: 17px; --read-lh: 1.78; }
+[data-reading="xl"] { --read-fs: 19px; --read-lh: 1.85; }
+
+/* base reset (no italic) */
+em, i { font-style: normal; }
+
+/* utility classes */
+.serif { font-family: var(--serif); }
+.sans  { font-family: var(--sans); }
+.mono  { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+.eyebrow {
+  font-family: var(--mono);
+  font-size: var(--t-eyebrow);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}

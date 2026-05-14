@@ -1,0 +1,2286 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>思考 · 产品介绍页 重做原型 v2 (3 方案)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ═══════════════════════════════════════════════════════════════════
+       Tokens · 1:1 镜像 frontend/src/styles/tokens.css
+       三方案分级使用:
+         V1 — 仅用 :root 内的现有 token, 0 新增
+         V2 — 显式声明 .v2-pane 内的 *新增提议* token (注释标 NEW)
+         V3 — 借规范明文允许的扩展 (radial gradient §7.4 L3 卡 / sticky nav blur)
+       ═══════════════════════════════════════════════════════════════════ */
+    :root {
+      --brand: #0b1120; --brand-700: #000000;
+      --brand-50: #f1f5f9; --brand-100: #e2e8f0; --brand-200: #cbd5e1;
+      --accent: #3f7ef1; --accent-50: #eff6ff;
+
+      --ink: #0b1120; --ink-muted: #334155;
+      --muted: #64748b; --placeholder: #94a3b8;
+
+      --bg: #ffffff; --bg-alt: #f8fafc;
+      --line: #e5e7eb; --line-strong: #cbd5e1;
+
+      --success: #16a34a; --success-bg: #dcfce7;
+      --warn: #f59e0b; --warn-bg: #fef3c7;
+      --danger: #dc2626; --danger-bg: #fee2e2;
+
+      --r-sm: 8px; --r-md: 12px; --r-lg: 16px; --r-xl: 20px;
+      --r-btn: 10px; --r-pill: 9999px;
+
+      --shadow-card: 0 1px 2px 0 rgb(15 23 42 / .04), 0 1px 3px 0 rgb(15 23 42 / .06);
+      --shadow-pop:  0 10px 30px -10px rgb(15 23 42 / .15);
+      --shadow-hero: 0 25px 50px -12px rgb(15 23 42 / .25);
+
+      --motion-fast: 150ms; --motion-base: 200ms; --motion-slow: 300ms;
+      --motion-ease: cubic-bezier(.4,0,.2,1);
+
+      --sans:  'Inter', system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+      --mono:  'JetBrains Mono', 'SF Mono', Monaco, Consolas, monospace;
+
+      --fs-xs: 12px; --fs-sm: 13px; --fs-base: 14px; --fs-md: 16px;
+      --fs-lg: 18px; --fs-xl: 20px; --fs-2xl: 24px; --fs-3xl: 30px;
+      --fs-4xl: 36px; --fs-5xl: 48px;
+      --fs-eyebrow: 11px;
+      --fs-h-card: 22px; --fs-h-section: 28px; --fs-h-mkt: 42px; --fs-display: 64px;
+
+      --lh-tight: 1.2; --lh-snug: 1.35; --lh-normal: 1.5; --lh-relaxed: 1.65;
+      --tracking-tight: -0.02em;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--sans);
+      font-size: var(--fs-base);
+      line-height: var(--lh-relaxed);
+      color: var(--ink);
+      background: var(--bg-alt);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    button { font-family: inherit; cursor: pointer; border: none; background: none; }
+    a { color: var(--ink); text-decoration: none; }
+    code { font-family: var(--mono); font-size: var(--fs-xs); }
+    h1, h2, h3, h4 { margin: 0; }
+
+    /* ─────────── meta chrome (3 方案切换 tab, 不属于 marketing) ─────────── */
+    .meta-shell { max-width: 1480px; margin: 0 auto; padding: 24px 16px 64px; }
+    .meta-header {
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+      padding-bottom: 16px; border-bottom: 1px solid var(--line); margin-bottom: 20px;
+    }
+    .meta-brand { display: inline-flex; align-items: center; gap: 12px; font-weight: 700; }
+    .meta-brand-text { display: inline-flex; flex-direction: column; line-height: 1.1; }
+    .meta-brand-text small { color: var(--muted); font-weight: 500; font-size: var(--fs-xs); letter-spacing: .04em; }
+    .meta-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+    .meta-tab {
+      border: 1px solid var(--line); background: var(--bg); color: var(--ink-muted);
+      padding: 10px 16px; border-radius: var(--r-pill);
+      font-size: var(--fs-sm); font-weight: 600;
+      transition: all var(--motion-fast) var(--motion-ease);
+    }
+    .meta-tab:hover { border-color: var(--brand-200); color: var(--ink); }
+    .meta-tab.active { background: var(--brand); color: #fff; border-color: var(--brand); }
+    .meta-tab .kbd { margin-left: 8px; font-family: var(--mono); font-size: 10px; opacity: .6; }
+    .tab-desc { color: var(--muted); font-size: var(--fs-sm); margin: 0 0 16px;
+      display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+    .tab-desc .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; background: var(--brand-50);
+      color: var(--brand-700); font-size: var(--fs-eyebrow); font-weight: 700;
+      border-radius: var(--r-pill); border: 1px solid var(--brand-100);
+    }
+    .tab-desc .pill .dot { width: 5px; height: 5px; border-radius: 50%; background: var(--brand); }
+
+    .stage {
+      background: var(--bg);
+      border-radius: var(--r-xl);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      position: relative;
+      min-height: 800px;
+    }
+    .stage-pane { display: none; }
+    .stage-pane.active { display: block; }
+    .meta-footer {
+      margin-top: 24px;
+      font-size: var(--fs-xs); color: var(--muted);
+      display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+      padding-top: 16px; border-top: 1px solid var(--line);
+    }
+    .meta-footer code { background: var(--bg); padding: 2px 6px; border: 1px solid var(--line); border-radius: 4px; }
+    .audit-row {
+      display: flex; gap: 12px; flex-wrap: wrap; font-size: var(--fs-xs);
+      color: var(--muted); margin-top: 6px;
+    }
+    .audit-row b { color: var(--ink); font-weight: 600; }
+    .audit-row .ok { color: var(--success); }
+    .audit-row .new { color: var(--accent); }
+
+    /* ─────────── Shared atoms (token-strict) ─────────── */
+    .wrap { max-width: 1160px; margin: 0 auto; padding: 0 32px; }
+    .eyebrow {
+      font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--muted); line-height: 1.4;
+    }
+    .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+    .mono { font-family: var(--mono); }
+
+    .btn {
+      border: 1px solid transparent;
+      padding: 12px 20px; border-radius: var(--r-btn);
+      font-size: var(--fs-base); font-weight: 600; line-height: 1;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: all var(--motion-fast) var(--motion-ease);
+      cursor: pointer; text-decoration: none;
+    }
+    .btn.primary { background: var(--brand); color: #fff; }
+    .btn.primary:hover { background: var(--brand-700); }
+    .btn.ghost { background: var(--bg); color: var(--ink); border-color: var(--line); }
+    .btn.ghost:hover { border-color: var(--brand-200); }
+    .btn.lg { padding: 14px 22px; font-size: var(--fs-md); }
+    .btn.invert { background: #fff; color: var(--brand); }
+    .btn.invert:hover { background: var(--brand-50); }
+    .btn.outline-light { background: transparent; color: #fff; border-color: rgba(255,255,255,.3); }
+    .btn.outline-light:hover { border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.06); }
+
+    .chip {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 5px 12px; border-radius: var(--r-pill);
+      background: var(--brand-50); color: var(--brand-700);
+      border: 1px solid var(--brand-100);
+      font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .chip .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--brand); }
+
+    /* ─────────── Enter motion (scroll-triggered) ─────────── */
+    @keyframes mFadeUp { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+    @keyframes mFadeIn { from { opacity: 0; } to { opacity: 1; } }
+    @keyframes mDrawLine { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+    @keyframes mPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(63,126,241,.4); }
+      50% { box-shadow: 0 0 0 6px rgba(63,126,241,0); }
+    }
+    .anim-up    { opacity: 0; }
+    .anim-up.in { animation: mFadeUp var(--motion-base) var(--motion-ease) both; }
+    .anim-fade    { opacity: 0; }
+    .anim-fade.in { animation: mFadeIn var(--motion-slow) var(--motion-ease) both; }
+    .anim-line    { transform: scaleX(0); transform-origin: left center; }
+    .anim-line.in { animation: mDrawLine 600ms var(--motion-ease) both; }
+    .delay-1.in { animation-delay: 60ms !important; }
+    .delay-2.in { animation-delay: 120ms !important; }
+    .delay-3.in { animation-delay: 180ms !important; }
+    .delay-4.in { animation-delay: 240ms !important; }
+    .delay-5.in { animation-delay: 300ms !important; }
+    .delay-6.in { animation-delay: 360ms !important; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .anim-up, .anim-fade, .anim-line { opacity: 1 !important; transform: none !important; animation: none !important; }
+    }
+
+    .logo-mark { width: 30px; height: 30px; flex-shrink: 0; }
+
+    /* ════════════════════════════════════════════════════════════════════
+       V1 · Token-Strict
+       承诺: 100% 用 :root 现有 token, 0 italic, 0 serif body, 0 hardcode 颜色,
+            0 任意字号, 0 transform 装饰, 0 gradient text. 仅 enter fade + hover shadow.
+       目标: 验证 "design system 内, 不堆装饰, 也能做出克制高级感"
+       ════════════════════════════════════════════════════════════════════ */
+    .v1-pane { background: var(--bg); color: var(--ink); }
+
+    /* Nav */
+    .v1-nav {
+      max-width: 1160px; margin: 0 auto;
+      padding: 22px 32px;
+      display: flex; align-items: center; gap: 28px;
+      border-bottom: 1px solid var(--line);
+    }
+    .v1-nav .v1-brand {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: var(--fs-md);
+    }
+    .v1-nav nav { display: flex; gap: 24px; font-size: var(--fs-sm); margin-left: 8px; }
+    .v1-nav nav a { color: var(--ink-muted); font-weight: 500; transition: color var(--motion-fast) var(--motion-ease); }
+    .v1-nav nav a:hover { color: var(--ink); }
+    .v1-nav .v1-cta { margin-left: auto; display: inline-flex; gap: 8px; align-items: center; }
+    .v1-nav .v1-login { font-size: var(--fs-sm); font-weight: 600; color: var(--ink-muted); padding: 8px 12px; }
+    .v1-nav .v1-signup {
+      padding: 8px 14px; font-size: var(--fs-sm); font-weight: 600;
+      background: var(--brand); color: #fff; border-radius: var(--r-btn);
+    }
+    .v1-nav .v1-signup:hover { background: var(--brand-700); }
+
+    /* Hero */
+    .v1-hero { max-width: 1160px; margin: 0 auto; padding: 80px 32px 60px; }
+    .v1-hero h1 {
+      font-size: var(--fs-display); font-weight: 800;
+      line-height: var(--lh-tight); letter-spacing: var(--tracking-tight);
+      margin: 22px 0 20px; max-width: 14ch;
+    }
+    .v1-hero h1 .v1-em {
+      color: var(--accent);
+      position: relative;
+      display: inline-block;
+    }
+    .v1-hero h1 .v1-em::after {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; bottom: 6px;
+      height: 4px;
+      background: var(--accent);
+      border-radius: 2px;
+      transform: scaleX(0);
+      transform-origin: left center;
+      animation: mDrawLine 700ms var(--motion-ease) 800ms both;
+      opacity: .35;
+    }
+    /* note: reduced-motion 检测原型省略,生产实施时加回 */
+    .v1-hero .v1-lead {
+      font-size: var(--fs-xl); color: var(--ink-muted);
+      max-width: 56ch; line-height: var(--lh-snug); margin: 0;
+    }
+    .v1-hero .v1-cta { margin-top: 32px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+    .v1-hero .v1-meta {
+      margin-top: 24px;
+      font-size: var(--fs-sm); color: var(--muted);
+      display: flex; gap: 18px; align-items: center; flex-wrap: wrap;
+    }
+    .v1-hero .v1-meta span::before {
+      content: "✓"; color: var(--brand); font-weight: 700; margin-right: 6px;
+    }
+
+    /* Preview card (现代对话窗, 与 element/ui_kits/marketing 现版一致) */
+    .v1-preview {
+      max-width: 1160px; margin: 60px auto 0;
+      background: var(--bg-alt); border: 1px solid var(--line);
+      border-radius: var(--r-xl);
+      box-shadow: 0 30px 80px -30px rgb(15 23 42 / .25);
+      overflow: hidden;
+    }
+    .v1-preview .v1-tabbar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 10px 14px; background: var(--bg);
+      border-bottom: 1px solid var(--line);
+    }
+    .v1-preview .v1-tabbar .v1-dot {
+      width: 10px; height: 10px; border-radius: 50%; background: var(--line-strong);
+    }
+    .v1-preview .v1-tabbar .v1-url {
+      flex: 1; text-align: center;
+      font-family: var(--mono); font-size: var(--fs-xs); color: var(--muted);
+    }
+    .v1-preview .v1-body {
+      padding: 28px 32px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    }
+    .v1-preview .v1-msg {
+      background: var(--bg); border: 1px solid var(--line);
+      border-radius: var(--r-md); padding: 18px;
+      font-size: var(--fs-base); line-height: var(--lh-relaxed);
+    }
+    .v1-preview .v1-msg.v1-user {
+      background: var(--brand-50); border-color: var(--brand-100);
+    }
+    .v1-preview .v1-msg .v1-who {
+      font-size: var(--fs-eyebrow); font-weight: 700; color: var(--muted);
+      text-transform: uppercase; margin-bottom: 8px; letter-spacing: .04em;
+    }
+    .v1-preview .v1-msg.v1-user .v1-who { color: var(--brand-700); }
+    .v1-preview .v1-msg mark {
+      background: var(--warn-bg); padding: 0 3px; border-radius: 3px;
+    }
+    .v1-preview .v1-msg .v1-msg-meta {
+      display: block; margin-top: 12px;
+      font-size: var(--fs-sm); color: var(--muted);
+      padding-top: 10px; border-top: 1px dashed var(--line);
+    }
+    .v1-preview .v1-msg .v1-msg-meta::before { content: "→ "; color: var(--accent); }
+
+    /* Preview tabs (4 题型切换) */
+    .v1-preview .v1-pv-tabs {
+      display: flex; gap: 4px; padding: 10px 14px 0;
+      background: var(--bg);
+      border-bottom: 1px solid var(--line);
+      overflow-x: auto;
+    }
+    .v1-preview .v1-pv-tab {
+      padding: 10px 16px; background: transparent;
+      font-size: var(--fs-sm); font-weight: 600; color: var(--ink-muted);
+      border: none; border-bottom: 2px solid transparent;
+      margin-bottom: -1px; white-space: nowrap;
+      transition: color var(--motion-fast) var(--motion-ease),
+                  border-color var(--motion-fast) var(--motion-ease);
+    }
+    .v1-preview .v1-pv-tab:hover { color: var(--ink); }
+    .v1-preview .v1-pv-tab.active {
+      color: var(--brand);
+      border-bottom-color: var(--brand);
+    }
+    .v1-preview .v1-pv-pane { display: none; }
+    .v1-preview .v1-pv-pane.active {
+      display: block;
+      animation: pvFadeIn var(--motion-base) var(--motion-ease) both;
+    }
+    @keyframes pvFadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: none; }
+    }
+    .v1-preview .v1-pv-foot {
+      padding: 12px 32px 14px;
+      font-size: var(--fs-xs); color: var(--placeholder);
+      text-align: center;
+      border-top: 1px dashed var(--line);
+      background: var(--bg-alt);
+      letter-spacing: .04em;
+    }
+
+    /* Stats (3 列 token-strict) */
+    .v1-stats {
+      max-width: 1160px; margin: 100px auto 0;
+      padding: 80px 32px;
+      border-top: 1px solid var(--line);
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 40px;
+    }
+    .v1-stat .v1-stat-n {
+      font-family: var(--mono);
+      font-size: var(--fs-4xl); font-weight: 700;
+      color: var(--ink); letter-spacing: var(--tracking-tight);
+    }
+    .v1-stat .v1-stat-l {
+      font-size: var(--fs-sm); color: var(--muted); margin-top: 4px;
+    }
+
+    /* Section heading shared */
+    .v1-sec-head { margin-bottom: 48px; max-width: 720px; }
+    .v1-sec-head .v1-kicker {
+      font-size: var(--fs-eyebrow); font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--brand-700);
+    }
+    .v1-sec-head h2 {
+      font-size: var(--fs-h-mkt); font-weight: 700;
+      letter-spacing: var(--tracking-tight); line-height: var(--lh-tight);
+      margin: 10px 0 14px;
+    }
+    .v1-sec-head p {
+      font-size: var(--fs-lg); color: var(--ink-muted);
+      line-height: var(--lh-snug); margin: 0; max-width: 56ch;
+    }
+
+    .v1-section { max-width: 1160px; margin: 0 auto; padding: 80px 32px; border-top: 1px solid var(--line); }
+
+    /* How (3 步, 黑圆 mono 序号) */
+    .v1-how {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+      position: relative;
+    }
+    .v1-how::before {
+      content: ""; position: absolute; top: 20px;
+      left: calc(16% + 20px); right: calc(16% + 20px); height: 1px;
+      background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 12px);
+      z-index: 0;
+    }
+    .v1-step { position: relative; z-index: 1; }
+    .v1-step .v1-step-n {
+      width: 40px; height: 40px;
+      border-radius: var(--r-pill);
+      background: var(--brand); color: #fff;
+      font-family: var(--mono); font-weight: 700; font-size: var(--fs-md);
+      display: grid; place-items: center;
+      margin-bottom: 18px;
+      border: 4px solid var(--bg);
+    }
+    .v1-step h3 { font-size: var(--fs-xl); font-weight: 700; margin-bottom: 8px; }
+    .v1-step p { font-size: var(--fs-base); color: var(--muted); line-height: var(--lh-relaxed); margin: 0; }
+    .v1-step .v1-step-hint { font-size: var(--fs-sm); color: var(--accent); margin-top: 8px; }
+
+    /* Features (4 卡 2x2) */
+    .v1-feat-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    }
+    .v1-feat {
+      background: var(--bg); border: 1px solid var(--line);
+      border-radius: var(--r-xl); padding: 32px;
+      box-shadow: var(--shadow-card);
+      transition: box-shadow var(--motion-fast) var(--motion-ease),
+                  border-color var(--motion-fast) var(--motion-ease);
+    }
+    .v1-feat:hover { box-shadow: var(--shadow-pop); border-color: var(--brand-200); }
+    .v1-feat .v1-feat-icon {
+      width: 44px; height: 44px;
+      border-radius: var(--r-md);
+      background: var(--brand-50); color: var(--brand-700);
+      display: grid; place-items: center;
+      margin-bottom: 18px;
+    }
+    .v1-feat h3 { font-size: var(--fs-lg); font-weight: 700; margin-bottom: 8px; }
+    .v1-feat p { font-size: var(--fs-base); color: var(--muted); line-height: var(--lh-relaxed); margin: 0; }
+
+    /* Invite (替代学员故事) */
+    .v1-invite {
+      background: var(--brand-50);
+      border: 1px solid var(--brand-100);
+      border-radius: var(--r-xl);
+      padding: 56px 48px;
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 48px; align-items: center;
+    }
+    .v1-invite .v1-invite-text .v1-invite-eyebrow {
+      font-size: var(--fs-eyebrow); font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--brand-700);
+    }
+    .v1-invite .v1-invite-text h2 {
+      font-size: var(--fs-h-section); font-weight: 700;
+      margin: 10px 0 14px; letter-spacing: var(--tracking-tight);
+    }
+    .v1-invite .v1-invite-text p {
+      font-size: var(--fs-md); color: var(--ink-muted);
+      line-height: var(--lh-snug); margin: 0; max-width: 60ch;
+    }
+    .v1-invite .v1-invite-cta { display: flex; flex-direction: column; gap: 10px; }
+
+    /* Pricing */
+    .v1-pricing {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    }
+    .v1-plan {
+      background: var(--bg); border: 1px solid var(--line);
+      border-radius: var(--r-xl); padding: 32px;
+      display: flex; flex-direction: column; gap: 14px;
+      transition: transform var(--motion-base) var(--motion-ease),
+                  box-shadow var(--motion-base) var(--motion-ease),
+                  border-color var(--motion-base) var(--motion-ease);
+      will-change: transform;
+    }
+    .v1-plan:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-pop);
+      border-color: var(--brand-200);
+    }
+    .v1-plan.feat:hover {
+      transform: translateY(-6px);
+      box-shadow: 0 25px 50px -12px rgb(15 23 42 / .35);
+    }
+    .v1-plan.feat {
+      background: var(--brand); color: #fff; border-color: var(--brand);
+      position: relative;
+    }
+    .v1-plan.feat::before {
+      content: "推荐"; position: absolute; top: -12px; right: 20px;
+      background: var(--accent); color: #fff;
+      font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .04em;
+      padding: 4px 10px; border-radius: var(--r-sm);
+    }
+    .v1-plan .v1-p-name { font-size: var(--fs-base); font-weight: 600; color: var(--muted); }
+    .v1-plan.feat .v1-p-name { color: rgba(255,255,255,.6); }
+    .v1-plan .v1-p-price {
+      font-family: var(--mono);
+      font-size: var(--fs-h-mkt); font-weight: 700;
+      letter-spacing: var(--tracking-tight); line-height: 1;
+    }
+    .v1-plan .v1-p-price small {
+      font-family: var(--sans);
+      font-size: var(--fs-md); font-weight: 500; color: var(--muted); margin-left: 4px;
+    }
+    .v1-plan.feat .v1-p-price small { color: rgba(255,255,255,.6); }
+    .v1-plan .v1-p-desc { font-size: var(--fs-sm); color: var(--muted); }
+    .v1-plan.feat .v1-p-desc { color: rgba(255,255,255,.7); }
+    .v1-plan ul {
+      list-style: none; padding: 0; margin: 16px 0;
+      display: flex; flex-direction: column; gap: 10px;
+      font-size: var(--fs-base); line-height: var(--lh-snug);
+    }
+    .v1-plan ul li::before {
+      content: "✓"; color: var(--brand); margin-right: 8px; font-weight: 700;
+    }
+    .v1-plan.feat ul li::before { color: var(--accent); }
+    .v1-plan .v1-p-cta { margin-top: auto; padding-top: 6px; }
+    .v1-plan .v1-p-cta .btn { width: 100%; justify-content: center; }
+
+    /* Beta banner (邀请制说明, Pricing 段 hero) */
+    .v1-beta-banner {
+      display: grid; grid-template-columns: auto 1fr auto; gap: 24px;
+      align-items: center;
+      padding: 22px 28px;
+      background: var(--brand); color: #fff;
+      border-radius: var(--r-xl);
+      margin-bottom: 32px;
+    }
+    .v1-beta-banner .v1-beta-badge {
+      font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase;
+      padding: 6px 12px; background: var(--accent); border-radius: var(--r-pill);
+      white-space: nowrap;
+      animation: mPulse 1.8s var(--motion-ease) 1.2s 2 both;
+    }
+    .v1-beta-banner .v1-beta-text {
+      font-size: var(--fs-md); line-height: var(--lh-snug); color: rgba(255,255,255,.85);
+    }
+    .v1-beta-banner .v1-beta-text strong { color: #fff; font-weight: 700; }
+
+    /* Compare table */
+    .v1-compare-toggle { margin-top: 32px; }
+    .v1-compare-toggle summary {
+      font-size: var(--fs-sm); font-weight: 600; color: var(--ink-muted);
+      cursor: pointer; padding: 14px 18px;
+      background: var(--bg-alt); border: 1px solid var(--line); border-radius: var(--r-md);
+      list-style: none;
+    }
+    .v1-compare-toggle summary::-webkit-details-marker { display: none; }
+    .v1-compare-toggle summary::after {
+      content: " ▾"; font-size: var(--fs-xs); color: var(--muted); margin-left: 6px;
+    }
+    .v1-compare-toggle[open] summary::after { content: " ▴"; }
+    .v1-compare-toggle[open] summary { border-radius: var(--r-md) var(--r-md) 0 0; border-bottom: none; }
+    .v1-compare {
+      width: 100%; border-collapse: collapse; font-size: var(--fs-sm);
+      border: 1px solid var(--line); border-top: none;
+      border-radius: 0 0 var(--r-md) var(--r-md); overflow: hidden;
+    }
+    .v1-compare th, .v1-compare td {
+      padding: 12px 18px; text-align: left;
+      border-bottom: 1px solid var(--line);
+    }
+    .v1-compare th {
+      background: var(--bg-alt); font-weight: 700; color: var(--ink);
+    }
+    .v1-compare th.v1-cmp-recommend { color: var(--brand-700); background: var(--brand-50); }
+    .v1-compare th.v1-cmp-feat { width: 32%; }
+    .v1-compare tr:last-child td { border-bottom: none; }
+    .v1-compare td { color: var(--ink-muted); }
+    .v1-compare td.v1-cmp-yes { color: var(--success); font-weight: 700; }
+    .v1-compare td.v1-cmp-no { color: var(--placeholder); }
+    .v1-compare td.v1-cmp-recommend { background: var(--brand-50); }
+
+    /* FAQ (Pricing 之后, 最后转化助推) */
+    .v1-faq { display: flex; flex-direction: column; }
+    .v1-faq details {
+      border-bottom: 1px solid var(--line);
+      padding: 20px 0;
+    }
+    .v1-faq details:first-child { border-top: 1px solid var(--line); }
+    .v1-faq summary {
+      cursor: pointer; list-style: none;
+      font-size: var(--fs-md); font-weight: 600; color: var(--ink);
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 16px;
+    }
+    .v1-faq summary::-webkit-details-marker { display: none; }
+    .v1-faq summary::after {
+      content: "+"; font-size: var(--fs-xl); color: var(--muted);
+      font-weight: 400; font-family: var(--mono);
+      transition: transform var(--motion-fast) var(--motion-ease);
+    }
+    .v1-faq details[open] summary::after { content: "−"; color: var(--brand); }
+    .v1-faq details[open] summary { color: var(--brand); }
+    .v1-faq details p {
+      font-size: var(--fs-base); color: var(--muted); line-height: var(--lh-relaxed);
+      margin: 12px 0 0; padding-right: 36px;
+      animation: pvFadeIn var(--motion-base) var(--motion-ease) both;
+    }
+
+    /* Footer */
+    .v1-footer {
+      max-width: 1160px; margin: 0 auto;
+      padding: 60px 32px 40px;
+      border-top: 1px solid var(--line);
+      color: var(--muted); font-size: var(--fs-sm);
+    }
+    .v1-footer-row {
+      display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr;
+      gap: 40px; margin-bottom: 28px;
+    }
+    .v1-footer-row .v1-foot-brand {
+      font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px; font-size: var(--fs-md);
+    }
+    .v1-footer-row .v1-foot-tag { max-width: 280px; line-height: var(--lh-snug); margin: 0 0 12px; }
+    .v1-footer-row .v1-foot-contact { font-size: var(--fs-xs); color: var(--muted); margin: 0; line-height: var(--lh-snug); }
+    .v1-footer-row h4 { font-size: var(--fs-xs); font-weight: 700; color: var(--ink); margin-bottom: 14px; text-transform: uppercase; letter-spacing: .08em; }
+    .v1-footer-row a { color: var(--muted); display: block; padding: 4px 0; transition: color var(--motion-fast) var(--motion-ease); }
+    .v1-footer-row a:hover { color: var(--ink); }
+    .v1-footer-legal {
+      padding-top: 24px; border-top: 1px solid var(--line);
+      display: flex; justify-content: space-between; font-size: var(--fs-xs);
+    }
+
+    /* ════════════════════════════════════════════════════════════════════
+       V2 · Other Element System (规范外的"另一套规范")
+       明确声明: 这一版用 *与本项目无关* 的设计语言, 是"如果让另一个 design
+       team 重做会给的版本". 用户用这版判断"我是否想换一套规范"。
+
+       借鉴语言: 类 Apple 商品页 / 苹果发布会风, 极大字号 + 居中对称 + sans
+       compressed feel + bg 黑/白节奏 + 数字超大。
+
+       关键差异化: 字号超出 design system 阶梯 (88/120 px), 中性灰阶不同,
+       不用 brand-50 chip, 用 letter-spacing -0.05em 收紧。
+       ════════════════════════════════════════════════════════════════════ */
+    .v2-pane {
+      /* Apple-style: pure light gray bg + centered + dramatic sizes */
+      --v2-bg: #f5f5f7;          /* NEW: 苹果灰 (规范外) */
+      --v2-text: #1d1d1f;        /* NEW: 苹果黑 (规范外) */
+      --v2-muted: #6e6e73;       /* NEW: 苹果次灰 */
+      --v2-line: #d2d2d7;        /* NEW: 苹果分割线 */
+      --v2-accent: #06c;         /* NEW: 苹果蓝 #0066cc */
+      --v2-fs-mega: 96px;        /* NEW: 超出阶梯 */
+      --v2-fs-jumbo: 56px;       /* NEW: 超出阶梯 */
+      background: var(--v2-bg); color: var(--v2-text);
+    }
+
+    .v2-nav {
+      max-width: 1280px; margin: 0 auto;
+      padding: 0 32px;
+      display: flex; align-items: center; gap: 28px;
+      height: 56px;
+      font-size: var(--fs-sm);
+      backdrop-filter: saturate(180%) blur(20px);
+      -webkit-backdrop-filter: saturate(180%) blur(20px);
+      background: rgba(245,245,247,.72);
+      border-bottom: 1px solid var(--v2-line);
+      position: sticky; top: 0; z-index: 10;
+    }
+    .v2-nav .v2-brand {
+      display: inline-flex; align-items: center; gap: 8px;
+      font-weight: 600; font-size: var(--fs-md);
+    }
+    .v2-nav nav { display: flex; gap: 28px; margin-left: 12px; font-size: var(--fs-xs); }
+    .v2-nav nav a { color: var(--v2-text); font-weight: 400; opacity: .85; }
+    .v2-nav nav a:hover { opacity: 1; }
+    .v2-nav .v2-cta { margin-left: auto; display: inline-flex; gap: 14px; align-items: center; font-size: var(--fs-xs); }
+    .v2-nav .v2-cta a { color: var(--v2-accent); font-weight: 500; }
+
+    /* Hero (居中, 极大字, 苹果发布会风) */
+    .v2-hero {
+      padding: 80px 32px 100px;
+      text-align: center;
+    }
+    .v2-hero .v2-eyebrow {
+      font-size: var(--fs-md); color: var(--v2-accent); font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .v2-hero h1 {
+      font-size: var(--v2-fs-mega); font-weight: 700;
+      line-height: 1.05; letter-spacing: -0.04em;
+      max-width: 14ch; margin: 0 auto 24px;
+      color: var(--v2-text);
+    }
+    .v2-hero h1 .v2-em {
+      background: linear-gradient(135deg, #1d1d1f 0%, #6e6e73 100%);
+      -webkit-background-clip: text; background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .v2-hero .v2-lead {
+      font-size: var(--fs-2xl); color: var(--v2-text);
+      line-height: 1.35; max-width: 28ch; margin: 0 auto 36px;
+      font-weight: 400;
+    }
+    .v2-hero .v2-cta {
+      display: flex; gap: 28px; justify-content: center; align-items: center;
+      flex-wrap: wrap; font-size: var(--fs-md);
+    }
+    .v2-hero .v2-cta-primary {
+      padding: 14px 28px;
+      background: var(--v2-accent); color: #fff;
+      border-radius: var(--r-pill);
+      font-weight: 500;
+    }
+    .v2-hero .v2-cta-primary:hover { background: #0a72e0; }
+    .v2-hero .v2-cta-link {
+      color: var(--v2-accent); font-weight: 500;
+    }
+    .v2-hero .v2-cta-link:hover { text-decoration: underline; }
+
+    /* Preview card (放大苹果产品照风格) */
+    .v2-showcase {
+      max-width: 1080px; margin: 40px auto 0;
+      background: #fff;
+      border-radius: 24px;
+      box-shadow: 0 50px 120px -30px rgba(0,0,0,.18), 0 8px 30px -10px rgba(0,0,0,.1);
+      padding: 40px;
+    }
+    .v2-showcase .v2-show-tab {
+      display: flex; align-items: center; gap: 12px;
+      font-size: var(--fs-xs); color: var(--v2-muted);
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--v2-line);
+      margin-bottom: 24px;
+    }
+    .v2-showcase .v2-show-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 24px;
+    }
+    .v2-showcase .v2-msg {
+      padding: 20px;
+      border-radius: 14px;
+      font-size: var(--fs-base); line-height: 1.7;
+      background: var(--v2-bg);
+    }
+    .v2-showcase .v2-msg.v2-user {
+      background: #e8f0fe; color: var(--v2-text);
+    }
+    .v2-showcase .v2-msg .v2-who {
+      font-size: var(--fs-xs); font-weight: 600;
+      color: var(--v2-muted); margin-bottom: 6px;
+    }
+    .v2-showcase .v2-msg.v2-user .v2-who { color: var(--v2-accent); }
+    .v2-showcase .v2-msg mark { background: #ffd60a; color: var(--v2-text); padding: 0 3px; border-radius: 3px; }
+
+    /* Section heading (居中) */
+    .v2-section {
+      max-width: 1080px; margin: 0 auto;
+      padding: 120px 32px;
+      text-align: center;
+    }
+    .v2-section h2 {
+      font-size: var(--v2-fs-jumbo); font-weight: 700;
+      letter-spacing: -0.04em; line-height: 1.05;
+      max-width: 20ch; margin: 0 auto 16px;
+    }
+    .v2-section .v2-sec-eyebrow {
+      font-size: var(--fs-md); color: var(--v2-accent); font-weight: 600;
+      margin-bottom: 16px; display: inline-block;
+    }
+    .v2-section .v2-sec-lead {
+      font-size: var(--fs-xl); color: var(--v2-muted);
+      line-height: 1.45; max-width: 60ch; margin: 0 auto 64px;
+    }
+
+    /* Stats (超大数字, 苹果数据风) */
+    .v2-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 0;
+      text-align: center;
+      max-width: 1080px; margin: 0 auto;
+      padding: 60px 32px;
+    }
+    .v2-stat {
+      padding: 16px 32px;
+      border-right: 1px solid var(--v2-line);
+    }
+    .v2-stat:last-child { border-right: 0; }
+    .v2-stat .v2-stat-n {
+      font-size: 88px; font-weight: 600;
+      letter-spacing: -0.05em; line-height: 1;
+      color: var(--v2-text);
+      font-variant-numeric: tabular-nums;
+    }
+    .v2-stat .v2-stat-l {
+      font-size: var(--fs-md); color: var(--v2-muted);
+      margin-top: 12px;
+    }
+
+    /* How (3 卡, 居中, 苹果 feature 卡) */
+    .v2-how {
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    }
+    .v2-step {
+      background: #fff;
+      border-radius: 24px;
+      padding: 40px 32px;
+      text-align: left;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .v2-step .v2-step-n {
+      font-size: var(--fs-md); font-weight: 600;
+      color: var(--v2-accent); margin-bottom: 24px;
+    }
+    .v2-step h3 { font-size: var(--fs-2xl); font-weight: 600; margin-bottom: 10px; letter-spacing: -.01em; }
+    .v2-step p { font-size: var(--fs-md); color: var(--v2-muted); line-height: 1.5; margin: 0; }
+
+    /* Features (2x2 大卡) */
+    .v2-features {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+      text-align: left;
+    }
+    .v2-feat {
+      background: #fff; border-radius: 24px;
+      padding: 48px 40px;
+      transition: transform var(--motion-base) var(--motion-ease),
+                  box-shadow var(--motion-base) var(--motion-ease);
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .v2-feat:hover { transform: translateY(-4px); box-shadow: 0 20px 40px -10px rgba(0,0,0,.12); }
+    .v2-feat .v2-feat-icon {
+      width: 56px; height: 56px; border-radius: 16px;
+      background: linear-gradient(135deg, var(--v2-accent), #4d8fff);
+      color: #fff;
+      display: grid; place-items: center;
+      margin-bottom: 24px;
+    }
+    .v2-feat h3 { font-size: var(--fs-2xl); font-weight: 600; margin-bottom: 10px; letter-spacing: -.01em; }
+    .v2-feat p { font-size: var(--fs-md); color: var(--v2-muted); line-height: 1.5; margin: 0; }
+
+    /* Invite (大字 hero-style 邀请) */
+    .v2-invite {
+      max-width: 1080px; margin: 0 auto;
+      padding: 120px 32px;
+      text-align: center;
+    }
+    .v2-invite .v2-invite-eyebrow {
+      font-size: var(--fs-md); color: var(--v2-accent); font-weight: 600;
+      margin-bottom: 16px;
+    }
+    .v2-invite h2 {
+      font-size: var(--v2-fs-jumbo); font-weight: 700;
+      letter-spacing: -0.04em; line-height: 1.05;
+      max-width: 20ch; margin: 0 auto 20px;
+    }
+    .v2-invite p {
+      font-size: var(--fs-xl); color: var(--v2-muted); line-height: 1.45;
+      max-width: 60ch; margin: 0 auto 40px;
+    }
+    .v2-invite .v2-invite-cta { display: flex; gap: 28px; justify-content: center; flex-wrap: wrap; align-items: center; font-size: var(--fs-md); }
+
+    /* Pricing (3 卡, 苹果价目卡) */
+    .v2-pricing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; text-align: left; }
+    .v2-plan {
+      background: #fff; border-radius: 24px; padding: 40px 32px;
+      display: flex; flex-direction: column; gap: 14px;
+      box-shadow: 0 1px 3px rgba(0,0,0,.04);
+    }
+    .v2-plan.feat {
+      border: 2px solid var(--v2-accent);
+      box-shadow: 0 20px 40px -10px rgba(6,102,204,.18);
+    }
+    .v2-plan .v2-p-name { font-size: var(--fs-md); font-weight: 600; color: var(--v2-muted); }
+    .v2-plan.feat .v2-p-name { color: var(--v2-accent); }
+    .v2-plan .v2-p-price {
+      font-size: var(--v2-fs-jumbo); font-weight: 600;
+      letter-spacing: -0.05em; line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+    .v2-plan .v2-p-price small {
+      font-size: var(--fs-md); font-weight: 500; color: var(--v2-muted); margin-left: 4px;
+    }
+    .v2-plan .v2-p-desc { font-size: var(--fs-sm); color: var(--v2-muted); }
+    .v2-plan ul { list-style: none; padding: 0; margin: 14px 0; display: flex; flex-direction: column; gap: 10px; font-size: var(--fs-base); line-height: 1.5; }
+    .v2-plan ul li::before { content: "•"; color: var(--v2-accent); margin-right: 10px; font-weight: 700; }
+    .v2-plan .v2-p-cta { margin-top: auto; padding-top: 14px; }
+    .v2-plan .v2-p-cta a {
+      display: block; text-align: center;
+      padding: 12px;
+      background: var(--v2-accent); color: #fff;
+      border-radius: var(--r-pill);
+      font-weight: 500; font-size: var(--fs-base);
+    }
+    .v2-plan:not(.feat) .v2-p-cta a {
+      background: transparent; color: var(--v2-accent);
+      border: 1px solid var(--v2-line);
+    }
+
+    /* Footer (苹果脚注风) */
+    .v2-footer {
+      background: var(--v2-bg);
+      padding: 48px 32px 32px;
+      font-size: var(--fs-xs); color: var(--v2-muted);
+      border-top: 1px solid var(--v2-line);
+    }
+    .v2-footer-inner { max-width: 1080px; margin: 0 auto; }
+    .v2-footer-row {
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 32px;
+      padding-bottom: 32px; margin-bottom: 24px;
+      border-bottom: 1px solid var(--v2-line);
+    }
+    .v2-footer-row h4 {
+      font-size: var(--fs-xs); font-weight: 600; color: var(--v2-text);
+      margin-bottom: 12px;
+    }
+    .v2-footer-row a { display: block; padding: 4px 0; color: var(--v2-muted); }
+    .v2-footer-row a:hover { color: var(--v2-text); text-decoration: underline; }
+    .v2-footer-legal { display: flex; justify-content: space-between; }
+
+    /* ════════════════════════════════════════════════════════════════════
+       V3 · Best-in-class (Linear / Vercel / Stripe / Anthropic 现代 SaaS)
+       严格在 *本项目 token 系统* 内, 但用 §7.4 L3 卡 + sticky blur + radial
+       gradient 这些规范明文允许的扩展. 0 italic, sans-first.
+       亮点: dark hero 节奏 + accent radial + dotted grid + floating preview
+       ════════════════════════════════════════════════════════════════════ */
+    .v3-pane { background: var(--bg); color: var(--ink); }
+
+    /* Sticky nav with blur */
+    .v3-nav {
+      position: sticky; top: 0; z-index: 10;
+      backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+      background: rgba(255,255,255,.85);
+      border-bottom: 1px solid var(--line);
+    }
+    .v3-nav-inner {
+      max-width: 1200px; margin: 0 auto;
+      padding: 16px 32px;
+      display: flex; align-items: center; gap: 32px;
+    }
+    .v3-nav-inner .v3-brand {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-weight: 700; font-size: var(--fs-md);
+    }
+    .v3-nav-inner nav { display: flex; gap: 24px; margin-left: 16px; font-size: var(--fs-base); }
+    .v3-nav-inner nav a { color: var(--ink-muted); font-weight: 500; }
+    .v3-nav-inner nav a:hover { color: var(--ink); }
+    .v3-nav-inner .v3-cta { margin-left: auto; display: inline-flex; gap: 8px; }
+    .v3-nav-inner .v3-login {
+      padding: 8px 14px; font-size: var(--fs-sm); font-weight: 600; color: var(--ink-muted);
+    }
+    .v3-nav-inner .v3-signup {
+      padding: 8px 14px; font-size: var(--fs-sm); font-weight: 600;
+      background: var(--brand); color: #fff;
+      border-radius: var(--r-btn);
+    }
+
+    /* Hero — full-bleed 黑底 + accent radial (§7.4 L3 卡的 full-screen 版本) */
+    .v3-hero {
+      background: linear-gradient(180deg, var(--brand) 0%, #1e293b 100%);
+      color: #fff;
+      padding: 96px 0 80px;
+      position: relative; overflow: hidden;
+      border-bottom: 1px solid #1e293b;
+    }
+    .v3-hero::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(800px circle at 75% 30%, rgba(63,126,241,.16), transparent 55%),
+        radial-gradient(600px circle at 0% 100%, rgba(63,126,241,.08), transparent 55%);
+      z-index: 0;
+    }
+    .v3-hero::after {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background-image:
+        linear-gradient(rgba(255,255,255,.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,.025) 1px, transparent 1px);
+      background-size: 64px 64px;
+      mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 70%);
+      -webkit-mask-image: radial-gradient(ellipse at 50% 30%, #000 30%, transparent 70%);
+      z-index: 0;
+    }
+    .v3-hero-inner {
+      position: relative; z-index: 1;
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 32px; text-align: center;
+    }
+    .v3-hero .v3-eyebrow {
+      display: inline-flex; align-items: center; gap: 10px;
+      padding: 5px 14px;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.04);
+      color: rgba(255,255,255,.85);
+      border-radius: var(--r-pill);
+      font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase;
+      backdrop-filter: blur(8px);
+    }
+    .v3-hero .v3-eyebrow .v3-pulse {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent);
+      animation: mPulse 2.4s var(--motion-ease) infinite;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .v3-hero .v3-eyebrow .v3-pulse { animation: none; }
+    }
+    .v3-hero h1 {
+      font-size: var(--fs-display); font-weight: 800;
+      line-height: var(--lh-tight); letter-spacing: -0.03em;
+      margin: 28px auto 24px; max-width: 14ch; color: #fff;
+    }
+    .v3-hero h1 .v3-em { color: var(--accent); }
+    .v3-hero .v3-lead {
+      font-size: var(--fs-xl); color: rgba(255,255,255,.7);
+      line-height: var(--lh-snug);
+      max-width: 56ch; margin: 0 auto 32px;
+    }
+    .v3-hero .v3-cta {
+      display: flex; gap: 12px; justify-content: center; flex-wrap: wrap;
+    }
+    .v3-hero .v3-meta {
+      margin-top: 28px;
+      display: flex; gap: 24px; justify-content: center; flex-wrap: wrap;
+      font-size: var(--fs-sm); color: rgba(255,255,255,.55);
+    }
+    .v3-hero .v3-meta span::before { content: "✓"; color: var(--accent); font-weight: 700; margin-right: 6px; }
+
+    /* Floating preview card (Linear / Stripe 经典手法, 跨边界) */
+    .v3-preview-wrap {
+      position: relative; z-index: 1;
+      max-width: 1100px; margin: 64px auto -180px;
+      padding: 0 32px;
+    }
+    .v3-preview {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--r-xl);
+      box-shadow: 0 30px 100px -20px rgb(0 0 0 / .55), 0 8px 30px -10px rgb(0 0 0 / .4);
+      overflow: hidden;
+    }
+    .v3-preview .v3-tabbar {
+      display: flex; align-items: center; gap: 6px;
+      padding: 12px 16px; background: var(--bg-alt);
+      border-bottom: 1px solid var(--line);
+    }
+    .v3-preview .v3-tabbar .v3-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--line-strong); }
+    .v3-preview .v3-tabbar .v3-url {
+      flex: 1; text-align: center;
+      font-family: var(--mono); font-size: var(--fs-xs); color: var(--muted);
+      padding: 4px 12px; background: var(--bg);
+      border: 1px solid var(--line); border-radius: var(--r-sm);
+      max-width: 480px; margin: 0 auto;
+    }
+    .v3-preview .v3-body {
+      padding: 32px; background: var(--bg-alt);
+      display: grid; grid-template-columns: 1fr 1fr; gap: 20px;
+    }
+    .v3-preview .v3-msg {
+      background: var(--bg); border: 1px solid var(--line);
+      border-radius: var(--r-md); padding: 18px;
+      font-size: var(--fs-base); line-height: var(--lh-relaxed);
+    }
+    .v3-preview .v3-msg.v3-user {
+      background: var(--brand-50); border-color: var(--brand-100);
+    }
+    .v3-preview .v3-msg .v3-who {
+      font-size: var(--fs-eyebrow); font-weight: 700; color: var(--muted);
+      text-transform: uppercase; margin-bottom: 8px; letter-spacing: .04em;
+    }
+    .v3-preview .v3-msg.v3-user .v3-who { color: var(--brand-700); }
+    .v3-preview .v3-msg mark { background: var(--warn-bg); padding: 0 3px; border-radius: 3px; }
+
+    /* Section title (居中 vercel-style) */
+    .v3-sec-title {
+      max-width: 1200px; margin: 0 auto;
+      padding: 96px 32px 48px;
+      text-align: center;
+    }
+    .v3-sec-title.first { padding-top: 232px; }
+    .v3-sec-title .v3-kicker {
+      display: inline-block;
+      font-size: var(--fs-eyebrow); font-weight: 700;
+      letter-spacing: .12em; text-transform: uppercase;
+      color: var(--accent); margin-bottom: 14px;
+    }
+    .v3-sec-title h2 {
+      font-size: var(--fs-h-mkt); font-weight: 800;
+      letter-spacing: -0.02em; line-height: var(--lh-tight);
+      max-width: 22ch; margin: 0 auto 14px;
+    }
+    .v3-sec-title p {
+      font-size: var(--fs-lg); color: var(--ink-muted);
+      line-height: var(--lh-snug); max-width: 60ch; margin: 0 auto;
+    }
+
+    /* How (3 步, 类 Stripe 步骤) */
+    .v3-how {
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 32px 48px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px;
+      position: relative;
+    }
+    .v3-how::before {
+      content: ""; position: absolute; top: 24px;
+      left: calc(16% + 16px); right: calc(16% + 16px); height: 1px;
+      background: repeating-linear-gradient(90deg, var(--line) 0 6px, transparent 6px 12px);
+      z-index: 0;
+    }
+    .v3-step { text-align: center; position: relative; z-index: 1; }
+    .v3-step .v3-step-n {
+      width: 48px; height: 48px; margin: 0 auto 18px;
+      border-radius: var(--r-pill); background: var(--brand); color: #fff;
+      font-family: var(--mono); font-weight: 700; font-size: var(--fs-md);
+      display: grid; place-items: center;
+      border: 4px solid var(--bg); box-shadow: var(--shadow-card);
+    }
+    .v3-step h3 { font-size: var(--fs-lg); font-weight: 700; margin-bottom: 8px; }
+    .v3-step p {
+      font-size: var(--fs-base); color: var(--muted);
+      line-height: var(--lh-relaxed); margin: 0;
+      max-width: 32ch; margin-inline: auto;
+    }
+
+    /* Stats (黑底 section, 节奏切换 — 类 Linear) */
+    .v3-stats {
+      background: var(--brand); color: #fff;
+      padding: 80px 0; margin-top: 96px;
+    }
+    .v3-stats-inner {
+      max-width: 1200px; margin: 0 auto; padding: 0 32px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px;
+    }
+    .v3-stat { display: flex; flex-direction: column; gap: 10px; padding-right: 24px; border-right: 1px solid #1e293b; }
+    .v3-stat:last-child { border-right: 0; }
+    .v3-stat .v3-stat-n {
+      font-size: var(--fs-5xl); font-weight: 800;
+      line-height: 1; letter-spacing: -0.03em;
+      color: #fff; font-variant-numeric: tabular-nums;
+    }
+    .v3-stat .v3-stat-l { font-size: var(--fs-sm); color: rgba(255,255,255,.55); line-height: var(--lh-snug); }
+
+    /* Features (类 Vercel hover lift, 卡 + icon 反色) */
+    .v3-features {
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 32px 96px;
+      display: grid; grid-template-columns: 1fr 1fr; gap: 16px;
+    }
+    .v3-feat {
+      background: var(--bg); border: 1px solid var(--line);
+      border-radius: var(--r-xl); padding: 36px 32px;
+      box-shadow: var(--shadow-card);
+      transition: all var(--motion-base) var(--motion-ease);
+      position: relative; overflow: hidden;
+    }
+    .v3-feat:hover {
+      border-color: var(--brand-200);
+      box-shadow: var(--shadow-pop);
+      transform: translateY(-2px);
+    }
+    .v3-feat .v3-feat-icon {
+      width: 48px; height: 48px;
+      background: var(--brand-50); color: var(--brand-700);
+      border-radius: var(--r-md);
+      display: grid; place-items: center;
+      margin-bottom: 20px;
+      transition: all var(--motion-base) var(--motion-ease);
+    }
+    .v3-feat:hover .v3-feat-icon { background: var(--brand); color: #fff; }
+    .v3-feat h3 { font-size: var(--fs-xl); font-weight: 700; margin-bottom: 10px; letter-spacing: var(--tracking-tight); }
+    .v3-feat p { color: var(--muted); font-size: var(--fs-md); line-height: var(--lh-relaxed); margin: 0; }
+
+    /* Invite (替代学员故事, 黑底大卡) */
+    .v3-invite-wrap {
+      max-width: 1200px; margin: 0 auto;
+      padding: 0 32px 96px;
+    }
+    .v3-invite {
+      background: var(--brand); color: #fff;
+      border-radius: var(--r-xl);
+      padding: 64px 56px;
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 48px; align-items: center;
+      position: relative; overflow: hidden;
+      box-shadow: var(--shadow-hero);
+    }
+    .v3-invite::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background: radial-gradient(500px circle at 100% 0%, rgba(63,126,241,.18), transparent 55%);
+    }
+    .v3-invite > * { position: relative; z-index: 1; }
+    .v3-invite .v3-invite-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 4px 12px;
+      background: rgba(63,126,241,.18); border: 1px solid rgba(63,126,241,.3);
+      border-radius: var(--r-pill);
+      font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--accent);
+    }
+    .v3-invite h2 {
+      font-size: var(--fs-h-section); font-weight: 800;
+      letter-spacing: var(--tracking-tight); line-height: var(--lh-tight);
+      margin: 14px 0 14px; max-width: 18ch;
+    }
+    .v3-invite p {
+      font-size: var(--fs-md); color: rgba(255,255,255,.7);
+      line-height: var(--lh-snug); margin: 0; max-width: 56ch;
+    }
+    .v3-invite .v3-invite-cta { display: flex; flex-direction: column; gap: 10px; }
+
+    /* Pricing */
+    .v3-pricing {
+      max-width: 1100px; margin: 0 auto;
+      padding: 0 32px 96px;
+      display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;
+    }
+    .v3-plan {
+      background: var(--bg); border: 1px solid var(--line);
+      border-radius: var(--r-xl); padding: 36px 32px;
+      display: flex; flex-direction: column; gap: 14px;
+    }
+    .v3-plan.feat {
+      background: var(--brand); color: #fff; border-color: var(--brand);
+      transform: scale(1.04); box-shadow: var(--shadow-hero);
+      position: relative;
+    }
+    .v3-plan.feat::before {
+      content: "推荐"; position: absolute; top: -12px; left: 50%;
+      transform: translateX(-50%);
+      background: var(--accent); color: #fff;
+      font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .12em;
+      padding: 4px 14px; border-radius: var(--r-pill);
+      text-transform: uppercase;
+    }
+    .v3-plan .v3-p-name { font-size: var(--fs-base); font-weight: 600; color: var(--muted); }
+    .v3-plan.feat .v3-p-name { color: rgba(255,255,255,.6); }
+    .v3-plan .v3-p-price {
+      font-size: var(--fs-5xl); font-weight: 800; line-height: 1;
+      letter-spacing: -0.03em; font-variant-numeric: tabular-nums;
+    }
+    .v3-plan .v3-p-price small {
+      font-size: var(--fs-md); font-weight: 500; color: var(--muted); margin-left: 4px;
+    }
+    .v3-plan.feat .v3-p-price small { color: rgba(255,255,255,.6); }
+    .v3-plan .v3-p-desc { font-size: var(--fs-sm); color: var(--muted); }
+    .v3-plan.feat .v3-p-desc { color: rgba(255,255,255,.7); }
+    .v3-plan ul { list-style: none; padding: 0; margin: 16px 0; display: flex; flex-direction: column; gap: 10px; font-size: var(--fs-base); line-height: var(--lh-snug); }
+    .v3-plan ul li::before { content: "✓"; color: var(--accent); font-weight: 700; margin-right: 8px; }
+    .v3-plan .v3-p-cta { margin-top: auto; }
+    .v3-plan .v3-p-cta .btn { width: 100%; justify-content: center; }
+
+    /* Footer (黑底 + 大 CTA, vercel/linear 经典) */
+    .v3-footer {
+      background: var(--brand); color: rgba(255,255,255,.55);
+      padding: 80px 0 32px;
+    }
+    .v3-footer-inner { max-width: 1200px; margin: 0 auto; padding: 0 32px; }
+    .v3-footer-cta {
+      text-align: center;
+      padding-bottom: 64px;
+      border-bottom: 1px solid #1e293b;
+      margin-bottom: 48px;
+    }
+    .v3-footer-cta h3 {
+      font-size: var(--fs-h-mkt); font-weight: 800;
+      line-height: var(--lh-tight); letter-spacing: -0.02em;
+      color: #fff; max-width: 18ch; margin: 0 auto 28px;
+    }
+    .v3-footer-row {
+      display: grid; grid-template-columns: 1.5fr 1fr 1fr 1fr; gap: 32px;
+      margin-bottom: 48px;
+    }
+    .v3-footer-row .v3-foot-brand { color: #fff; font-weight: 700; font-size: var(--fs-md); display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+    .v3-footer-row .v3-foot-tag { max-width: 280px; line-height: var(--lh-snug); color: rgba(255,255,255,.45); }
+    .v3-footer-row h4 { font-size: var(--fs-xs); font-weight: 700; color: rgba(255,255,255,.85); margin-bottom: 14px; text-transform: uppercase; letter-spacing: .08em; }
+    .v3-footer-row a { display: block; padding: 4px 0; color: rgba(255,255,255,.55); font-size: var(--fs-sm); }
+    .v3-footer-row a:hover { color: #fff; }
+    .v3-footer-legal { padding-top: 24px; border-top: 1px solid #1e293b; display: flex; justify-content: space-between; font-size: var(--fs-xs); }
+
+  </style>
+</head>
+<body>
+  <div class="meta-shell">
+    <header class="meta-header">
+      <div class="meta-brand">
+        <svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true">
+          <rect width="40" height="40" rx="10" fill="#0b1120"/>
+          <g stroke="#fff" stroke-width="1.8" stroke-linecap="round">
+            <line x1="11" y1="13" x2="29" y2="13"/><line x1="11" y1="22" x2="29" y2="22"/>
+            <line x1="11" y1="13" x2="11" y2="27"/><line x1="20" y1="13" x2="20" y2="27"/>
+            <line x1="29" y1="13" x2="29" y2="27"/><line x1="11" y1="27" x2="29" y2="27"/>
+          </g>
+          <circle cx="20" cy="34" r="2.2" fill="#fff"/>
+        </svg>
+        <span class="meta-brand-text">
+          思考 · 产品介绍页 重做 v2
+          <small>3 方案 · revised 2026-05-06 · 删学员故事 / 减斜体 / 规范分级</small>
+        </span>
+      </div>
+      <div style="font-size:12px;color:var(--muted);text-align:right;line-height:1.5;">
+        scroll-trigger 入场 · prefers-reduced-motion 自动尊重<br/>
+        <code>1/2/3</code> 键切换方案
+      </div>
+    </header>
+
+    <nav class="meta-tabs" id="tabs" role="tablist">
+      <button class="meta-tab active" data-tab="v1" role="tab">V1 · 严格规范<span class="kbd">1</span></button>
+      <button class="meta-tab" data-tab="v2" role="tab">V2 · 另一套规范<span class="kbd">2</span></button>
+      <button class="meta-tab" data-tab="v3" role="tab">V3 · 现代 SaaS<span class="kbd">3</span></button>
+    </nav>
+    <p class="tab-desc">
+      <span class="pill"><span class="dot"></span><span id="tab-name">V1 · 严格规范</span></span>
+      <span id="tab-summary">100% 用 tokens.css 现有 token / 0 italic / 0 serif / 0 hardcode / 0 任意字号 — 验证规范内可以做出克制高级感</span>
+    </p>
+    <div class="audit-row" id="tab-audit">
+      <span><b>token 合规</b> <span class="ok">✓ 100%</span></span>
+      <span><b>italic</b> <span class="ok">0 处</span></span>
+      <span><b>新增元素</b> <span class="ok">无</span></span>
+    </div>
+
+    <main class="stage" id="stage" style="margin-top:20px;">
+
+      <!-- ═════════════════════════════════════════════════════════════════
+           V1 · Token-Strict
+           ═════════════════════════════════════════════════════════════════ -->
+      <section class="stage-pane v1-pane active" data-stage="v1" role="tabpanel">
+        <!-- Nav -->
+        <nav class="v1-nav">
+          <span class="v1-brand">
+            <svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true">
+              <rect width="40" height="40" rx="10" fill="#0b1120"/>
+              <g stroke="#fff" stroke-width="1.8" stroke-linecap="round">
+                <line x1="11" y1="13" x2="29" y2="13"/><line x1="11" y1="22" x2="29" y2="22"/>
+                <line x1="11" y1="13" x2="11" y2="27"/><line x1="20" y1="13" x2="20" y2="27"/>
+                <line x1="29" y1="13" x2="29" y2="27"/><line x1="11" y1="27" x2="29" y2="27"/>
+              </g>
+              <circle cx="20" cy="34" r="2.2" fill="#fff"/>
+            </svg>
+            思考
+          </span>
+          <nav>
+            <a href="#">功能</a><a href="#">题库</a><a href="#">定价</a><a href="#">官方公众号</a>
+          </nav>
+          <div class="v1-cta">
+            <a class="v1-login" href="#">登录</a>
+            <a class="v1-signup" href="#">免费试用</a>
+          </div>
+        </nav>
+
+        <!-- Hero -->
+        <header class="v1-hero">
+          <span class="chip anim-up">
+            <span class="dot"></span>2026 国考大纲已对齐 · 申论 5 维度反馈
+          </span>
+          <h1 class="anim-up delay-1">让备考从刷题<br/>变成<span class="v1-em">思考</span></h1>
+          <p class="v1-lead anim-up delay-2">
+            先做对国考真题。AI 陪你从「为什么错」开始,一题一题想清楚。省考与事业编陆续覆盖。
+          </p>
+          <div class="v1-cta anim-up delay-3">
+            <a class="btn primary lg" href="#">开始免费练习</a>
+            <a class="btn ghost lg" href="#">观看 2 分钟演示</a>
+          </div>
+          <div class="v1-meta anim-up delay-4">
+            <span>受邀者首月免费</span>
+            <span>2013–2025 全量真题</span>
+            <span>30 秒申论 5 维度批改</span>
+          </div>
+        </header>
+
+        <!-- Preview card (4 题型切换 · 示意) -->
+        <div class="v1-preview anim-up" id="v1-preview">
+          <div class="v1-tabbar">
+            <span class="v1-dot"></span><span class="v1-dot"></span><span class="v1-dot"></span>
+            <span class="v1-url">sikao.ai / 练习 / <span class="v1-pv-url">2024 国考 · 言语理解 · 第 18 题</span></span>
+          </div>
+          <div class="v1-pv-tabs" role="tablist">
+            <button class="v1-pv-tab active" data-pv="yan" role="tab">言语理解</button>
+            <button class="v1-pv-tab" data-pv="shu" role="tab">数量关系</button>
+            <button class="v1-pv-tab" data-pv="pan" role="tab">判断推理</button>
+            <button class="v1-pv-tab" data-pv="zi" role="tab">资料分析</button>
+          </div>
+
+          <!-- Pane: 言语理解 -->
+          <div class="v1-pv-pane active" data-pv-pane="yan" data-pv-url="2024 国考 · 言语理解 · 第 18 题">
+            <div class="v1-body">
+              <div class="v1-msg v1-user">
+                <div class="v1-who">你</div>
+                我选了 B,但答案是 C。第二段里「<mark>循序渐进</mark>」和「按部就班」感觉都能填,差别在哪?
+              </div>
+              <div class="v1-msg">
+                <div class="v1-who">思考 AI</div>
+                关键差别在「主动性」。「循序渐进」强调有计划地向前推进,带有积极动作;「按部就班」偏中性甚至略带消极,指按既定步骤、不变通。原文在讲「改革推进」的主动性,所以 C 更贴合。
+                <span class="v1-msg-meta">「近义成语辨析」高频考点,近 5 年出现 11 次。</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane: 数量关系 -->
+          <div class="v1-pv-pane" data-pv-pane="shu" data-pv-url="2024 国考 · 数量关系 · 第 65 题">
+            <div class="v1-body">
+              <div class="v1-msg v1-user">
+                <div class="v1-who">你</div>
+                甲队 12 天修完,乙队 18 天修完。两队合作 4 天后甲队撤走,乙队接着修完剩余部分。我算出乙队还要修 8 天,但选项里有 8 也有 8.5,到底选哪个?
+              </div>
+              <div class="v1-msg">
+                <div class="v1-who">思考 AI</div>
+                合作 4 天的工作量 = 4 × (1/12 + 1/18) = <mark>5/9</mark>。剩余 4/9 由乙队独力完成,需 4/9 ÷ 1/18 = <mark>8 天</mark>。你算对了 —— 选 8。
+                <span class="v1-msg-meta">「分数工程模型」5 年内出现 14 次。常见陷阱是没把合作工作量化简到位,得出 7.x 或 8.5。</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane: 判断推理 -->
+          <div class="v1-pv-pane" data-pv-pane="pan" data-pv-url="2024 国考 · 判断推理 · 第 87 题">
+            <div class="v1-body">
+              <div class="v1-msg v1-user">
+                <div class="v1-who">你</div>
+                所有会计都精通税法。小李精通税法,小张是会计。我选 A(小李是会计),为什么答案是 B(小张精通税法)?
+              </div>
+              <div class="v1-msg">
+                <div class="v1-who">思考 AI</div>
+                关键是「<mark>充分条件 vs 必要条件</mark>」。「所有会计 → 精通税法」是单向的,反向不必然成立。
+                <br/>· 小李精通税法 → 不能反推他是会计(他可能是律师)
+                <br/>· 小张是会计 → 必然精通税法,<mark>所以 B 对</mark>
+                <span class="v1-msg-meta">「直言命题反向推理」是判断推理高频陷阱。</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pane: 资料分析 -->
+          <div class="v1-pv-pane" data-pv-pane="zi" data-pv-url="2024 国考 · 资料分析 · 第 121 题">
+            <div class="v1-body">
+              <div class="v1-msg v1-user">
+                <div class="v1-who">你</div>
+                材料:2024 年某省 GDP 8.4 万亿元,同比增长 5.6%。问 2023 年 GDP 约为多少。
+                <br/>我用 8.4 × (1 - 5.6%) ≈ 7.93,但答案是 7.95?
+              </div>
+              <div class="v1-msg">
+                <div class="v1-who">思考 AI</div>
+                公式错了。正确是 <mark>基期值 = 现期值 ÷ (1 + 增长率)</mark> = 8.4 ÷ 1.056 ≈ <mark>7.95</mark>。
+                <br/>增长率不能简单减回去 —— 这是资料分析最常见的陷阱。
+                <span class="v1-msg-meta">「基期值还原」是资料分析中频率最高的题型,占比 28%。</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="v1-pv-foot">仅供产品演示 · 真题答疑界面以实际产品为准</div>
+        </div>
+
+        <!-- Stats (3 列 honest 真数字) -->
+        <section class="v1-stats">
+          <div class="v1-stat anim-up">
+            <div class="v1-stat-n">760+</div>
+            <div class="v1-stat-l">套真题 · 国考 / 省考 / 事业编</div>
+          </div>
+          <div class="v1-stat anim-up delay-1">
+            <div class="v1-stat-n num">88,000+</div>
+            <div class="v1-stat-l">道已解析题目</div>
+          </div>
+          <div class="v1-stat anim-up delay-2">
+            <div class="v1-stat-n">13</div>
+            <div class="v1-stat-l">年真题覆盖 · 2013–2025</div>
+          </div>
+        </section>
+
+        <!-- How -->
+        <section class="v1-section">
+          <div class="v1-sec-head">
+            <span class="v1-kicker anim-up">使用方式</span>
+            <h2 class="anim-up delay-1">三步开始你的备考</h2>
+            <p class="anim-up delay-2">告诉 AI 你的考试,按计划练习,周报复盘。</p>
+          </div>
+          <div class="v1-how">
+            <div class="v1-step anim-up">
+              <div class="v1-step-n">1</div>
+              <h3>告诉我们你的考试</h3>
+              <p>选择目标 —— 国考 / 省考 / 事业编,告诉我们考试时间。思考会生成一份专属复习计划。</p>
+            </div>
+            <div class="v1-step anim-up delay-1">
+              <div class="v1-step-n">2</div>
+              <h3>按计划练习,随时提问</h3>
+              <p>刷真题,遇到卡壳的题直接问 AI。它记得你的错题,知道你哪里弱。</p>
+            </div>
+            <div class="v1-step anim-up delay-2">
+              <div class="v1-step-n">3</div>
+              <h3>周报复盘,考前冲刺</h3>
+              <p>每周拿到一份数据报告,看清进步曲线。薄弱模块自动加码训练。</p>
+              <p class="v1-step-hint">考前 30 天自动切换冲刺模式 · 真题压轴 + 错题重做。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Features -->
+        <section class="v1-section">
+          <div class="v1-sec-head">
+            <span class="v1-kicker anim-up">核心能力</span>
+            <h2 class="anim-up delay-1">备考需要的,都在一个地方</h2>
+            <p class="anim-up delay-2">AI 陪练不是替你做题,是帮你搞清楚每一题背后的考点与思路。</p>
+          </div>
+          <div class="v1-feat-grid">
+            <article class="v1-feat anim-up">
+              <div class="v1-feat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+              <h3>AI 答疑陪练</h3>
+              <p>遇到不懂的题直接追问,AI 会从考点、思路、易错点三个层面讲清楚。不止告诉你答案是什么,更告诉你为什么。</p>
+            </article>
+            <article class="v1-feat anim-up delay-1">
+              <div class="v1-feat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+              <h3>真题刷题与模考</h3>
+              <p>2013 年至今全量国考真题 + 186 套省考真题。支持单题、模块、整套三种模式,断点续答。</p>
+            </article>
+            <article class="v1-feat anim-up delay-2">
+              <div class="v1-feat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
+              <h3>申论 AI 批改</h3>
+              <p>输入作文,30 秒内拿到按评分标准给的分数、要点反馈与改进建议。对齐国考真实阅卷维度。</p>
+            </article>
+            <article class="v1-feat anim-up delay-3">
+              <div class="v1-feat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+              <h3>错题本与薄弱分析</h3>
+              <p>自动归类错题到考点图谱。你弱在资料分析还是判断推理,一目了然,配套专项训练。</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Invite (替代 Testimonials) -->
+        <section class="v1-section">
+          <div class="v1-invite">
+            <div class="v1-invite-text anim-up">
+              <span class="v1-invite-eyebrow">Beta 公测 · 首发邀请</span>
+              <h2>我们刚开始。<br/>你可以是第一个。</h2>
+              <p>思考目前是公开测试。AI 还会答错,错题归类还会归错。比起赞美,我们更想听到「这里你答错了」—— 你的反馈会直接决定下个版本怎么做。</p>
+            </div>
+            <div class="v1-invite-cta anim-up delay-1">
+              <a class="btn primary lg" href="#">申请加入 beta</a>
+              <a class="btn ghost lg" href="mailto:hello@sikao.ai">提交反馈</a>
+            </div>
+          </div>
+        </section>
+
+        <!-- Pricing (Beta 邀请制 + 转正后定价预告 + 对比表) -->
+        <section class="v1-section">
+          <div class="v1-sec-head">
+            <span class="v1-kicker anim-up">正式定价 · 预告</span>
+            <h2 class="anim-up delay-1">受邀者首月免费,<br/>转正后选一档</h2>
+            <p class="anim-up delay-2">邀请制公测期间无费用。下方为转正后预告价,首月退款无理由。</p>
+          </div>
+
+          <div class="v1-beta-banner anim-up">
+            <span class="v1-beta-badge">Beta · 邀请制</span>
+            <span class="v1-beta-text">
+              下方价格仅为正式上线后预告。Beta 期受邀用户 <strong>首月免费</strong>,期间随时可退,无任何隐性收费。
+            </span>
+            <a class="btn invert" href="#">申请获得邀请</a>
+          </div>
+
+          <div class="v1-pricing">
+            <div class="v1-plan anim-up">
+              <span class="v1-p-name">月度会员</span>
+              <span class="v1-p-price">¥168<small>/月</small></span>
+              <span class="v1-p-desc">考前一个月内冲刺</span>
+              <ul>
+                <li>AI 答疑无限次</li>
+                <li>全量真题刷题与模考</li>
+                <li>申论批改 30 次/月</li>
+                <li>错题本 + 考点图谱</li>
+              </ul>
+              <div class="v1-p-cta"><a class="btn ghost" href="#">选择月度</a></div>
+            </div>
+            <div class="v1-plan feat anim-up delay-1">
+              <span class="v1-p-name">季度会员</span>
+              <span class="v1-p-price">¥128<small>/月</small></span>
+              <span class="v1-p-desc">公考备考的标准周期</span>
+              <ul>
+                <li>月度全部权益</li>
+                <li>申论批改 60 次/月</li>
+                <li>周报数据复盘</li>
+                <li>考前 30 天冲刺模式</li>
+              </ul>
+              <div class="v1-p-cta"><a class="btn invert" href="#">选择季度</a></div>
+            </div>
+            <div class="v1-plan anim-up delay-2">
+              <span class="v1-p-name">年度会员</span>
+              <span class="v1-p-price">¥88<small>/月</small></span>
+              <span class="v1-p-desc">长期备考最划算</span>
+              <ul>
+                <li>季度全部权益</li>
+                <li>申论批改不限次</li>
+                <li>大纲变更全年随同步</li>
+              </ul>
+              <div class="v1-p-cta"><a class="btn ghost" href="#">选择年度</a></div>
+            </div>
+          </div>
+
+          <details class="v1-compare-toggle anim-up">
+            <summary>查看完整功能对比</summary>
+            <table class="v1-compare">
+              <thead>
+                <tr>
+                  <th class="v1-cmp-feat">功能</th>
+                  <th>月度 ¥168</th>
+                  <th class="v1-cmp-recommend">季度 ¥128/月 · 推荐</th>
+                  <th>年度 ¥88/月</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td>AI 答疑陪练</td>
+                  <td class="v1-cmp-yes">不限</td>
+                  <td class="v1-cmp-yes v1-cmp-recommend">不限</td>
+                  <td class="v1-cmp-yes">不限</td>
+                </tr>
+                <tr>
+                  <td>真题刷题与模考</td>
+                  <td class="v1-cmp-yes">全量</td>
+                  <td class="v1-cmp-yes v1-cmp-recommend">全量</td>
+                  <td class="v1-cmp-yes">全量</td>
+                </tr>
+                <tr>
+                  <td>错题本 + 考点图谱</td>
+                  <td class="v1-cmp-yes">✓</td>
+                  <td class="v1-cmp-yes v1-cmp-recommend">✓</td>
+                  <td class="v1-cmp-yes">✓</td>
+                </tr>
+                <tr>
+                  <td>申论 AI 批改额度</td>
+                  <td>30 次/月</td>
+                  <td class="v1-cmp-recommend">60 次/月</td>
+                  <td class="v1-cmp-yes">不限</td>
+                </tr>
+                <tr>
+                  <td>周报数据复盘</td>
+                  <td class="v1-cmp-no">—</td>
+                  <td class="v1-cmp-yes v1-cmp-recommend">✓</td>
+                  <td class="v1-cmp-yes">✓</td>
+                </tr>
+                <tr>
+                  <td>考前 30 天冲刺模式</td>
+                  <td class="v1-cmp-no">—</td>
+                  <td class="v1-cmp-yes v1-cmp-recommend">✓</td>
+                  <td class="v1-cmp-yes">✓</td>
+                </tr>
+                <tr>
+                  <td>大纲变更同步</td>
+                  <td>当月</td>
+                  <td class="v1-cmp-recommend">当季</td>
+                  <td class="v1-cmp-yes">全年</td>
+                </tr>
+                <tr>
+                  <td>合计</td>
+                  <td>¥168</td>
+                  <td class="v1-cmp-recommend"><strong>¥384</strong>(¥128/月)</td>
+                  <td><strong>¥1,056</strong>(¥88/月)</td>
+                </tr>
+              </tbody>
+            </table>
+          </details>
+        </section>
+
+        <!-- FAQ (最后转化助推) -->
+        <section class="v1-section">
+          <div class="v1-sec-head">
+            <span class="v1-kicker anim-up">常见问题</span>
+            <h2 class="anim-up delay-1">你想问的,我们都答了</h2>
+            <p class="anim-up delay-2">还有疑问发到 <a href="mailto:hello@sikao.ai" style="color:var(--accent);">hello@sikao.ai</a>,我们 24 小时内回复。</p>
+          </div>
+          <div class="v1-faq">
+            <details class="anim-up">
+              <summary>AI 答疑会不会答错?</summary>
+              <p>思考目前是公开测试,AI 偶有答错。我们会清晰标注模型对答案的置信度,每周 audit 错误样例并迭代。如果你发现错误归类或解析,可以一键反馈 — 这是我们最珍惜的输入。</p>
+            </details>
+            <details class="anim-up delay-1">
+              <summary>零基础裸考能用吗?</summary>
+              <p>可以。建议从 AI 答疑入手 —— 先搞清楚每道真题背后的考点,再按系统推荐的顺序刷题。错题会自动归类,你不会被动重复练同类的题。</p>
+            </details>
+            <details class="anim-up delay-2">
+              <summary>和粉笔 / 华图等传统题库有什么不同?</summary>
+              <p>我们不只是更便宜的题库。核心区别是:你做错题时,AI 讲清「为什么错」,而不只给标准答案。错题自动归到考点图谱,你能看到自己的薄弱模块,而不是被海量题淹没。</p>
+            </details>
+            <details class="anim-up delay-3">
+              <summary>申论批改对齐什么评分标准?</summary>
+              <p>对齐近 5 年国考阅卷的 5 个维度:扣题、要点、结构、表达、卷面。批改报告逐维度给分 + 改进建议,30 秒内出结果。批改与人工评分的对齐数据我们会持续公开。</p>
+            </details>
+            <details class="anim-up delay-4">
+              <summary>怎么退款?</summary>
+              <p>Beta 期受邀者首月免费,期间可随时退出。正式付费后,首月内可申请全额退款,无需理由。年度会员超出首月的部分按月退还剩余金额。</p>
+            </details>
+            <details class="anim-up delay-5">
+              <summary>省考 / 事业编现在能用吗?</summary>
+              <p>国考真题已全量对齐;省考与事业编正在分批上线,可在邀请申请里注明你的优先地区,我们按真实需求排期。</p>
+            </details>
+          </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="v1-footer">
+          <div class="v1-footer-row">
+            <div>
+              <div class="v1-foot-brand"><svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#0b1120"/><g stroke="#fff" stroke-width="1.8" stroke-linecap="round"><line x1="11" y1="13" x2="29" y2="13"/><line x1="11" y1="22" x2="29" y2="22"/><line x1="11" y1="13" x2="11" y2="27"/><line x1="20" y1="13" x2="20" y2="27"/><line x1="29" y1="13" x2="29" y2="27"/><line x1="11" y1="27" x2="29" y2="27"/></g><circle cx="20" cy="34" r="2.2" fill="#fff"/></svg> 思考</div>
+              <p class="v1-foot-tag">让备考从刷题变成思考。</p>
+              <p class="v1-foot-contact">
+                <span>合作 / 反馈:hello@sikao.ai</span>
+              </p>
+            </div>
+            <div>
+              <h4>功能</h4>
+              <a href="#">AI 答疑陪练</a>
+              <a href="#">真题刷题与模考</a>
+              <a href="#">申论 AI 批改</a>
+              <a href="#">错题本与薄弱分析</a>
+            </div>
+            <div>
+              <h4>资源</h4>
+              <a href="#">官方公众号</a>
+              <a href="#">考情动态</a>
+              <a href="#">备考指南</a>
+              <a href="#">帮助中心</a>
+            </div>
+            <div>
+              <h4>关于</h4>
+              <a href="#">关于我们</a>
+              <a href="#">联系方式</a>
+              <a href="#">商务合作</a>
+              <a href="#">成为导师</a>
+            </div>
+          </div>
+          <div class="v1-footer-legal">
+            <span>© 2026 思考科技. 保留所有权利. · <a href="#" style="display:inline;">京 ICP 备 XXXXXXXX 号</a></span>
+            <span><a href="#" style="display:inline;margin-right:14px;">隐私政策</a><a href="#" style="display:inline;">服务条款</a></span>
+          </div>
+        </footer>
+      </section>
+
+      <!-- ═════════════════════════════════════════════════════════════════
+           V2 · Other Element System (苹果发布会风, 与本项目规范不同)
+           ═════════════════════════════════════════════════════════════════ -->
+      <section class="stage-pane v2-pane" data-stage="v2" role="tabpanel">
+        <!-- Sticky blur nav -->
+        <nav class="v2-nav">
+          <span class="v2-brand">
+            <svg class="logo-mark" width="20" height="20" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#1d1d1f"/><g stroke="#fff" stroke-width="1.8" stroke-linecap="round"><line x1="11" y1="13" x2="29" y2="13"/><line x1="11" y1="22" x2="29" y2="22"/><line x1="11" y1="13" x2="11" y2="27"/><line x1="20" y1="13" x2="20" y2="27"/><line x1="29" y1="13" x2="29" y2="27"/><line x1="11" y1="27" x2="29" y2="27"/></g><circle cx="20" cy="34" r="2.2" fill="#fff"/></svg>
+            思考
+          </span>
+          <nav>
+            <a href="#">产品</a><a href="#">题库</a><a href="#">定价</a><a href="#">博客</a><a href="#">支持</a>
+          </nav>
+          <div class="v2-cta">
+            <a href="#">登录</a>
+            <a href="#">免费试用 →</a>
+          </div>
+        </nav>
+
+        <!-- Hero (居中, 苹果发布会风) -->
+        <header class="v2-hero">
+          <div class="v2-eyebrow anim-up">2026 春 · Beta 公测</div>
+          <h1 class="anim-up delay-1">让备考从刷题<br/><span class="v2-em">变成思考</span></h1>
+          <p class="v2-lead anim-up delay-2">一个 AI 陪练。不止给答案,还告诉你为什么。</p>
+          <div class="v2-cta anim-up delay-3">
+            <a class="v2-cta-primary" href="#">免费试用</a>
+            <a class="v2-cta-link" href="#">观看演示 →</a>
+          </div>
+        </header>
+
+        <!-- Showcase (preview card) -->
+        <div class="v2-showcase anim-up">
+          <div class="v2-show-tab">
+            <span style="display:inline-flex;gap:5px;"><span style="width:8px;height:8px;border-radius:50%;background:#d2d2d7;"></span><span style="width:8px;height:8px;border-radius:50%;background:#d2d2d7;"></span><span style="width:8px;height:8px;border-radius:50%;background:#d2d2d7;"></span></span>
+            <span style="margin-left:auto;">2024 国考 · 言语理解 · 第 18 题</span>
+          </div>
+          <div class="v2-show-grid">
+            <div class="v2-msg v2-user">
+              <div class="v2-who">你</div>
+              我选了 B,但答案是 C。第二段里「<mark>循序渐进</mark>」和「按部就班」感觉都能填。
+            </div>
+            <div class="v2-msg">
+              <div class="v2-who">思考 AI</div>
+              关键差别在「主动性」:「循序渐进」强调有计划地推进;「按部就班」偏中性甚至略带消极。原文在强调「改革推进」的主动性,所以 C 更贴合。
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats -->
+        <section class="v2-stats">
+          <div class="v2-stat anim-up">
+            <div class="v2-stat-n">28</div>
+            <div class="v2-stat-l">套国考真题<br/>2013–2024</div>
+          </div>
+          <div class="v2-stat anim-up delay-1">
+            <div class="v2-stat-n">186</div>
+            <div class="v2-stat-l">套省考真题覆盖</div>
+          </div>
+          <div class="v2-stat anim-up delay-2">
+            <div class="v2-stat-n num">42K+</div>
+            <div class="v2-stat-l">道已解析题目</div>
+          </div>
+        </section>
+
+        <!-- How -->
+        <section class="v2-section">
+          <span class="v2-sec-eyebrow anim-up">使用方式</span>
+          <h2 class="anim-up delay-1">三步开始你的备考</h2>
+          <p class="v2-sec-lead anim-up delay-2">告诉 AI 你的考试,按计划练习,周报复盘。</p>
+          <div class="v2-how">
+            <div class="v2-step anim-up">
+              <div class="v2-step-n">01</div>
+              <h3>告诉我们你的考试</h3>
+              <p>选择目标 —— 国考 / 省考 / 事业编,告诉我们考试时间。思考会生成一份专属复习计划。</p>
+            </div>
+            <div class="v2-step anim-up delay-1">
+              <div class="v2-step-n">02</div>
+              <h3>按计划练习,随时提问</h3>
+              <p>刷真题,遇到卡壳的题直接问 AI。它记得你的错题,知道你哪里弱。</p>
+            </div>
+            <div class="v2-step anim-up delay-2">
+              <div class="v2-step-n">03</div>
+              <h3>周报复盘,持续调优</h3>
+              <p>每周拿到一份数据报告,看清进步曲线。薄弱模块自动加码训练。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- Features -->
+        <section class="v2-section">
+          <span class="v2-sec-eyebrow anim-up">核心能力</span>
+          <h2 class="anim-up delay-1">备考需要的,都在一个地方</h2>
+          <p class="v2-sec-lead anim-up delay-2">AI 陪练不是替你做题,是帮你搞清楚每一题背后的考点与思路。</p>
+          <div class="v2-features">
+            <article class="v2-feat anim-up">
+              <div class="v2-feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+              <h3>AI 答疑陪练</h3>
+              <p>遇到不懂的题直接追问,AI 会从考点、思路、易错点三个层面讲清楚。不止告诉你答案是什么,更告诉你为什么。</p>
+            </article>
+            <article class="v2-feat anim-up delay-1">
+              <div class="v2-feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+              <h3>真题刷题与模考</h3>
+              <p>2013 年至今全量国考真题 + 186 套省考真题。支持单题、模块、整套三种模式,断点续答。</p>
+            </article>
+            <article class="v2-feat anim-up delay-2">
+              <div class="v2-feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
+              <h3>申论 AI 批改</h3>
+              <p>输入作文,30 秒内拿到按评分标准给的分数、要点反馈与改进建议。对齐国考真实阅卷维度。</p>
+            </article>
+            <article class="v2-feat anim-up delay-3">
+              <div class="v2-feat-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+              <h3>错题本与薄弱分析</h3>
+              <p>自动归类错题到考点图谱。你弱在资料分析还是判断推理,一目了然,配套专项训练。</p>
+            </article>
+          </div>
+        </section>
+
+        <!-- Invite -->
+        <section class="v2-invite">
+          <div class="v2-invite-eyebrow anim-up">Beta 公测 · 首发邀请</div>
+          <h2 class="anim-up delay-1">我们刚开始。<br/>你可以是第一个。</h2>
+          <p class="anim-up delay-2">
+            思考目前是公开测试。AI 还会答错,错题归类还会归错。<br/>
+            比起赞美,我们更想听到「这里你答错了」。
+          </p>
+          <div class="v2-invite-cta anim-up delay-3">
+            <a class="v2-cta-primary" href="#">免费加入 beta</a>
+            <a class="v2-cta-link" href="#">提交反馈 →</a>
+          </div>
+        </section>
+
+        <!-- Pricing -->
+        <section class="v2-section">
+          <span class="v2-sec-eyebrow anim-up">定价</span>
+          <h2 class="anim-up delay-1">按备考周期选一个</h2>
+          <p class="v2-sec-lead anim-up delay-2">随时可退。考试结束后欢迎来当导师,收入分成。</p>
+          <div class="v2-pricing">
+            <div class="v2-plan anim-up">
+              <div class="v2-p-name">免费体验</div>
+              <div class="v2-p-price">¥0</div>
+              <div class="v2-p-desc">先试一周再决定</div>
+              <ul>
+                <li>AI 答疑每天 10 次</li>
+                <li>2023 国考真题一套</li>
+                <li>基础错题本</li>
+              </ul>
+              <div class="v2-p-cta"><a href="#">立即开始</a></div>
+            </div>
+            <div class="v2-plan feat anim-up delay-1">
+              <div class="v2-p-name">季度会员</div>
+              <div class="v2-p-price">¥128<small>/月</small></div>
+              <div class="v2-p-desc">适合考前 3 个月集中备考</div>
+              <ul>
+                <li>AI 答疑无限次</li>
+                <li>全量真题 · 申论批改</li>
+                <li>考点图谱 + 薄弱分析</li>
+                <li>学员社群答疑</li>
+              </ul>
+              <div class="v2-p-cta"><a href="#">3 天免费试用</a></div>
+            </div>
+            <div class="v2-plan anim-up delay-2">
+              <div class="v2-p-name">年度会员</div>
+              <div class="v2-p-price">¥88<small>/月</small></div>
+              <div class="v2-p-desc">长期备考最划算</div>
+              <ul>
+                <li>季度会员全部权益</li>
+                <li>面试模拟 10 次/月</li>
+                <li>历年真题讲解视频</li>
+              </ul>
+              <div class="v2-p-cta"><a href="#">选择年度</a></div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="v2-footer">
+          <div class="v2-footer-inner">
+            <div class="v2-footer-row">
+              <div>
+                <h4>产品</h4>
+                <a href="#">AI 答疑</a><a href="#">真题库</a><a href="#">申论批改</a><a href="#">错题本</a>
+              </div>
+              <div>
+                <h4>资源</h4>
+                <a href="#">博客</a><a href="#">考情动态</a><a href="#">帮助中心</a>
+              </div>
+              <div>
+                <h4>公司</h4>
+                <a href="#">关于我们</a><a href="#">加入我们</a><a href="#">联系方式</a>
+              </div>
+              <div>
+                <h4>开始</h4>
+                <a href="#">免费试用</a><a href="#">登录</a>
+              </div>
+            </div>
+            <div class="v2-footer-legal">
+              <span>© 2026 思考科技. 保留所有权利.</span>
+              <span><a href="#" style="display:inline;margin-right:14px;color:var(--v2-muted);">隐私政策</a><a href="#" style="display:inline;color:var(--v2-muted);">服务条款</a></span>
+            </div>
+          </div>
+        </footer>
+      </section>
+
+      <!-- ═════════════════════════════════════════════════════════════════
+           V3 · Best-in-class (Linear / Vercel / Stripe / Anthropic)
+           ═════════════════════════════════════════════════════════════════ -->
+      <section class="stage-pane v3-pane" data-stage="v3" role="tabpanel">
+        <!-- Sticky nav -->
+        <nav class="v3-nav">
+          <div class="v3-nav-inner">
+            <span class="v3-brand">
+              <svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#0b1120"/><g stroke="#fff" stroke-width="1.8" stroke-linecap="round"><line x1="11" y1="13" x2="29" y2="13"/><line x1="11" y1="22" x2="29" y2="22"/><line x1="11" y1="13" x2="11" y2="27"/><line x1="20" y1="13" x2="20" y2="27"/><line x1="29" y1="13" x2="29" y2="27"/><line x1="11" y1="27" x2="29" y2="27"/></g><circle cx="20" cy="34" r="2.2" fill="#fff"/></svg>
+              思考
+            </span>
+            <nav>
+              <a href="#">产品</a><a href="#">题库</a><a href="#">定价</a><a href="#">博客</a>
+            </nav>
+            <div class="v3-cta">
+              <a class="v3-login" href="#">登录</a>
+              <a class="v3-signup" href="#">免费试用</a>
+            </div>
+          </div>
+        </nav>
+
+        <!-- Hero full-bleed dark -->
+        <header class="v3-hero">
+          <div class="v3-hero-inner">
+            <div class="v3-eyebrow anim-up"><span class="v3-pulse"></span>2026 国考大纲已更新 · AI 批改已就绪</div>
+            <h1 class="anim-up delay-1">让备考从刷题<br/>变成<span class="v3-em">思考</span></h1>
+            <p class="v3-lead anim-up delay-2">国考、省考、事业编,一个 AI 陪练陪你从入门到考试。不止给答案,还告诉你为什么。</p>
+            <div class="v3-cta anim-up delay-3">
+              <a class="btn invert lg" href="#">开始免费练习</a>
+              <a class="btn outline-light lg" href="#">观看 2 分钟演示</a>
+            </div>
+            <div class="v3-meta anim-up delay-4">
+              <span>无需信用卡</span>
+              <span>2013–2025 全量真题</span>
+              <span>3 天免费试用</span>
+            </div>
+          </div>
+        </header>
+
+        <!-- Floating preview -->
+        <div class="v3-preview-wrap anim-up">
+          <div class="v3-preview">
+            <div class="v3-tabbar">
+              <span class="v3-dot"></span><span class="v3-dot"></span><span class="v3-dot"></span>
+              <span class="v3-url">sikao.ai / 练习 / 2024 国考 · 言语理解 · 第 18 题</span>
+            </div>
+            <div class="v3-body">
+              <div class="v3-msg v3-user">
+                <div class="v3-who">你</div>
+                我选了 B,但答案是 C。想知道错在哪。第二段里「<mark>循序渐进</mark>」和「按部就班」感觉都能填。
+              </div>
+              <div class="v3-msg">
+                <div class="v3-who">思考 AI</div>
+                关键差别在「主动性」:「循序渐进」强调有计划地推进,带有向前的动作;「按部就班」偏中性甚至略带消极,指按既定步骤、不变通。原文上下文在强调「改革推进」的主动性,所以 C 更贴合。<br/><br/>
+                <span style="color:var(--muted)">→ 这道题属于「近义成语辨析」高频考点,近 5 年出现过 11 次。</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- HOW -->
+        <div class="v3-sec-title first">
+          <span class="v3-kicker anim-up">使用方式</span>
+          <h2 class="anim-up delay-1">三步开始你的备考</h2>
+          <p class="anim-up delay-2">告诉 AI 你的考试,按计划练习,周报复盘。</p>
+        </div>
+        <div class="v3-how">
+          <div class="v3-step anim-up">
+            <div class="v3-step-n">1</div>
+            <h3>告诉我们你的考试</h3>
+            <p>选择目标 —— 国考 / 省考 / 事业编,告诉我们考试时间。思考会生成一份专属复习计划。</p>
+          </div>
+          <div class="v3-step anim-up delay-1">
+            <div class="v3-step-n">2</div>
+            <h3>按计划练习,随时提问</h3>
+            <p>刷真题,遇到卡壳的题直接问 AI。它记得你的错题,知道你哪里弱。</p>
+          </div>
+          <div class="v3-step anim-up delay-2">
+            <div class="v3-step-n">3</div>
+            <h3>周报复盘,持续调优</h3>
+            <p>每周拿到一份数据报告,看清进步曲线。薄弱模块自动加码训练。</p>
+          </div>
+        </div>
+
+        <!-- STATS dark band -->
+        <section class="v3-stats">
+          <div class="v3-stats-inner">
+            <div class="v3-stat anim-up">
+              <div class="v3-stat-n">28</div>
+              <div class="v3-stat-l">套国考真题 · 2013–2024</div>
+            </div>
+            <div class="v3-stat anim-up delay-1">
+              <div class="v3-stat-n">186</div>
+              <div class="v3-stat-l">套省考真题覆盖</div>
+            </div>
+            <div class="v3-stat anim-up delay-2">
+              <div class="v3-stat-n num">42,180</div>
+              <div class="v3-stat-l">道已解析题目</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- FEATURES -->
+        <div class="v3-sec-title">
+          <span class="v3-kicker anim-up">核心能力</span>
+          <h2 class="anim-up delay-1">备考需要的,都在一个地方</h2>
+          <p class="anim-up delay-2">AI 陪练不是替你做题,是帮你搞清楚每一题背后的考点与思路。</p>
+        </div>
+        <div class="v3-features">
+          <article class="v3-feat anim-up">
+            <div class="v3-feat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+            <h3>AI 答疑陪练</h3>
+            <p>遇到不懂的题直接追问,AI 会从考点、思路、易错点三个层面讲清楚。不止告诉你答案是什么,更告诉你为什么。</p>
+          </article>
+          <article class="v3-feat anim-up delay-1">
+            <div class="v3-feat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></div>
+            <h3>真题刷题与模考</h3>
+            <p>2013 年至今全量国考真题 + 186 套省考真题。支持单题、模块、整套三种模式,断点续答。</p>
+          </article>
+          <article class="v3-feat anim-up delay-2">
+            <div class="v3-feat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/></svg></div>
+            <h3>申论 AI 批改</h3>
+            <p>输入作文,30 秒内拿到按评分标准给的分数、要点反馈与改进建议。对齐国考真实阅卷维度。</p>
+          </article>
+          <article class="v3-feat anim-up delay-3">
+            <div class="v3-feat-icon"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg></div>
+            <h3>错题本与薄弱分析</h3>
+            <p>自动归类错题到考点图谱。你弱在资料分析还是判断推理,一目了然,配套专项训练。</p>
+          </article>
+        </div>
+
+        <!-- INVITE -->
+        <div class="v3-invite-wrap">
+          <div class="v3-invite">
+            <div>
+              <span class="v3-invite-eyebrow anim-up">Beta 公测 · 首发邀请</span>
+              <h2 class="anim-up delay-1">我们刚开始。你可以是第一个。</h2>
+              <p class="anim-up delay-2">思考目前是公开测试。AI 还会答错,错题归类还会归错。比起赞美,我们更想听到「这里你答错了」—— 你的反馈会直接决定下个版本怎么做。</p>
+            </div>
+            <div class="v3-invite-cta anim-up delay-3">
+              <a class="btn invert lg" href="#">免费加入 beta</a>
+              <a class="btn outline-light lg" href="#">提交反馈</a>
+            </div>
+          </div>
+        </div>
+
+        <!-- PRICING -->
+        <div class="v3-sec-title">
+          <span class="v3-kicker anim-up">定价</span>
+          <h2 class="anim-up delay-1">按备考周期选一个</h2>
+          <p class="anim-up delay-2">随时可退。考试结束后欢迎来当导师,收入分成。</p>
+        </div>
+        <div class="v3-pricing">
+          <div class="v3-plan anim-up">
+            <div class="v3-p-name">免费体验</div>
+            <div class="v3-p-price">¥0</div>
+            <div class="v3-p-desc">先试一周再决定</div>
+            <ul>
+              <li>AI 答疑每天 10 次</li>
+              <li>2023 国考真题一套</li>
+              <li>基础错题本</li>
+            </ul>
+            <div class="v3-p-cta"><a class="btn ghost" href="#">立即开始</a></div>
+          </div>
+          <div class="v3-plan feat anim-up delay-1">
+            <div class="v3-p-name">季度会员</div>
+            <div class="v3-p-price">¥128<small>/月</small></div>
+            <div class="v3-p-desc">适合考前 3 个月集中备考</div>
+            <ul>
+              <li>AI 答疑无限次</li>
+              <li>全量真题 · 申论批改</li>
+              <li>考点图谱 + 薄弱分析</li>
+              <li>学员社群答疑</li>
+            </ul>
+            <div class="v3-p-cta"><a class="btn invert" href="#">3 天免费试用</a></div>
+          </div>
+          <div class="v3-plan anim-up delay-2">
+            <div class="v3-p-name">年度会员</div>
+            <div class="v3-p-price">¥88<small>/月</small></div>
+            <div class="v3-p-desc">长期备考最划算</div>
+            <ul>
+              <li>季度会员全部权益</li>
+              <li>面试模拟 10 次/月</li>
+              <li>历年真题讲解视频</li>
+            </ul>
+            <div class="v3-p-cta"><a class="btn ghost" href="#">选择年度</a></div>
+          </div>
+        </div>
+
+        <!-- FOOTER (黑底大 CTA) -->
+        <footer class="v3-footer">
+          <div class="v3-footer-inner">
+            <div class="v3-footer-cta">
+              <h3 class="anim-up">让备考从刷题变成思考</h3>
+              <a class="btn invert lg anim-up delay-1" href="#">开始免费练习</a>
+            </div>
+            <div class="v3-footer-row">
+              <div>
+                <div class="v3-foot-brand"><svg class="logo-mark" viewBox="0 0 40 40" aria-hidden="true"><rect width="40" height="40" rx="10" fill="#fff"/><g stroke="#0b1120" stroke-width="1.8" stroke-linecap="round"><line x1="11" y1="13" x2="29" y2="13"/><line x1="11" y1="22" x2="29" y2="22"/><line x1="11" y1="13" x2="11" y2="27"/><line x1="20" y1="13" x2="20" y2="27"/><line x1="29" y1="13" x2="29" y2="27"/><line x1="11" y1="27" x2="29" y2="27"/></g><circle cx="20" cy="34" r="2.2" fill="#0b1120"/></svg> 思考</div>
+                <p class="v3-foot-tag">让备考从刷题变成思考。</p>
+              </div>
+              <div><h4>产品</h4><a href="#">AI 答疑</a><a href="#">真题库</a><a href="#">申论批改</a><a href="#">错题本</a></div>
+              <div><h4>资源</h4><a href="#">博客</a><a href="#">考情动态</a><a href="#">帮助中心</a></div>
+              <div><h4>公司</h4><a href="#">关于我们</a><a href="#">加入我们</a><a href="#">联系方式</a></div>
+            </div>
+            <div class="v3-footer-legal">
+              <span>© 2026 思考科技. 保留所有权利.</span>
+              <span><a href="#" style="display:inline;margin-right:14px;color:rgba(255,255,255,.55);">隐私政策</a><a href="#" style="display:inline;color:rgba(255,255,255,.55);">服务条款</a></span>
+            </div>
+          </div>
+        </footer>
+      </section>
+
+    </main>
+
+    <footer class="meta-footer">
+      <div>
+        <span>Tokens 1:1 镜像 <code>frontend/src/styles/tokens.css</code></span>
+        <span style="margin-left:16px;">规范 <code>docs/design/style-guide.md</code></span>
+      </div>
+      <div>变更: 删学员故事 / 学员故事 stat 列 / 院校 logo wall · 加 beta 邀请 section · 减 italic</div>
+    </footer>
+  </div>
+
+  <script>
+    /* ───── tab 切换 + scroll-triggered 入场动画 ───── */
+    const tabs  = document.querySelectorAll('.meta-tab');
+    const panes = document.querySelectorAll('.stage-pane');
+    const tabName = document.getElementById('tab-name');
+    const tabSummary = document.getElementById('tab-summary');
+    const tabAudit = document.getElementById('tab-audit');
+
+    const meta = {
+      v1: {
+        name: 'V1 · 严格规范',
+        summary: '100% 用 tokens.css 现有 token / 0 italic / 0 serif body / 0 hardcode / 0 任意字号 — 验证规范内可以做出克制高级感',
+        audit: '<span><b>token 合规</b> <span class="ok">✓ 100%</span></span><span><b>italic</b> <span class="ok">0 处</span></span><span><b>新增元素</b> <span class="ok">无</span></span>'
+      },
+      v2: {
+        name: 'V2 · 另一套规范',
+        summary: '苹果发布会风 · 与本项目规范不同的色彩字体语言 (#f5f5f7 灰底 / #06c 苹果蓝 / 96px mega 字号 / 居中对称) — 用于判断 "我是否要换设计系统"',
+        audit: '<span><b>token 合规</b> <span style="color:var(--danger)">✗ 用 v2-* 全套新 token</span></span><span><b>italic</b> <span class="ok">0 处</span></span><span><b>新增元素</b> <span style="color:var(--accent)">5 个新 var (灰底/灰文/蓝/超大字号)</span></span>'
+      },
+      v3: {
+        name: 'V3 · 现代 SaaS',
+        summary: '严格在 tokens.css 内 + §7.4 L3 卡 full-bleed + sticky blur + radial glow (规范明文允许) · 0 italic · 类 Linear/Vercel/Stripe/Anthropic',
+        audit: '<span><b>token 合规</b> <span class="ok">✓ 100%</span></span><span><b>italic</b> <span class="ok">0 处</span></span><span><b>新增元素</b> <span class="new">无 token (用 §7.4 + sticky blur 规范扩展)</span></span>'
+      }
+    };
+
+    const io = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) {
+          e.target.classList.add('in');
+          io.unobserve(e.target);
+        }
+      }
+    }, { threshold: 0.12, rootMargin: '0px 0px -10% 0px' });
+
+    function bindIO(scope) {
+      scope.querySelectorAll('.anim-up, .anim-fade, .anim-line').forEach((el) => {
+        el.classList.remove('in');
+        io.unobserve(el);
+        io.observe(el);
+      });
+    }
+
+    function activate(key) {
+      tabs.forEach((t) => {
+        const on = t.dataset.tab === key;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      panes.forEach((p) => {
+        const on = p.dataset.stage === key;
+        p.classList.toggle('active', on);
+        if (on) {
+          p.scrollTop = 0;
+          void p.offsetWidth;
+          bindIO(p);
+          requestAnimationFrame(() => {
+            p.querySelectorAll('.anim-up, .anim-fade, .anim-line').forEach((el) => {
+              const r = el.getBoundingClientRect();
+              if (r.top < window.innerHeight * 0.95) el.classList.add('in');
+            });
+          });
+        }
+      });
+      const m = meta[key];
+      if (m) {
+        tabName.textContent = m.name;
+        tabSummary.textContent = m.summary;
+        tabAudit.innerHTML = m.audit;
+      }
+    }
+
+    tabs.forEach((t) => t.addEventListener('click', () => activate(t.dataset.tab)));
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '1') activate('v1');
+      else if (e.key === '2') activate('v2');
+      else if (e.key === '3') activate('v3');
+    });
+
+    // 支持 #v1 / #v2 / #v3 直链
+    const initial = (location.hash || '').replace('#', '');
+    activate(['v1','v2','v3'].includes(initial) ? initial : 'v1');
+
+    /* ───── V1 Preview tabs (4 题型切换) ───── */
+    const previewRoot = document.getElementById('v1-preview');
+    if (previewRoot) {
+      const pvTabs = previewRoot.querySelectorAll('.v1-pv-tab');
+      const pvPanes = previewRoot.querySelectorAll('.v1-pv-pane');
+      const pvUrl = previewRoot.querySelector('.v1-pv-url');
+      pvTabs.forEach((tab) => {
+        tab.addEventListener('click', () => {
+          const key = tab.dataset.pv;
+          pvTabs.forEach((t) => {
+            const on = t === tab;
+            t.classList.toggle('active', on);
+            t.setAttribute('aria-selected', on ? 'true' : 'false');
+          });
+          pvPanes.forEach((p) => {
+            const on = p.dataset.pvPane === key;
+            p.classList.toggle('active', on);
+            if (on && pvUrl) pvUrl.textContent = p.dataset.pvUrl || '';
+          });
+        });
+      });
+    }
+
+    /* ───── V1 Stats count-up (scroll listener, 起始 0 滚到 target) ───── */
+    {
+      const animateCount = (el, target) => {
+        const isPlus = target.endsWith('+');
+        const cleaned = target.replace(/[+,]/g, '');
+        const num = parseInt(cleaned, 10);
+        if (isNaN(num)) { el.textContent = target; return; }
+        const start = performance.now();
+        const dur = 1200;
+        const tick = (t) => {
+          const p = Math.min(1, (t - start) / dur);
+          const ease = 1 - Math.pow(1 - p, 3);
+          const val = Math.round(num * ease);
+          el.textContent = val.toLocaleString() + (isPlus ? '+' : '');
+          if (p < 1) requestAnimationFrame(tick);
+          else el.textContent = target;
+        };
+        requestAnimationFrame(tick);
+      };
+      // 初始化: target 存 dataset, 显示先 reset 为 0
+      document.querySelectorAll('.v1-stat .v1-stat-n').forEach(el => {
+        el.dataset.target = el.textContent;
+        const isPlus = el.textContent.endsWith('+');
+        el.textContent = '0' + (isPlus ? '+' : '');
+      });
+      const inView = (el) => {
+        const r = el.getBoundingClientRect();
+        return r.top < window.innerHeight * 0.9 && r.bottom > 0;
+      };
+      const checkAll = () => {
+        document.querySelectorAll('.v1-stat .v1-stat-n').forEach((el) => {
+          if (!el.dataset.counted && inView(el)) {
+            el.dataset.counted = '1';
+            animateCount(el, el.dataset.target);
+          }
+        });
+      };
+      window.addEventListener('scroll', checkAll, { passive: true });
+      window.addEventListener('resize', checkAll, { passive: true });
+      window.addEventListener('load', checkAll);
+      checkAll();
+    }
+  </script>
+</body>
+</html>

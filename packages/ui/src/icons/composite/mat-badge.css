@@ -1,0 +1,77 @@
+/*
+ * MaterialBadge styles — SSOT: design/SIKAO/icon-spec/composite-icons-spec.md §C.5.
+ * 状态颜色全走 var(--*) token, dark/night 自动响应. radius 走 var(--r-tiny) (4px).
+ */
+
+.mat-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-content: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-tiny);
+  background: transparent;
+  text-align: center;
+  min-width: 0;
+  overflow: hidden;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+  font-family: var(--font-mono);
+  color: var(--ink-3);
+}
+
+.mat-badge svg {
+  display: block;
+  width: 32px;
+  height: 20px;
+  flex: 0 0 auto;
+}
+
+/* Status-driven visuals */
+.mat-badge[data-status='pending'] {
+  border-color: var(--line-2);
+  color: var(--ink-3);
+}
+
+.mat-badge[data-status='read'] {
+  background: var(--paper-2);
+  color: var(--ink-2);
+}
+
+.mat-badge[data-status='marked'] {
+  border-color: var(--accent-1);
+  background: var(--accent-50);
+  color: var(--accent-2);
+}
+
+.mat-badge[data-status='active'] {
+  border-color: var(--accent-1);
+  color: var(--accent-1);
+  position: relative;
+}
+
+.mat-badge[data-status='active']::after {
+  content: '';
+  position: absolute;
+  left: 10%;
+  right: 10%;
+  bottom: -3px;
+  height: 2px;
+  background: var(--accent-1);
+}
+
+.mat-badge:hover {
+  background: var(--paper-2);
+}
+
+.mat-badge[data-status='marked']:hover {
+  background: var(--accent-50);
+  filter: brightness(0.97);
+}
+
+.mat-badge:focus-visible {
+  outline: 2px solid var(--accent-1);
+  outline-offset: 2px;
+}

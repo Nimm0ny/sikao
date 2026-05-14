@@ -1,0 +1,251 @@
+/*
+ * SIKAO V3 申论 — 局部样式 (双栏 EssayGrid + ScratchPad clip + DropMarker).
+ *
+ * 引用规则: 颜色 / 间距 / 圆角 / 阴影 全部走 tokens.css 三处 SSOT 的 CSS
+ * variables, 不 hardcode. CJK 禁 italic (CLAUDE.md §4 italic 政策).
+ *
+ * Imported once from EssayShellSikao.tsx.
+ */
+
+/* ── 3 档 responsive grid (Wave 9 Phase 2a, 2026-05-12) ─────────────
+ * desktop ≥1024: 双栏 1.1fr / 1fr (材料 + 编辑器)
+ * tablet 769-1023: 紧凑双栏 minmax(280px, 1fr) / minmax(0, 1.4fr)
+ *   材料列窄到 280px 下限, 编辑器仍主导阅读区
+ * mobile ≤768: 沉浸单栏 — 编辑器为主, 材料走 sheet (data-mobile-mode 控)
+ *   data-mobile-mode='material' → 单栏材料态; 'editor' → 单栏编辑器态
+ */
+.essay-grid {
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  gap: var(--sp-5);
+  height: 100%;
+  min-height: 0;
+}
+@media (max-width: 1023px) and (min-width: 769px) {
+  .essay-grid {
+    grid-template-columns: minmax(280px, 1fr) minmax(0, 1.4fr);
+    gap: var(--sp-4);
+  }
+}
+@media (max-width: 768px) {
+  .essay-grid {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr;
+    gap: 0;
+  }
+  /* mobile: source col 默认 hidden (沉浸编辑器), data-mobile-mode='material'
+   * 时切到只显材料. EssayShellSikao 用 state 控这两态. */
+  .essay-grid[data-mobile-mode='editor'] .essay-source-col {
+    display: none;
+  }
+  .essay-grid[data-mobile-mode='material'] .essay-editor-col {
+    display: none;
+  }
+}
+
+/* ── 左栏 source col (Material + ScratchPad 上下叠放) ─────────────── */
+.essay-source-col {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  min-height: 0;
+  min-width: 0;
+  gap: var(--sp-4);
+}
+
+/* ── 横线纸 — 28px gradient 横线 (spec 锚点) ──────────────────────── */
+.scratch-paper {
+  background-color: var(--paper-2);
+  background-image: repeating-linear-gradient(
+    to bottom,
+    transparent 0,
+    transparent calc(28px - 1px),
+    var(--line-2) 28px
+  );
+  background-size: 100% 28px;
+}
+
+/* ── ScratchPad drop 态 ─────────────────────────────────────────── */
+.scratch-pad[data-dropping='true'] {
+  outline: 1px dashed var(--accent-1);
+  outline-offset: -1px;
+}
+
+/* ── DropMarker — 进入 dropping 态显示, hover 行间出现的虚线插入条 ── */
+.essay-drop-marker {
+  display: none;
+  height: 2px;
+  background: var(--accent-1);
+  margin: var(--sp-1) 0;
+  border-radius: 1px;
+  pointer-events: none;
+}
+.scratch-pad[data-dropping='true'] .essay-drop-marker {
+  display: block;
+}
+
+/* ── 划线短语 .hl[draggable] grip ────────────────────────────────── */
+.essay-hl-clip {
+  position: relative;
+  background-color: var(--accent-50);
+  border-radius: var(--r-tiny);
+  padding: 0 2px;
+  cursor: grab;
+  transition: background-color var(--motion-fast) ease;
+}
+.essay-hl-clip:hover {
+  background-color: rgb(155 47 47 / 14%);
+}
+.essay-hl-clip:active {
+  cursor: grabbing;
+}
+
+/* ── ScratchClip 卡片 (paper-3 底 + 左上 pin SVG) ─────────────────── */
+.scratch-clip {
+  position: relative;
+  background-color: var(--paper-3);
+  border: 1px solid var(--line-2);
+  border-left: 2px solid var(--accent-1);
+  border-radius: var(--r-tiny);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-2);
+  cursor: grab;
+  transition: box-shadow var(--motion-fast) ease;
+}
+.scratch-clip:hover {
+  box-shadow: var(--shadow-card);
+}
+.scratch-clip:active {
+  cursor: grabbing;
+}
+.scratch-clip__pin {
+  position: absolute;
+  top: -6px;
+  left: var(--sp-3);
+  color: var(--accent-1);
+}
+.scratch-clip__src {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+  letter-spacing: var(--tracking-loose);
+  margin-top: var(--sp-1);
+}
+
+/* ── ScratchNote — 自由便签 paper-3 底 + 描边淡 ────────────────────── */
+.scratch-note {
+  background-color: var(--paper-3);
+  border: 1px dashed var(--line-3);
+  border-radius: var(--r-tiny);
+  padding: var(--sp-2) var(--sp-3);
+  margin-bottom: var(--sp-2);
+}
+.scratch-note__body {
+  font-family: var(--font-serif);
+  font-size: 14px;
+  color: var(--ink-1);
+  outline: none;
+  min-height: 1.5em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.scratch-note__body[contenteditable='true']:empty::before {
+  content: attr(data-placeholder);
+  color: var(--ink-4);
+}
+
+/* ── EditorPanel cite-bar — 当前题已引用列表 ──────────────────────── */
+.essay-cite-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--sp-2);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--line-2);
+}
+.essay-cite-bar__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-1);
+  padding: 2px 8px;
+  background: var(--accent-50);
+  color: var(--accent-2);
+  border-radius: var(--r-pill);
+  font-size: 12px;
+  font-family: var(--font-mono);
+  letter-spacing: var(--tracking-loose);
+  cursor: pointer;
+  transition: background-color var(--motion-fast) ease;
+}
+.essay-cite-bar__chip:hover {
+  background: rgb(155 47 47 / 18%);
+}
+
+/* ── MmStrip — 04b 顶部均匀按钮条 (材料 + 题号) ─────────────────── */
+.essay-mm-strip {
+  display: grid;
+  gap: var(--sp-1);
+  padding: var(--sp-2) var(--sp-3);
+  background: var(--paper-2);
+  border-bottom: 1px solid var(--line-2);
+}
+.essay-mm-strip > * {
+  min-width: 0;
+}
+
+/* ── Q-tab — 04b 右栏文字 tab (Phase 1C, 2026-05-11) ──────────────────
+ * 三态: done (✓ glyph) / active (accent + underline) / locked (placeholder + disabled).
+ * Color 全走 token (text-* tailwind utility 在 .tsx, css 仅管 layout + underline).
+ * mono 字号给数字; tabular-nums 防字数变化抖动.
+ */
+.essay-q-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-1);
+  padding: var(--sp-1) var(--sp-2);
+  border: 0;
+  border-bottom: 2px solid transparent;
+  border-radius: 0;
+  background: transparent;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--fs-sm);
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+  transition: color var(--motion-fast) var(--motion-ease), border-color var(--motion-fast) var(--motion-ease), background var(--motion-fast) var(--motion-ease);
+}
+
+.essay-q-tab-label {
+  font-weight: 500;
+}
+
+.essay-q-tab-meta {
+  font-size: var(--fs-xs);
+  opacity: 0.78;
+}
+
+.essay-q-tab-check {
+  flex: 0 0 auto;
+}
+
+.essay-q-tab:hover:not(:disabled) {
+  background: var(--paper-2);
+}
+
+.essay-q-tab--active {
+  border-bottom-color: var(--accent-1);
+}
+
+.essay-q-tab--locked {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.essay-q-tab:focus-visible {
+  outline: 2px solid var(--accent-1);
+  outline-offset: 2px;
+}

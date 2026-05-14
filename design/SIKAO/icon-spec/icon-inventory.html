@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIKAO · SVG Icon Inventory</title>
+<style>
+  /* ================================================================
+   * SIKAO icon inventory — visual catalog
+   * Tokens 1:1 mirror of design/SIKAO/handoff/design/tokens.css
+   * ================================================================ */
+
+  :root {
+    /* paper / ink — warm neutrals (default theme · reading) */
+    --paper:        #FAF7F0;
+    --paper-2:      #F4F0E6;
+    --paper-3:      #ECE6D7;
+    --rule:         #E2DBC8;
+    --rule-strong:  #C9C0A8;
+    --ink:          #1A1815;
+    --ink-2:        #3A352D;
+    --ink-3:        #6B6358;
+    --ink-4:        #948A7A;
+
+    /* accent · blue */
+    --accent:       #3f7ef1;
+    --accent-2:     #245fd6;
+    --accent-50:    #eaf2ff;
+
+    /* semantic */
+    --ok:           #4F7A4F;
+    --ok-bg:        #E8EFE2;
+    --warn:         #B47A1F;
+    --warn-bg:      #F4ECDC;
+    --bad:          #9B2F2F;
+    --bad-bg:       #F5E6E2;
+
+    --serif: 'Source Serif 4', 'Noto Serif SC', Georgia, 'Songti SC', serif;
+    --sans:  'Inter', system-ui, -apple-system, sans-serif;
+    --mono:  'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
+
+    --t-eyebrow:  11px;
+    --t-small:    13px;
+    --t-body:     15px;
+    --t-h3:       22px;
+    --t-h2:       36px;
+    --t-h1:       56px;
+
+    --s1: 4px; --s2: 8px; --s3: 12px; --s4: 16px;
+    --s5: 24px; --s6: 32px; --s7: 48px; --s8: 64px; --s9: 96px;
+
+    --r-sm: 4px; --r-md: 6px; --r-lg: 10px; --r-xl: 14px;
+
+    --shadow-1: 0 1px 0 rgba(26,24,21,.04), 0 1px 2px rgba(26,24,21,.04);
+    --shadow-2: 0 6px 24px -8px rgba(26,24,21,.16), 0 2px 6px rgba(26,24,21,.05);
+  }
+
+  [data-theme="night"] {
+    --paper:#1B1814; --paper-2:#231F1A; --paper-3:#2D2823;
+    --rule:#3A332C; --rule-strong:#544A3F;
+    --ink:#F2EAD8; --ink-2:#D6CDB8; --ink-3:#9B917D; --ink-4:#6E6657;
+    --accent:#D9A055; --accent-2:#B07F36; --accent-50:#3A2E1C;
+    --ok:#9DB37C; --ok-bg:#2A2E1F;
+    --warn:#D9A055; --warn-bg:#3A2E1C;
+    --bad:#D88A8A; --bad-bg:#3A2222;
+  }
+
+  * { box-sizing: border-box; }
+  em, i { font-style: normal; }
+  html, body { background: var(--paper); color: var(--ink); }
+  body {
+    font-family: var(--sans);
+    font-size: var(--t-body);
+    line-height: 1.6;
+    margin: 0;
+    padding: 0 0 var(--s9);
+  }
+
+  /* Topbar */
+  .topbar {
+    position: sticky; top: 0; z-index: 10;
+    background: var(--paper);
+    border-bottom: 1px solid var(--rule);
+    padding: var(--s4) var(--s7);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .brand {
+    display: flex; align-items: center; gap: var(--s3);
+    font-family: var(--serif);
+    font-size: var(--t-h3);
+    color: var(--ink);
+    text-decoration: none;
+  }
+  .brand .mark {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px;
+    background: var(--ink); color: var(--paper);
+    font-family: var(--mono); font-size: 14px; font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .topbar-meta {
+    font-family: var(--mono);
+    font-size: var(--t-small);
+    color: var(--ink-3);
+    letter-spacing: 0.04em;
+  }
+  .theme-toggle {
+    display: inline-flex; gap: 0;
+    border: 1px solid var(--rule);
+    overflow: hidden;
+  }
+  .theme-toggle button {
+    padding: 6px 12px;
+    background: transparent;
+    border: none;
+    font-family: var(--mono);
+    font-size: var(--t-eyebrow);
+    letter-spacing: 0.06em;
+    color: var(--ink-3);
+    cursor: pointer;
+    text-transform: uppercase;
+  }
+  .theme-toggle button[aria-pressed="true"] {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  /* Page header */
+  .page-head {
+    padding: var(--s9) var(--s7) var(--s7);
+    border-bottom: 1px solid var(--rule);
+    background: var(--paper);
+  }
+  .eyebrow {
+    font-family: var(--mono);
+    font-size: var(--t-eyebrow);
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin: 0 0 var(--s3);
+  }
+  h1.title {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: var(--t-h1);
+    line-height: 1.1;
+    margin: 0 0 var(--s3);
+    color: var(--ink);
+  }
+  .lede {
+    max-width: 720px;
+    color: var(--ink-2);
+    font-size: var(--t-h3);
+    line-height: 1.5;
+    font-family: var(--serif);
+  }
+  .meta-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    margin-top: var(--s7);
+    border-top: 1px solid var(--rule);
+    border-left: 1px solid var(--rule);
+  }
+  .meta-grid > div {
+    padding: var(--s4);
+    border-right: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .meta-grid .k { font-family: var(--mono); font-size: var(--t-eyebrow); letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+  .meta-grid .v { font-family: var(--serif); font-size: var(--t-h3); margin-top: var(--s2); color: var(--ink); }
+
+  /* Section */
+  section {
+    padding: var(--s9) var(--s7) var(--s7);
+    border-bottom: 1px solid var(--rule);
+  }
+  .section-head {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    gap: var(--s7);
+    align-items: baseline;
+    margin-bottom: var(--s7);
+  }
+  .section-head h2 {
+    font-family: var(--serif);
+    font-weight: 400;
+    font-size: var(--t-h2);
+    line-height: 1.15;
+    margin: 0;
+    color: var(--ink);
+  }
+  .section-head .sec-meta {
+    font-family: var(--mono);
+    font-size: var(--t-eyebrow);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    line-height: 1.4;
+  }
+  .section-head .sec-meta b {
+    display: block;
+    color: var(--accent);
+    font-weight: 500;
+    margin-bottom: 4px;
+  }
+  .section-desc {
+    max-width: 760px;
+    color: var(--ink-2);
+    line-height: 1.7;
+    margin-bottom: var(--s7);
+  }
+
+  /* Icon grid */
+  .icon-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    gap: var(--s4);
+  }
+  .icon-cell {
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    padding: var(--s5) var(--s4) var(--s4);
+    display: flex; flex-direction: column; align-items: center;
+    text-align: center;
+    transition: background 120ms ease, border-color 120ms ease;
+  }
+  .icon-cell:hover {
+    background: var(--paper-2);
+    border-color: var(--rule-strong);
+  }
+  .icon-cell .demo {
+    height: 64px;
+    display: flex; align-items: center; justify-content: center;
+    color: var(--ink);
+    margin-bottom: var(--s3);
+  }
+  .icon-cell .name {
+    font-family: var(--mono);
+    font-size: var(--t-small);
+    color: var(--ink);
+    margin-bottom: var(--s2);
+    word-break: break-word;
+  }
+  .icon-cell .aria {
+    font-family: var(--serif);
+    font-size: var(--t-small);
+    color: var(--ink-2);
+    line-height: 1.4;
+    margin-bottom: var(--s2);
+  }
+  .icon-cell .recommend {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+
+  /* IconBtn demos */
+  .iconbtn {
+    width: 32px; height: 32px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent;
+    border: none;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+  }
+  .iconbtn svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.4; stroke-linecap: round; stroke-linejoin: round; }
+  .iconbtn:hover { background: var(--paper-2); }
+  .iconbtn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .iconbtn[aria-pressed="true"] { color: var(--accent); }
+
+  /* SVG defaults inside cells */
+  .demo svg.sm { width: 16px; height: 16px; }
+  .demo svg.md { width: 18px; height: 18px; }
+  .demo svg.lg { width: 24px; height: 24px; }
+  .demo svg.xl { width: 32px; height: 32px; }
+
+  /* Composite — NumberCircle / NumberSquare */
+  .composite-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: var(--s4);
+    margin-bottom: var(--s6);
+  }
+  .composite-cell {
+    border: 1px solid var(--rule);
+    padding: var(--s4);
+    background: var(--paper);
+  }
+  .composite-cell .examples {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--s3);
+    height: 80px;
+  }
+  .composite-cell .label {
+    border-top: 1px solid var(--rule);
+    padding-top: var(--s3);
+    margin-top: var(--s3);
+    font-family: var(--mono);
+    font-size: var(--t-small);
+    color: var(--ink);
+  }
+  .composite-cell .label .state {
+    color: var(--accent);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: var(--t-eyebrow);
+    margin-bottom: 2px;
+  }
+
+  /* MmStrip demo */
+  .mmstrip-demo {
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    padding: var(--s5);
+    margin-bottom: var(--s5);
+  }
+  .mmstrip-demo .stripe-label {
+    font-family: var(--mono);
+    font-size: var(--t-eyebrow);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+    margin-bottom: var(--s3);
+  }
+  .mmstrip-l {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: var(--s2);
+  }
+  .mmstrip-r {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--s2);
+    margin-top: var(--s4);
+  }
+  .mat-badge,
+  .q-badge {
+    display: grid;
+    grid-template-rows: auto auto;
+    align-content: center;
+    padding: 6px 10px;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-sm);
+    background: transparent;
+    text-align: left;
+    min-width: 0;
+    overflow: hidden;
+    cursor: pointer;
+    transition: background 120ms ease, border-color 120ms ease, color 120ms ease;
+    font-family: var(--mono);
+    color: var(--ink-3);
+  }
+  .mat-badge .title,
+  .q-badge .title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    font-variant-numeric: tabular-nums;
+  }
+  .mat-badge .meta,
+  .q-badge .meta {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    font-size: 9px;
+    color: var(--ink-4);
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-variant-numeric: tabular-nums;
+    margin-top: 2px;
+  }
+  .mat-badge .dot svg { width: 8px; height: 8px; display: block; }
+
+  /* MaterialBadge states */
+  .mat-badge[data-status="pending"] { border-color: var(--rule); color: var(--ink-3); }
+  .mat-badge[data-status="read"] { background: var(--paper-2); color: var(--ink-2); border-color: var(--rule); }
+  .mat-badge[data-status="marked"] {
+    border-color: var(--accent);
+    background: var(--accent-50);
+    color: var(--accent-2);
+  }
+  .mat-badge[data-status="active"] {
+    border-color: var(--accent);
+    color: var(--accent);
+    position: relative;
+  }
+  .mat-badge[data-status="active"]::after {
+    content: '';
+    position: absolute;
+    left: 10%; right: 10%; bottom: -3px;
+    height: 2px;
+    background: var(--accent);
+  }
+  .mat-badge:not([data-status="marked"]) .dot { display: none; }
+  .mat-badge:hover { background: var(--paper-2); }
+  .mat-badge[data-status="marked"]:hover { background: var(--accent-50); filter: brightness(0.97); }
+  .mat-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* QuestionBadge states */
+  .q-badge[data-status="locked"] { color: var(--ink-4); pointer-events: none; }
+  .q-badge[data-status="pending"] { color: var(--ink-3); }
+  .q-badge[data-status="writing"] {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .q-badge[data-status="writing"] .title {
+    text-decoration: underline;
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    text-decoration-color: var(--accent);
+  }
+  .q-badge[data-status="writing"] .meta {
+    color: var(--accent);
+    font-weight: 500;
+  }
+  .q-badge[data-status="submitted"] {
+    border-color: var(--ok);
+    background: var(--ok-bg);
+    color: var(--ok);
+  }
+  .q-badge[data-status="submitted"] .meta {
+    color: var(--ok);
+  }
+  .q-badge:hover { background: var(--paper-2); }
+  .q-badge[data-status="submitted"]:hover { background: var(--ok-bg); filter: brightness(0.98); }
+  .q-badge:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* FbDock demo (35-cell) */
+  .fb-dock-demo {
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    padding: var(--s5);
+  }
+  .fb-dock-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    max-width: 360px;
+  }
+  .num-circle {
+    width: 32px; height: 32px;
+    cursor: pointer;
+    border: none;
+    background: none;
+    padding: 0;
+    transition: transform 120ms ease;
+  }
+  .num-circle:hover { transform: scale(1.05); }
+  .num-circle:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .num-circle svg { width: 100%; height: 100%; display: block; }
+
+  /* Footnote */
+  footer {
+    padding: var(--s7) var(--s7);
+    border-top: 1px solid var(--rule);
+    color: var(--ink-3);
+    font-size: var(--t-small);
+    line-height: 1.6;
+  }
+  footer code {
+    background: var(--paper-2);
+    padding: 1px 6px;
+    font-family: var(--mono);
+    font-size: 12px;
+  }
+
+  @media (max-width: 720px) {
+    .topbar, .page-head, section { padding-left: var(--s4); padding-right: var(--s4); }
+    .section-head { grid-template-columns: 1fr; gap: var(--s3); }
+    .meta-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+</style>
+</head>
+<body data-theme="warm">
+
+<!-- Topbar -->
+<div class="topbar">
+  <a class="brand" href="#">
+    <span class="mark">思</span>
+    <span>SIKAO Icon Inventory</span>
+  </a>
+  <div class="topbar-meta">v1.0 · 2026-05-09</div>
+  <div class="theme-toggle" role="group" aria-label="主题切换">
+    <button aria-pressed="true" data-theme-target="warm">Warm</button>
+    <button aria-pressed="false" data-theme-target="night">Night</button>
+  </div>
+</div>
+
+<!-- Header -->
+<div class="page-head">
+  <p class="eyebrow">SVG ICON DESIGN SYSTEM</p>
+  <h1 class="title">让每一个图标，都像从同一块纸上裁下。</h1>
+  <p class="lede">
+    SIKAO 的视觉语言 — ink-first + blue accent + 1.4px 描边 + 24-grid。
+    答题系统按 <em>SVG-only</em> 硬约束运行：图标即按钮，<code>aria-label</code> 兜底意义。
+    本目录梳理 46 个原子图标 + 4 个复合编号原型，附用法示例。
+  </p>
+  <div class="meta-grid">
+    <div><div class="k">VIEWBOX</div><div class="v">24×24 / 16×16</div></div>
+    <div><div class="k">STROKE</div><div class="v">1.4 / 1.5px</div></div>
+    <div><div class="k">CATEGORIES</div><div class="v">Nav · Tool · Action · Status · Subject · Composite</div></div>
+    <div><div class="k">TOTAL</div><div class="v">46 + 4</div></div>
+  </div>
+</div>
+
+<!-- ====================== NAV ====================== -->
+<section>
+  <div class="section-head">
+    <h2>Nav<br><span style="color: var(--ink-3); font-size: var(--t-h3); display: block; margin-top: 8px;">导航</span></h2>
+    <div class="sec-meta">
+      <b>6 icons</b>
+      上一题 · 下一题 · 返回 · 关闭 · 答题卡 · 提交
+      <br>主导航与流向语义
+    </div>
+  </div>
+  <p class="section-desc">
+    带方向语义的图标。<code>NavSubmitIcon</code> 是答题系统中唯一可与文字共存的图标（主 CTA 例外）。
+    其余皆按 <code>IconBtn</code> 包装，<code>aria-label</code> 必填。
+  </p>
+  <div class="icon-grid">
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15 5l-7 7 7 7"/>
+        </svg>
+      </div>
+      <div class="name">NavPrevIcon</div>
+      <div class="aria">aria-label="上一题"</div>
+      <div class="recommend">md · 32×32 IconBtn</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M9 5l7 7-7 7"/>
+        </svg>
+      </div>
+      <div class="name">NavNextIcon</div>
+      <div class="aria">aria-label="下一题"</div>
+      <div class="recommend">md · 32×32 IconBtn</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M20 12H5M12 5l-7 7 7 7"/>
+        </svg>
+      </div>
+      <div class="name">NavBackIcon</div>
+      <div class="aria">aria-label="返回学习中心"</div>
+      <div class="recommend">md · header back</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 5l14 14M19 5L5 19"/>
+        </svg>
+      </div>
+      <div class="name">NavCloseIcon</div>
+      <div class="aria">aria-label="关闭"</div>
+      <div class="recommend">md · Modal/Drawer</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="4" y="5" width="16" height="14" rx="1"/>
+          <path d="M8 9h2M14 9h2M8 12h2M14 12h2M8 15h2M14 15h2"/>
+        </svg>
+      </div>
+      <div class="name">NavAnswerCardIcon</div>
+      <div class="aria">aria-label="打开答题卡"</div>
+      <div class="recommend">md · FbTopbar</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 12l5 5 13-13"/>
+        </svg>
+      </div>
+      <div class="name">NavSubmitIcon</div>
+      <div class="aria">aria-label="提交"（仅在 Button.primary 出现）</div>
+      <div class="recommend">lg · 主 CTA</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================== TOOL ====================== -->
+<section>
+  <div class="section-head">
+    <h2>Tool<br><span style="color: var(--ink-3); font-size: var(--t-h3); display: block; margin-top: 8px;">工具</span></h2>
+    <div class="sec-meta">
+      <b>17 icons</b>
+      暂停 · 设置 · 主题 · 草稿 · 解析 · ...
+      <br>顶部工具栏与编辑器辅助
+    </div>
+  </div>
+  <p class="section-desc">
+    工具类图标。每屏出现 3-8 个，密度高，必须同 stroke-width / 同视觉语言，否则一眼凌乱。
+  </p>
+  <div class="icon-grid">
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M9 5v14M15 5v14"/>
+        </svg>
+      </div>
+      <div class="name">ToolPauseIcon</div>
+      <div class="aria">aria-label="暂停计时"</div>
+      <div class="recommend">md · timer area</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M7 4l13 8-13 8z"/>
+        </svg>
+      </div>
+      <div class="name">ToolPlayIcon</div>
+      <div class="aria">aria-label="继续计时"</div>
+      <div class="recommend">md · timer area</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 2v3M12 19v3M22 12h-3M5 12H2M19 5l-2 2M7 17l-2 2M19 19l-2-2M7 7L5 5"/>
+        </svg>
+      </div>
+      <div class="name">ToolSettingsIcon</div>
+      <div class="aria">aria-label="设置"</div>
+      <div class="recommend">md · header right</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/>
+          <path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="name">ToolThemeIcon</div>
+      <div class="aria">aria-label="切换主题"</div>
+      <div class="recommend">md · settings panel</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="4" y="3" width="16" height="18"/>
+          <path d="M4 8h16M4 13h16M4 18h16"/>
+        </svg>
+      </div>
+      <div class="name">ToolScratchIcon</div>
+      <div class="aria">aria-label="切换草稿纸"</div>
+      <div class="recommend">md · 申论 toolbar</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 2v8M8 6l4-4 4 4M6 12l-2 4 2 4h12l2-4-2-4z"/>
+        </svg>
+      </div>
+      <div class="name">ToolPinIcon</div>
+      <div class="aria">aria-label="钉住此 clip"</div>
+      <div class="recommend">sm · ScratchPad</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M9 14L4 9l5-5"/>
+          <path d="M4 9h11a5 5 0 0 1 5 5v0a5 5 0 0 1-5 5h-3"/>
+        </svg>
+      </div>
+      <div class="name">ToolUndoIcon</div>
+      <div class="aria">aria-label="撤销"</div>
+      <div class="recommend">md · editor toolbar</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M15 14l5-5-5-5"/>
+          <path d="M20 9H9a5 5 0 0 0-5 5v0a5 5 0 0 0 5 5h3"/>
+        </svg>
+      </div>
+      <div class="name">ToolRedoIcon</div>
+      <div class="aria">aria-label="重做"</div>
+      <div class="recommend">md · editor toolbar</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/>
+          <path d="M16.5 16.5l4 4"/>
+        </svg>
+      </div>
+      <div class="name">ToolSearchIcon</div>
+      <div class="aria">aria-label="搜索"</div>
+      <div class="recommend">md · header / list</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 7h14M7 12h10M9 17h6"/>
+        </svg>
+      </div>
+      <div class="name">ToolSortIcon</div>
+      <div class="aria">aria-label="排序"</div>
+      <div class="recommend">md · Wrongbook</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 5h18l-7 9v6l-4-2v-4z"/>
+        </svg>
+      </div>
+      <div class="name">ToolFilterIcon</div>
+      <div class="aria">aria-label="筛选"</div>
+      <div class="recommend">md · list controls</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3v12M7 11l5 4 5-4M4 20h16"/>
+        </svg>
+      </div>
+      <div class="name">ToolDownloadIcon</div>
+      <div class="aria">aria-label="下载"</div>
+      <div class="recommend">sm · header right</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/>
+          <circle cx="12" cy="12" r="3"/>
+        </svg>
+      </div>
+      <div class="name">ToolEyeIcon</div>
+      <div class="aria">aria-label="查看材料"</div>
+      <div class="recommend">md · 申论 toolbar</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 12l17-8-5 17-4-6-8-3z"/>
+        </svg>
+      </div>
+      <div class="name">ToolSendIcon</div>
+      <div class="aria">aria-label="提交答案"</div>
+      <div class="recommend">md · essay editor</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 8V4h4M20 8V4h-4M4 16v4h4M20 16v4h-4"/>
+        </svg>
+      </div>
+      <div class="name">ToolFullscreenIcon</div>
+      <div class="aria">aria-label="专注大作文模式"</div>
+      <div class="recommend">md · essay Q4</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3l2.2 4.8L19 10l-4.8 2.2L12 17l-2.2-4.8L5 10l4.8-2.2zM18 16l1 2 2 1-2 1-1 2-1-2-2-1 2-1z"/>
+        </svg>
+      </div>
+      <div class="name">ToolAiIcon</div>
+      <div class="aria">aria-label="解析建议"</div>
+      <div class="recommend">md · advanced feature</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 5h16v11H10l-4 4v-4H4z"/>
+        </svg>
+      </div>
+      <div class="name">ToolChatIcon</div>
+      <div class="aria">aria-label="提问解析"</div>
+      <div class="recommend">md · AnalysisBundle</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================== ACTION ====================== -->
+<section>
+  <div class="section-head">
+    <h2>Action<br><span style="color: var(--ink-3); font-size: var(--t-h3); display: block; margin-top: 8px;">动作</span></h2>
+    <div class="sec-meta">
+      <b>7 icons</b>
+      收藏 · 标记 · 笔记 · 书签
+      <br>题目层面的用户动作
+    </div>
+  </div>
+  <p class="section-desc">
+    成对出现的 toggle icon（线 / 实）。<code>aria-pressed</code> 反映当前状态，<code>aria-label</code> 跟着切。
+  </p>
+  <div class="icon-grid">
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3l2.6 5.3 5.7.8-4.2 4.1 1 5.7L12 16.7l-5.1 2.7 1-5.7-4.2-4.1 5.7-.8z"/>
+        </svg>
+      </div>
+      <div class="name">ActionStarIcon</div>
+      <div class="aria">aria-label="收藏"</div>
+      <div class="recommend">sm · FbCard 操作条</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--accent);">
+          <path d="M12 3l2.6 5.3 5.7.8-4.2 4.1 1 5.7L12 16.7l-5.1 2.7 1-5.7-4.2-4.1 5.7-.8z"/>
+        </svg>
+      </div>
+      <div class="name">ActionStarFilledIcon</div>
+      <div class="aria">aria-label="取消收藏" aria-pressed="true"</div>
+      <div class="recommend">sm · pressed state</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 21V3h12l-2.5 4 2.5 4H5"/>
+        </svg>
+      </div>
+      <div class="name">ActionMarkIcon</div>
+      <div class="aria">aria-label="标记"</div>
+      <div class="recommend">sm · FbCard / dock</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="currentColor" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round" aria-hidden="true" style="color: var(--accent);">
+          <path d="M5 21V3h12l-2.5 4 2.5 4H5z" stroke-linecap="round"/>
+          <path d="M5 21V3" fill="none" stroke="currentColor" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="name">ActionMarkFilledIcon</div>
+      <div class="aria">aria-label="取消标记" aria-pressed="true"</div>
+      <div class="recommend">sm · pressed state</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 4h11l4 4v12H5z"/>
+          <path d="M8 10h9M8 13h9M8 16h6"/>
+        </svg>
+      </div>
+      <div class="name">ActionNoteIcon</div>
+      <div class="aria">aria-label="添加笔记"</div>
+      <div class="recommend">sm · FbCard 操作条</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--accent);">
+          <path d="M5 4h11l4 4v12H5z"/>
+          <path d="M8 10h9M8 13h9M8 16h6"/>
+          <circle cx="19" cy="6" r="2.5" fill="currentColor"/>
+        </svg>
+      </div>
+      <div class="name">ActionNoteEditIcon</div>
+      <div class="aria">aria-label="编辑笔记"（已有笔记）</div>
+      <div class="recommend">sm · with-note state</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M6 3v18l6-3 6 3V3z"/>
+        </svg>
+      </div>
+      <div class="name">ActionBookmarkIcon</div>
+      <div class="aria">aria-label="加入题库"</div>
+      <div class="recommend">md · permanent action</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================== STATUS ====================== -->
+<section>
+  <div class="section-head">
+    <h2>Status<br><span style="color: var(--ink-3); font-size: var(--t-h3); display: block; margin-top: 8px;">状态</span></h2>
+    <div class="sec-meta">
+      <b>5 icons</b>
+      done · wrong · pending · current · locked
+      <br>装饰性状态指示
+    </div>
+  </div>
+  <p class="section-desc">
+    状态图标常作为复合 icon 的装饰元素（如 QuestionBadge.submitted 内的 ✓）。
+    单独使用时一定要配 <code>aria-label</code> 或上下文中的可访问文本。
+  </p>
+  <div class="icon-grid">
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--ok);">
+          <path d="M3 12l5 5 13-13"/>
+        </svg>
+      </div>
+      <div class="name">StatusDoneIcon</div>
+      <div class="aria">aria-label="已完成"</div>
+      <div class="recommend">xs/sm · decorator</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--bad);">
+          <path d="M5 5l14 14M19 5L5 19"/>
+        </svg>
+      </div>
+      <div class="name">StatusWrongIcon</div>
+      <div class="aria">aria-label="答错"</div>
+      <div class="recommend">xs/sm · result page</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true" style="color: var(--ink-3);">
+          <circle cx="12" cy="12" r="9"/>
+        </svg>
+      </div>
+      <div class="name">StatusPendingIcon</div>
+      <div class="aria">aria-label="待办"</div>
+      <div class="recommend">sm · timeline / list</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="currentColor" aria-hidden="true" style="color: var(--accent);">
+          <circle cx="12" cy="12" r="6"/>
+        </svg>
+      </div>
+      <div class="name">StatusCurrentIcon</div>
+      <div class="aria">aria-label="当前"</div>
+      <div class="recommend">xs · indicator dot</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="color: var(--ink-4);">
+          <rect x="5" y="11" width="14" height="9" rx="1"/>
+          <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+        </svg>
+      </div>
+      <div class="name">StatusLockedIcon</div>
+      <div class="aria">aria-label="未解锁"</div>
+      <div class="recommend">sm · Q4 / paid feature</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================== SUBJECT ====================== -->
+<section>
+  <div class="section-head">
+    <h2>Subject<br><span style="color: var(--ink-3); font-size: var(--t-h3); display: block; margin-top: 8px;">学科</span></h2>
+    <div class="sec-meta">
+      <b>7 icons</b>
+      首页 · 行测 · 申论 · 错题 · 数据 · 计划 · 我的
+      <br>侧边栏导航
+    </div>
+  </div>
+  <p class="section-desc">
+    侧边栏 7 项导航。每屏只展示同色（<code>--ink</code> default → <code>--accent</code> active）。
+    描边权重 1.5 以匹配整个 nav 区域作为视觉锚点。
+  </p>
+  <div class="icon-grid">
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M3 11l9-7 9 7v9a2 2 0 0 1-2 2h-4v-7H9v7H5a2 2 0 0 1-2-2z"/>
+        </svg>
+      </div>
+      <div class="name">SubjectHomeIcon</div>
+      <div class="aria">aria-label="首页"</div>
+      <div class="recommend">lg · sidebar nav</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 4h12l4 4v12a2 2 0 0 1-2 2H4z"/>
+          <path d="M8 11h8M8 15h8"/>
+        </svg>
+      </div>
+      <div class="name">SubjectXingceIcon</div>
+      <div class="aria">aria-label="行测"</div>
+      <div class="recommend">lg · sidebar nav</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 3h11l3 3v15a1 1 0 0 1-1 1H5z"/>
+          <path d="M8 9l4 5 4-3M8 17h8"/>
+        </svg>
+      </div>
+      <div class="name">SubjectEssayIcon</div>
+      <div class="aria">aria-label="申论"</div>
+      <div class="recommend">lg · sidebar nav</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M5 3v18l7-4 7 4V3z"/>
+          <path d="M9 9l6 6M15 9l-6 6"/>
+        </svg>
+      </div>
+      <div class="name">SubjectWrongbookIcon</div>
+      <div class="aria">aria-label="错题本"</div>
+      <div class="recommend">lg · sidebar nav</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 19V8M10 19V4M16 19v-7M22 19H2"/>
+        </svg>
+      </div>
+      <div class="name">SubjectDashboardIcon</div>
+      <div class="aria">aria-label="数据"</div>
+      <div class="recommend">lg · sidebar nav</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="3" y="5" width="18" height="16" rx="1"/>
+          <path d="M3 9h18M8 3v4M16 3v4"/>
+        </svg>
+      </div>
+      <div class="name">SubjectPlanIcon</div>
+      <div class="aria">aria-label="计划"</div>
+      <div class="recommend">lg · sidebar nav</div>
+    </div>
+
+    <div class="icon-cell">
+      <div class="demo">
+        <svg viewBox="0 0 24 24" class="lg" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="9" r="3.5"/>
+          <path d="M5 20a7 7 0 0 1 14 0"/>
+        </svg>
+      </div>
+      <div class="name">SubjectProfileIcon</div>
+      <div class="aria">aria-label="我的"</div>
+      <div class="recommend">lg · sidebar nav</div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================== COMPOSITE — NumberCircle ====================== -->
+<section>
+  <div class="section-head">
+    <h2>Composite · NumberCircle<br><span style="color: var(--ink-3); font-size: var(--t-h3); display: block; margin-top: 8px;">题号圆</span></h2>
+    <div class="sec-meta">
+      <b>5 states · 3 sizes</b>
+      unanswered · answered · marked · current · wrong
+      <br>FbDock / FbOpt / FbGroupTabs
+    </div>
+  </div>
+  <p class="section-desc">
+    复合编号原型 — 数字 + 圆 + 状态 三位一体。<strong>本系统传播范围最广</strong>（每屏 35-40 个），任何视觉漂移都会立刻被发现。
+    底层由 <code>frontend/src/icons/composite/NumberCircle.tsx</code> 提供，5 状态切换通过 <code>status</code> prop。
+  </p>
+
+  <div class="composite-row">
+
+    <div class="composite-cell">
+      <div class="examples">
+        <!-- unanswered: 1 -->
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: var(--ink-3);">
+          <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="currentColor" style="font-variant-numeric: tabular-nums">1</text>
+        </svg>
+        <!-- unanswered: 22 -->
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: var(--ink-3);">
+          <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="currentColor" style="font-variant-numeric: tabular-nums">22</text>
+        </svg>
+        <!-- unanswered: 35 -->
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: var(--ink-3);">
+          <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="currentColor" style="font-variant-numeric: tabular-nums">35</text>
+        </svg>
+      </div>
+      <div class="label">
+        <div class="state">unanswered</div>
+        第 N 题, 未答, 点击跳转
+      </div>
+    </div>
+
+    <div class="composite-cell">
+      <div class="examples">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
+          <circle cx="12" cy="12" r="11" fill="var(--ink)"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--paper)" style="font-variant-numeric: tabular-nums">1</text>
+        </svg>
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
+          <circle cx="12" cy="12" r="11" fill="var(--ink)"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--paper)" style="font-variant-numeric: tabular-nums">22</text>
+        </svg>
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
+          <circle cx="12" cy="12" r="11" fill="var(--ink)"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--paper)" style="font-variant-numeric: tabular-nums">35</text>
+        </svg>
+      </div>
+      <div class="label">
+        <div class="state">answered</div>
+        第 N 题, 已答, 点击跳转
+      </div>
+    </div>
+
+    <div class="composite-cell">
+      <div class="examples">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: var(--accent);">
+          <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="currentColor" style="font-variant-numeric: tabular-nums">1</text>
+        </svg>
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: var(--accent);">
+          <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="currentColor" style="font-variant-numeric: tabular-nums">22</text>
+        </svg>
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: var(--accent);">
+          <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="currentColor" style="font-variant-numeric: tabular-nums">35</text>
+        </svg>
+      </div>
+      <div class="label">
+        <div class="state">marked</div>
+        第 N 题, 已标记, 点击跳转
+      </div>
+    </div>
+
+    <div class="composite-cell">
+      <div class="examples">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
+          <circle cx="12" cy="12" r="11" fill="var(--accent)"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--paper)" style="font-variant-numeric: tabular-nums">1</text>
+        </svg>
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
+          <circle cx="12" cy="12" r="11" fill="var(--accent)"/>
+          <circle cx="12" cy="12" r="11.5" stroke="var(--accent)" stroke-width="0.6" stroke-opacity="0.3" fill="none"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--paper)" style="font-variant-numeric: tabular-nums">22</text>
+        </svg>
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
+          <circle cx="12" cy="12" r="11" fill="var(--accent)"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--paper)" style="font-variant-numeric: tabular-nums">35</text>
+        </svg>
+      </div>
+      <div class="label">
+        <div class="state">current (中间带 halo)</div>
+        第 N 题, 当前题
+      </div>
+    </div>
+
+    <div class="composite-cell">
+      <div class="examples">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: var(--bad);">
+          <circle cx="12" cy="12" r="11" fill="var(--bad-bg)"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="currentColor" style="font-variant-numeric: tabular-nums">1</text>
+        </svg>
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: var(--bad);">
+          <circle cx="12" cy="12" r="11" fill="var(--bad-bg)"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="currentColor" style="font-variant-numeric: tabular-nums">22</text>
+        </svg>
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: var(--bad);">
+          <circle cx="12" cy="12" r="11" fill="var(--bad-bg)"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="currentColor" style="font-variant-numeric: tabular-nums">35</text>
+        </svg>
+      </div>
+      <div class="label">
+        <div class="state">wrong (review)</div>
+        第 N 题, 答错, 点击查看
+      </div>
+    </div>
+
+  </div>
+
+  <h3 style="font-family: var(--serif); font-weight: 400; font-size: var(--t-h3); color: var(--ink-2); margin: var(--s7) 0 var(--s4);">FbDock 实战示例 — 35 题答题卡, 5 状态混合</h3>
+  <div class="fb-dock-demo">
+    <div class="fb-dock-grid" id="fbDockGrid" role="list" aria-label="答题卡, 共 35 题"></div>
+  </div>
+
+</section>
+
+<!-- ====================== COMPOSITE — NumberSquare ====================== -->
+<section>
+  <div class="section-head">
+    <h2>Composite · NumberSquare<br><span style="color: var(--ink-3); font-size: var(--t-h3); display: block; margin-top: 8px;">题号方</span></h2>
+    <div class="sec-meta">
+      <b>same 5 states</b>
+      Tweaks: option-style="square"
+      <br>方形 letter 的可选切换
+    </div>
+  </div>
+  <p class="section-desc">
+    与 NumberCircle 完全对偶。视觉差仅外形（圆 → 圆角 4px 矩形），内部数字 / 状态 / 字号规则一致。
+    用户在 Tweaks 面板切换 <code>option-style</code>，整页 35 题号同步切换。
+  </p>
+
+  <div class="composite-row">
+
+    <div class="composite-cell">
+      <div class="examples">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: var(--ink-3);">
+          <rect x="1" y="1" width="22" height="22" rx="4" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="currentColor" style="font-variant-numeric: tabular-nums">A</text>
+        </svg>
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: var(--ink-3);">
+          <rect x="1" y="1" width="22" height="22" rx="4" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="currentColor" style="font-variant-numeric: tabular-nums">B</text>
+        </svg>
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: var(--ink-3);">
+          <rect x="1" y="1" width="22" height="22" rx="4" stroke="currentColor" stroke-width="1.4" fill="none"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="currentColor" style="font-variant-numeric: tabular-nums">D</text>
+        </svg>
+      </div>
+      <div class="label">
+        <div class="state">unanswered (FbOpt)</div>
+        选项 X
+      </div>
+    </div>
+
+    <div class="composite-cell">
+      <div class="examples">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
+          <rect x="1" y="1" width="22" height="22" rx="4" fill="var(--accent)"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--paper)" style="font-variant-numeric: tabular-nums">B</text>
+        </svg>
+      </div>
+      <div class="label">
+        <div class="state">current (selected)</div>
+        选项 B, 已选中
+      </div>
+    </div>
+
+    <div class="composite-cell">
+      <div class="examples">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
+          <rect x="1" y="1" width="22" height="22" rx="4" fill="var(--ink)"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="11" fill="var(--paper)" style="font-variant-numeric: tabular-nums">7</text>
+        </svg>
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
+          <rect x="1" y="1" width="22" height="22" rx="4" fill="var(--ink)"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="var(--paper)" style="font-variant-numeric: tabular-nums">22</text>
+        </svg>
+      </div>
+      <div class="label">
+        <div class="state">answered (FbDock)</div>
+        第 N 题, 已答
+      </div>
+    </div>
+
+    <div class="composite-cell">
+      <div class="examples">
+        <svg viewBox="0 0 24 24" width="32" height="32" fill="none" style="color: var(--bad);">
+          <rect x="1" y="1" width="22" height="22" rx="4" fill="var(--bad-bg)"/>
+          <text x="12" y="16" text-anchor="middle" font-family="var(--mono)" font-size="10" fill="currentColor" style="font-variant-numeric: tabular-nums">22</text>
+        </svg>
+      </div>
+      <div class="label">
+        <div class="state">wrong</div>
+        第 N 题, 答错
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================== COMPOSITE — MaterialBadge ====================== -->
+<section>
+  <div class="section-head">
+    <h2>Composite · MaterialBadge<br><span style="color: var(--ink-3); font-size: var(--t-h3); display: block; margin-top: 8px;">申论材料编号 M1-M9</span></h2>
+    <div class="sec-meta">
+      <b>4 states</b>
+      pending · read · marked · active
+      <br>EssayMmStrip 左侧均匀按钮条
+    </div>
+  </div>
+  <p class="section-desc">
+    申论多材料切换 tab。每条材料一个 badge，rect 外形 + 字符 / 副标 / 已划重点圆点。
+    <code>repeat(7, 1fr)</code> 等宽永不换行（spec 04-essay.md §04b）。
+  </p>
+
+  <div class="mmstrip-demo">
+    <div class="stripe-label">EssayMmStrip · 左 (M1-M7) — 真实排布</div>
+    <div class="mmstrip-l">
+
+      <button class="mat-badge" data-status="marked"
+              aria-label="材料 1, 已读, 内有 2 处划重点">
+        <span class="title">M1<span class="dot" aria-hidden="true"><svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" fill="var(--accent)"/></svg></span></span>
+        <span class="meta">2 处</span>
+      </button>
+
+      <button class="mat-badge" data-status="read"
+              aria-label="材料 2, 已读">
+        <span class="title">M2</span>
+        <span class="meta">已读</span>
+      </button>
+
+      <button class="mat-badge" data-status="read"
+              aria-label="材料 3, 已读">
+        <span class="title">M3</span>
+        <span class="meta">已读</span>
+      </button>
+
+      <button class="mat-badge" data-status="marked"
+              aria-label="材料 4, 已读, 内有 1 处划重点">
+        <span class="title">M4<span class="dot" aria-hidden="true"><svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" fill="var(--accent)"/></svg></span></span>
+        <span class="meta">1 处</span>
+      </button>
+
+      <button class="mat-badge" data-status="active"
+              aria-label="材料 5, 当前正在阅读">
+        <span class="title">M5</span>
+        <span class="meta">已读</span>
+      </button>
+
+      <button class="mat-badge" data-status="pending"
+              aria-label="材料 6, 未读">
+        <span class="title">M6</span>
+        <span class="meta">未读</span>
+      </button>
+
+      <button class="mat-badge" data-status="pending"
+              aria-label="材料 7, 未读">
+        <span class="title">M7</span>
+        <span class="meta">未读</span>
+      </button>
+
+    </div>
+  </div>
+
+  <div class="composite-row">
+
+    <div class="composite-cell">
+      <div class="examples" style="display: block;">
+        <button class="mat-badge" data-status="pending" aria-label="材料 1, 未读">
+          <span class="title">M1</span>
+          <span class="meta">未读</span>
+        </button>
+      </div>
+      <div class="label">
+        <div class="state">pending</div>
+        rect: rule / paper · 字: ink-3 · 副标: 未读
+      </div>
+    </div>
+
+    <div class="composite-cell">
+      <div class="examples" style="display: block;">
+        <button class="mat-badge" data-status="read" aria-label="材料 2, 已读">
+          <span class="title">M2</span>
+          <span class="meta">已读</span>
+        </button>
+      </div>
+      <div class="label">
+        <div class="state">read</div>
+        rect: rule / paper-2 · 字: ink-2 · 副标: 已读
+      </div>
+    </div>
+
+    <div class="composite-cell">
+      <div class="examples" style="display: block;">
+        <button class="mat-badge" data-status="marked" aria-label="材料 3, 已读, 内有 2 处划重点">
+          <span class="title">M3<span class="dot" aria-hidden="true"><svg viewBox="0 0 8 8"><circle cx="4" cy="4" r="3" fill="var(--accent)"/></svg></span></span>
+          <span class="meta">2 处</span>
+        </button>
+      </div>
+      <div class="label">
+        <div class="state">marked</div>
+        rect: accent / accent-50 · 字: accent-2 · dot: accent · 副标: N 处
+      </div>
+    </div>
+
+    <div class="composite-cell">
+      <div class="examples" style="display: block;">
+        <button class="mat-badge" data-status="active" aria-label="材料 5, 当前正在阅读">
+          <span class="title">M5</span>
+          <span class="meta">已读</span>
+        </button>
+      </div>
+      <div class="label">
+        <div class="state">active</div>
+        rect: accent / paper · 字: accent · 底部 2px accent 下划线
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================== COMPOSITE — QuestionBadge ====================== -->
+<section>
+  <div class="section-head">
+    <h2>Composite · QuestionBadge<br><span style="color: var(--ink-3); font-size: var(--t-h3); display: block; margin-top: 8px;">申论问题编号 Q1-Q4</span></h2>
+    <div class="sec-meta">
+      <b>4 states</b>
+      locked · pending · writing · submitted
+      <br>EssayMmStrip 右侧 / EditorPanel 顶部
+    </div>
+  </div>
+  <p class="section-desc">
+    申论多题目切换。带字数进度，状态推动颜色 / 边框 / 装饰。<code>writing</code> 时下划线 accent；<code>submitted</code> 含内联 ✓。
+  </p>
+
+  <div class="mmstrip-demo">
+    <div class="stripe-label">EssayMmStrip · 右 (Q1-Q4) — 真实排布</div>
+    <div class="mmstrip-r">
+
+      <button class="q-badge" data-status="submitted"
+              aria-label="问题 1, 已提交, 198 字 共 200 字">
+        <span class="title">Q1</span>
+        <span class="meta">
+          198/200
+          <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <path d="M2 8l3 3 8-8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </button>
+
+      <button class="q-badge" data-status="submitted"
+              aria-label="问题 2, 已提交, 312 字 共 300 字">
+        <span class="title">Q2</span>
+        <span class="meta">
+          312/300
+          <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <path d="M2 8l3 3 8-8" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+      </button>
+
+      <button class="q-badge" data-status="writing"
+              aria-label="问题 3, 正在作答, 142 字 共 500 字">
+        <span class="title">Q3</span>
+        <span class="meta">142/500</span>
+      </button>
+
+      <button class="q-badge" data-status="locked"
+              aria-label="问题 4, 未解锁">
+        <span class="title">
+          <svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+            <rect x="3" y="7" width="10" height="7" rx="1"/>
+            <path d="M5 7V5a3 3 0 0 1 6 0v2" stroke-linecap="round"/>
+          </svg>
+          Q4
+        </span>
+        <span class="meta">0/1000</span>
+      </button>
+
+    </div>
+  </div>
+
+  <div class="composite-row">
+
+    <div class="composite-cell">
+      <div class="examples" style="display: block;">
+        <button class="q-badge" data-status="locked" aria-label="问题 4, 未解锁">
+          <span class="title">
+            <svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+              <rect x="3" y="7" width="10" height="7" rx="1"/>
+              <path d="M5 7V5a3 3 0 0 1 6 0v2" stroke-linecap="round"/>
+            </svg>
+            Q4
+          </span>
+          <span class="meta">0/1000</span>
+        </button>
+      </div>
+      <div class="label">
+        <div class="state">locked</div>
+        ink-4 · 不可点 · 内联 lock icon
+      </div>
+    </div>
+
+    <div class="composite-cell">
+      <div class="examples" style="display: block;">
+        <button class="q-badge" data-status="pending" aria-label="问题 2, 待作答">
+          <span class="title">Q2</span>
+          <span class="meta">0/300</span>
+        </button>
+      </div>
+      <div class="label">
+        <div class="state">pending</div>
+        ink-3 · 默认描边 · 待作答
+      </div>
+    </div>
+
+    <div class="composite-cell">
+      <div class="examples" style="display: block;">
+        <button class="q-badge" data-status="writing" aria-label="问题 3, 正在作答, 142 字 共 500 字">
+          <span class="title">Q3</span>
+          <span class="meta">142/500</span>
+        </button>
+      </div>
+      <div class="label">
+        <div class="state">writing (active)</div>
+        accent · 下划线 · meta 加粗 · 当前作答
+      </div>
+    </div>
+
+    <div class="composite-cell">
+      <div class="examples" style="display: block;">
+        <button class="q-badge" data-status="submitted" aria-label="问题 1, 已提交, 198 字 共 200 字">
+          <span class="title">Q1</span>
+          <span class="meta">
+            198/200
+            <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" stroke-width="1.4" aria-hidden="true">
+              <path d="M2 8l3 3 8-8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </span>
+        </button>
+      </div>
+      <div class="label">
+        <div class="state">submitted</div>
+        ok / ok-bg · 内联 ✓ · 已交
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ====================== Footer ====================== -->
+<footer>
+  <p style="margin: 0 0 var(--s3); color: var(--ink-2);">
+    <strong>SIKAO Icon Inventory v1.0</strong> · 整理日 2026-05-09 ·
+    Tokens 来自 <code>design/SIKAO/handoff/design/tokens.css</code> ·
+    详细规则见同目录 <code>SVG-ICON-DESIGN-SYSTEM.md</code> / <code>composite-icons-spec.md</code> / <code>usage-rules.md</code>
+  </p>
+  <p style="margin: 0;">
+    切到 night 主题验证全部图标的 token 流通正常。任何 hex 进 SVG 都是 lint:icon-tokens 必抓的违规（实现 backlog）。
+  </p>
+</footer>
+
+<script>
+  // Theme toggle
+  const themeButtons = document.querySelectorAll('.theme-toggle button');
+  themeButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const target = btn.getAttribute('data-theme-target');
+      document.body.setAttribute('data-theme', target);
+      themeButtons.forEach(b => b.setAttribute('aria-pressed',
+        b.getAttribute('data-theme-target') === target ? 'true' : 'false'));
+    });
+  });
+
+  // FbDock 35-cell demo with mixed states
+  const fbDockGrid = document.getElementById('fbDockGrid');
+  if (fbDockGrid) {
+    // Pre-defined 35-cell state pattern that exercises all 5 states
+    const dockStates = {
+      // unanswered: most
+      // answered: 3, 5, 7, 9, 11, 13, 14, 16, 17, 19, 24, 27, 30, 31
+      // marked: 4, 12, 28
+      // current: 22
+      // wrong: (none for live; keep for review-only - skip in dock)
+    };
+    const answered = new Set([3, 5, 7, 9, 11, 13, 14, 16, 17, 19, 24, 27, 30, 31]);
+    const marked = new Set([4, 12, 28]);
+    const current = 22;
+
+    const labelFor = (n) => {
+      if (n === current) return '当前题';
+      if (marked.has(n)) return '已标记';
+      if (answered.has(n)) return '已答';
+      return '未答';
+    };
+
+    const renderSvg = (n, status) => {
+      const txtSize = String(n).length === 1 ? 11 : 10;
+      const dy = 16;
+      switch (status) {
+        case 'unanswered':
+          return `<svg viewBox="0 0 24 24" fill="none" style="color: var(--ink-3);">
+            <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.4" fill="none"/>
+            <text x="12" y="${dy}" text-anchor="middle" font-family="var(--mono)" font-size="${txtSize}" fill="currentColor" style="font-variant-numeric: tabular-nums">${n}</text>
+          </svg>`;
+        case 'answered':
+          return `<svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="11" fill="var(--ink)"/>
+            <text x="12" y="${dy}" text-anchor="middle" font-family="var(--mono)" font-size="${txtSize}" fill="var(--paper)" style="font-variant-numeric: tabular-nums">${n}</text>
+          </svg>`;
+        case 'marked':
+          return `<svg viewBox="0 0 24 24" fill="none" style="color: var(--accent);">
+            <circle cx="12" cy="12" r="11" stroke="currentColor" stroke-width="1.4" fill="none"/>
+            <text x="12" y="${dy}" text-anchor="middle" font-family="var(--mono)" font-size="${txtSize}" fill="currentColor" style="font-variant-numeric: tabular-nums">${n}</text>
+          </svg>`;
+        case 'current':
+          return `<svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="11" fill="var(--accent)"/>
+            <circle cx="12" cy="12" r="11.5" stroke="var(--accent)" stroke-width="0.6" stroke-opacity="0.3" fill="none"/>
+            <text x="12" y="${dy}" text-anchor="middle" font-family="var(--mono)" font-size="${txtSize}" fill="var(--paper)" style="font-variant-numeric: tabular-nums">${n}</text>
+          </svg>`;
+      }
+    };
+
+    for (let i = 1; i <= 35; i++) {
+      const status = i === current ? 'current' : marked.has(i) ? 'marked' : answered.has(i) ? 'answered' : 'unanswered';
+      const btn = document.createElement('button');
+      btn.className = 'num-circle';
+      btn.setAttribute('aria-label', `第 ${i} 题, ${labelFor(i)}, 点击跳转`);
+      btn.setAttribute('role', 'listitem');
+      btn.innerHTML = renderSvg(i, status);
+      fbDockGrid.appendChild(btn);
+    }
+  }
+</script>
+
+</body>
+</html>

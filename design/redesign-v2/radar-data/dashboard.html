@@ -1,0 +1,882 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440" />
+<title>思考 SIKAO — Dashboard · 雷达数据驱动</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" href="../../tokens.css" />
+<style>
+/* ==========================================================
+   Dashboard · 雷达数据驱动  (radar-data direction)
+   主张: "看清自己的弱点, 然后变强"
+   雷达 (能力地图) + 倒计时 (时间紧迫) + 推荐题 (短板直驱)
+   所有 color / radius / spacing / type 走 ../../tokens.css
+   ========================================================== */
+
+html, body { margin: 0; padding: 0; background: var(--paper-1); color: var(--ink-1);
+  font-family: var(--font-sans); font-size: var(--t-body); line-height: 1.55;
+  -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+button { font: inherit; color: inherit; background: none; border: 0; padding: 0; cursor: pointer; }
+svg { display: block; }
+em, i { font-style: normal; }            /* CJK hard rule */
+.serif { font-family: var(--font-serif); letter-spacing: -.01em; }
+.mono  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
+.num-emph { font-family: var(--font-serif); font-style: italic; font-weight: 600; }  /* 大数字 design signature */
+
+/* ── eyebrow / stamp (SIKAO 调性, mono 11px caps) ───────────────────── */
+.eyebrow {
+  font-family: var(--font-mono); font-size: var(--t-tiny);
+  letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+  color: var(--ink-3);
+}
+.stamp {
+  display: inline-flex; align-items: center; gap: 8px;
+  font-family: var(--font-mono); font-size: var(--t-tiny);
+  letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+  color: var(--ink-2);
+}
+.stamp::before {
+  content: ""; width: 5px; height: 5px; border-radius: var(--r-pill);
+  background: var(--ink-1); display: inline-block;
+}
+.stamp.weak::before { background: var(--err); }
+
+/* ── shell layout ──────────────────────────────────────────────────── */
+.app {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  min-height: 100vh;
+}
+
+/* sidebar (collapsed, icon-only static) */
+.sb {
+  background: var(--paper-2);
+  border-right: 1px solid var(--line-2);
+  padding: 20px 0;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  position: sticky; top: 0; height: 100vh;
+}
+.sb .logo {
+  width: 40px; height: 40px;
+  border: 1px solid var(--line-3); border-radius: var(--r-2);
+  display: grid; place-items: center;
+  font-family: var(--font-serif); font-weight: 600; font-size: 20px;
+  color: var(--ink-1); background: var(--paper-1);
+  margin-bottom: 18px;
+}
+.sb .nav-i {
+  width: 40px; height: 40px;
+  display: grid; place-items: center;
+  color: var(--ink-3);
+  border-radius: var(--r-tiny);
+  cursor: pointer;
+}
+.sb .nav-i:hover { background: var(--paper-3); color: var(--ink-1); }
+.sb .nav-i.active { background: var(--ink-1); color: var(--paper-1); }
+.sb .nav-i svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+.sb .spacer { flex: 1; }
+.sb .avatar {
+  width: 36px; height: 36px; border-radius: var(--r-pill);
+  background: var(--ink-1); color: var(--paper-1);
+  display: grid; place-items: center;
+  font-family: var(--font-serif); font-weight: 600; font-size: 14px;
+  margin-top: 18px;
+}
+
+/* main column */
+.col { display: flex; flex-direction: column; min-width: 0; }
+
+/* top nav */
+.topnav {
+  height: 56px;
+  border-bottom: 1px solid var(--line-2);
+  display: grid; grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 0 32px;
+  background: var(--paper-1);
+  position: sticky; top: 0; z-index: var(--z-nav);
+}
+.topnav .crumb {
+  display: flex; align-items: center; gap: 10px;
+  font-size: var(--t-small); color: var(--ink-3);
+}
+.topnav .crumb b { color: var(--ink-1); font-weight: 600; }
+.topnav .crumb .sep { color: var(--ink-4); }
+.topnav .util { display: flex; align-items: center; gap: 4px; }
+.topnav .ic {
+  width: 36px; height: 36px;
+  display: grid; place-items: center;
+  border-radius: var(--r-tiny);
+  color: var(--ink-2); cursor: pointer;
+}
+.topnav .ic:hover { background: var(--paper-2); color: var(--ink-1); }
+.topnav .ic svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+
+/* page header */
+.ph {
+  padding: 28px 56px 8px;
+  display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 32px;
+}
+.ph h1 {
+  font-family: var(--font-serif); font-weight: 600; font-size: var(--t-h1);
+  letter-spacing: -.015em; margin: 6px 0 4px; color: var(--ink-1);
+}
+.ph .lede { color: var(--ink-3); font-size: var(--t-small); margin: 0; max-width: 540px; line-height: 1.6; }
+.ph .ctx { text-align: right; font-size: var(--t-small); color: var(--ink-3); }
+.ph .ctx b { color: var(--ink-1); font-weight: 600; }
+
+/* main canvas */
+.main { padding: 24px 56px 56px; display: flex; flex-direction: column; gap: 24px; }
+
+/* ── HERO row: radar (left, fixed) + right column (countdown + stats) ── */
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  gap: 24px;
+  align-items: stretch;
+}
+
+/* radar card  (fixed位置, 不可拖) */
+.radar-card {
+  background: var(--paper-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-card);
+  padding: 24px 28px 28px;
+  position: relative;
+  display: flex; flex-direction: column;
+}
+.radar-card .head {
+  display: grid; grid-template-columns: 1fr auto; align-items: center;
+  margin-bottom: 8px;
+}
+.radar-card .head .title {
+  font-family: var(--font-serif); font-weight: 600; font-size: var(--t-h3);
+  color: var(--ink-1); margin: 0;
+}
+.radar-card .head .meta {
+  font-size: var(--t-meta); color: var(--ink-3);
+}
+.radar-card .head .meta b { color: var(--ink-1); font-weight: 600; }
+.radar-card .legend {
+  display: flex; align-items: center; gap: 18px;
+  font-size: var(--t-meta); color: var(--ink-3);
+  padding: 8px 0 0;
+}
+.radar-card .legend .sw {
+  display: inline-flex; align-items: center; gap: 6px;
+}
+.radar-card .legend .sw i {
+  width: 10px; height: 10px; display: inline-block; border-radius: var(--r-1);
+}
+.radar-card .legend .sw.you i { background: var(--ink-1); }
+.radar-card .legend .sw.fill i { background: var(--data-2); border: 1px solid var(--data-3); }
+.radar-card .legend .sw.target i { background: var(--paper-1); border: 1.5px dashed var(--line-3); }
+.radar-card .legend .sw.weak i { background: var(--err); }
+
+/* radar svg wrapper */
+.radar-wrap {
+  flex: 1;
+  display: grid; place-items: center;
+  min-height: 460px;
+}
+
+/* radar tweak (fixed marker, 不可拖图标) */
+.radar-card .fixed-mark {
+  position: absolute; top: 18px; right: 18px;
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: var(--tracking-loose); text-transform: uppercase;
+  color: var(--ink-4);
+  padding: 4px 8px; border: 1px solid var(--line-2); border-radius: var(--r-tiny);
+  background: var(--paper-1);
+}
+.radar-card .fixed-mark svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+
+/* ── right column (countdown + 2 stat cards) ──────────────────────── */
+.rcol { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+
+.countdown {
+  background: var(--ink-1); color: var(--paper-1);
+  border-radius: var(--r-card);
+  padding: 22px 24px;
+  position: relative;
+  overflow: hidden;
+}
+.countdown::after {
+  content: ""; position: absolute; right: -60px; top: -60px;
+  width: 220px; height: 220px; border-radius: var(--r-pill);
+  background: radial-gradient(circle, rgba(250,247,239,.07) 0%, transparent 60%);
+  pointer-events: none;
+}
+.countdown .kicker {
+  font-family: var(--font-mono); font-size: var(--t-tiny);
+  letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+  color: rgba(250,247,239,.62); margin-bottom: 8px;
+  display: flex; align-items: center; gap: 8px;
+}
+.countdown .kicker::before {
+  content: ""; width: 5px; height: 5px; border-radius: var(--r-pill);
+  background: rgba(250,247,239,.62);
+}
+.countdown .target {
+  font-size: var(--t-meta); color: rgba(250,247,239,.7);
+  margin-bottom: 8px;
+}
+.countdown .target b { color: rgba(250,247,239,.9); font-weight: 600; }
+.countdown .big-row {
+  display: flex; align-items: baseline; gap: 10px;
+  margin: 6px 0 4px;
+}
+.countdown .big {
+  font-family: var(--font-serif); font-style: italic; font-weight: 600;
+  font-size: 84px; line-height: 0.95; letter-spacing: -.02em;
+  color: var(--paper-1);
+}
+.countdown .unit {
+  font-family: var(--font-serif); font-weight: 600; font-size: var(--t-h3);
+  color: rgba(250,247,239,.72);
+}
+.countdown .pace {
+  font-size: var(--t-meta); color: rgba(250,247,239,.62);
+  border-top: 1px solid rgba(250,247,239,.12);
+  margin-top: 12px; padding-top: 10px;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.countdown .pace b { color: rgba(250,247,239,.92); font-weight: 600; }
+
+/* stat card (可拖 / 可折叠 — 视觉态用 handle / icon 表达) */
+.stat {
+  background: var(--paper-1);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-card);
+  padding: 16px 18px;
+  position: relative;
+  display: grid; grid-template-columns: 1fr auto;
+  align-items: center; gap: 16px;
+}
+.stat .stat-body { min-width: 0; }
+.stat .k {
+  font-family: var(--font-mono); font-size: var(--t-tiny);
+  letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 4px;
+}
+.stat .v {
+  font-family: var(--font-serif); font-weight: 600; font-size: 32px;
+  line-height: 1.05; color: var(--ink-1);
+  letter-spacing: -.01em;
+  display: flex; align-items: baseline; gap: 6px;
+}
+.stat .v .u {
+  font-family: var(--font-sans); font-weight: 500; font-size: var(--t-small);
+  color: var(--ink-3); letter-spacing: 0;
+}
+.stat .delta {
+  font-family: var(--font-mono); font-size: var(--t-meta);
+  color: var(--ok); margin-top: 4px;
+}
+.stat .delta.down { color: var(--err); }
+.stat .delta.flat { color: var(--ink-3); }
+.stat .ic-decor {
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  color: var(--ink-2);
+  border: 1px solid var(--line-2); border-radius: var(--r-2);
+  background: var(--paper-2);
+  flex-shrink: 0;
+}
+.stat .ic-decor svg { width: 18px; height: 18px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+
+/* drag handle (左上, 视觉占位; ⋮⋮ pattern) */
+.drag {
+  position: absolute; top: 8px; left: 8px;
+  width: 16px; height: 16px;
+  display: grid; place-items: center;
+  color: var(--ink-4);
+  cursor: grab;
+  border-radius: var(--r-tiny);
+}
+.drag:hover { color: var(--ink-2); background: var(--paper-2); }
+.drag svg { width: 10px; height: 10px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+/* fold (右上小箭头) */
+.fold {
+  position: absolute; top: 8px; right: 8px;
+  width: 22px; height: 22px;
+  display: grid; place-items: center;
+  color: var(--ink-4); border-radius: var(--r-tiny);
+  cursor: pointer;
+}
+.fold:hover { color: var(--ink-1); background: var(--paper-2); }
+.fold svg { width: 11px; height: 11px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+
+/* ── recommendation row (3 cards, drivable by 雷达) ───────────────── */
+.reco {
+  display: flex; flex-direction: column; gap: 14px;
+}
+.reco-head {
+  display: flex; align-items: baseline; justify-content: space-between;
+  padding: 0 2px;
+}
+.reco-head h2 {
+  font-family: var(--font-serif); font-weight: 600; font-size: var(--t-h2);
+  margin: 0; color: var(--ink-1);
+}
+.reco-head .why {
+  font-size: var(--t-meta); color: var(--ink-3);
+}
+.reco-head .why b { color: var(--ink-1); font-weight: 600; }
+.reco-grid {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.rec {
+  background: var(--paper-1);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-card);
+  padding: 20px 20px 18px;
+  position: relative;
+  display: flex; flex-direction: column;
+  min-height: 220px;
+  transition: border-color 150ms var(--motion-ease);
+}
+.rec:hover { border-color: var(--line-3); }
+.rec .rank {
+  position: absolute; top: 16px; left: 18px;
+  font-family: var(--font-serif); font-weight: 600; font-style: italic;
+  font-size: 26px; color: var(--ink-4);
+  line-height: 1;
+}
+.rec .topline {
+  display: flex; align-items: center; justify-content: flex-end;
+  gap: 10px; padding-left: 40px;
+  margin-bottom: 10px;
+}
+.rec .modtag {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-family: var(--font-mono); font-size: var(--t-tiny);
+  letter-spacing: var(--tracking-eyebrow); text-transform: uppercase;
+  color: var(--ink-2);
+  padding: 3px 9px; border: 1px solid var(--line-2);
+  background: var(--paper-2); border-radius: var(--r-tiny);
+}
+.rec .modtag::before {
+  content: ""; width: 5px; height: 5px; border-radius: var(--r-pill);
+  background: var(--err);
+}
+.rec.med .modtag::before { background: var(--warn); }
+.rec h3 {
+  font-family: var(--font-serif); font-weight: 600; font-size: var(--t-h3);
+  margin: 14px 0 4px; line-height: 1.3; color: var(--ink-1);
+  padding-left: 40px;
+}
+.rec .sub {
+  font-size: var(--t-meta); color: var(--ink-3);
+  padding-left: 40px; margin: 0 0 12px;
+}
+.rec .stats {
+  display: flex; gap: 18px;
+  padding: 12px 0; margin: 4px 0 12px;
+  border-top: 1px solid var(--line-1);
+  border-bottom: 1px solid var(--line-1);
+}
+.rec .stat-item .k {
+  font-family: var(--font-mono); font-size: 10px;
+  letter-spacing: var(--tracking-loose); text-transform: uppercase;
+  color: var(--ink-3); margin-bottom: 2px;
+}
+.rec .stat-item .v {
+  font-family: var(--font-serif); font-weight: 600; font-size: 20px;
+  color: var(--ink-1); line-height: 1;
+}
+.rec .stat-item .v .u {
+  font-family: var(--font-sans); font-weight: 500; font-size: var(--t-meta);
+  color: var(--ink-3); margin-left: 3px;
+}
+.rec .reason {
+  font-size: var(--t-meta); color: var(--ink-3);
+  line-height: 1.6; margin-bottom: 14px;
+  display: flex; gap: 8px;
+}
+.rec .reason::before {
+  content: ""; flex-shrink: 0; width: 2px; align-self: stretch;
+  background: var(--err); margin-right: 2px;
+}
+.rec.med .reason::before { background: var(--warn); }
+.rec .reason b { color: var(--ink-1); font-weight: 600; }
+.rec .reason .err { color: var(--err); font-family: var(--font-mono); font-weight: 600; }
+.rec.med .reason .err { color: var(--warn); }
+.rec .actions {
+  margin-top: auto;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+}
+.rec .primary {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--ink-1); color: var(--paper-1);
+  padding: 9px 16px; border-radius: var(--r-tiny);
+  font-size: var(--t-small); font-weight: 600;
+  transition: background 150ms var(--motion-ease);
+}
+.rec .primary:hover { background: var(--ink-2); }
+.rec .primary svg { width: 13px; height: 13px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+.rec .skip {
+  font-size: var(--t-meta); color: var(--ink-3);
+  padding: 6px 10px; border-radius: var(--r-tiny);
+}
+.rec .skip:hover { color: var(--ink-1); background: var(--paper-2); }
+
+/* ── AI helper floating (focus state uses accent quota) ───────────── */
+.ai-fab {
+  position: fixed; right: 28px; bottom: 28px;
+  width: 56px; height: 56px;
+  background: var(--ink-1); color: var(--paper-1);
+  border-radius: var(--r-pill);
+  display: grid; place-items: center;
+  box-shadow: var(--shadow-pop);
+  cursor: pointer;
+  transition: transform 200ms var(--motion-ease);
+  z-index: var(--z-popover);
+}
+.ai-fab:hover { transform: translateY(-2px); }
+.ai-fab:focus-visible { outline: 2px solid var(--accent-1); outline-offset: 3px; }
+.ai-fab svg { width: 22px; height: 22px; stroke: var(--paper-1); fill: none; stroke-width: 1.4; }
+.ai-fab .dot {
+  position: absolute; top: 6px; right: 6px;
+  width: 9px; height: 9px; border-radius: var(--r-pill);
+  background: var(--paper-1);
+  border: 2px solid var(--ink-1);
+}
+
+/* small a11y */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
+  overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ─── sidebar (collapsed icon rail) ─────────────────────────── -->
+  <aside class="sb" aria-label="主导航">
+    <div class="logo" aria-label="思考 SIKAO">思</div>
+
+    <button class="nav-i active" aria-label="复盘工作台" title="复盘工作台">
+      <!-- radar icon -->
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5.5"/><circle cx="12" cy="12" r="2"/><path d="M12 3 L12 21 M3 12 L21 12"/></svg>
+    </button>
+    <button class="nav-i" aria-label="练习" title="练习">
+      <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="1"/><path d="M8 9 L16 9 M8 13 L14 13 M8 17 L12 17"/></svg>
+    </button>
+    <button class="nav-i" aria-label="错题本" title="错题本">
+      <svg viewBox="0 0 24 24"><path d="M6 4 L18 4 L18 20 L6 20 Z M6 4 L6 20"/><path d="M9 9 L15 9 M9 13 L15 13"/><circle cx="16.5" cy="16.5" r="2.5" fill="currentColor" stroke="none"/></svg>
+    </button>
+    <button class="nav-i" aria-label="笔记" title="笔记">
+      <svg viewBox="0 0 24 24"><path d="M5 3 L15 3 L19 7 L19 21 L5 21 Z"/><path d="M15 3 L15 7 L19 7"/><path d="M8 13 L16 13 M8 17 L13 17"/></svg>
+    </button>
+    <button class="nav-i" aria-label="计划" title="计划">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="1"/><path d="M3 9 L21 9 M8 3 L8 7 M16 3 L16 7"/><circle cx="9" cy="14" r="0.8" fill="currentColor"/><circle cx="13" cy="14" r="0.8" fill="currentColor"/><circle cx="17" cy="14" r="0.8" fill="currentColor"/></svg>
+    </button>
+    <button class="nav-i" aria-label="AI 助手" title="AI 助手">
+      <svg viewBox="0 0 24 24"><path d="M4 7 L4 15 C4 16 5 17 6 17 L9 17 L12 20 L12 17 L18 17 C19 17 20 16 20 15 L20 7 C20 6 19 5 18 5 L6 5 C5 5 4 6 4 7 Z"/><circle cx="9" cy="11" r="0.8" fill="currentColor"/><circle cx="12" cy="11" r="0.8" fill="currentColor"/><circle cx="15" cy="11" r="0.8" fill="currentColor"/></svg>
+    </button>
+
+    <div class="spacer"></div>
+
+    <button class="nav-i" aria-label="设置" title="设置">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2 L12 5 M12 19 L12 22 M2 12 L5 12 M19 12 L22 12 M5 5 L7 7 M17 17 L19 19 M5 19 L7 17 M17 7 L19 5"/></svg>
+    </button>
+    <div class="avatar" aria-label="林">林</div>
+  </aside>
+
+  <!-- ─── main column ───────────────────────────────────────────── -->
+  <div class="col">
+
+    <!-- top nav -->
+    <nav class="topnav" aria-label="顶部">
+      <div class="crumb">
+        <span class="serif" style="font-size:15px;font-weight:600;color:var(--ink-1);">思考</span>
+        <span class="sep">/</span>
+        <b>复盘工作台</b>
+      </div>
+      <div class="util">
+        <button class="ic" aria-label="搜索" title="搜索 (⌘K)">
+          <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7" fill="none" stroke="currentColor"/><path d="M16 16 L21 21" stroke="currentColor"/></svg>
+        </button>
+        <button class="ic" aria-label="通知" title="通知">
+          <svg viewBox="0 0 24 24"><path d="M6 9 C6 6 8 4 12 4 C16 4 18 6 18 9 L18 14 L20 16 L4 16 L6 14 Z M10 19 C10 20 11 21 12 21 C13 21 14 20 14 19" fill="none" stroke="currentColor"/></svg>
+        </button>
+        <button class="ic" aria-label="主题切换" title="主题">
+          <svg viewBox="0 0 24 24"><path d="M12 3 C7 3 3 7 3 12 C3 17 7 21 12 21 L12 3 Z" fill="currentColor"/></svg>
+        </button>
+        <button class="ic" aria-label="字号 / 密度">
+          <svg viewBox="0 0 24 24"><path d="M4 18 L8 6 L12 18 M5.5 14 L10.5 14" stroke="currentColor"/><path d="M14 8 L20 8 M14 12 L20 12 M14 16 L20 16" stroke="currentColor"/></svg>
+        </button>
+      </div>
+    </nav>
+
+    <!-- page header -->
+    <header class="ph">
+      <div>
+        <div class="stamp">复盘工作台 · DASHBOARD</div>
+        <h1>能力地图</h1>
+        <p class="lede">看清自己的弱点，然后变强。今天的推荐已经按你雷达图最弱的三轴自动排好。</p>
+      </div>
+      <div class="ctx">
+        <div>今天是 <b>2026 年 05 月 13 日 · 星期三</b></div>
+        <div style="margin-top:4px;">本周累计 <b>4 小时 12 分</b> · 较上周 <span style="color:var(--ok);">+38 min</span></div>
+      </div>
+    </header>
+
+    <!-- main canvas -->
+    <main class="main">
+
+      <!-- ── HERO: radar (fixed) + right stat column ─────────── -->
+      <section class="hero" aria-label="能力概览">
+
+        <!-- radar card -->
+        <div class="radar-card" aria-label="薄弱模块雷达图（固定位置）">
+          <div class="fixed-mark" title="此模块固定位置，不可拖动">
+            <svg viewBox="0 0 24 24"><rect x="6" y="10" width="12" height="9" rx="1"/><path d="M9 10 L9 7 C9 5 10 4 12 4 C14 4 15 5 15 7 L15 10"/></svg>
+            固定
+          </div>
+
+          <div class="head">
+            <h3 class="title">薄弱模块雷达</h3>
+            <div class="meta">基于近 <b>30 天</b> · <b>2,438</b> 道题</div>
+          </div>
+
+          <div class="radar-wrap">
+            <!-- ╭─ Radar SVG (7 axis) ─────────────────────────╮
+                 7 模块: 言语理解 / 资料分析 / 判断推理 / 数量关系 /
+                          常识判断 / 申论写作 / 申论概括
+                 5 ring grid: 20/40/60/80/100, 数据 polygon
+                 颜色: --line-2 grid / --ink-1 data stroke
+                       --data-2 半透明 fill / --err 最弱 axis label
+                 ╰───────────────────────────────────────────────╯ -->
+            <svg width="640" height="500" viewBox="0 0 640 500" role="img" aria-label="七个模块雷达图">
+              <defs>
+                <radialGradient id="radarFill" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="var(--data-2)" stop-opacity="0.55"/>
+                  <stop offset="100%" stop-color="var(--data-2)" stop-opacity="0.18"/>
+                </radialGradient>
+              </defs>
+
+              <g transform="translate(320 250)">
+
+                <!-- ╭──── Regular heptagon, radius scale 40/80/120/160/200 ────╮
+                     Vertex k angle: -90deg + k * 360/7  (clockwise from top)
+                     v0 言语理解 / v1 资料分析 / v2 数量关系 / v3 申论概括 /
+                     v4 申论写作 / v5 常识判断 / v6 判断推理
+                     ╰──────────────────────────────────────────────────────────╯ -->
+
+                <!-- ring 100 (outer, filled paper) -->
+                <polygon points="0.00,-200.00 156.37,-124.70 194.99,44.50 86.78,180.19 -86.78,180.19 -194.99,44.50 -156.37,-124.70"
+                  fill="var(--paper-1)" stroke="var(--line-2)" stroke-width="1" opacity="0.95"/>
+
+                <!-- inner rings 80/60/40/20 dashed -->
+                <g fill="none" stroke="var(--line-2)" stroke-width="1">
+                  <polygon points="0.00,-160.00 125.09,-99.76 155.99,35.60 69.42,144.16 -69.42,144.16 -155.99,35.60 -125.09,-99.76" stroke-dasharray="2 4" opacity="0.75"/>
+                  <polygon points="0.00,-120.00 93.82,-74.82 116.99,26.70 52.07,108.12 -52.07,108.12 -116.99,26.70 -93.82,-74.82" stroke-dasharray="2 4" opacity="0.7"/>
+                  <polygon points="0.00,-80.00 62.55,-49.88 77.99,17.80 34.71,72.08 -34.71,72.08 -77.99,17.80 -62.55,-49.88" stroke-dasharray="2 4" opacity="0.55"/>
+                  <polygon points="0.00,-40.00 31.27,-24.94 39.00,8.90 17.36,36.04 -17.36,36.04 -39.00,8.90 -31.27,-24.94" stroke-dasharray="2 4" opacity="0.4"/>
+                </g>
+
+                <!-- ring scale labels (along top axis) -->
+                <g font-family="var(--font-mono)" font-size="9" fill="var(--ink-4)" text-anchor="start">
+                  <text x="4" y="-198">100</text>
+                  <text x="4" y="-158">80</text>
+                  <text x="4" y="-118">60</text>
+                  <text x="4" y="-78">40</text>
+                  <text x="4" y="-38">20</text>
+                </g>
+
+                <!-- axis spokes (7) -->
+                <g stroke="var(--line-2)" stroke-width="1" opacity="0.7">
+                  <line x1="0" y1="0" x2="0.00" y2="-200.00"/>
+                  <line x1="0" y1="0" x2="156.37" y2="-124.70"/>
+                  <line x1="0" y1="0" x2="194.99" y2="44.50"/>
+                  <line x1="0" y1="0" x2="86.78" y2="180.19"/>
+                  <line x1="0" y1="0" x2="-86.78" y2="180.19"/>
+                  <line x1="0" y1="0" x2="-194.99" y2="44.50"/>
+                  <line x1="0" y1="0" x2="-156.37" y2="-124.70"/>
+                </g>
+
+                <!-- target band (goal 80%, dashed ring) -->
+                <polygon points="0.00,-160.00 125.09,-99.76 155.99,35.60 69.42,144.16 -69.42,144.16 -155.99,35.60 -125.09,-99.76"
+                  fill="none" stroke="var(--ink-3)" stroke-width="1.2" stroke-dasharray="3 5" opacity="0.55"/>
+
+                <!-- ╭──── data polygon  values 71/62/38/60/47/55/47 ────╮
+                     v0 言语理解 71% r=142   (   0.00, -142.00)
+                     v1 资料分析 62% r=124   (  96.95,  -77.31)
+                     v2 数量关系 38% r=76    (  74.09,   16.91)   WEAK
+                     v3 申论概括 60% r=120   (  52.07,  108.12)
+                     v4 申论写作 47% r=94    ( -40.79,   84.69)   WEAK
+                     v5 常识判断 55% r=110   (-107.24,   24.48)
+                     v6 判断推理 47% r=94    ( -73.49,  -58.61)   WEAK
+                     ╰──────────────────────────────────────────────────╯ -->
+                <polygon points="0.00,-142.00 96.95,-77.31 74.09,16.91 52.07,108.12 -40.79,84.69 -107.24,24.48 -73.49,-58.61"
+                  fill="url(#radarFill)" stroke="var(--ink-1)" stroke-width="1.5" stroke-linejoin="round"/>
+
+                <!-- data points -->
+                <g fill="var(--ink-1)">
+                  <circle cx="0.00" cy="-142.00" r="3.2"/>
+                  <circle cx="96.95" cy="-77.31" r="3.2"/>
+                  <circle cx="74.09" cy="16.91" r="3.6" fill="var(--err)"/>
+                  <circle cx="52.07" cy="108.12" r="3.2"/>
+                  <circle cx="-40.79" cy="84.69" r="3.6" fill="var(--err)"/>
+                  <circle cx="-107.24" cy="24.48" r="3.2"/>
+                  <circle cx="-73.49" cy="-58.61" r="3.6" fill="var(--err)"/>
+                </g>
+
+                <!-- axis labels (CJK serif 14, percent mono 13) -->
+                <g font-family="var(--font-serif)" font-weight="600" font-size="14" fill="var(--ink-1)">
+                  <!-- v0 top: 言语理解 71% -->
+                  <text x="0" y="-218" text-anchor="middle">言语理解</text>
+                  <text x="0" y="-232" text-anchor="middle" font-family="var(--font-mono)" font-style="italic" font-size="13" fill="var(--ink-2)">71%</text>
+
+                  <!-- v1 upper-right: 资料分析 62% -->
+                  <text x="172" y="-132" text-anchor="start">资料分析</text>
+                  <text x="172" y="-116" text-anchor="start" font-family="var(--font-mono)" font-style="italic" font-size="13" fill="var(--ink-2)">62%</text>
+
+                  <!-- v2 right: 数量关系 38%  WEAK -->
+                  <text x="212" y="42" text-anchor="start" fill="var(--err)">数量关系</text>
+                  <text x="212" y="58" text-anchor="start" font-family="var(--font-mono)" font-style="italic" font-size="13" fill="var(--err)" font-weight="600">38%</text>
+
+                  <!-- v3 lower-right: 申论概括 60% -->
+                  <text x="96" y="202" text-anchor="start">申论概括</text>
+                  <text x="96" y="218" text-anchor="start" font-family="var(--font-mono)" font-style="italic" font-size="13" fill="var(--ink-2)">60%</text>
+
+                  <!-- v4 lower-left: 申论写作 47%  WEAK -->
+                  <text x="-96" y="202" text-anchor="end" fill="var(--err)">申论写作</text>
+                  <text x="-96" y="218" text-anchor="end" font-family="var(--font-mono)" font-style="italic" font-size="13" fill="var(--err)" font-weight="600">47%</text>
+
+                  <!-- v5 left: 常识判断 55% -->
+                  <text x="-212" y="42" text-anchor="end">常识判断</text>
+                  <text x="-212" y="58" text-anchor="end" font-family="var(--font-mono)" font-style="italic" font-size="13" fill="var(--ink-2)">55%</text>
+
+                  <!-- v6 upper-left: 判断推理 47%  WEAK -->
+                  <text x="-172" y="-132" text-anchor="end" fill="var(--err)">判断推理</text>
+                  <text x="-172" y="-116" text-anchor="end" font-family="var(--font-mono)" font-style="italic" font-size="13" fill="var(--err)" font-weight="600">47%</text>
+                </g>
+
+              </g>
+            </svg>
+          </div>
+
+          <div class="legend" aria-label="图例">
+            <span class="sw you"><i></i> 当前能力</span>
+            <span class="sw fill"><i></i> 数据区域</span>
+            <span class="sw target"><i></i> 目标 80%</span>
+            <span class="sw weak"><i></i> 短板模块</span>
+            <span style="margin-left:auto;color:var(--ink-4);">最弱 3 轴已自动驱动右侧推荐 ↓</span>
+          </div>
+        </div>
+
+        <!-- right column: countdown + 2 stat cards -->
+        <aside class="rcol" aria-label="时间与累计">
+
+          <!-- countdown -->
+          <div class="countdown">
+            <div class="kicker">考试倒计时</div>
+            <div class="target">距 <b>2026 国考 · 11 月 24 日</b></div>
+            <div class="big-row">
+              <span class="big">195</span>
+              <span class="unit">天</span>
+            </div>
+            <div class="pace">
+              <span>建议每日 <b>40 分钟</b></span>
+              <span>已坚持 <b>21 天</b></span>
+            </div>
+          </div>
+
+          <!-- stat: 累计学习时长 -->
+          <div class="stat" aria-label="累计学习时长">
+            <button class="drag" aria-label="拖动" title="拖动重排">
+              <svg viewBox="0 0 12 12"><circle cx="3" cy="3" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="3" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+            </button>
+            <button class="fold" aria-label="折叠" title="折叠">
+              <svg viewBox="0 0 12 12"><path d="M3 5 L6 8 L9 5" stroke="currentColor" fill="none"/></svg>
+            </button>
+            <div class="stat-body">
+              <div class="k">累计学习时长</div>
+              <div class="v">87<span class="u">小时 24 分</span></div>
+              <div class="delta">↑ 本周 +4h 12m</div>
+            </div>
+            <div class="ic-decor" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7 L12 12 L15 14"/></svg>
+            </div>
+          </div>
+
+          <!-- stat: 错题待复盘 -->
+          <div class="stat" aria-label="错题待复盘">
+            <button class="drag" aria-label="拖动" title="拖动重排">
+              <svg viewBox="0 0 12 12"><circle cx="3" cy="3" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="3" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+            </button>
+            <button class="fold" aria-label="折叠" title="折叠">
+              <svg viewBox="0 0 12 12"><path d="M3 5 L6 8 L9 5" stroke="currentColor" fill="none"/></svg>
+            </button>
+            <div class="stat-body">
+              <div class="k">待复盘错题</div>
+              <div class="v">142<span class="u">道</span></div>
+              <div class="delta down">↑ 新增 23 道 (本周)</div>
+            </div>
+            <div class="ic-decor" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M6 4 L18 4 L18 20 L6 20 Z M6 4 L6 20"/><path d="M9 9 L15 9 M9 13 L15 13"/><circle cx="16.5" cy="16.5" r="2.2" fill="currentColor" stroke="none"/></svg>
+            </div>
+          </div>
+
+        </aside>
+      </section>
+
+      <!-- ── recommendation row ─────────────────────────────── -->
+      <section class="reco" aria-label="今日推荐">
+        <div class="reco-head">
+          <h2>今日推荐 · 直击三轴短板</h2>
+          <div class="why">推荐来源 · 雷达图最弱三轴 · <b>数量关系 / 申论写作 / 判断推理</b></div>
+        </div>
+
+        <div class="reco-grid">
+
+          <!-- card 1: 数量关系 38% (weakest) -->
+          <article class="rec" aria-label="推荐 1 数量关系">
+            <span class="rank">01</span>
+            <div class="topline">
+              <button class="drag" style="position:static;" aria-label="拖动" title="拖动重排">
+                <svg viewBox="0 0 12 12"><circle cx="3" cy="3" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="3" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+              </button>
+              <span class="modtag">行测 · 数量关系</span>
+            </div>
+            <h3>数量关系专项 · 工程问题</h3>
+            <p class="sub">含真题解析与同类型扩展题</p>
+
+            <div class="stats">
+              <div class="stat-item">
+                <div class="k">题数</div>
+                <div class="v">25<span class="u">题</span></div>
+              </div>
+              <div class="stat-item">
+                <div class="k">建议用时</div>
+                <div class="v">28<span class="u">min</span></div>
+              </div>
+              <div class="stat-item">
+                <div class="k">本模块正确率</div>
+                <div class="v" style="color:var(--err);">38<span class="u">%</span></div>
+              </div>
+            </div>
+
+            <p class="reason">
+              <span>你在此模块正确率 <span class="err">38%</span>，是雷达图<b>最低</b>一轴；距国考 195 天，建议本周重点补 2 次。</span>
+            </p>
+
+            <div class="actions">
+              <button class="primary">
+                开始训练
+                <svg viewBox="0 0 24 24"><path d="M5 12 L19 12 M13 6 L19 12 L13 18" stroke="currentColor" fill="none"/></svg>
+              </button>
+              <button class="skip">稍后</button>
+            </div>
+          </article>
+
+          <!-- card 2: 申论写作 47% -->
+          <article class="rec" aria-label="推荐 2 申论写作">
+            <span class="rank">02</span>
+            <div class="topline">
+              <button class="drag" style="position:static;" aria-label="拖动" title="拖动重排">
+                <svg viewBox="0 0 12 12"><circle cx="3" cy="3" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="3" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+              </button>
+              <span class="modtag">申论 · 作文</span>
+            </div>
+            <h3>申论作文 · 议论框架训练</h3>
+            <p class="sub">2024 国考真题 1 篇 + 范文对照</p>
+
+            <div class="stats">
+              <div class="stat-item">
+                <div class="k">篇数</div>
+                <div class="v">1<span class="u">篇</span></div>
+              </div>
+              <div class="stat-item">
+                <div class="k">建议用时</div>
+                <div class="v">45<span class="u">min</span></div>
+              </div>
+              <div class="stat-item">
+                <div class="k">本模块得分率</div>
+                <div class="v" style="color:var(--err);">47<span class="u">%</span></div>
+              </div>
+            </div>
+
+            <p class="reason">
+              <span>申论写作得分率 <span class="err">47%</span>，是雷达图<b>第二弱</b>轴；建议先完成框架训练再做总评。</span>
+            </p>
+
+            <div class="actions">
+              <button class="primary">
+                开始训练
+                <svg viewBox="0 0 24 24"><path d="M5 12 L19 12 M13 6 L19 12 L13 18" stroke="currentColor" fill="none"/></svg>
+              </button>
+              <button class="skip">稍后</button>
+            </div>
+          </article>
+
+          <!-- card 3: 判断推理 47% -->
+          <article class="rec med" aria-label="推荐 3 判断推理">
+            <span class="rank">03</span>
+            <div class="topline">
+              <button class="drag" style="position:static;" aria-label="拖动" title="拖动重排">
+                <svg viewBox="0 0 12 12"><circle cx="3" cy="3" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="3" cy="9" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="3" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="6" r="1" fill="currentColor" stroke="none"/><circle cx="8" cy="9" r="1" fill="currentColor" stroke="none"/></svg>
+              </button>
+              <span class="modtag">行测 · 判断推理</span>
+            </div>
+            <h3>判断推理 · 类比推理 30 题</h3>
+            <p class="sub">题型混合 · 含解析</p>
+
+            <div class="stats">
+              <div class="stat-item">
+                <div class="k">题数</div>
+                <div class="v">30<span class="u">题</span></div>
+              </div>
+              <div class="stat-item">
+                <div class="k">建议用时</div>
+                <div class="v">25<span class="u">min</span></div>
+              </div>
+              <div class="stat-item">
+                <div class="k">本模块正确率</div>
+                <div class="v" style="color:var(--warn);">47<span class="u">%</span></div>
+              </div>
+            </div>
+
+            <p class="reason">
+              <span>判断推理正确率 <span class="err">47%</span>，类比推理是细分弱点；先攻 30 题热身再做综合。</span>
+            </p>
+
+            <div class="actions">
+              <button class="primary">
+                开始训练
+                <svg viewBox="0 0 24 24"><path d="M5 12 L19 12 M13 6 L19 12 L13 18" stroke="currentColor" fill="none"/></svg>
+              </button>
+              <button class="skip">稍后</button>
+            </div>
+          </article>
+
+        </div>
+      </section>
+
+    </main>
+  </div>
+</div>
+
+<!-- AI 助手浮按钮 -->
+<button class="ai-fab" aria-label="AI 助手 (Cmd+J)">
+  <svg viewBox="0 0 24 24">
+    <path d="M4 7 L4 15 C4 16 5 17 6 17 L9 17 L12 20 L12 17 L18 17 C19 17 20 16 20 15 L20 7 C20 6 19 5 18 5 L6 5 C5 5 4 6 4 7 Z"/>
+    <circle cx="9" cy="11" r="0.9" fill="currentColor" stroke="none"/>
+    <circle cx="12" cy="11" r="0.9" fill="currentColor" stroke="none"/>
+    <circle cx="15" cy="11" r="0.9" fill="currentColor" stroke="none"/>
+  </svg>
+  <span class="dot" aria-hidden="true"></span>
+  <span class="sr-only">AI 助手 · 有新消息</span>
+</button>
+
+</body>
+</html>

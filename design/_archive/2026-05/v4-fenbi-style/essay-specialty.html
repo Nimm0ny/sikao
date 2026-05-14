@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>思考 — 申论专项练习 (v4 fenbi-style)</title>
+<style>
+:root {
+  --paper:#f5f1e8; --paper-deep:#ece6d6; --bg:#ffffff; --bg-alt:#f8fafc;
+  --ink:#0b1120; --ink-muted:#334155; --muted:#64748b;
+  --line:#d9d2bf; --line-strong:#b9af96;
+  --accent:#3f7ef1; --accent-50:#eff6ff;
+  --r-chip:8px; --r-card:12px; --r-btn:10px; --r-pill:9999px;
+  --sans:'Inter',system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+  --serif:'Source Serif 4','Songti SC','Noto Serif SC',Georgia,serif;
+  --mono:'SF Mono','Cascadia Code',Consolas,monospace;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+.shell{max-width:1024px;margin:0 auto;padding:32px 32px 80px;}
+
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.page-head h1{margin:0;font-family:var(--serif);font-size:28px;font-weight:600;letter-spacing:-0.01em;color:var(--ink);display:inline;}
+.logo-stub{width:32px;height:32px;background:var(--ink);border-radius:var(--r-chip);margin-right:12px;display:inline-block;vertical-align:middle;}
+.custom-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);text-decoration:none;font-weight:500;}
+.custom-link:hover{color:var(--ink);}
+.custom-link svg{width:14px;height:14px;}
+
+.hero{background:var(--ink);color:#fff;border-radius:var(--r-card);padding:24px 28px;margin-bottom:24px;display:flex;align-items:center;gap:20px;}
+.hero .icon{width:56px;height:56px;border-radius:var(--r-card);background:rgba(255,255,255,0.08);display:inline-flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;}
+.hero h2{margin:0 0 4px;font-family:var(--serif);font-size:22px;font-weight:600;letter-spacing:-0.005em;}
+.hero p{margin:0;font-size:13px;color:rgba(255,255,255,0.72);}
+
+.tree{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden;}
+.cat{border-bottom:1px solid var(--line);}
+.cat:last-child{border-bottom:none;}
+.cat-row{display:flex;align-items:center;gap:12px;padding:18px 20px;cursor:pointer;user-select:none;transition:background 150ms ease;}
+.cat-row:hover{background:var(--bg-alt);}
+.cat-row .chev{width:14px;height:14px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);transition:transform 200ms ease,color 150ms ease;font-size:10px;}
+.cat[data-open="true"] .cat-row .chev{transform:rotate(180deg);color:var(--ink);}
+.cat-row .name{flex:1;font-size:15px;font-weight:500;color:var(--ink);}
+.cat[data-open="true"] .cat-row .name{font-weight:600;}
+.cat-row .total{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted);}
+
+.sub-list{display:none;background:var(--paper);border-top:1px solid var(--line);}
+.cat[data-open="true"] .sub-list{display:block;}
+.sub-row{display:flex;align-items:center;gap:12px;padding:14px 20px 14px 48px;border-bottom:1px solid var(--line);cursor:pointer;transition:background 150ms ease;}
+.sub-row:last-child{border-bottom:none;}
+.sub-row:hover{background:var(--paper-deep);}
+.sub-row .dot{width:6px;height:6px;border-radius:var(--r-pill);background:var(--line-strong);flex-shrink:0;}
+.sub-row .label{flex:1;font-size:14px;color:var(--ink-muted);}
+.sub-row .progress{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:12px;color:var(--muted);min-width:80px;text-align:right;}
+.sub-row .progress strong{color:var(--ink);font-weight:600;}
+.sub-row .go{display:inline-flex;align-items:center;gap:4px;font-size:13px;color:var(--muted);font-weight:500;white-space:nowrap;transition:color 150ms ease;}
+.sub-row:hover .go{color:var(--ink);font-weight:600;}
+
+.chip:focus-visible,.cat-row:focus-visible,.sub-row:focus-visible{outline:2px solid var(--accent);outline-offset:-2px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="page-head">
+    <div><span class="logo-stub" aria-hidden="true"></span><h1>申论 · 专项练习</h1></div>
+    <a href="#" class="custom-link">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+      自定义刷题
+    </a>
+  </div>
+
+  <div class="hero">
+    <span class="icon" aria-hidden="true">📝</span>
+    <div><h2>专项练习</h2><p>按题型练 · AI 即时批改 · 5 大类 26 子项</p></div>
+  </div>
+
+  <div class="tree" role="tree">
+
+    <div class="cat" data-open="true" role="treeitem" aria-expanded="true">
+      <div class="cat-row" tabindex="0">
+        <span class="chev">▼</span>
+        <span class="name">归纳概括</span>
+        <span class="total">5 / 5</span>
+      </div>
+      <div class="sub-list" role="group">
+        <div class="sub-row" tabindex="0"><span class="dot" aria-hidden="true"></span><span class="label">全部</span><span class="progress"><strong>43</strong> / 312</span><span class="go">去练习 →</span></div>
+        <div class="sub-row" tabindex="0"><span class="dot" aria-hidden="true"></span><span class="label">单一概括</span><span class="progress"><strong>18</strong> / 96</span><span class="go">去练习 →</span></div>
+        <div class="sub-row" tabindex="0"><span class="dot" aria-hidden="true"></span><span class="label">综合概括</span><span class="progress"><strong>15</strong> / 102</span><span class="go">去练习 →</span></div>
+        <div class="sub-row" tabindex="0"><span class="dot" aria-hidden="true"></span><span class="label">概括原因 / 影响</span><span class="progress"><strong>7</strong> / 64</span><span class="go">去练习 →</span></div>
+        <div class="sub-row" tabindex="0"><span class="dot" aria-hidden="true"></span><span class="label">概括对策 / 经验</span><span class="progress"><strong>3</strong> / 50</span><span class="go">去练习 →</span></div>
+      </div>
+    </div>
+
+    <div class="cat" data-open="false" role="treeitem" aria-expanded="false">
+      <div class="cat-row" tabindex="0"><span class="chev">▼</span><span class="name">综合分析</span><span class="total">4 / 4</span></div>
+      <div class="sub-list" role="group">
+        <div class="sub-row" tabindex="0"><span class="dot" aria-hidden="true"></span><span class="label">全部</span><span class="progress"><strong>22</strong> / 218</span><span class="go">去练习 →</span></div>
+      </div>
+    </div>
+
+    <div class="cat" data-open="false" role="treeitem" aria-expanded="false">
+      <div class="cat-row" tabindex="0"><span class="chev">▼</span><span class="name">提出对策</span><span class="total">3 / 3</span></div>
+      <div class="sub-list" role="group">
+        <div class="sub-row" tabindex="0"><span class="dot" aria-hidden="true"></span><span class="label">全部</span><span class="progress"><strong>11</strong> / 156</span><span class="go">去练习 →</span></div>
+      </div>
+    </div>
+
+    <div class="cat" data-open="false" role="treeitem" aria-expanded="false">
+      <div class="cat-row" tabindex="0"><span class="chev">▼</span><span class="name">应用文写作</span><span class="total">8 / 8</span></div>
+      <div class="sub-list" role="group">
+        <div class="sub-row" tabindex="0"><span class="dot" aria-hidden="true"></span><span class="label">全部</span><span class="progress"><strong>9</strong> / 245</span><span class="go">去练习 →</span></div>
+      </div>
+    </div>
+
+    <div class="cat" data-open="false" role="treeitem" aria-expanded="false">
+      <div class="cat-row" tabindex="0"><span class="chev">▼</span><span class="name">大作文</span><span class="total">6 / 6</span></div>
+      <div class="sub-list" role="group">
+        <div class="sub-row" tabindex="0"><span class="dot" aria-hidden="true"></span><span class="label">全部</span><span class="progress"><strong>5</strong> / 184</span><span class="go">去练习 →</span></div>
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('.cat-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const cat = row.parentElement;
+      const open = cat.getAttribute('data-open') === 'true';
+      cat.setAttribute('data-open', open ? 'false' : 'true');
+      cat.setAttribute('aria-expanded', open ? 'false' : 'true');
+    });
+  });
+</script>
+</body>
+</html>

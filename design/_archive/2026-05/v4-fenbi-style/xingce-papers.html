@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>思考 — 行测套卷 (v4 fenbi-style)</title>
+<style>
+:root {
+  --paper:#f5f1e8; --paper-deep:#ece6d6; --bg:#ffffff; --bg-alt:#f8fafc;
+  --ink:#0b1120; --ink-muted:#334155; --muted:#64748b;
+  --line:#d9d2bf; --line-strong:#b9af96;
+  --accent:#3f7ef1; --accent-50:#eff6ff;
+  --warn:#c97a16; --warn-bg:#fde9bf;
+  --r-chip:8px; --r-card:12px; --r-btn:10px; --r-pill:9999px;
+  --sans:'Inter',system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+  --serif:'Source Serif 4','Songti SC','Noto Serif SC',Georgia,serif;
+  --mono:'SF Mono','Cascadia Code',Consolas,monospace;
+}
+*{box-sizing:border-box;}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;}
+.shell{max-width:1024px;margin:0 auto;padding:32px 32px 80px;}
+
+/* Header */
+.page-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;}
+.page-head h1{margin:0;font-family:var(--serif);font-size:28px;font-weight:600;letter-spacing:-0.01em;color:var(--ink);display:inline;}
+.page-head .meta{font-size:13px;color:var(--muted);}
+.logo-stub{width:32px;height:32px;background:var(--ink);border-radius:var(--r-chip);margin-right:12px;display:inline-block;vertical-align:middle;}
+
+/* Filter chips */
+.filter-block{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-card);padding:16px 20px;margin-bottom:24px;}
+.filter-row{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+.filter-row:last-child{margin-bottom:0;}
+.chip{display:inline-flex;align-items:center;height:28px;padding:0 14px;border-radius:var(--r-pill);background:var(--bg-alt);color:var(--ink-muted);font-size:13px;font-weight:500;border:1px solid transparent;cursor:pointer;transition:background 150ms ease,color 150ms ease;user-select:none;white-space:nowrap;}
+.chip:hover{background:var(--paper-deep);}
+.chip.active{background:var(--ink);color:#fff;}
+
+/* Counter */
+.counter{font-size:12px;color:var(--muted);margin-bottom:12px;padding-left:4px;}
+.counter strong{color:var(--ink);font-weight:600;}
+
+/* Row list */
+.list{background:var(--bg);border:1px solid var(--line);border-radius:var(--r-card);overflow:hidden;}
+.row{display:flex;align-items:center;gap:14px;padding:16px 20px;border-bottom:1px solid var(--line);cursor:pointer;transition:background 150ms ease;}
+.row:last-child{border-bottom:none;}
+.row:hover{background:var(--bg-alt);}
+.row .play{flex-shrink:0;width:16px;height:16px;display:inline-flex;align-items:center;justify-content:center;color:var(--ink);}
+.row .play svg{width:12px;height:12px;fill:currentColor;}
+.row .body{flex:1;min-width:0;}
+.row .title{font-size:14px;font-weight:500;color:var(--ink);margin:0 0 4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.row .sub{font-size:12px;color:var(--muted);display:flex;gap:12px;}
+.row .sub .difficulty{font-family:var(--mono);font-variant-numeric:tabular-nums;}
+.row .status{flex-shrink:0;display:inline-flex;align-items:center;height:28px;padding:0 12px;border-radius:var(--r-pill);font-size:12px;font-weight:500;white-space:nowrap;}
+.row .status.done{background:var(--bg-alt);color:var(--muted);}
+.row .status.done .num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-weight:600;color:var(--ink-muted);margin:0 2px;}
+.row .status.todo{background:var(--warn-bg);color:var(--warn);}
+
+.chip:focus-visible,.row:focus-visible{outline:2px solid var(--accent);outline-offset:2px;}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <div class="page-head">
+    <div><span class="logo-stub" aria-hidden="true"></span><h1>行测 · 套卷练习</h1></div>
+    <div class="meta">完整真题 · 网友回忆版</div>
+  </div>
+
+  <div class="filter-block" role="group" aria-label="按地区筛选">
+    <div class="filter-row">
+      <button class="chip active">推荐</button>
+      <button class="chip">国考</button>
+      <button class="chip">国考模拟题</button>
+      <button class="chip">省考模拟题</button>
+      <button class="chip">安徽</button>
+      <button class="chip">北京</button>
+      <button class="chip">福建</button>
+      <button class="chip">甘肃</button>
+      <button class="chip">广东</button>
+      <button class="chip">广西</button>
+      <button class="chip">贵州</button>
+      <button class="chip">海南</button>
+      <button class="chip">河北</button>
+      <button class="chip">河南</button>
+      <button class="chip">黑龙江</button>
+      <button class="chip">湖北</button>
+      <button class="chip">湖南</button>
+    </div>
+    <div class="filter-row">
+      <button class="chip">吉林</button>
+      <button class="chip">江苏</button>
+      <button class="chip">江西</button>
+      <button class="chip">辽宁</button>
+      <button class="chip">内蒙古</button>
+      <button class="chip">宁夏</button>
+      <button class="chip">青海</button>
+      <button class="chip">山东</button>
+      <button class="chip">山西</button>
+      <button class="chip">陕西</button>
+      <button class="chip">上海</button>
+      <button class="chip">四川</button>
+      <button class="chip">天津</button>
+      <button class="chip">西藏</button>
+      <button class="chip">新疆</button>
+      <button class="chip">云南</button>
+      <button class="chip">浙江</button>
+      <button class="chip">重庆</button>
+    </div>
+    <div class="filter-row">
+      <button class="chip">深圳市考</button>
+      <button class="chip">广州市考</button>
+      <button class="chip">政法干警</button>
+      <button class="chip">选调</button>
+    </div>
+  </div>
+
+  <div class="counter">共 <strong>34</strong> 套</div>
+
+  <div class="list" role="list">
+    <div class="row" role="listitem" tabindex="0">
+      <span class="play" aria-hidden="true"><svg viewBox="0 0 12 12"><polygon points="2,1 11,6 2,11"/></svg></span>
+      <div class="body"><p class="title">2026 年广东省公务员录用考试《行测》题（网友回忆版）</p><div class="sub"><span class="difficulty">难度 4.1</span><span>120 题 · 120 分钟</span></div></div>
+      <span class="status done">完成 <span class="num">13</span> 次</span>
+    </div>
+    <div class="row" role="listitem" tabindex="0">
+      <span class="play" aria-hidden="true"><svg viewBox="0 0 12 12"><polygon points="2,1 11,6 2,11"/></svg></span>
+      <div class="body"><p class="title">2025 年国家公务员录用考试《行政职业能力测验》题（地市级）</p><div class="sub"><span class="difficulty">难度 4.6</span><span>130 题 · 120 分钟</span></div></div>
+      <span class="status todo">未完成</span>
+    </div>
+    <div class="row" role="listitem" tabindex="0">
+      <span class="play" aria-hidden="true"><svg viewBox="0 0 12 12"><polygon points="2,1 11,6 2,11"/></svg></span>
+      <div class="body"><p class="title">2025 年国家公务员录用考试《行政职业能力测验》题（副省级）</p><div class="sub"><span class="difficulty">难度 4.7</span><span>135 题 · 120 分钟</span></div></div>
+      <span class="status done">完成 <span class="num">5</span> 次</span>
+    </div>
+    <div class="row" role="listitem" tabindex="0">
+      <span class="play" aria-hidden="true"><svg viewBox="0 0 12 12"><polygon points="2,1 11,6 2,11"/></svg></span>
+      <div class="body"><p class="title">2025 年江苏省公务员录用考试《行测》题（A 类）</p><div class="sub"><span class="difficulty">难度 4.3</span><span>135 题 · 120 分钟</span></div></div>
+      <span class="status done">完成 <span class="num">2</span> 次</span>
+    </div>
+    <div class="row" role="listitem" tabindex="0">
+      <span class="play" aria-hidden="true"><svg viewBox="0 0 12 12"><polygon points="2,1 11,6 2,11"/></svg></span>
+      <div class="body"><p class="title">2024 年浙江省公务员录用考试《行测》题（A 类）</p><div class="sub"><span class="difficulty">难度 4.0</span><span>130 题 · 120 分钟</span></div></div>
+      <span class="status todo">未完成</span>
+    </div>
+    <div class="row" role="listitem" tabindex="0">
+      <span class="play" aria-hidden="true"><svg viewBox="0 0 12 12"><polygon points="2,1 11,6 2,11"/></svg></span>
+      <div class="body"><p class="title">2024 年北京市公务员录用考试《行测》题</p><div class="sub"><span class="difficulty">难度 4.4</span><span>135 题 · 120 分钟</span></div></div>
+      <span class="status done">完成 <span class="num">8</span> 次</span>
+    </div>
+    <div class="row" role="listitem" tabindex="0">
+      <span class="play" aria-hidden="true"><svg viewBox="0 0 12 12"><polygon points="2,1 11,6 2,11"/></svg></span>
+      <div class="body"><p class="title">2024 年山东省公务员录用考试《行测》题</p><div class="sub"><span class="difficulty">难度 3.9</span><span>120 题 · 120 分钟</span></div></div>
+      <span class="status done">完成 <span class="num">1</span> 次</span>
+    </div>
+    <div class="row" role="listitem" tabindex="0">
+      <span class="play" aria-hidden="true"><svg viewBox="0 0 12 12"><polygon points="2,1 11,6 2,11"/></svg></span>
+      <div class="body"><p class="title">2024 年四川省公务员录用考试《行测》题（上半年）</p><div class="sub"><span class="difficulty">难度 4.2</span><span>125 题 · 120 分钟</span></div></div>
+      <span class="status todo">未完成</span>
+    </div>
+    <div class="row" role="listitem" tabindex="0">
+      <span class="play" aria-hidden="true"><svg viewBox="0 0 12 12"><polygon points="2,1 11,6 2,11"/></svg></span>
+      <div class="body"><p class="title">2024 年深圳市公务员录用考试《行测》题</p><div class="sub"><span class="difficulty">难度 4.5</span><span>100 题 · 90 分钟</span></div></div>
+      <span class="status done">完成 <span class="num">3</span> 次</span>
+    </div>
+    <div class="row" role="listitem" tabindex="0">
+      <span class="play" aria-hidden="true"><svg viewBox="0 0 12 12"><polygon points="2,1 11,6 2,11"/></svg></span>
+      <div class="body"><p class="title">2023 年广东省公务员录用考试《行测》题（县级）</p><div class="sub"><span class="difficulty">难度 3.8</span><span>120 题 · 120 分钟</span></div></div>
+      <span class="status todo">未完成</span>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  document.querySelectorAll('.chip').forEach(c => {
+    c.addEventListener('click', () => {
+      document.querySelectorAll('.chip').forEach(x => x.classList.remove('active'));
+      c.classList.add('active');
+    });
+  });
+</script>
+</body>
+</html>

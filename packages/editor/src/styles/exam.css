@@ -1,0 +1,207 @@
+/*
+ * Essay exam v2 — feature-local design tokens + keyframes.
+ *
+ * Why a feature-local stylesheet (not src/styles/tokens.css):
+ *   - These vars are scoped to the 考场 (kaiti pen blue, paper tint, ruled-line
+ *     binding, particle keyframes). They don't belong in the global token
+ *     palette and shouldn't bloat tokens.css for routes that never need them.
+ *   - Global tokens still anchor brand/ink/accent/danger/warn/success — we
+ *     reuse those via Tailwind classes; only exam-specific extras live here.
+ *
+ * Imported once from ExamShell.tsx — applies to the entire /essay/exam
+ * subtree. prefers-reduced-motion zeroes out decorative animations.
+ */
+
+:root {
+  /* Kaiti pen blue — the 田字格 character color and the scratch notebook ink */
+  --exam-ink: #1e3a8a;
+  /* Paper / drawer tint — slightly off-white, separates the scratch panel from #fff */
+  --exam-paper: #fafbfc;
+  /* Binding line for the scratch notebook spine */
+  --exam-binding: #e0e7ff;
+  /* Solid-fill green for the question-button "completed" celebrate ring */
+  --exam-success-deep: #22c55e;
+  /* Highlight tints — search match (warn) vs underline mark (accent) */
+  --exam-hit-bg: rgba(245, 158, 11, 0.25);
+  --exam-hit-rule: rgba(245, 158, 11, 0.8);
+  --exam-mark-bg: rgba(63, 126, 241, 0.14);
+  --exam-mark-rule: rgba(63, 126, 241, 0.55);
+  /* Scratch ruled line tint */
+  --exam-ruled: rgba(203, 213, 225, 0.55);
+  /* GridPaper SVG strokes — pulled out of GridPaper.tsx const literals.
+     --exam-grid-line / faint mirror global --line-strong / --placeholder
+     (so a token rename there cascades). --exam-grid-outer is a feature-
+     local sub-shade between --ink-muted and --muted that gives the page
+     border its visual weight; no exact global token matches. */
+  --exam-grid-line: var(--line-3);
+  --exam-grid-faint: var(--ink-4);
+  --exam-grid-outer: #475569; /* hardcode-allow: between ink-muted and muted; no global token */
+}
+
+@keyframes exam-pulse-warn {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(220, 38, 38, 0);
+  }
+}
+
+@keyframes exam-slide-down {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -10px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}
+
+@keyframes exam-cursor-blink {
+  0%,
+  50% {
+    opacity: 1;
+  }
+  50.01%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@keyframes exam-ink-fade {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes exam-fade-slide {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes exam-celebrate-ring {
+  0% {
+    opacity: 1;
+    transform: scale(0.7);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.6);
+  }
+}
+
+@keyframes exam-check-pop {
+  0% {
+    opacity: 0;
+    transform: scale(0.4) rotate(-8deg);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.25) rotate(2deg);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1) rotate(0);
+  }
+}
+
+@keyframes exam-particle-burst {
+  0% {
+    opacity: 1;
+    transform: rotate(var(--deg)) translateY(0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: rotate(var(--deg)) translateY(-32px) scale(0.3);
+  }
+}
+
+@keyframes exam-hl-pulse {
+  0% {
+    background: rgba(245, 158, 11, 0.35);
+    box-shadow: 0 0 0 4px rgba(245, 158, 11, 0.25);
+  }
+  100% {
+    background: var(--exam-mark-bg);
+    box-shadow: 0 0 0 0 rgba(63, 126, 241, 0);
+  }
+}
+
+.exam-pulse-warn {
+  animation: exam-pulse-warn 1s ease-in-out infinite;
+}
+
+.exam-slide-down {
+  animation: exam-slide-down 200ms ease-out;
+}
+
+.exam-ink-fade {
+  animation: exam-ink-fade 200ms ease-out;
+}
+
+.exam-fade-slide {
+  animation: exam-fade-slide 180ms ease-out;
+}
+
+/* Caret blink in 田字格 — class instead of inline so reduced-motion can disable it. */
+.exam-cursor-blink {
+  animation: exam-cursor-blink 1s step-end infinite;
+}
+
+/* QuestionRing — stroke + check + celebrate. Pulled out of inline style so the
+   reduced-motion @media below can flatten them in one sweep. */
+.exam-ring-stroke {
+  transition:
+    stroke-dashoffset 600ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    stroke 220ms;
+}
+
+.exam-check-pop {
+  animation: exam-check-pop 600ms cubic-bezier(0.2, 0.9, 0.3, 1.4);
+}
+
+.exam-celebrate-ring {
+  animation: exam-celebrate-ring 900ms cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+}
+
+/* Highlight pulse on a freshly recorded mark — single-shot. */
+.exam-hl-pulse-once {
+  animation: exam-hl-pulse 700ms ease-out;
+}
+
+/* MaterialTabs sliding underline. */
+.exam-tab-underline-slide {
+  transition:
+    left 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    width 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .exam-pulse-warn,
+  .exam-slide-down,
+  .exam-ink-fade,
+  .exam-fade-slide,
+  .exam-cursor-blink,
+  .exam-check-pop,
+  .exam-celebrate-ring,
+  .exam-hl-pulse-once {
+    animation: none !important;
+  }
+  .exam-ring-stroke,
+  .exam-tab-underline-slide {
+    transition: none !important;
+  }
+}

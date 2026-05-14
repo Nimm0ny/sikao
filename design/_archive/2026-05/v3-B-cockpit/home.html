@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>v3-B Cockpit · 学习中心 (Home)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  /* ── tokens (v3-B Cockpit 终端调性 — 纯白 + hairline + mono) ──────── */
+  :root {
+    --ink: #0b1120;
+    --ink-muted: #334155;       /* 反馈 C: caption 走 ink-muted, 非 placeholder */
+    --muted: #5b6677;
+    --placeholder: #94a3b8;
+    --bg: #ffffff;
+    --bg-alt: #f8fafc;          /* sidebar 配色 (v3-B 创新点 1: 白 sidebar 反 v3-A) */
+    --line: #e2e8f0;            /* hairline 灰色 1px */
+    --line-strong: #cbd5e1;
+    --grid: #eef2f6;            /* 极淡网格底纹 */
+    --accent: #3f7ef1;          /* focus only */
+    --success: #16a34a;
+    --warn: #d97706;
+    --danger: #b91c1c;
+
+    --r-sm: 6px;                /* Cockpit 调性: 圆角更小 */
+    --r-md: 8px;
+    --r-lg: 10px;
+    --r-btn: 6px;
+
+    --sans: 'Inter', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --mono: 'IBM Plex Mono', 'SF Mono', Monaco, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 13px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* ── viewport guard ─────────────────────────────────────────────── */
+  .vp {
+    width: 1280px;
+    height: 800px;
+    overflow: hidden;
+    background: var(--bg);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 240px 1fr;
+  }
+
+  /* ── sidebar (Cockpit 调性: 白底 + hairline 分隔, 非深色) ────────── */
+  .sb {
+    background: var(--bg-alt);
+    color: var(--ink);
+    padding: 20px 14px;
+    height: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    border-right: 1px solid var(--line);
+  }
+  .sb-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 6px 16px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 12px;
+  }
+  .sb-brand-mark { flex-shrink: 0; }
+  .sb-brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+  .sb-brand-zh {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  .sb-brand-en {
+    font-family: var(--mono);
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.18em;
+    margin-top: 3px;
+    font-weight: 500;
+  }
+  .sb-section {
+    margin-top: 10px;
+    margin-bottom: 4px;
+    padding: 0 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--muted);
+  }
+  .sb-section::before {
+    content: "// ";
+    color: var(--placeholder);
+  }
+  .sb-item, .sb-group-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: var(--r-sm);
+    font-size: 13px;
+    color: var(--ink);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .sb-item:hover, .sb-group-head:hover { background: #eef2f6; }
+  .sb-item.active {
+    background: var(--ink);
+    color: #fff;
+    font-weight: 500;
+  }
+  .sb-item.active .sb-icon { color: #fff; }
+  .sb-icon {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+    color: var(--muted);
+  }
+  .sb-group-children {
+    padding-left: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-bottom: 4px;
+  }
+  .sb-child {
+    padding: 5px 10px;
+    font-size: 12.5px;
+    color: var(--muted);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    transition: background .15s;
+  }
+  .sb-child:hover { background: #eef2f6; color: var(--ink); }
+  .sb-spacer { flex: 1; }
+  .sb-foot {
+    border-top: 1px solid var(--line);
+    padding: 12px 8px 4px;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    letter-spacing: 0.04em;
+  }
+
+  /* ── main: Cockpit 紧凑 3-row ─────────────────────────────────── */
+  .main {
+    height: 800px;
+    overflow: hidden;
+    padding: 18px 24px 20px;
+    display: grid;
+    grid-template-rows: auto auto 1fr auto;
+    gap: 14px;
+  }
+
+  /* page header — 终端 prompt 调性 */
+  .page-hd {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--line);
+  }
+  .page-prompt {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    letter-spacing: 0.06em;
+  }
+  .page-prompt::before {
+    content: "$ ";
+    color: var(--placeholder);
+  }
+  .page-title {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin-top: 4px;
+  }
+  .page-meta {
+    display: flex;
+    gap: 24px;
+    align-items: center;
+  }
+  .page-meta-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+  }
+  .page-meta-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .page-meta-val {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-top: 2px;
+    font-variant-numeric: tabular-nums;
+  }
+  .page-meta-val .small { font-size: 12px; color: var(--muted); margin-left: 3px; font-weight: 500; }
+
+  /* KPI strip — Cockpit 5-cell 紧凑横排 */
+  .kpi {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 0;
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .kpi-cell {
+    padding: 14px 16px 12px;
+    border-right: 1px solid var(--line);
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .kpi-cell:last-child { border-right: none; }
+  .kpi-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--ink-muted);  /* 反馈 C */
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .kpi-value {
+    font-family: var(--mono);  /* 反馈 B: mono 不 italic */
+    font-weight: 600;
+    font-size: 28px;
+    color: var(--ink);
+    line-height: 1.05;
+    letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+    display: flex;
+    align-items: baseline;
+    gap: 2px;
+  }
+  .kpi-unit {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted);
+  }
+  /* hairline divider 紧贴数字 */
+  .kpi-divider {
+    height: 1px;
+    background: var(--line);
+    margin: 6px 0 4px;
+  }
+  .kpi-foot {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .kpi-trend-up { color: var(--success); font-weight: 600; }
+  .kpi-trend-flat { color: var(--muted); font-weight: 600; }
+  .kpi-trend-down { color: var(--danger); font-weight: 600; }
+  /* sparkline */
+  .spark {
+    height: 22px;
+    width: 100%;
+    margin-top: 4px;
+  }
+
+  /* mid grid: continue session (left, 2/3) + module breakdown (right, 1/3) */
+  .mid {
+    display: grid;
+    grid-template-columns: 1.6fr 1fr;
+    gap: 14px;
+    min-height: 0;
+  }
+  .panel {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+  .panel-hd {
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--line);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-alt);
+  }
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .panel-title::before {
+    content: "▸ ";
+    color: var(--placeholder);
+  }
+  .panel-aux {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .panel-body { padding: 14px 16px; flex: 1; }
+
+  /* continue card */
+  .cont-name {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.35;
+  }
+  .cont-tags {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+  }
+  .cont-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border: 1px solid var(--line-strong);
+    border-radius: var(--r-sm);
+    color: var(--ink-muted);
+    letter-spacing: 0.06em;
+  }
+  .cont-meter {
+    margin-top: 14px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 10px;
+    align-items: center;
+  }
+  .meter-bar {
+    height: 4px;
+    background: var(--grid);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+  .meter-fill {
+    height: 100%;
+    background: var(--ink);
+    border-radius: 2px;
+  }
+  .meter-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    font-variant-numeric: tabular-nums;
+  }
+  .cont-actions {
+    margin-top: 14px;
+    display: flex;
+    gap: 8px;
+  }
+  .btn-primary, .btn-ghost {
+    height: 34px;
+    padding: 0 14px;
+    border-radius: var(--r-btn);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--sans);
+  }
+  .btn-primary {
+    background: var(--ink);
+    color: #fff;
+  }
+  .btn-primary:hover { background: #1a2235; }
+  .btn-ghost {
+    background: transparent;
+    color: var(--ink);
+    border-color: var(--line-strong);
+  }
+  .btn-ghost:hover { background: var(--grid); }
+
+  /* horizontal rule mono dashed */
+  .hr-mono {
+    border: none;
+    border-top: 1px dashed var(--line);
+    margin: 14px 0 10px;
+  }
+  .cont-sub-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  .cont-sub {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .cont-sub-label {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .cont-sub-val {
+    font-family: var(--mono);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .cont-sub-meter {
+    height: 3px;
+    background: var(--grid);
+    border-radius: 2px;
+    overflow: hidden;
+    margin-top: 2px;
+  }
+  .cont-sub-fill {
+    height: 100%;
+    background: var(--ink);
+  }
+
+  /* module bars */
+  .mod-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 48px;
+    gap: 10px;
+    align-items: center;
+    padding: 6px 0;
+  }
+  .mod-row + .mod-row { border-top: 1px solid var(--line); }
+  .mod-name {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .mod-bar {
+    height: 6px;
+    background: var(--grid);
+    border-radius: 1px;
+    overflow: hidden;
+    position: relative;
+  }
+  .mod-bar-fill {
+    height: 100%;
+    background: var(--ink);
+  }
+  .mod-bar-fill.warn { background: var(--warn); }
+  .mod-bar-fill.danger { background: var(--danger); }
+  .mod-pct {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ink);
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* bottom: 4 quick entries */
+  .quick {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+  }
+  .quick-card {
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 12px 14px;
+    cursor: pointer;
+    transition: all .15s;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    position: relative;
+  }
+  .quick-card:hover {
+    border-color: var(--ink);
+  }
+  .quick-tag {
+    font-family: var(--mono);
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--ink-muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .quick-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    line-height: 1.3;
+  }
+  .quick-desc {
+    font-size: 11.5px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+  .quick-num {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--ink);
+    margin-top: 4px;
+    font-variant-numeric: tabular-nums;
+    border-top: 1px dashed var(--line);
+    padding-top: 6px;
+  }
+
+  /* sparkline color helpers */
+  .spark-line { fill: none; stroke: var(--ink); stroke-width: 1.4; }
+  .spark-area { fill: rgba(11,17,32,0.06); stroke: none; }
+</style>
+</head>
+<body>
+<div class="vp">
+  <!-- ── sidebar v3-B 嵌套分组 ──────────────────────────────────── -->
+  <aside class="sb">
+    <div class="sb-brand">
+      <!-- LogoMark frozen: 圆角方块 + 田 + 心底圆点. v3-B 配色: 黑底白线 (跟 v3-A 一致, sidebar 在白底上保持 contrast) -->
+      <svg class="sb-brand-mark" width="32" height="32" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-label="思考品牌标识" role="img">
+        <rect width="40" height="40" rx="10" fill="#0b1120"/>
+        <g stroke="#ffffff" stroke-width="1.8" stroke-linecap="round">
+          <line x1="11" y1="13" x2="29" y2="13"/>
+          <line x1="11" y1="22" x2="29" y2="22"/>
+          <line x1="11" y1="13" x2="11" y2="27"/>
+          <line x1="20" y1="13" x2="20" y2="27"/>
+          <line x1="29" y1="13" x2="29" y2="27"/>
+          <line x1="11" y1="27" x2="29" y2="27"/>
+        </g>
+        <circle cx="20" cy="34" r="2.2" fill="#ffffff"/>
+      </svg>
+      <div class="sb-brand-text">
+        <span class="sb-brand-zh">思考</span>
+        <span class="sb-brand-en">SIKAO</span>
+      </div>
+    </div>
+
+    <div class="sb-section">main</div>
+    <div class="sb-item active">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12l9-9 9 9M5 10v10h4v-6h6v6h4V10"/></svg>
+      首页
+    </div>
+    <div class="sb-group-head">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 17h5"/></svg>
+      行测试炼
+    </div>
+    <div class="sb-group-children">
+      <div class="sb-child">专项练习</div>
+      <div class="sb-child">套卷练习</div>
+    </div>
+    <div class="sb-group-head">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
+      申论试炼
+    </div>
+    <div class="sb-group-children">
+      <div class="sb-child">专项练习</div>
+      <div class="sb-child">套卷练习</div>
+    </div>
+
+    <div class="sb-section">review</div>
+    <div class="sb-item">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      错题本
+    </div>
+    <div class="sb-item">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>
+      学情数据
+    </div>
+    <div class="sb-item">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      考试日历
+    </div>
+
+    <div class="sb-spacer"></div>
+    <div class="sb-foot">让备考从刷题变成思考</div>
+  </aside>
+
+  <!-- ── main ────────────────────────────────────────────────── -->
+  <main class="main">
+    <!-- header -->
+    <header class="page-hd">
+      <div>
+        <div class="page-prompt">sikao home --user yzk</div>
+        <h1 class="page-title">今天，你打算思考什么？</h1>
+      </div>
+      <div class="page-meta">
+        <div class="page-meta-item">
+          <span class="page-meta-label">D-day</span>
+          <span class="page-meta-val">164<span class="small">天</span></span>
+        </div>
+        <div class="page-meta-item">
+          <span class="page-meta-label">streak</span>
+          <span class="page-meta-val">12<span class="small">日</span></span>
+        </div>
+      </div>
+    </header>
+
+    <!-- KPI strip 5-cell -->
+    <section class="kpi">
+      <div class="kpi-cell">
+        <span class="kpi-label">total questions</span>
+        <span class="kpi-value">2,470<span class="kpi-unit">题</span></span>
+        <div class="kpi-divider"></div>
+        <div class="kpi-foot">
+          <span>近 7 日</span>
+          <span class="kpi-trend-up">+86</span>
+        </div>
+        <svg class="spark" viewBox="0 0 100 22" preserveAspectRatio="none">
+          <path class="spark-area" d="M0,18 L10,16 L20,17 L30,14 L40,12 L50,13 L60,10 L70,11 L80,8 L90,7 L100,5 L100,22 L0,22 Z"/>
+          <path class="spark-line" d="M0,18 L10,16 L20,17 L30,14 L40,12 L50,13 L60,10 L70,11 L80,8 L90,7 L100,5"/>
+        </svg>
+      </div>
+      <div class="kpi-cell">
+        <span class="kpi-label">accuracy</span>
+        <span class="kpi-value">73<span class="kpi-unit">%</span></span>
+        <div class="kpi-divider"></div>
+        <div class="kpi-foot">
+          <span>较上周</span>
+          <span class="kpi-trend-up">+4 pp</span>
+        </div>
+        <svg class="spark" viewBox="0 0 100 22" preserveAspectRatio="none">
+          <path class="spark-line" d="M0,14 L10,15 L20,12 L30,13 L40,11 L50,10 L60,11 L70,9 L80,10 L90,8 L100,7"/>
+        </svg>
+      </div>
+      <div class="kpi-cell">
+        <span class="kpi-label">行测套卷</span>
+        <span class="kpi-value">12<span class="kpi-unit">/ 28</span></span>
+        <div class="kpi-divider"></div>
+        <div class="kpi-foot">
+          <span>43% 完成</span>
+          <span class="kpi-trend-flat">···</span>
+        </div>
+        <svg class="spark" viewBox="0 0 100 22" preserveAspectRatio="none">
+          <rect x="0" y="6" width="100" height="10" fill="#eef2f6"/>
+          <rect x="0" y="6" width="43" height="10" fill="#0b1120"/>
+        </svg>
+      </div>
+      <div class="kpi-cell">
+        <span class="kpi-label">申论专项</span>
+        <span class="kpi-value">58<span class="kpi-unit">/ 274</span></span>
+        <div class="kpi-divider"></div>
+        <div class="kpi-foot">
+          <span>21% 完成</span>
+          <span class="kpi-trend-flat">···</span>
+        </div>
+        <svg class="spark" viewBox="0 0 100 22" preserveAspectRatio="none">
+          <rect x="0" y="6" width="100" height="10" fill="#eef2f6"/>
+          <rect x="0" y="6" width="21" height="10" fill="#0b1120"/>
+        </svg>
+      </div>
+      <div class="kpi-cell">
+        <span class="kpi-label">错题待复</span>
+        <span class="kpi-value">86<span class="kpi-unit">题</span></span>
+        <div class="kpi-divider"></div>
+        <div class="kpi-foot">
+          <span>今日到期</span>
+          <span class="kpi-trend-down">+12</span>
+        </div>
+        <svg class="spark" viewBox="0 0 100 22" preserveAspectRatio="none">
+          <path class="spark-line" d="M0,8 L10,9 L20,7 L30,11 L40,10 L50,13 L60,12 L70,15 L80,14 L90,16 L100,17" stroke="#b91c1c"/>
+        </svg>
+      </div>
+    </section>
+
+    <!-- mid: continue session + module breakdown -->
+    <section class="mid">
+      <div class="panel">
+        <div class="panel-hd">
+          <span class="panel-title">continue session</span>
+          <span class="panel-aux">last_active 2h 14m ago</span>
+        </div>
+        <div class="panel-body">
+          <h2 class="cont-name">2024 国考行政职业能力测验（地市级）</h2>
+          <div class="cont-tags">
+            <span class="cont-tag">120 题</span>
+            <span class="cont-tag">120 分钟</span>
+            <span class="cont-tag">已答 47</span>
+            <span class="cont-tag">剩余 73</span>
+          </div>
+          <div class="cont-meter">
+            <div class="meter-bar"><div class="meter-fill" style="width:39%"></div></div>
+            <span class="meter-num">39.2 %</span>
+          </div>
+          <div class="cont-actions">
+            <button class="btn-primary">继续作答 →</button>
+            <button class="btn-ghost">换一套</button>
+          </div>
+          <hr class="hr-mono">
+          <div class="cont-sub-grid">
+            <div class="cont-sub">
+              <span class="cont-sub-label">行测套卷</span>
+              <span class="cont-sub-val">12 / 28</span>
+              <div class="cont-sub-meter"><div class="cont-sub-fill" style="width:43%"></div></div>
+            </div>
+            <div class="cont-sub">
+              <span class="cont-sub-label">申论专项</span>
+              <span class="cont-sub-val">58 / 274</span>
+              <div class="cont-sub-meter"><div class="cont-sub-fill" style="width:21%"></div></div>
+            </div>
+            <div class="cont-sub">
+              <span class="cont-sub-label">错题复习</span>
+              <span class="cont-sub-val">32 / 50</span>
+              <div class="cont-sub-meter"><div class="cont-sub-fill" style="width:64%"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-hd">
+          <span class="panel-title">module accuracy</span>
+          <span class="panel-aux">avg 71.0 %</span>
+        </div>
+        <div class="panel-body">
+          <div class="mod-row">
+            <span class="mod-name">资料分析</span>
+            <div class="mod-bar"><div class="mod-bar-fill" style="width:84%"></div></div>
+            <span class="mod-pct">84%</span>
+          </div>
+          <div class="mod-row">
+            <span class="mod-name">言语理解</span>
+            <div class="mod-bar"><div class="mod-bar-fill" style="width:76%"></div></div>
+            <span class="mod-pct">76%</span>
+          </div>
+          <div class="mod-row">
+            <span class="mod-name">判断推理</span>
+            <div class="mod-bar"><div class="mod-bar-fill" style="width:71%"></div></div>
+            <span class="mod-pct">71%</span>
+          </div>
+          <div class="mod-row">
+            <span class="mod-name">数量关系</span>
+            <div class="mod-bar"><div class="mod-bar-fill warn" style="width:62%"></div></div>
+            <span class="mod-pct">62%</span>
+          </div>
+          <div class="mod-row">
+            <span class="mod-name">常识判断</span>
+            <div class="mod-bar"><div class="mod-bar-fill danger" style="width:58%"></div></div>
+            <span class="mod-pct">58%</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- bottom: 4 quick entries -->
+    <section class="quick">
+      <div class="quick-card">
+        <span class="quick-tag">行测 / 专项</span>
+        <span class="quick-title">挑一类专攻</span>
+        <span class="quick-desc">5 大类按真实占分比攻克薄弱环节</span>
+        <span class="quick-num">5 类 · 1,243 题</span>
+      </div>
+      <div class="quick-card">
+        <span class="quick-tag">申论 / 专项</span>
+        <span class="quick-title">跨卷集中刷</span>
+        <span class="quick-desc">归纳 / 大作文 / 综合分析 / 公文</span>
+        <span class="quick-num">5 类 · 274 题</span>
+      </div>
+      <div class="quick-card">
+        <span class="quick-tag">复盘</span>
+        <span class="quick-title">攻克错题</span>
+        <span class="quick-desc">86 题待复习 · Ebbinghaus 间隔提示</span>
+        <span class="quick-num">今日 32 / 待复 86</span>
+      </div>
+      <div class="quick-card">
+        <span class="quick-tag">数据</span>
+        <span class="quick-title">学情趋势</span>
+        <span class="quick-desc">7 / 30 日正确率曲线 + 模块对比</span>
+        <span class="quick-num">accuracy 73% · +4 pp</span>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

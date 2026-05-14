@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>思考 · 答题中</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="tokens.css">
+<style>
+  body { margin: 0; background: #eef0f3; }
+  dc-canvas { background: #eef0f3; }
+
+  /* 全局规范基类 */
+  .card { background: var(--bg); border: 1px solid var(--line); border-radius: 16px; }
+  .chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; font-size: 12px; font-weight: 600; background: var(--brand-50); color: var(--brand-700); border: 1px solid var(--brand-100); white-space: nowrap; }
+  .chip.muted { background: var(--bg-alt); color: var(--ink-muted); border-color: var(--line); }
+  .chip.warn { background: var(--warn-bg); color: #a16207; border-color: #fde68a; }
+  .chip.danger { background: var(--danger-bg); color: var(--danger); border-color: #fecaca; }
+  .chip.success { background: var(--success-bg); color: var(--success); border-color: #bbf7d0; }
+  .sec-title { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; color: var(--brand); text-transform: uppercase; }
+
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: 10px; font-size: 13px; font-weight: 600; border: 1px solid transparent; cursor: pointer; font-family: inherit; transition: all .15s ease; }
+  .btn.brand { background: var(--brand); color: #fff; }
+  .btn.brand:hover { background: var(--brand-700); }
+  .btn.ghost { background: transparent; color: var(--ink-muted); }
+  .btn.ghost:hover { background: var(--bg-alt); color: var(--ink); }
+  .btn.outline { background: var(--bg); color: var(--ink); border-color: var(--line-strong); }
+  .btn.outline:hover { background: var(--bg-alt); }
+  .btn.tiny { padding: 5px 10px; font-size: 12px; }
+
+  .opt { display: flex; align-items: center; gap: 14px; padding: 14px 18px; background: var(--bg); border: 1.5px solid var(--line-strong); border-radius: 12px; cursor: pointer; transition: all .15s ease; user-select: none; }
+  .opt:hover { border-color: var(--brand); box-shadow: 0 4px 16px -6px rgba(37,99,235,.25); }
+  .opt .k { width: 30px; height: 30px; border-radius: 8px; background: var(--bg-alt); color: var(--ink-muted); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 700; flex-shrink: 0; }
+  .opt.selected { border-color: var(--brand); background: var(--brand-50); }
+  .opt.selected .k { background: var(--brand); color: #fff; }
+  .opt.correct { border-color: var(--success); background: var(--success-bg); }
+  .opt.correct .k { background: var(--success); color: #fff; }
+  .opt.wrong { border-color: var(--danger); background: var(--danger-bg); }
+  .opt.wrong .k { background: var(--danger); color: #fff; }
+
+  .bar { height: 6px; background: var(--bg-alt); border-radius: 3px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: var(--brand); }
+
+  .icon-sq { width: 36px; height: 36px; border-radius: 10px; background: var(--brand-50); color: var(--brand); display: inline-flex; align-items: center; justify-content: center; }
+
+  .ph { background: repeating-linear-gradient(135deg, var(--bg-alt), var(--bg-alt) 8px, #f1f5f9 8px, #f1f5f9 16px); border: 1px dashed var(--line-strong); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 12px; font-family: var(--mono); }
+
+  .mono { font-family: var(--mono); }
+
+  /* 豆沙背景 */
+  body[data-bg="sepia"] dc-canvas { background: #efe8d8; }
+  body[data-bg="sepia"] .session-canvas { background: #f5efe0 !important; }
+
+  /* 字号 */
+  body[data-fontsize="lg"] .q-stem { font-size: 20px !important; }
+  body[data-fontsize="xl"] .q-stem { font-size: 24px !important; }
+  body[data-fontsize="lg"] .opt { font-size: 15.5px; }
+  body[data-fontsize="xl"] .opt { font-size: 17px; }
+</style>
+</head>
+<body data-bg="default" data-fontsize="md">
+
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+
+<script type="text/babel" src="session/session-shell.jsx"></script>
+<script type="text/babel" src="session/session-a.jsx"></script>
+<script type="text/babel" src="session/session-b.jsx"></script>
+<script type="text/babel" src="session/session-c.jsx"></script>
+<script type="text/babel" src="session/session-d.jsx"></script>
+<script type="text/babel" src="session/session-e.jsx"></script>
+
+<script type="text/babel" data-presets="react">
+const { useEffect } = React;
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "fontSize": "md",
+  "background": "default",
+  "focus": false,
+  "mode": "practice",
+  "aiPanel": false
+}/*EDITMODE-END*/;
+
+function App() {
+  const [tweaks, setTweak] = useTweaks(TWEAK_DEFAULTS);
+  useEffect(() => {
+    document.body.dataset.fontsize = tweaks.fontSize;
+    document.body.dataset.bg = tweaks.background;
+  }, [tweaks.fontSize, tweaks.background]);
+
+  const ctx = { tweaks, setTweak };
+
+  return (
+    <>
+      <DesignCanvas>
+        <DCSection id="single" title="A · 单选标准（可点击原型）">
+          <DCArtboard id="ses-a" label="单选 · 言语理解 · 全交互" width={1280} height={820}>
+            <SessionA ctx={ctx}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="material" title="B · 材料题分栏 · 资料分析">
+          <DCArtboard id="ses-b" label="材料题 · 紧凑表格 + 多小题" width={1280} height={820}>
+            <SessionB ctx={ctx}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="graphic" title="C · 图形推理">
+          <DCArtboard id="ses-c" label="图形推理 · 单选" width={1280} height={820}>
+            <SessionC ctx={ctx}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="answercard" title="D · 答题卡抽屉">
+          <DCArtboard id="ses-d" label="答题卡 · 130 题分组 + 图例" width={1280} height={820}>
+            <SessionD ctx={ctx}/>
+          </DCArtboard>
+        </DCSection>
+
+        <DCSection id="focus" title="E · 极简专注模式">
+          <DCArtboard id="ses-e" label="专注 · 一题一屏 + 键盘提示" width={1280} height={820}>
+            <SessionE ctx={ctx}/>
+          </DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+
+      <TweaksPanel title="Tweaks">
+        <TweakSection label="模式">
+          <TweakRadio label="练习 / 考试" value={tweaks.mode} options={[{value:'practice',label:'练习'},{value:'exam',label:'考试'}]} onChange={v => setTweak('mode', v)}/>
+        </TweakSection>
+        <TweakSection label="可读性">
+          <TweakRadio label="题目字号" value={tweaks.fontSize} options={[{value:'md',label:'标准'},{value:'lg',label:'大'},{value:'xl',label:'超大'}]} onChange={v => setTweak('fontSize', v)}/>
+          <TweakRadio label="背景色" value={tweaks.background} options={[{value:'default',label:'白'},{value:'sepia',label:'豆沙'}]} onChange={v => setTweak('background', v)}/>
+        </TweakSection>
+        <TweakSection label="扩展">
+          <TweakToggle label="专注模式（隐藏顶栏）" value={tweaks.focus} onChange={v => setTweak('focus', v)}/>
+          <TweakToggle label="AI 问答面板（A 题）" value={tweaks.aiPanel} onChange={v => setTweak('aiPanel', v)}/>
+        </TweakSection>
+        <TweakSection label="提示">
+          <div style={{ fontSize: 11, color: '#94a3b8', lineHeight: 1.5 }}>
+            A 题为可点击原型 · 选答案 → 提交 → 看解析 · 按 1-4 快选 · 点 Tweaks 切换状态
+          </div>
+        </TweakSection>
+      </TweaksPanel>
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>

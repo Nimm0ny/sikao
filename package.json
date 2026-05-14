@@ -1,0 +1,21 @@
+{
+  "name": "sikao",
+  "private": true,
+  "version": "0.0.0",
+  "description": "SIKAO — 公考备考工具单仓（apps/packages/services 分层）",
+  "type": "module",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w @sikao/web",
+    "build": "npm run build -w @sikao/web",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

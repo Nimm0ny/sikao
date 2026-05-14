@@ -1,0 +1,2082 @@
+<!DOCTYPE html>
+<!--
+================================================================
+SIKAO · 行测答题页 · v4 · 四题型完整版 (classic列表 · paper-warm)
+================================================================
+覆盖题型:
+  · 单选题 (单一答案, 圆形 letter, 单选互斥)
+  · 多选题 (≥2 个正确答案, 方形 letter + ✓, 可多选)
+  · 判断题 (2 个选项: 正确 / 错误, 大 pill)
+  · 资料分析题 (1 题干材料 + 5 题, sticky passage + groupTabs)
+
+Token SSOT: tokens.css (paper-warm)
+图标: 自绘 1.4 stroke SVG · 不使用 emoji
+Tweaks: theme · reading · density · option-style (单选 letter 圆 / 方)
+================================================================
+-->
+<html lang="zh">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>SIKAO · 行测练习 · 四题型完整版</title>
+<link rel="stylesheet" href="tokens.css" />
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--t-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  em, i { font-style: normal; }
+  button { font-family: inherit; font-size: inherit; color: inherit; }
+  [data-reading="lg"] { --read-fs: 17px; --read-lh: 1.78; }
+  html { --read-fs: 17px; --read-lh: 1.78; }
+
+  /* ────────────────────────────────────────
+   * Topbar (sticky)
+   * ──────────────────────────────────────── */
+  .fb-top {
+    position: sticky; top: 0; z-index: 40;
+    height: 56px;
+    padding: 0 var(--s5);
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: var(--s4);
+    background: color-mix(in srgb, var(--paper) 90%, transparent);
+    border-bottom: 1px solid var(--rule);
+    backdrop-filter: saturate(180%) blur(8px);
+    -webkit-backdrop-filter: saturate(180%) blur(8px);
+  }
+  .fb-top-l { display: flex; align-items: center; gap: var(--s3); min-width: 0; }
+  .fb-logo {
+    width: 28px; height: 28px;
+    border: 1.4px solid var(--ink);
+    border-radius: var(--r-sm);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--ink);
+    flex-shrink: 0;
+  }
+  .fb-logo svg { width: 16px; height: 16px; }
+  .fb-paper-title {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .fb-paper-meta {
+    font-family: var(--mono);
+    font-size: var(--t-small);
+    color: var(--ink-3);
+    letter-spacing: 0.06em;
+    padding-left: var(--s3);
+    border-left: 1px solid var(--rule);
+    white-space: nowrap;
+  }
+
+  .fb-top-c {
+    display: flex; align-items: center; justify-content: center;
+    gap: var(--s5);
+  }
+  .fb-timer {
+    font-family: var(--mono);
+    font-size: 20px;
+    color: var(--ink);
+    letter-spacing: 0.04em;
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .fb-timer.is-paused {
+    color: var(--ink-3);
+    border-bottom: 1px dashed var(--ink-3);
+    padding-bottom: 2px;
+  }
+  .fb-progress-text {
+    font-family: var(--mono);
+    font-size: 15px;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.04em;
+  }
+  .fb-progress-text em { color: var(--ink-3); font-weight: 400; }
+
+  .fb-top-r { display: flex; align-items: center; gap: var(--s2); }
+
+  /* IconBtn */
+  .icon-btn {
+    width: 32px; height: 32px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    color: var(--ink-2);
+    position: relative;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+  .icon-btn:hover { background: var(--paper-2); color: var(--ink); }
+  .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .icon-btn[aria-pressed="true"] { color: var(--accent); }
+  .icon-btn[aria-pressed="true"].is-marked { color: var(--accent); }
+  .icon-btn svg {
+    width: 18px; height: 18px;
+    stroke: currentColor; fill: none;
+    stroke-width: 1.4;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  .icon-btn.is-on svg { fill: currentColor; fill-opacity: .12; }
+  .icon-btn[data-tip]::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: -28px; left: 50%; transform: translateX(-50%);
+    font-family: var(--sans);
+    font-size: var(--t-eyebrow);
+    color: var(--paper);
+    background: var(--ink);
+    padding: 3px var(--s2);
+    border-radius: var(--r-sm);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+    letter-spacing: 0.04em;
+    z-index: 50;
+  }
+  .icon-btn:hover[data-tip]::after { opacity: 1; }
+
+  /* Settings popover */
+  .settings-wrap { position: relative; }
+  .settings-pop {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    width: 280px;
+    background: var(--paper);
+    border: 1px solid var(--rule-strong);
+    border-radius: var(--r-md);
+    padding: var(--s4);
+    box-shadow: var(--shadow-2);
+    z-index: 70;
+    display: flex; flex-direction: column;
+    gap: var(--s3);
+  }
+  .settings-pop[hidden] { display: none; }
+  .settings-row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: var(--s3);
+  }
+  .settings-label {
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .seg {
+    display: inline-flex;
+    background: var(--paper-2);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-sm);
+    padding: 2px;
+    gap: 2px;
+  }
+  .seg button {
+    background: transparent;
+    border: none;
+    padding: 4px 10px;
+    font-family: var(--sans);
+    font-size: 12px;
+    color: var(--ink-3);
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 120ms ease;
+  }
+  .seg button:hover { color: var(--ink); }
+  .seg button.is-on {
+    background: var(--ink);
+    color: var(--paper);
+  }
+
+  /* Floating AI trigger (right-edge) */
+  .ai-fab {
+    position: fixed;
+    right: var(--s4);
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 35;
+    display: flex; flex-direction: column; gap: var(--s2);
+  }
+  .ai-fab-btn {
+    width: 48px; height: 48px;
+    border-radius: 999px;
+    background: var(--paper);
+    border: 1px solid var(--rule-strong);
+    color: var(--ink);
+    cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    box-shadow: var(--shadow-2);
+    transition: all 160ms ease;
+    position: relative;
+  }
+  .ai-fab-btn:hover {
+    background: var(--ink);
+    color: var(--paper);
+    transform: translateX(-2px);
+  }
+  .ai-fab-btn svg {
+    width: 20px; height: 20px;
+    stroke: currentColor; fill: none;
+    stroke-width: 1.4;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  .ai-fab-btn .lock-dot {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: var(--accent);
+    color: var(--paper);
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 2px solid var(--paper);
+  }
+  .ai-fab-btn .lock-dot svg {
+    width: 8px; height: 8px; stroke-width: 2;
+  }
+  .ai-fab-label {
+    position: absolute;
+    right: calc(100% + var(--s2));
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--sans);
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: var(--r-sm);
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 120ms ease;
+  }
+  .ai-fab-btn:hover .ai-fab-label { opacity: 1; }
+
+  /* ────────────────────────────────────────
+   * Stage
+   * ──────────────────────────────────────── */
+  .stage {
+    max-width: calc(740px + var(--s5) * 2);
+    margin: 0 auto;
+    padding: var(--s7) var(--s5) 120px;
+  }
+
+  /* Section label */
+  .section-label {
+    display: flex; align-items: baseline;
+    gap: var(--s3);
+    margin: var(--s8) 0 var(--s5);
+    padding-bottom: var(--s3);
+    border-bottom: 1px solid var(--rule);
+  }
+  .section-label:first-child { margin-top: 0; }
+  .section-label-num {
+    font-family: var(--mono);
+    font-size: var(--t-small);
+    color: var(--ink-3);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .section-label-title {
+    font-family: var(--serif);
+    font-size: var(--t-h3);
+    font-weight: 500;
+    color: var(--ink);
+    margin: 0;
+  }
+  .section-label-meta {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: var(--t-small);
+    color: var(--ink-3);
+    letter-spacing: 0.06em;
+  }
+
+  /* ────────────────────────────────────────
+   * FbCard — base
+   * ──────────────────────────────────────── */
+  .fb-card {
+    display: grid;
+    grid-template-columns: 72px 1fr;
+    gap: var(--s5);
+    padding: var(--s5) 0;
+    border-bottom: 1px solid var(--rule);
+    position: relative;
+  }
+  .fb-card:last-of-type { border-bottom: none; }
+  .fb-card.is-current {
+    background: linear-gradient(to right, var(--paper-2), transparent 100px);
+  }
+  .fb-card.is-current::before {
+    content: '';
+    position: absolute;
+    left: calc(var(--s5) * -1);
+    top: var(--s5); bottom: var(--s5);
+    width: 2px;
+    background: var(--accent);
+  }
+  .fb-card-num {
+    font-family: var(--serif);
+    font-size: 30px;
+    font-weight: 500;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    padding-bottom: var(--s3);
+    border-bottom: 1px solid var(--rule);
+    text-align: center;
+  }
+  .fb-card.is-current .fb-card-num { color: var(--accent); }
+  .fb-card-num-label {
+    margin-top: var(--s2);
+    font-family: var(--mono);
+    font-size: var(--t-eyebrow);
+    color: var(--ink-3);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .fb-card.is-current .fb-card-num-label { color: var(--accent); }
+  .fb-card-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    margin-top: var(--s3);
+  }
+  .fb-card-actions .icon-btn {
+    width: 30px; height: 30px;
+  }
+  .fb-card-actions .icon-btn svg {
+    width: 15px; height: 15px;
+  }
+  .fb-card-body { min-width: 0; }
+  .fb-card-tags {
+    display: flex; gap: var(--s2);
+    margin-bottom: var(--s3);
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .fb-tag {
+    padding: 2px var(--s2);
+    font-family: var(--sans);
+    font-size: 11px;
+    color: var(--ink-3);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-sm);
+    letter-spacing: 0.04em;
+    line-height: 1.4;
+  }
+  .fb-tag.is-type {
+    background: var(--paper-2);
+    color: var(--ink-2);
+    border-color: var(--rule-strong);
+    font-weight: 500;
+  }
+  .fb-tag.is-acc {
+    background: var(--accent-50);
+    color: var(--accent);
+    border-color: var(--accent-50);
+  }
+  .fb-hint {
+    font-family: var(--mono);
+    font-size: var(--t-eyebrow);
+    color: var(--ink-3);
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    margin-left: auto;
+  }
+  .fb-stem {
+    font-family: var(--serif);
+    font-size: var(--read-fs);
+    line-height: var(--read-lh);
+    color: var(--ink);
+    margin: 4px 0 var(--s5);
+    padding-top: 2px;
+    text-wrap: pretty;
+    letter-spacing: 0.01em;
+  }
+  .fb-stem strong { font-weight: 600; }
+  .fb-stem em.kw {
+    font-style: normal;
+    background: linear-gradient(transparent 65%, var(--accent-50) 65%);
+    padding: 0 1px;
+  }
+
+  /* ────────────────────────────────────────
+   * FbOpts (单选 / 多选)
+   * ──────────────────────────────────────── */
+  .fb-opts { display: flex; flex-direction: column; gap: var(--s3); }
+  .fb-opt {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: var(--s4);
+    align-items: center;
+    padding: var(--s3) var(--s4);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-sm);
+    background: var(--paper);
+    cursor: pointer;
+    transition: border-color 120ms ease, background 120ms ease;
+    user-select: none;
+  }
+  .fb-opt:hover {
+    border-color: var(--rule-strong);
+    background: var(--paper-2);
+  }
+  .fb-opt.is-selected {
+    border-color: var(--ink);
+    background: var(--paper);
+  }
+
+  /* 圆形 letter (单选默认) */
+  .fb-opt-letter {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1.4px solid var(--rule-strong);
+    background: transparent;
+    color: var(--ink-2);
+    font-family: var(--mono);
+    font-size: 13px;
+    font-weight: 500;
+    display: inline-flex; align-items: center; justify-content: center;
+    transition: all 160ms ease;
+    position: relative;
+  }
+  .fb-opt:hover .fb-opt-letter {
+    border-color: var(--ink-2);
+    color: var(--ink);
+  }
+  .fb-opt.is-selected .fb-opt-letter {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+
+  /* 方形 letter (多选 / option-style=square) */
+  html[data-opt-style="square"] .fb-opt-letter,
+  .fb-opt.is-multi .fb-opt-letter {
+    border-radius: var(--r-sm);
+  }
+  /* 多选选中时 letter 内部画 ✓ */
+  .fb-opt.is-multi.is-selected .fb-opt-letter::after {
+    content: '';
+    position: absolute;
+    width: 12px; height: 6px;
+    border-left: 1.8px solid var(--paper);
+    border-bottom: 1.8px solid var(--paper);
+    transform: translate(0, -1px) rotate(-45deg);
+    top: 50%; left: 50%;
+    margin-top: -6px; margin-left: -6px;
+  }
+  .fb-opt.is-multi.is-selected .fb-opt-letter {
+    /* hide letter text on multi-select state, show ✓ instead */
+    color: transparent;
+  }
+
+  .fb-opt-text {
+    font-family: var(--serif);
+    font-size: var(--read-fs);
+    line-height: 1.65;
+    color: var(--ink);
+  }
+
+  /* ────────────────────────────────────────
+   * 判断题 — 2 pill 选项
+   * ──────────────────────────────────────── */
+  .fb-tf {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--s4);
+    max-width: 480px;
+  }
+  .fb-tf-opt {
+    display: flex; align-items: center; gap: var(--s3);
+    padding: var(--s4) var(--s5);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    background: var(--paper);
+    cursor: pointer;
+    transition: all 160ms ease;
+    user-select: none;
+  }
+  .fb-tf-opt:hover {
+    border-color: var(--rule-strong);
+    background: var(--paper-2);
+  }
+  .fb-tf-opt-mark {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    border: 1.4px solid var(--rule-strong);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--ink-3);
+    transition: all 160ms ease;
+    flex-shrink: 0;
+  }
+  .fb-tf-opt-mark svg {
+    width: 16px; height: 16px;
+    stroke: currentColor; fill: none;
+    stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  .fb-tf-opt-label {
+    font-family: var(--serif);
+    font-size: 18px;
+    color: var(--ink);
+    line-height: 1;
+  }
+  .fb-tf-opt-key {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: var(--t-eyebrow);
+    color: var(--ink-4);
+    letter-spacing: 0.12em;
+  }
+  .fb-tf-opt.is-selected {
+    border-color: var(--ink);
+    background: var(--paper);
+  }
+  .fb-tf-opt.is-selected .fb-tf-opt-mark {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+
+  /* ────────────────────────────────────────
+   * 资料分析 — FbPassage + sub-cards
+   * ──────────────────────────────────────── */
+  .pg-wrap {
+    position: relative;
+    margin-bottom: var(--s5);
+  }
+  .pg-passage {
+    position: sticky;
+    top: 56px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-md);
+    padding: var(--s5) var(--s6);
+    margin-bottom: var(--s5);
+    box-shadow: var(--shadow-1);
+    z-index: 20;
+    max-height: calc(50vh);
+    overflow: hidden;
+    transition: max-height 200ms ease, padding 200ms ease;
+  }
+  .pg-passage.is-collapsed {
+    max-height: 64px;
+    padding-top: var(--s4);
+    padding-bottom: var(--s4);
+  }
+  .pg-passage-head {
+    display: flex; align-items: center; gap: var(--s3);
+    margin-bottom: var(--s3);
+  }
+  .pg-passage-eyebrow {
+    font-family: var(--mono);
+    font-size: var(--t-eyebrow);
+    color: var(--ink-3);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .pg-passage-title {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 500;
+    color: var(--ink);
+    margin: 0;
+  }
+  .pg-passage-toggle {
+    margin-left: auto;
+  }
+  .pg-passage-body {
+    font-family: var(--serif);
+    font-size: 15px;
+    line-height: 1.78;
+    color: var(--ink-2);
+    columns: 1;
+    max-height: calc(50vh - 100px);
+    overflow-y: auto;
+    padding-right: var(--s3);
+    scrollbar-width: thin;
+  }
+  .pg-passage-body p { margin: 0 0 var(--s3); }
+  .pg-passage-body p:last-child { margin-bottom: 0; }
+  .pg-passage-body .hl {
+    background: var(--warn-bg);
+    padding: 0 2px;
+    border-bottom: 1px solid var(--warn);
+    color: var(--ink);
+  }
+  .pg-passage-body sup {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--ink-3);
+    margin: 0 1px;
+  }
+
+  /* GroupTabs */
+  .pg-tabs {
+    display: flex; gap: var(--s2);
+    margin-bottom: var(--s4);
+    padding: 2px 0;
+    overflow-x: auto;
+  }
+  .pg-tab {
+    display: inline-flex; align-items: center; gap: var(--s2);
+    padding: var(--s2) var(--s3);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-sm);
+    background: var(--paper);
+    cursor: pointer;
+    color: var(--ink-3);
+    transition: all 120ms ease;
+    flex-shrink: 0;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+  .pg-tab:hover { border-color: var(--rule-strong); color: var(--ink-2); }
+  .pg-tab .dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--rule-strong);
+    flex-shrink: 0;
+  }
+  .pg-tab.is-done { color: var(--ink-2); }
+  .pg-tab.is-done .dot { background: var(--ink); }
+  .pg-tab.is-marked .dot {
+    background: transparent;
+    border: 1.4px solid var(--accent);
+  }
+  .pg-tab.is-active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+  .pg-tab.is-active .dot { background: var(--paper); }
+
+  /* sub-card (题组内单题) */
+  .pg-sub {
+    grid-template-columns: 64px 1fr;
+    padding: var(--s4) 0;
+    border-bottom: 1px dashed var(--rule);
+  }
+  .pg-sub:last-of-type { border-bottom: none; }
+  .pg-sub .fb-card-num {
+    font-size: 28px;
+  }
+
+  /* option ref (jump back to passage) */
+  .fb-opt-ref {
+    display: inline-flex; align-items: center; gap: 4px;
+    margin-left: var(--s2);
+    font-family: var(--mono);
+    font-size: var(--t-eyebrow);
+    color: var(--ink-4);
+    letter-spacing: 0.06em;
+    text-decoration: none;
+    border: 1px solid var(--rule);
+    padding: 1px 6px;
+    border-radius: var(--r-sm);
+    transition: all 120ms ease;
+    white-space: nowrap;
+  }
+  .fb-opt-ref:hover {
+    color: var(--accent);
+    border-color: var(--accent-50);
+    background: var(--accent-50);
+  }
+
+  /* ────────────────────────────────────────
+   * Bottom Dock — 答题卡 浮动
+   * ──────────────────────────────────────── */
+  .fb-dock {
+    position: fixed;
+    bottom: var(--s5);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--paper);
+    border: 1px solid var(--rule-strong);
+    border-radius: 999px;
+    padding: var(--s2) var(--s3);
+    display: flex; align-items: center; gap: var(--s2);
+    box-shadow: var(--shadow-2);
+    z-index: 30;
+  }
+  .fb-dock-nav {
+    width: 32px; height: 32px;
+    border: 1px solid var(--rule);
+    background: var(--paper);
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer;
+    color: var(--ink-2);
+    transition: all 120ms ease;
+  }
+  .fb-dock-nav:hover { background: var(--paper-2); color: var(--ink); }
+  .fb-dock-nav svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+  .fb-dock-pos {
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-2);
+    letter-spacing: 0.04em;
+    padding: 0 var(--s2);
+    border-left: 1px solid var(--rule);
+    border-right: 1px solid var(--rule);
+    height: 24px;
+    display: inline-flex; align-items: center;
+  }
+  .fb-dock-pos em { color: var(--ink-3); font-weight: 400; }
+  .fb-dock-open {
+    height: 32px;
+    padding: 0 var(--s3);
+    border: none;
+    border-radius: 999px;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: background 120ms ease;
+  }
+  .fb-dock-open:hover { background: var(--paper-2); }
+  .fb-dock-open svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+  .fb-dock-submit {
+    height: 32px;
+    width: 32px;
+    padding: 0;
+    justify-content: center;
+    border: none;
+    border-radius: 999px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--sans);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    transition: background 120ms ease;
+  }
+  .fb-dock-submit:hover { background: var(--ink-2); }
+  .fb-dock-submit svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+  /* ────────────────────────────────────────
+   * Drawer (答题卡)
+   * ──────────────────────────────────────── */
+  .scrim {
+    position: fixed; inset: 0;
+    background: color-mix(in srgb, var(--ink) 30%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+    z-index: 50;
+  }
+  .scrim.is-open { opacity: 1; pointer-events: auto; }
+
+  .drawer {
+    position: fixed;
+    top: 0; right: 0; bottom: 0;
+    width: 360px;
+    background: var(--paper);
+    box-shadow: var(--shadow-2);
+    display: flex; flex-direction: column;
+    transform: translateX(100%);
+    transition: transform 240ms cubic-bezier(.4, 0, .2, 1);
+    z-index: 60;
+    border-left: 1px solid var(--rule);
+  }
+  .drawer.is-open { transform: translateX(0); }
+  .drawer-header {
+    flex-shrink: 0;
+    padding: var(--s4) var(--s5);
+    border-bottom: 1px solid var(--rule);
+  }
+  .drawer-header-row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: var(--s4);
+  }
+  .drawer-title {
+    font-family: var(--serif);
+    font-size: 18px;
+    font-weight: 500;
+    margin: 0;
+  }
+  .drawer-progress {
+    display: flex; align-items: baseline; gap: var(--s2);
+    font-family: var(--mono);
+    margin-bottom: var(--s3);
+  }
+  .drawer-progress-num {
+    font-size: 22px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .drawer-progress-num em { color: var(--ink-3); font-weight: 400; }
+  .drawer-progress-label {
+    font-size: 13px;
+    color: var(--ink-3);
+    letter-spacing: 0.06em;
+  }
+  .drawer-bar {
+    height: 3px;
+    background: var(--rule);
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: var(--s4);
+  }
+  .drawer-bar-fill {
+    height: 100%;
+    background: var(--ink);
+    width: calc(22 / 35 * 100%);
+  }
+  .drawer-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--s5);
+  }
+  .grid-section { margin-bottom: var(--s5); }
+  .grid-section-label {
+    display: flex; align-items: center; gap: var(--s2);
+    font-family: var(--mono);
+    font-size: var(--t-eyebrow);
+    letter-spacing: 0.16em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    margin-bottom: var(--s3);
+  }
+  .grid-section-label::after {
+    content: '';
+    flex: 1; height: 1px;
+    background: var(--rule);
+  }
+  .grid-section.is-group {
+    background: var(--paper-2);
+    margin: 0 calc(var(--s5) * -1) var(--s5);
+    padding: var(--s4) var(--s5);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(7, 32px);
+    gap: var(--s3);
+  }
+  .q-btn {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: transparent;
+    border: 1.4px solid var(--rule-strong);
+    font-family: var(--mono);
+    font-size: 13px;
+    color: var(--ink-2);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    position: relative;
+    transition: transform 120ms ease, border-color 120ms ease;
+    font-variant-numeric: tabular-nums;
+  }
+  .q-btn:hover { transform: scale(1.06); }
+  .q-btn.is-answered {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .q-btn.is-marked {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .q-btn.is-marked::after {
+    content: '';
+    position: absolute;
+    top: -2px; right: -2px;
+    width: 8px; height: 8px;
+    background: var(--accent);
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+  }
+  .q-btn.is-current {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--paper);
+    box-shadow: 0 0 0 4px var(--accent-50);
+  }
+  .legend {
+    margin-top: var(--s4);
+    padding-top: var(--s4);
+    border-top: 1px solid var(--rule);
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--s2) var(--s3);
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: var(--s2);
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+  .legend-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1.4px solid var(--rule-strong);
+  }
+  .legend-dot.dot-answered { background: var(--ink); border-color: var(--ink); }
+  .legend-dot.dot-marked { border-color: var(--accent); }
+  .legend-dot.dot-current { background: var(--accent); border-color: var(--accent); }
+
+  .drawer-footer {
+    flex-shrink: 0;
+    padding: var(--s4) var(--s5);
+    border-top: 1px solid var(--rule);
+  }
+  .drawer-submit {
+    width: 100%;
+    height: 44px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: var(--r-sm);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: var(--s2);
+    transition: background 120ms ease;
+  }
+  .drawer-submit:hover { background: var(--ink-2); }
+  .drawer-submit svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+  .drawer-meta {
+    margin-top: var(--s2);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ink-3);
+    letter-spacing: 0.08em;
+    text-align: center;
+  }
+  .drawer-meta em { color: var(--ink-2); font-weight: 500; }
+
+  /* Density tweak */
+  html[data-density="compact"] .fb-card { padding: var(--s4) 0; }
+  html[data-density="compact"] .fb-opts { gap: var(--s2); }
+  html[data-density="compact"] .fb-opt { padding: var(--s2) var(--s4); }
+  html[data-density="compact"] .section-label { margin: var(--s7) 0 var(--s4); }
+
+  /* DEPRECATED — replaced by ai-fab + ai-modal */
+  .upsell--legacy {
+    margin-top: var(--s7);
+    padding: var(--s5);
+    background: var(--paper-2);
+    border: 1px dashed var(--rule-strong);
+    border-radius: var(--r-md);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: var(--s5);
+    align-items: center;
+  }
+  .upsell--legacy-h {
+    font-family: var(--serif);
+    font-size: 18px;
+    color: var(--ink);
+    margin: 0 0 var(--s2);
+  }
+  .upsell--legacy-d {
+    font-size: 14px;
+    color: var(--ink-3);
+    line-height: 1.6;
+    margin: 0;
+  }
+  .upsell--legacy-cta {
+    height: 40px;
+    padding: 0 var(--s5);
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: var(--r-sm);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+
+  /* Selection toolbar — Fenbi-style highlight popover */
+  .sel-toolbar {
+    position: absolute;
+    z-index: 80;
+    display: none;
+    align-items: center;
+    background: var(--ink);
+    color: var(--paper);
+    border-radius: var(--r-sm);
+    box-shadow: var(--shadow-2);
+    padding: 4px;
+    gap: 2px;
+    font-family: var(--sans);
+    font-size: 12px;
+    transform: translateX(-50%);
+  }
+  .sel-toolbar.is-on { display: inline-flex; }
+  .sel-toolbar button {
+    background: transparent; border: none; color: var(--paper);
+    height: 26px; padding: 0 8px; border-radius: 3px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 4px;
+    transition: background 120ms ease;
+  }
+  .sel-toolbar button:hover { background: color-mix(in srgb, var(--paper) 18%, transparent); }
+  .sel-toolbar .swatch {
+    width: 12px; height: 12px; border-radius: 2px; display: inline-block;
+    border: 1px solid color-mix(in srgb, var(--paper) 30%, transparent);
+  }
+  .sel-toolbar .divider { width: 1px; height: 16px; background: color-mix(in srgb, var(--paper) 25%, transparent); margin: 0 2px; }
+
+  mark.fb-hl {
+    background: var(--hl-yellow, oklch(0.92 0.10 95));
+    color: inherit;
+    padding: 0 1px;
+    border-radius: 2px;
+    cursor: pointer;
+  }
+  mark.fb-hl[data-c="green"]  { background: var(--hl-green,  oklch(0.92 0.08 145)); }
+  mark.fb-hl[data-c="blue"]   { background: var(--hl-blue,   oklch(0.92 0.06 230)); }
+  mark.fb-hl[data-c="pink"]   { background: var(--hl-pink,   oklch(0.92 0.07  20)); }
+
+  /* Card armed for highlight (gentle pulse on left edge) */
+  .fb-card.hl-armed { animation: hlArm 1.2s ease-out; }
+  @keyframes hlArm {
+    0%   { box-shadow: inset 3px 0 0 transparent; }
+    20%  { box-shadow: inset 3px 0 0 var(--accent); }
+    100% { box-shadow: inset 3px 0 0 transparent; }
+  }
+
+  /* Note strip pinned above stem */
+  .fb-note-strip {
+    display: flex; align-items: flex-start; gap: var(--s2);
+    padding: var(--s2) var(--s3);
+    margin-bottom: var(--s3);
+    background: color-mix(in srgb, var(--accent-50) 70%, var(--paper));
+    border-left: 2px solid var(--accent);
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-2);
+    line-height: 1.5;
+  }
+  .fb-note-strip svg {
+    width: 14px; height: 14px; flex-shrink: 0; margin-top: 2px;
+    stroke: var(--accent); fill: none;
+  }
+
+  .sel-toolbar button[disabled] { opacity: 0.35; cursor: not-allowed; }
+  html[data-theme="night"] mark.fb-hl { background: oklch(0.45 0.10 95); color: inherit; }
+  html[data-theme="night"] mark.fb-hl[data-c="green"] { background: oklch(0.45 0.08 145); }
+  html[data-theme="night"] mark.fb-hl[data-c="blue"]  { background: oklch(0.45 0.07 230); }
+  html[data-theme="night"] mark.fb-hl[data-c="pink"]  { background: oklch(0.45 0.07  20); }
+
+  /* AI paywall modal */
+  .ai-modal-scrim {
+    position: fixed; inset: 0;
+    background: color-mix(in srgb, var(--ink) 45%, transparent);
+    backdrop-filter: blur(2px);
+    z-index: 90;
+    display: none;
+    align-items: center; justify-content: center;
+    padding: var(--s5);
+  }
+  .ai-modal-scrim.is-on { display: flex; }
+  .ai-modal {
+    background: var(--paper);
+    border-radius: var(--r-md);
+    max-width: 440px;
+    width: 100%;
+    overflow: hidden;
+    box-shadow: var(--shadow-2);
+    border: 1px solid var(--rule);
+    animation: aiIn 200ms cubic-bezier(.4,0,.2,1);
+  }
+  @keyframes aiIn {
+    from { opacity: 0; transform: translateY(8px) scale(.98); }
+    to   { opacity: 1; transform: none; }
+  }
+  .ai-modal-hero {
+    padding: var(--s6) var(--s5) var(--s4);
+    background: var(--paper-2);
+    border-bottom: 1px solid var(--rule);
+    text-align: center;
+    position: relative;
+  }
+  .ai-modal-hero .badge {
+    display: inline-flex; align-items: center; gap: 4px;
+    font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em;
+    color: var(--accent);
+    background: var(--accent-50);
+    padding: 4px 8px;
+    border-radius: 999px;
+    margin-bottom: var(--s3);
+  }
+  .ai-modal-hero h3 {
+    font-family: var(--serif);
+    font-size: 22px;
+    font-weight: 500;
+    margin: 0 0 var(--s2);
+  }
+  .ai-modal-hero p {
+    font-size: 13px;
+    color: var(--ink-3);
+    margin: 0;
+    line-height: 1.6;
+  }
+  .ai-modal-close {
+    position: absolute; top: var(--s3); right: var(--s3);
+    width: 28px; height: 28px;
+    background: transparent; border: none;
+    color: var(--ink-3); cursor: pointer;
+    border-radius: 50%;
+    display: inline-flex; align-items: center; justify-content: center;
+  }
+  .ai-modal-close:hover { background: var(--rule); color: var(--ink); }
+  .ai-modal-close svg { width: 16px; height: 16px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+  .ai-modal-body { padding: var(--s5); }
+  .ai-features {
+    list-style: none; padding: 0; margin: 0 0 var(--s5);
+    display: flex; flex-direction: column; gap: var(--s3);
+  }
+  .ai-features li {
+    display: flex; align-items: flex-start; gap: var(--s3);
+    font-size: 14px;
+    color: var(--ink-2);
+  }
+  .ai-features li svg {
+    width: 16px; height: 16px; flex-shrink: 0; margin-top: 2px;
+    stroke: var(--accent); fill: none; stroke-width: 1.8;
+    stroke-linecap: round; stroke-linejoin: round;
+  }
+  .ai-features li strong { font-weight: 500; color: var(--ink); font-family: var(--serif); }
+  .ai-plans { display: flex; gap: var(--s3); margin-bottom: var(--s4); }
+  .ai-plan {
+    flex: 1; border: 1px solid var(--rule-strong);
+    border-radius: var(--r-sm);
+    padding: var(--s3);
+    cursor: pointer;
+    transition: border-color 120ms ease;
+    text-align: left;
+    background: var(--paper);
+  }
+  .ai-plan.is-on { border-color: var(--accent); background: var(--accent-50); }
+  .ai-plan-period { font-size: 11px; color: var(--ink-3); letter-spacing: 0.08em; text-transform: uppercase; font-family: var(--mono); }
+  .ai-plan-price { font-family: var(--mono); font-size: 22px; color: var(--ink); margin-top: 2px; }
+  .ai-plan-price em { font-style: normal; font-size: 12px; color: var(--ink-3); }
+  .ai-plan-note { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+  .ai-cta {
+    width: 100%;
+    height: 44px;
+    background: var(--ink);
+    color: var(--paper);
+    border: none;
+    border-radius: var(--r-sm);
+    font-size: 14px;
+    cursor: pointer;
+    font-family: var(--sans);
+    letter-spacing: 0.04em;
+    display: inline-flex; align-items: center; justify-content: center; gap: var(--s2);
+    transition: background 120ms ease;
+  }
+  .ai-cta:hover { background: var(--ink-2); }
+  .ai-cta svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+  .ai-modal-foot {
+    margin-top: var(--s3);
+    text-align: center;
+    font-size: 11px;
+    color: var(--ink-3);
+  }
+
+  @media (max-width: 768px) {
+    .fb-paper-meta { display: none; }
+    .fb-top-c { display: none; }
+    .stage { padding: var(--s5) var(--s4) 120px; }
+    .fb-card { grid-template-columns: 1fr; gap: var(--s3); }
+    .fb-card.is-current::before { display: none; }
+    .fb-card-actions { flex-direction: row; margin-top: 0; margin-left: 0; }
+    .fb-tf { grid-template-columns: 1fr; }
+    .drawer { width: 100%; }
+    .fb-dock-pos { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { transition-duration: 0.01ms !important; }
+  }
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<header class="fb-top" data-screen-label="topbar">
+  <div class="fb-top-l">
+    <span class="fb-logo" aria-label="SIKAO">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+        <rect x="3" y="3" width="18" height="18" rx="1.5" />
+        <path d="M3 12h18M12 3v18" />
+      </svg>
+    </span>
+    <span class="fb-paper-title">2024 国考 · 行测真题</span>
+    <span class="fb-paper-meta">副省级 · 共 35 题 · 120 分钟</span>
+  </div>
+
+  <div class="fb-top-c">
+    <span class="fb-timer" id="timer" aria-label="计时, 已用 38 分 14 秒">00:38:14</span>
+  </div>
+
+  <div class="fb-top-r">
+    <button class="icon-btn" type="button" aria-label="暂停" data-tip="暂停 · 空格" id="pause-btn">
+      <svg viewBox="0 0 24 24"><rect x="6" y="5" width="4" height="14" /><rect x="14" y="5" width="4" height="14" /></svg>
+    </button>
+    <div class="settings-wrap">
+      <button class="icon-btn" type="button" aria-label="设置" data-tip="设置" id="settings-btn" aria-expanded="false">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 00.33 1.82l.06.06a2 2 0 11-2.83 2.83l-.06-.06a1.65 1.65 0 00-1.82-.33 1.65 1.65 0 00-1 1.51V21a2 2 0 11-4 0v-.09a1.65 1.65 0 00-1-1.51 1.65 1.65 0 00-1.82.33l-.06.06a2 2 0 11-2.83-2.83l.06-.06a1.65 1.65 0 00.33-1.82 1.65 1.65 0 00-1.51-1H3a2 2 0 110-4h.09a1.65 1.65 0 001.51-1 1.65 1.65 0 00-.33-1.82l-.06-.06a2 2 0 112.83-2.83l.06.06a1.65 1.65 0 001.82.33H9a1.65 1.65 0 001-1.51V3a2 2 0 114 0v.09a1.65 1.65 0 001 1.51 1.65 1.65 0 001.82-.33l.06-.06a2 2 0 112.83 2.83l-.06.06a1.65 1.65 0 00-.33 1.82V9a1.65 1.65 0 001.51 1H21a2 2 0 110 4h-.09a1.65 1.65 0 00-1.51 1z" /></svg>
+      </button>
+      <div class="settings-pop" id="settings-pop" role="menu" hidden>
+        <div class="settings-row">
+          <span class="settings-label">阅读字号</span>
+          <div class="seg" role="radiogroup" data-setting="reading">
+            <button type="button" data-v="md">M</button><button type="button" data-v="lg" class="is-on">L</button><button type="button" data-v="xl">XL</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">行间密度</span>
+          <div class="seg" role="radiogroup" data-setting="density">
+            <button type="button" data-v="cozy" class="is-on">Cozy</button><button type="button" data-v="compact">Compact</button>
+          </div>
+        </div>
+        <div class="settings-row">
+          <span class="settings-label">选项 letter</span>
+          <div class="seg" role="radiogroup" data-setting="optStyle">
+            <button type="button" data-v="circle" class="is-on">圆形</button><button type="button" data-v="square">方形</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- STAGE -->
+<main class="stage">
+
+  <!-- ────────── PART 01 言语理解 (单选) ────────── -->
+  <div class="section-label" data-screen-label="section-yanyu">
+    <span class="section-label-num">PART 01</span>
+    <h2 class="section-label-title">言语理解与表达</h2>
+    <span class="section-label-meta">11 题 · 已完成 10</span>
+  </div>
+
+  <article class="fb-card" data-q="15" data-screen-label="q15-single">
+    <div>
+      <div class="fb-card-num">15</div>
+      <div class="fb-card-actions">
+        <button class="icon-btn" type="button" aria-label="收藏第 15 题" data-tip="收藏 · S">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15 9 22 9 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9 9 9 12 2" /></svg>
+        </button>
+        <button class="icon-btn is-on" type="button" aria-label="已标记第 15 题" data-tip="已标记 · M" aria-pressed="true">
+          <svg viewBox="0 0 24 24"><path d="M5 3v18M5 3h12l-2 4 2 4H5" /></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="笔记" data-tip="笔记 · N">
+          <svg viewBox="0 0 24 24"><path d="M5 3h11l4 4v14H5z" /><path d="M7 9h10M7 13h10M7 17h7" /></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="划线" data-tip="划线 · H" data-act="hl-trigger">
+          <svg viewBox="0 0 24 24"><path d="M14 4l6 6-9 9-6 1 1-6 9-9z"/><path d="M13 5l6 6"/><path d="M3 21h6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="fb-card-body">
+      <p class="fb-stem">
+        在量子力学发展的早期，玻尔提出了对应原理，认为在量子数极大的极限情况下，量子力学的预言应当与经典力学的预言一致。这一原理虽然在历史上推动了旧量子论的发展，但在严格的现代量子力学框架中，其地位已发生了微妙的变化。下列对这段文字理解最准确的是：
+      </p>
+      <div class="fb-opts" data-qtype="single">
+        <label class="fb-opt"><span class="fb-opt-letter">A</span><span class="fb-opt-text">对应原理是量子力学早期发展的产物</span></label>
+        <label class="fb-opt"><span class="fb-opt-letter">B</span><span class="fb-opt-text">对应原理在现代量子力学中已被废弃</span></label>
+        <label class="fb-opt is-selected"><span class="fb-opt-letter">C</span><span class="fb-opt-text">对应原理的意义随理论发展发生了变化</span></label>
+        <label class="fb-opt"><span class="fb-opt-letter">D</span><span class="fb-opt-text">玻尔通过对应原理统一了经典与量子物理</span></label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ────────── PART 02 数量判断 (单选 · 当前题) ────────── -->
+  <div class="section-label" data-screen-label="section-shupan">
+    <span class="section-label-num">PART 02</span>
+    <h2 class="section-label-title">数量关系</h2>
+    <span class="section-label-meta">5 题 · 当前 16</span>
+  </div>
+
+  <article class="fb-card is-current" data-q="16" data-screen-label="q16-single-current">
+    <div>
+      <div class="fb-card-num">16</div>
+      <div class="fb-card-actions">
+        <button class="icon-btn" type="button" aria-label="收藏第 16 题" data-tip="收藏 · S">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15 9 22 9 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9 9 9 12 2" /></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="标记第 16 题" data-tip="标记 · M">
+          <svg viewBox="0 0 24 24"><path d="M5 3v18M5 3h12l-2 4 2 4H5" /></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="笔记" data-tip="笔记 · N">
+          <svg viewBox="0 0 24 24"><path d="M5 3h11l4 4v14H5z" /><path d="M7 9h10M7 13h10M7 17h7" /></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="划线" data-tip="划线 · H" data-act="hl-trigger">
+          <svg viewBox="0 0 24 24"><path d="M14 4l6 6-9 9-6 1 1-6 9-9z"/><path d="M13 5l6 6"/><path d="M3 21h6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="fb-card-body">
+      <p class="fb-stem">
+        已知数列 2、6、12、20、30、___ 的下一项为多少。该数列的递推关系隐含在相邻两项之差形成的等差数列中，请判断后续项的取值。
+      </p>
+      <div class="fb-opts" data-qtype="single">
+        <label class="fb-opt"><span class="fb-opt-letter">A</span><span class="fb-opt-text">40</span></label>
+        <label class="fb-opt"><span class="fb-opt-letter">B</span><span class="fb-opt-text">42</span></label>
+        <label class="fb-opt"><span class="fb-opt-letter">C</span><span class="fb-opt-text">44</span></label>
+        <label class="fb-opt"><span class="fb-opt-letter">D</span><span class="fb-opt-text">56</span></label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ────────── PART 03 常识判断 (多选) ────────── -->
+  <div class="section-label" data-screen-label="section-changshi">
+    <span class="section-label-num">PART 03</span>
+    <h2 class="section-label-title">常识判断</h2>
+    <span class="section-label-meta">5 题 · 多选 1 题</span>
+  </div>
+
+  <article class="fb-card" data-q="20" data-screen-label="q20-multi">
+    <div>
+      <div class="fb-card-num">20</div>
+      <div class="fb-card-actions">
+        <button class="icon-btn" type="button" aria-label="收藏第 20 题" data-tip="收藏 · S">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15 9 22 9 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9 9 9 12 2" /></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="标记第 20 题" data-tip="标记 · M">
+          <svg viewBox="0 0 24 24"><path d="M5 3v18M5 3h12l-2 4 2 4H5" /></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="笔记" data-tip="笔记 · N">
+          <svg viewBox="0 0 24 24"><path d="M5 3h11l4 4v14H5z" /><path d="M7 9h10M7 13h10M7 17h7" /></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="划线" data-tip="划线 · H" data-act="hl-trigger">
+          <svg viewBox="0 0 24 24"><path d="M14 4l6 6-9 9-6 1 1-6 9-9z"/><path d="M13 5l6 6"/><path d="M3 21h6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="fb-card-body">
+      <p class="fb-stem">
+        根据《中华人民共和国民法典》关于民事行为能力的规定，下列情形中，<strong>可以独立实施</strong>相应民事法律行为的有：（多选）
+      </p>
+      <div class="fb-opts" data-qtype="multi">
+        <label class="fb-opt is-multi is-selected"><span class="fb-opt-letter">A</span><span class="fb-opt-text">八周岁以上未成年人接受奖励、赠与</span></label>
+        <label class="fb-opt is-multi"><span class="fb-opt-letter">B</span><span class="fb-opt-text">六周岁儿童购买价值 5000 元的电子设备</span></label>
+        <label class="fb-opt is-multi is-selected"><span class="fb-opt-letter">C</span><span class="fb-opt-text">十六周岁以劳动收入为主要生活来源者签订劳务合同</span></label>
+        <label class="fb-opt is-multi"><span class="fb-opt-letter">D</span><span class="fb-opt-text">不能辨认自己行为的成年人独立处分大额财产</span></label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ────────── PART 04 判断推理 (判断题) ────────── -->
+  <div class="section-label" data-screen-label="section-panduan">
+    <span class="section-label-num">PART 04</span>
+    <h2 class="section-label-title">判断推理</h2>
+    <span class="section-label-meta">5 题 · 判断 1 题</span>
+  </div>
+
+  <article class="fb-card" data-q="24" data-screen-label="q24-truefalse">
+    <div>
+      <div class="fb-card-num">24</div>
+      <div class="fb-card-actions">
+        <button class="icon-btn" type="button" aria-label="收藏第 24 题" data-tip="收藏 · S">
+          <svg viewBox="0 0 24 24"><polygon points="12 2 15 9 22 9 16.5 14 18.5 21 12 17 5.5 21 7.5 14 2 9 9 9 12 2" /></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="标记第 24 题" data-tip="标记 · M">
+          <svg viewBox="0 0 24 24"><path d="M5 3v18M5 3h12l-2 4 2 4H5" /></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="笔记" data-tip="笔记 · N">
+          <svg viewBox="0 0 24 24"><path d="M5 3h11l4 4v14H5z" /><path d="M7 9h10M7 13h10M7 17h7" /></svg>
+        </button>
+        <button class="icon-btn" type="button" aria-label="划线" data-tip="划线 · H" data-act="hl-trigger">
+          <svg viewBox="0 0 24 24"><path d="M14 4l6 6-9 9-6 1 1-6 9-9z"/><path d="M13 5l6 6"/><path d="M3 21h6"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="fb-card-body">
+      <p class="fb-stem">
+        判断下列陈述是否正确：「如果一个命题为真，那么它的逆否命题也一定为真；反之，如果一个命题为假，那么它的逆否命题也一定为假。」
+      </p>
+      <div class="fb-tf" data-qtype="truefalse">
+        <label class="fb-tf-opt is-selected">
+          <span class="fb-tf-opt-mark">
+            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+          </span>
+          <span class="fb-tf-opt-label">正确</span>
+          <span class="fb-tf-opt-key">T</span>
+        </label>
+        <label class="fb-tf-opt">
+          <span class="fb-tf-opt-mark">
+            <svg viewBox="0 0 24 24"><line x1="6" y1="6" x2="18" y2="18" /><line x1="18" y1="6" x2="6" y2="18" /></svg>
+          </span>
+          <span class="fb-tf-opt-label">错误</span>
+          <span class="fb-tf-opt-key">F</span>
+        </label>
+      </div>
+    </div>
+  </article>
+
+  <!-- ────────── PART 05 资料分析 (passage + 5 题) ────────── -->
+  <div class="section-label" data-screen-label="section-ziliao">
+    <span class="section-label-num">PART 05</span>
+    <h2 class="section-label-title">资料分析</h2>
+    <span class="section-label-meta">材料一 · Q26—Q30 · 共 5 题</span>
+  </div>
+
+  <div class="pg-wrap" data-screen-label="passage-1">
+    <!-- Sticky material -->
+    <div class="pg-passage" id="passage-1">
+      <header class="pg-passage-head">
+        <span class="pg-passage-eyebrow">材料 · 一</span>
+        <h3 class="pg-passage-title">2023 年某省制造业固定资产投资</h3>
+        <button class="icon-btn pg-passage-toggle" type="button" aria-label="折叠材料" data-tip="折叠/展开 · P" id="passage-toggle">
+          <svg viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9" /></svg>
+        </button>
+      </header>
+      <div class="pg-passage-body">
+        <p>
+          <sup id="m1-p1">①</sup>2023 年，A 省全年完成制造业固定资产投资 <span class="hl">8,247.6 亿元</span>，比上年增长 <span class="hl">9.2%</span>，增速比全部固定资产投资高 4.8 个百分点。其中，高技术制造业完成投资 <span class="hl">2,135.4 亿元</span>，同比增长 18.6%，占制造业投资比重为 25.9%，比上年提升 2.1 个百分点。
+        </p>
+        <p>
+          <sup id="m1-p2">②</sup>分行业看，电子信息制造业完成投资 985.2 亿元，同比增长 <span class="hl">22.3%</span>；装备制造业完成投资 1,748.9 亿元，同比增长 11.4%；汽车制造业完成投资 612.1 亿元，同比下降 3.5%。
+        </p>
+        <p>
+          <sup id="m1-p3">③</sup>2023 年全年规模以上工业企业利润总额 <span class="hl">12,580 亿元</span>，比上年增长 6.4%。其中，国有控股企业实现利润 4,820 亿元，下降 1.2%；股份制企业 7,360 亿元，增长 9.8%；外商及港澳台投资企业 2,420 亿元，下降 2.8%。
+        </p>
+        <p>
+          <sup id="m1-p4">④</sup>从季度走势看，一季度、二季度、三季度、四季度制造业投资同比增速分别为 6.8%、8.4%、9.7%、11.2%，呈逐季回升态势。
+        </p>
+      </div>
+    </div>
+
+    <!-- Group Tabs -->
+    <div class="pg-tabs" role="group" aria-label="材料一 题组进度">
+      <button class="pg-tab is-done" type="button"><span class="dot"></span><span>Q26</span></button>
+      <button class="pg-tab is-done" type="button"><span class="dot"></span><span>Q27</span></button>
+      <button class="pg-tab is-marked" type="button"><span class="dot"></span><span>Q28 · 标记</span></button>
+      <button class="pg-tab is-active" type="button"><span class="dot"></span><span>Q29 · 当前</span></button>
+      <button class="pg-tab" type="button"><span class="dot"></span><span>Q30</span></button>
+    </div>
+
+    <!-- Sub questions -->
+    <article class="fb-card pg-sub" data-q="26" data-screen-label="q26-passage">
+      <div>
+        <div class="fb-card-num">26</div>
+      </div>
+      <div class="fb-card-body">
+        <p class="fb-stem">2023 年 A 省制造业固定资产投资约为多少亿元？</p>
+        <div class="fb-opts" data-qtype="single">
+          <label class="fb-opt is-selected"><span class="fb-opt-letter">A</span><span class="fb-opt-text">8,247.6 亿元 <a class="fb-opt-ref" href="#m1-p1">⤴ 材料 · 段一</a></span></label>
+          <label class="fb-opt"><span class="fb-opt-letter">B</span><span class="fb-opt-text">7,553.1 亿元</span></label>
+          <label class="fb-opt"><span class="fb-opt-letter">C</span><span class="fb-opt-text">2,135.4 亿元 <a class="fb-opt-ref" href="#m1-p1">⤴ 材料 · 段一</a></span></label>
+          <label class="fb-opt"><span class="fb-opt-letter">D</span><span class="fb-opt-text">12,580 亿元 <a class="fb-opt-ref" href="#m1-p3">⤴ 材料 · 段三</a></span></label>
+        </div>
+      </div>
+    </article>
+
+    <article class="fb-card pg-sub" data-q="27" data-screen-label="q27-passage">
+      <div>
+        <div class="fb-card-num">27</div>
+      </div>
+      <div class="fb-card-body">
+        <p class="fb-stem">2023 年 A 省高技术制造业投资占制造业投资的比重为：</p>
+        <div class="fb-opts" data-qtype="single">
+          <label class="fb-opt"><span class="fb-opt-letter">A</span><span class="fb-opt-text">22.3%</span></label>
+          <label class="fb-opt"><span class="fb-opt-letter">B</span><span class="fb-opt-text">23.8%</span></label>
+          <label class="fb-opt is-selected"><span class="fb-opt-letter">C</span><span class="fb-opt-text">25.9% <a class="fb-opt-ref" href="#m1-p1">⤴ 材料 · 段一</a></span></label>
+          <label class="fb-opt"><span class="fb-opt-letter">D</span><span class="fb-opt-text">28.0%</span></label>
+        </div>
+      </div>
+    </article>
+
+    <article class="fb-card pg-sub" data-q="28" data-screen-label="q28-passage">
+      <div>
+        <div class="fb-card-num">28</div>
+      </div>
+      <div class="fb-card-body">
+        <p class="fb-stem">在以下行业中，2023 年 A 省固定资产投资同比增速最快的是：</p>
+        <div class="fb-opts" data-qtype="single">
+          <label class="fb-opt"><span class="fb-opt-letter">A</span><span class="fb-opt-text">高技术制造业（18.6%） <a class="fb-opt-ref" href="#m1-p1">⤴ 段一</a></span></label>
+          <label class="fb-opt is-selected"><span class="fb-opt-letter">B</span><span class="fb-opt-text">电子信息制造业（22.3%） <a class="fb-opt-ref" href="#m1-p2">⤴ 段二</a></span></label>
+          <label class="fb-opt"><span class="fb-opt-letter">C</span><span class="fb-opt-text">装备制造业（11.4%） <a class="fb-opt-ref" href="#m1-p2">⤴ 段二</a></span></label>
+          <label class="fb-opt"><span class="fb-opt-letter">D</span><span class="fb-opt-text">汽车制造业（−3.5%） <a class="fb-opt-ref" href="#m1-p2">⤴ 段二</a></span></label>
+        </div>
+      </div>
+    </article>
+
+    <article class="fb-card pg-sub is-current" data-q="29" data-screen-label="q29-passage-current">
+      <div>
+        <div class="fb-card-num">29</div>
+      </div>
+      <div class="fb-card-body">
+        <p class="fb-stem">2023 年 A 省规模以上工业企业中，股份制企业利润比国有控股企业利润约多多少亿元？</p>
+        <div class="fb-opts" data-qtype="single">
+          <label class="fb-opt"><span class="fb-opt-letter">A</span><span class="fb-opt-text">1,820 亿元</span></label>
+          <label class="fb-opt"><span class="fb-opt-letter">B</span><span class="fb-opt-text">2,300 亿元</span></label>
+          <label class="fb-opt"><span class="fb-opt-letter">C</span><span class="fb-opt-text">2,540 亿元 <a class="fb-opt-ref" href="#m1-p3">⤴ 段三</a></span></label>
+          <label class="fb-opt"><span class="fb-opt-letter">D</span><span class="fb-opt-text">2,940 亿元</span></label>
+        </div>
+      </div>
+    </article>
+
+    <article class="fb-card pg-sub" data-q="30" data-screen-label="q30-passage">
+      <div>
+        <div class="fb-card-num">30</div>
+      </div>
+      <div class="fb-card-body">
+        <p class="fb-stem">根据上述资料，下列说法<strong>正确</strong>的是：</p>
+        <div class="fb-opts" data-qtype="single">
+          <label class="fb-opt"><span class="fb-opt-letter">A</span><span class="fb-opt-text">2023 年 A 省全部固定资产投资增速高于制造业投资</span></label>
+          <label class="fb-opt"><span class="fb-opt-letter">B</span><span class="fb-opt-text">汽车制造业是 2023 年增长最快的行业 <a class="fb-opt-ref" href="#m1-p2">⤴ 段二</a></span></label>
+          <label class="fb-opt"><span class="fb-opt-letter">C</span><span class="fb-opt-text">2023 年制造业投资呈现逐季回升态势 <a class="fb-opt-ref" href="#m1-p4">⤴ 段四</a></span></label>
+          <label class="fb-opt"><span class="fb-opt-letter">D</span><span class="fb-opt-text">国有控股企业是 2023 年利润增速最高的企业类型</span></label>
+        </div>
+      </div>
+    </article>
+  </div>
+
+</main>
+
+<!-- AI 解析浮按钮 (付费功能) -->
+<div class="ai-fab" data-screen-label="ai-fab">
+  <button class="ai-fab-btn" type="button" id="ai-btn" aria-label="AI 解析 · 付费功能">
+    <svg viewBox="0 0 24 24"><path d="M12 2l1.8 5.5L19 9l-4.6 3.4L16 18l-4-3-4 3 1.6-5.6L5 9l5.2-1.5z" /></svg>
+    <span class="lock-dot" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="6" y="11" width="12" height="9" rx="1" /><path d="M9 11V7a3 3 0 016 0v4" /></svg></span>
+    <span class="ai-fab-label">AI 解析 · Pro</span>
+  </button>
+</div>
+
+<!-- BOTTOM DOCK -->
+<nav class="fb-dock" data-screen-label="dock" aria-label="题号导航">
+  <button class="fb-dock-nav" type="button" aria-label="上一题" id="prev-q">
+    <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
+  </button>
+  <span class="fb-dock-pos" id="dock-pos">第 <em>29</em> 题 / 35</span>
+  <button class="fb-dock-nav" type="button" aria-label="下一题" id="next-q">
+    <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" /></svg>
+  </button>
+  <button class="fb-dock-open" type="button" aria-label="答题卡" id="open-drawer">
+    <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1" /><rect x="14" y="3" width="7" height="7" rx="1" /><rect x="3" y="14" width="7" height="7" rx="1" /><rect x="14" y="14" width="7" height="7" rx="1" /></svg>
+    <span>答题卡 22/35</span>
+  </button>
+  <button class="fb-dock-submit" type="button" id="dock-submit" aria-label="交卷" data-tip="交卷">
+    <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+  </button>
+</nav>
+
+<!-- DRAWER -->
+<div class="scrim" id="scrim" aria-hidden="true"></div>
+<aside class="drawer" id="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title" data-screen-label="answer-card-drawer">
+  <header class="drawer-header">
+    <div class="drawer-header-row">
+      <h2 class="drawer-title" id="drawer-title">答题卡</h2>
+      <button class="icon-btn" type="button" aria-label="关闭答题卡" id="close-drawer">
+        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+      </button>
+    </div>
+    <div class="drawer-progress">
+      <span class="drawer-progress-num">22<em>/35</em></span>
+      <span class="drawer-progress-label">行测 · 标准卷</span>
+    </div>
+    <div class="drawer-bar"><div class="drawer-bar-fill"></div></div>
+  </header>
+
+  <div class="drawer-body">
+    <section class="grid-section">
+      <div class="grid-section-label">PART 01 · 言语 · Q1—Q15</div>
+      <div class="grid" id="grid-1"></div>
+    </section>
+    <section class="grid-section">
+      <div class="grid-section-label">PART 02 · 数量 · Q16—Q19</div>
+      <div class="grid" id="grid-2"></div>
+    </section>
+    <section class="grid-section">
+      <div class="grid-section-label">PART 03 · 常识 · Q20—Q23 (含多选)</div>
+      <div class="grid" id="grid-3"></div>
+    </section>
+    <section class="grid-section">
+      <div class="grid-section-label">PART 04 · 判断 · Q24—Q25 (含判断)</div>
+      <div class="grid" id="grid-4"></div>
+    </section>
+    <section class="grid-section is-group">
+      <div class="grid-section-label">PART 05 · 资料分析 · 材料一 · Q26—Q30</div>
+      <div class="grid" id="grid-5"></div>
+    </section>
+    <section class="grid-section is-group">
+      <div class="grid-section-label">PART 05 · 资料分析 · 材料二 · Q31—Q35</div>
+      <div class="grid" id="grid-6"></div>
+    </section>
+
+    <div class="legend">
+      <div class="legend-item"><span class="legend-dot"></span>未答</div>
+      <div class="legend-item"><span class="legend-dot dot-answered"></span>已答</div>
+      <div class="legend-item"><span class="legend-dot dot-marked"></span>已标记</div>
+      <div class="legend-item"><span class="legend-dot dot-current"></span>当前</div>
+    </div>
+  </div>
+
+  <footer class="drawer-footer">
+    <button class="drawer-submit" type="button">
+      <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg>
+      <span>提交并查看结果</span>
+    </button>
+    <div class="drawer-meta">还有 <em>13 题</em> 未作答 · <em>4 题</em> 已标记</div>
+  </footer>
+</aside>
+
+<!-- AI 付费 modal -->
+<div class="ai-modal-scrim" id="ai-modal" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title" data-screen-label="ai-modal">
+  <div class="ai-modal">
+    <button class="ai-modal-close" type="button" id="ai-modal-close" aria-label="关闭">
+      <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" /></svg>
+    </button>
+    <div class="ai-modal-hero">
+      <span class="badge">PRO · AI 解析</span>
+      <h3 id="ai-modal-title">看懂每道错题</h3>
+      <p>3 步骨架解题 · 常踩陷阱识别 · 同类题追加训练</p>
+    </div>
+    <div class="ai-modal-body">
+      <ul class="ai-features">
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span><strong>骨架解析</strong> · 题干拆解 → 选项评估 → 定档</span></li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span><strong>错点诊断</strong> · 定位你扭错的那一步</span></li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span><strong>同类题推荐</strong> · 一键生成 5 道同险点</span></li>
+        <li><svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12" /></svg><span><strong>口语讲解</strong> · 像老师一样说人话</span></li>
+      </ul>
+      <div class="ai-plans">
+        <button class="ai-plan" type="button" data-plan="m">
+          <div class="ai-plan-period">月度</div>
+          <div class="ai-plan-price">¥39<em>/月</em></div>
+          <div class="ai-plan-note">随时取消</div>
+        </button>
+        <button class="ai-plan is-on" type="button" data-plan="y">
+          <div class="ai-plan-period">年度 · 推荐</div>
+          <div class="ai-plan-price">¥298<em>/年</em></div>
+          <div class="ai-plan-note">平均 ¥24.8 / 月</div>
+        </button>
+      </div>
+      <button class="ai-cta" type="button">
+        <span>解锁 AI 解析</span>
+        <svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6" /></svg>
+      </button>
+      <div class="ai-modal-foot">七天无理由退款 · 汇总账单在个人中心查看</div>
+    </div>
+  </div>
+</div>
+
+<!-- Selection toolbar -->
+<div class="sel-toolbar" id="sel-toolbar" role="toolbar" aria-label="划线工具">
+  <button type="button" data-act="hl" data-c="yellow" aria-label="黄色划线"><span class="swatch" style="background:oklch(0.88 0.14 95)"></span></button>
+  <button type="button" data-act="hl" data-c="green"  aria-label="绿色划线"><span class="swatch" style="background:oklch(0.88 0.12 145)"></span></button>
+  <button type="button" data-act="hl" data-c="blue"   aria-label="蓝色划线"><span class="swatch" style="background:oklch(0.88 0.10 230)"></span></button>
+  <button type="button" data-act="hl" data-c="pink"   aria-label="粉色划线"><span class="swatch" style="background:oklch(0.88 0.10  20)"></span></button>
+  <span class="divider"></span>
+  <button type="button" data-act="clear" aria-label="取消划线" data-tip="取消划线">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 012-2h4a2 2 0 012 2v2"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+  </button>
+  <button type="button" data-act="undo" aria-label="撤销" id="sel-undo" data-tip="撤销 · ⌘Z" disabled>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6"/><path d="M3 13a9 9 0 109-9"/></svg>
+    <span style="font-size:11px">撤销</span>
+  </button>
+</div>
+
+<!-- TWEAKS panel (loaded by tweaks-panel.jsx) -->
+<div id="tweaks-mount"></div>
+
+<!-- React for tweaks panel -->
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+<script type="text/babel" src="tweaks-panel.jsx"></script>
+<script type="text/babel" src="tweaks-app.jsx"></script>
+
+<script>
+  // ───── 35 questions mock state ─────
+  const STATE = {
+    1:'answered', 2:'answered', 3:'answered', 4:'marked', 5:'answered',
+    6:'answered', 7:'unanswered', 8:'answered', 9:'answered', 10:'answered',
+    11:'answered', 12:'answered', 13:'answered', 14:'marked', 15:'unanswered',
+    16:'unanswered', 17:'answered', 18:'answered', 19:'unanswered',
+    20:'answered', 21:'unanswered', 22:'unanswered', 23:'unanswered',
+    24:'answered', 25:'unanswered',
+    26:'answered', 27:'answered', 28:'marked', 29:'current', 30:'unanswered',
+    31:'unanswered', 32:'marked', 33:'unanswered', 34:'unanswered', 35:'unanswered'
+  };
+  const LABEL = { unanswered:'未答', answered:'已答', marked:'已标记', current:'当前', wrong:'答错' };
+  function makeBtn(n) {
+    const s = STATE[n];
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'q-btn is-' + s;
+    b.setAttribute('aria-label', `第 ${n} 题, ${LABEL[s]}, 点击跳转`);
+    b.textContent = n;
+    return b;
+  }
+  function renderRange(id, from, to) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    for (let n = from; n <= to; n++) el.appendChild(makeBtn(n));
+  }
+  renderRange('grid-1', 1, 15);
+  renderRange('grid-2', 16, 19);
+  renderRange('grid-3', 20, 23);
+  renderRange('grid-4', 24, 25);
+  renderRange('grid-5', 26, 30);
+  renderRange('grid-6', 31, 35);
+
+  // ───── Drawer open/close ─────
+  const drawer = document.getElementById('drawer');
+  const scrim  = document.getElementById('scrim');
+  function openDrawer() { drawer.classList.add('is-open'); scrim.classList.add('is-open'); }
+  function closeDrawer() { drawer.classList.remove('is-open'); scrim.classList.remove('is-open'); }
+  document.getElementById('open-drawer').addEventListener('click', openDrawer);
+  document.getElementById('close-drawer').addEventListener('click', closeDrawer);
+  scrim.addEventListener('click', closeDrawer);
+
+  // ───── Option selection ─────
+  document.querySelectorAll('.fb-opts').forEach(group => {
+    const type = group.getAttribute('data-qtype');
+    group.querySelectorAll('.fb-opt').forEach(opt => {
+      opt.addEventListener('click', e => {
+        // don't trigger select if user clicked a ref link
+        if (e.target.closest('.fb-opt-ref')) return;
+        if (type === 'multi') {
+          opt.classList.toggle('is-selected');
+        } else {
+          group.querySelectorAll('.fb-opt').forEach(o => o.classList.remove('is-selected'));
+          opt.classList.add('is-selected');
+        }
+      });
+    });
+  });
+
+  // ───── True/False ─────
+  document.querySelectorAll('.fb-tf').forEach(group => {
+    group.querySelectorAll('.fb-tf-opt').forEach(opt => {
+      opt.addEventListener('click', () => {
+        group.querySelectorAll('.fb-tf-opt').forEach(o => o.classList.remove('is-selected'));
+        opt.classList.add('is-selected');
+      });
+    });
+  });
+
+  // ───── Passage refs smooth scroll ─────
+  document.querySelectorAll('.fb-opt-ref').forEach(a => {
+    a.addEventListener('click', e => {
+      e.preventDefault();
+      const id = a.getAttribute('href').slice(1);
+      const tgt = document.getElementById(id);
+      if (!tgt) return;
+      // ensure passage is expanded
+      document.getElementById('passage-1')?.classList.remove('is-collapsed');
+      tgt.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      // brief highlight
+      tgt.style.transition = 'background 600ms ease';
+      tgt.style.background = 'var(--accent-50)';
+      setTimeout(() => { tgt.style.background = 'transparent'; }, 1200);
+    });
+  });
+
+  // ───── Passage collapse toggle ─────
+  document.getElementById('passage-toggle')?.addEventListener('click', () => {
+    document.getElementById('passage-1').classList.toggle('is-collapsed');
+  });
+
+  // ───── Settings popover ─────
+  (() => {
+    const btn = document.getElementById('settings-btn');
+    const pop = document.getElementById('settings-pop');
+    if (!btn || !pop) return;
+    const STORAGE_KEY = 'fb-settings-v1';
+    const defaults = { reading: 'lg', density: 'cozy', optStyle: 'circle' };
+    let state;
+    try { state = { ...defaults, ...JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}') }; }
+    catch { state = { ...defaults }; }
+
+    const apply = () => {
+      const html = document.documentElement;
+      html.setAttribute('data-reading', state.reading);
+      html.setAttribute('data-density', state.density);
+      html.setAttribute('data-opt-style', state.optStyle);
+      pop.querySelectorAll('.seg').forEach(seg => {
+        const k = seg.dataset.setting;
+        seg.querySelectorAll('button').forEach(b => {
+          b.classList.toggle('is-on', b.dataset.v === state[k]);
+        });
+      });
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    };
+    apply();
+
+    pop.querySelectorAll('.seg button').forEach(b => {
+      b.addEventListener('click', () => {
+        const k = b.parentElement.dataset.setting;
+        state[k] = b.dataset.v;
+        apply();
+      });
+    });
+
+    const open = () => { pop.hidden = false; btn.setAttribute('aria-expanded', 'true'); };
+    const close = () => { pop.hidden = true; btn.setAttribute('aria-expanded', 'false'); };
+    btn.addEventListener('click', e => { e.stopPropagation(); pop.hidden ? open() : close(); });
+    document.addEventListener('click', e => {
+      if (pop.hidden) return;
+      if (!pop.contains(e.target) && e.target !== btn) close();
+    });
+  })();
+
+  // ───── AI paywall modal ─────
+  (() => {
+    const modal = document.getElementById('ai-modal');
+    const trigger = document.getElementById('ai-btn');
+    const close = document.getElementById('ai-modal-close');
+    if (!modal || !trigger) return;
+    const open  = () => modal.classList.add('is-on');
+    const dismiss = () => modal.classList.remove('is-on');
+    trigger.addEventListener('click', open);
+    close?.addEventListener('click', dismiss);
+    modal.addEventListener('click', e => { if (e.target === modal) dismiss(); });
+    modal.querySelectorAll('.ai-plan').forEach(p => {
+      p.addEventListener('click', () => {
+        modal.querySelectorAll('.ai-plan').forEach(x => x.classList.remove('is-on'));
+        p.classList.add('is-on');
+      });
+    });
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && modal.classList.contains('is-on')) dismiss();
+    });
+  })();
+
+  // ───── Selection · Highlight · Note (Fenbi-style) ─────
+  (() => {
+    const toolbar = document.getElementById('sel-toolbar');
+    if (!toolbar) return;
+    const undoBtn = document.getElementById('sel-undo');
+    const SELECTABLE = '.fb-stem, .fb-passage-body, .fb-card';
+    let lastRange = null;
+    let pendingTrigger = null; // when user clicked left 'hl-trigger' button, hold this until they select
+    const history = []; // stack of undo fns
+
+    const refreshUndo = () => { undoBtn.toggleAttribute('disabled', history.length === 0); };
+    const pushHistory = fn => { history.push(fn); if (history.length > 50) history.shift(); refreshUndo(); };
+    const undo = () => {
+      const fn = history.pop();
+      if (fn) fn();
+      refreshUndo();
+    };
+
+    const hide = () => { toolbar.classList.remove('is-on'); lastRange = null; pendingTrigger = null; };
+    const showAt = (rect) => {
+      const top = rect.top + window.scrollY - 44;
+      const left = rect.left + window.scrollX + rect.width / 2;
+      toolbar.style.top = Math.max(8, top) + 'px';
+      toolbar.style.left = left + 'px';
+      toolbar.classList.add('is-on');
+    };
+
+    document.addEventListener('mouseup', e => {
+      if (toolbar.contains(e.target)) return;
+      const sel = window.getSelection();
+      if (!sel || sel.isCollapsed) {
+        if (!pendingTrigger) hide();
+        return;
+      }
+      const range = sel.getRangeAt(0);
+      const anchor = range.commonAncestorContainer.nodeType === 1
+        ? range.commonAncestorContainer
+        : range.commonAncestorContainer.parentElement;
+      if (!anchor || !anchor.closest(SELECTABLE)) { hide(); return; }
+      const rect = range.getBoundingClientRect();
+      if (rect.width === 0) { hide(); return; }
+      lastRange = range.cloneRange();
+      showAt(rect);
+    });
+
+    document.addEventListener('mousedown', e => {
+      if (toolbar.contains(e.target)) return;
+      if (e.target.closest('[data-act="hl-trigger"]')) return;
+      if (!pendingTrigger) hide();
+    });
+
+    // Left-column 'hl-trigger' buttons (per card) — anchor toolbar at button, await selection
+    document.addEventListener('click', e => {
+      const trig = e.target.closest('[data-act="hl-trigger"]');
+      if (!trig) return;
+      e.stopPropagation();
+      pendingTrigger = trig;
+      const rect = trig.getBoundingClientRect();
+      showAt(rect);
+      // gentle hint: highlight the card so user knows scope
+      const card = trig.closest('.fb-card');
+      if (card) {
+        card.classList.add('hl-armed');
+        setTimeout(() => card.classList.remove('hl-armed'), 1200);
+      }
+    });
+
+    const wrap = (color) => {
+      if (!lastRange) return;
+      try {
+        const mark = document.createElement('mark');
+        mark.className = 'fb-hl';
+        if (color !== 'yellow') mark.setAttribute('data-c', color);
+        const frag = lastRange.extractContents();
+        mark.appendChild(frag);
+        lastRange.insertNode(mark);
+        window.getSelection().removeAllRanges();
+        pushHistory(() => {
+          const parent = mark.parentNode;
+          if (!parent) return;
+          while (mark.firstChild) parent.insertBefore(mark.firstChild, mark);
+          parent.removeChild(mark);
+          parent.normalize();
+        });
+      } catch (err) { console.warn('hl failed', err); }
+      hide();
+    };
+
+    const clearHl = () => {
+      if (!lastRange) return;
+      const container = lastRange.commonAncestorContainer.nodeType === 1
+        ? lastRange.commonAncestorContainer
+        : lastRange.commonAncestorContainer.parentElement;
+      const scope = container.closest(SELECTABLE) || container;
+      const removed = [];
+      scope.querySelectorAll('mark.fb-hl').forEach(m => {
+        if (lastRange.intersectsNode(m)) {
+          const parent = m.parentNode;
+          const snapshot = { parent, nextSibling: m.nextSibling, html: m.outerHTML };
+          while (m.firstChild) parent.insertBefore(m.firstChild, m);
+          parent.removeChild(m);
+          parent.normalize();
+          removed.push(snapshot);
+        }
+      });
+      if (removed.length) {
+        pushHistory(() => {
+          removed.forEach(({ parent, nextSibling, html }) => {
+            const tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            const node = tmp.firstElementChild;
+            parent.insertBefore(node, nextSibling);
+          });
+        });
+      }
+      hide();
+    };
+
+    toolbar.addEventListener('click', e => {
+      const b = e.target.closest('button');
+      if (!b) return;
+      const act = b.dataset.act;
+      if (act === 'hl') wrap(b.dataset.c);
+      else if (act === 'clear') clearHl();
+      else if (act === 'undo') undo();
+    });
+
+    // Cmd/Ctrl-Z undo
+    document.addEventListener('keydown', e => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'z' && history.length) {
+        if (e.target.matches('input, textarea')) return;
+        e.preventDefault();
+        undo();
+      }
+    });
+
+    // Wire left-column 笔记 buttons — add a note pinned to the card
+    document.querySelectorAll('.icon-btn[aria-label="笔记"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const card = btn.closest('.fb-card');
+        if (!card) return;
+        const existing = card.querySelector('.fb-note-strip');
+        const cur = existing ? existing.dataset.note : '';
+        const note = window.prompt('为本题添加笔记：', cur || '');
+        if (note === null) return;
+        if (!note) { existing?.remove(); btn.classList.remove('is-on'); return; }
+        const strip = existing || (() => {
+          const el = document.createElement('div');
+          el.className = 'fb-note-strip';
+          card.querySelector('.fb-card-body')?.prepend(el);
+          return el;
+        })();
+        strip.dataset.note = note;
+        strip.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.12 2.12 0 113 3L7 19l-4 1 1-4z"/></svg><span>${note.replace(/</g,'&lt;')}</span>`;
+        btn.classList.add('is-on');
+      });
+    });
+
+    // Wire 收藏 buttons
+    document.querySelectorAll('.icon-btn[aria-label^="收藏"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const on = btn.classList.toggle('is-on');
+        btn.setAttribute('aria-pressed', on);
+      });
+    });
+
+    // Wire 标记 buttons (toggle flag state)
+    document.querySelectorAll('.icon-btn[aria-label*="标记"]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const on = btn.classList.toggle('is-on');
+        btn.setAttribute('aria-pressed', on);
+      });
+    });
+  })();
+
+  // ───── Pause ─────
+  const timer = document.getElementById('timer');
+  const pauseBtn = document.getElementById('pause-btn');
+  pauseBtn.addEventListener('click', () => {
+    timer.classList.toggle('is-paused');
+    const isPaused = timer.classList.contains('is-paused');
+    pauseBtn.setAttribute('aria-label', isPaused ? '继续' : '暂停');
+    pauseBtn.innerHTML = isPaused
+      ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>'
+      : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><rect x="6" y="5" width="4" height="14"/><rect x="14" y="5" width="4" height="14"/></svg>';
+  });
+
+  // ───── Keyboard shortcuts ─────
+  document.addEventListener('keydown', e => {
+    if (e.target.matches('input, textarea')) return;
+    if (e.key === ' ') { e.preventDefault(); pauseBtn.click(); }
+    if (e.key.toLowerCase() === 'a') openDrawer();
+    if (e.key === 'Escape') closeDrawer();
+    if (e.key.toLowerCase() === 'p') document.getElementById('passage-1')?.classList.toggle('is-collapsed');
+    // Quick jump for current question — 1-4 selects, T/F for判断
+    const currentCard = document.querySelector('.fb-card.is-current');
+    if (!currentCard) return;
+    const opts = currentCard.querySelectorAll('.fb-opt');
+    if (['1','2','3','4'].includes(e.key) && opts.length) {
+      e.preventDefault();
+      opts[parseInt(e.key, 10) - 1].click();
+    }
+    if (['t','f'].includes(e.key.toLowerCase())) {
+      const tfOpts = currentCard.querySelectorAll('.fb-tf-opt');
+      if (tfOpts.length) {
+        e.preventDefault();
+        tfOpts[e.key.toLowerCase() === 't' ? 0 : 1].click();
+      }
+    }
+  });
+</script>
+</body>
+</html>

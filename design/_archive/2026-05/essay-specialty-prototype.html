@@ -1,0 +1,1189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>申论 · 专项练习原型 (Phase D · 2026-05-08)</title>
+<style>
+/* ============================================================
+   思考 · ink-first design tokens (1:1 from design/tokens.css)
+   ============================================================ */
+:root {
+  --ink: #0b1120;
+  --ink-muted: #334155;
+  --muted: #64748b;
+  --placeholder: #94a3b8;
+  --bg: #ffffff;
+  --bg-alt: #f8fafc;
+  --line: #e5e7eb;
+  --line-strong: #cbd5e1;
+
+  --brand: #0b1120;
+  --brand-50: #f1f5f9;
+  --brand-100: #e2e8f0;
+  --brand-200: #cbd5e1;
+
+  --accent: #3f7ef1;
+  --accent-50: #eff6ff;
+
+  --success: #16a34a;
+  --success-bg: #dcfce7;
+  --warn: #f59e0b;
+  --warn-bg: #fef3c7;
+  --danger: #dc2626;
+  --danger-bg: #fee2e2;
+
+  --r-sm: 8px;
+  --r-md: 12px;
+  --r-lg: 16px;
+  --r-pill: 9999px;
+
+  --sans: 'Inter', system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  --serif: 'Source Serif 4', 'Songti SC', 'Noto Serif SC', Georgia, 'Times New Roman', serif;
+  --mono: 'SF Mono','Monaco','Cascadia Code','Roboto Mono',Consolas,'Courier New',monospace;
+}
+
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; }
+body {
+  font-family: var(--sans);
+  color: var(--ink);
+  background: var(--bg-alt);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============================================================
+   Doc shell
+   ============================================================ */
+.doc { max-width: 1640px; margin: 0 auto; padding: 56px 56px 120px; }
+.doc-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 12px;
+}
+.doc-title {
+  font-family: var(--serif);
+  font-size: 44px;
+  font-weight: 600;
+  line-height: 1.1;
+  letter-spacing: -0.01em;
+  margin: 0 0 16px;
+}
+.doc-lede {
+  font-size: 16px;
+  color: var(--ink-muted);
+  max-width: 760px;
+  line-height: 1.65;
+  margin: 0 0 36px;
+}
+.decisions {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 24px 28px;
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  gap: 14px 24px;
+  font-size: 13px;
+  margin-bottom: 56px;
+}
+.decisions h3 {
+  font-size: 12px;
+  font-family: var(--mono);
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0;
+  padding-top: 2px;
+}
+.decisions p { margin: 0; color: var(--ink-muted); line-height: 1.7; }
+.decisions p b { color: var(--ink); font-weight: 700; }
+.decisions code {
+  font-family: var(--mono);
+  font-size: 11.5px;
+  background: var(--bg-alt);
+  padding: 1px 6px;
+  border-radius: 4px;
+  color: var(--ink);
+}
+
+.scene { margin-top: 64px; }
+.scene-head {
+  display: flex;
+  align-items: baseline;
+  gap: 14px;
+  margin-bottom: 18px;
+}
+.scene-num {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .12em;
+  color: var(--muted);
+}
+.scene-title {
+  font-family: var(--serif);
+  font-size: 24px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.005em;
+}
+.scene-sub { color: var(--muted); font-size: 13px; }
+
+.frame {
+  width: 1480px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  box-shadow: 0 18px 48px -28px rgba(15,23,42,.18);
+}
+
+/* ============================================================
+   Shared: shell with sidebar + main
+   ============================================================ */
+.shell {
+  display: grid;
+  grid-template-columns: 240px 1fr;
+  height: 900px;
+}
+
+/* Sidebar — always-dark, 1:1 with sidebar v3 spec */
+.side {
+  background: #020617;
+  border-right: 1px solid #1e293b;
+  display: flex;
+  flex-direction: column;
+}
+.side-brand {
+  padding: 16px 20px;
+  border-bottom: 1px solid #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.side-brand-mark {
+  width: 32px; height: 32px;
+  background: #fff;
+  color: #0b1120;
+  border-radius: var(--r-sm);
+  display: grid;
+  place-items: center;
+  font-family: var(--serif);
+  font-weight: 700;
+  font-size: 14px;
+}
+.side-brand-name { font-size: 13px; font-weight: 600; color: #fff; }
+.side-brand-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: .04em;
+  color: #64748b;
+}
+
+.side-nav { flex: 1; padding: 10px 8px; overflow-y: auto; }
+.side-section { margin-bottom: 14px; }
+.side-label {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: #64748b;
+  padding: 0 12px;
+  margin-bottom: 8px;
+}
+.side-item, .side-group-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: var(--r-sm);
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+  position: relative;
+}
+.side-item:hover, .side-group-head:hover { color: #fff; }
+.side-item.active { background: #1e293b; color: #fff; font-weight: 600; }
+.side-item i, .side-group-head i {
+  width: 18px;
+  text-align: center;
+  font-style: normal;
+  font-size: 14px;
+  color: inherit;
+}
+.side-group-children { padding-left: 12px; padding-top: 4px; }
+.side-child {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px;
+  border-radius: var(--r-sm);
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  text-decoration: none;
+}
+.side-child:hover { color: #fff; }
+.side-child.active { background: #1e293b; color: #fff; font-weight: 600; }
+.side-dot {
+  width: 4px; height: 4px;
+  border-radius: 50%;
+  background: #64748b;
+}
+.side-child.active .side-dot { background: #fff; }
+.side-identity {
+  border-top: 1px solid #1e293b;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.side-avatar {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  background: #fff;
+  color: #0b1120;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+}
+.side-id-name { color: #fff; font-size: 13px; font-weight: 600; }
+.side-id-sub { color: #94a3b8; font-size: 11px; font-family: var(--mono); }
+
+/* Main */
+.main { display: flex; flex-direction: column; min-width: 0; background: var(--bg-alt); }
+
+.topbar {
+  height: 56px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  padding: 0 28px;
+  gap: 12px;
+}
+.crumb {
+  font-size: 13px;
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.crumb a { color: var(--muted); text-decoration: none; }
+.crumb a:hover { color: var(--ink); }
+.crumb-sep { color: var(--placeholder); }
+.crumb-current { color: var(--ink); font-weight: 600; }
+.spacer { flex: 1; }
+.tb-meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: .04em;
+}
+
+/* ============================================================
+   View 1 — list (specialty selection)
+   ============================================================ */
+.body { flex: 1; overflow-y: auto; padding: 32px 48px 48px; }
+
+.hero { max-width: 920px; }
+.hero-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+.hero-title {
+  font-family: var(--serif);
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: -0.01em;
+  margin: 0 0 12px;
+}
+.hero-sub {
+  font-size: 15px;
+  color: var(--ink-muted);
+  line-height: 1.65;
+  margin: 0 0 4px;
+  max-width: 640px;
+}
+.hero-tag {
+  font-family: var(--serif);
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 10px;
+}
+
+/* Chip filter row */
+.chips {
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.chip {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 9px 16px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  transition: border-color .15s, color .15s, background .15s;
+}
+.chip:hover { border-color: var(--brand-200); color: var(--ink); }
+.chip.active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+.chip .count {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  letter-spacing: .04em;
+}
+.chip.active .count { color: #cbd5e1; }
+
+/* Section header (list) */
+.list-head {
+  margin-top: 36px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 14px;
+  margin-bottom: 4px;
+}
+.list-h2 {
+  font-family: var(--serif);
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+  letter-spacing: -0.005em;
+}
+.list-meta {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: .04em;
+}
+
+/* Question rows */
+.q-row {
+  display: grid;
+  grid-template-columns: 64px 1fr 220px 80px;
+  gap: 20px;
+  padding: 18px 4px;
+  border-bottom: 1px solid var(--line);
+  align-items: start;
+  cursor: pointer;
+  transition: background .15s;
+}
+.q-row:hover { background: var(--bg); }
+.q-row:last-child { border-bottom: 0; }
+
+.q-no {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: .06em;
+  padding-top: 2px;
+}
+.q-no .num {
+  display: block;
+  font-size: 18px;
+  color: var(--ink);
+  letter-spacing: 0;
+  margin-bottom: 2px;
+}
+
+.q-stem {
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.7;
+  font-family: var(--serif);
+}
+.q-source {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: .02em;
+}
+
+.q-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  text-align: right;
+  padding-top: 2px;
+}
+.q-meta .word {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+  letter-spacing: .03em;
+}
+.q-meta .full {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--placeholder);
+  letter-spacing: .03em;
+}
+
+.q-status {
+  font-size: 12px;
+  text-align: right;
+  padding-top: 2px;
+}
+.q-status .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .02em;
+}
+.q-status .pill.done { background: var(--success-bg); color: var(--success); }
+.q-status .pill.untouched {
+  background: var(--bg-alt);
+  color: var(--muted);
+  border: 1px solid var(--line);
+}
+.q-status .pill .dot {
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+/* Pagination */
+.pager {
+  margin-top: 28px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+}
+.page-btn {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  background: var(--bg);
+  border-radius: var(--r-sm);
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-muted);
+  cursor: pointer;
+}
+.page-btn:hover { border-color: var(--brand-200); }
+.page-btn.active {
+  background: var(--ink);
+  color: #fff;
+  border-color: var(--ink);
+}
+.page-btn.disabled { color: var(--placeholder); cursor: not-allowed; }
+.page-ellipsis {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--placeholder);
+  padding: 0 4px;
+}
+
+/* ============================================================
+   View 2 — single question exam
+   ============================================================ */
+.exam-shell {
+  display: grid;
+  grid-template-columns: 360px 1fr 280px;
+  height: 844px; /* 900 - 56 topbar */
+  background: var(--bg);
+}
+.col {
+  border-right: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.col:last-child { border-right: 0; }
+
+.col-head {
+  height: 44px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  padding: 0 18px;
+  background: var(--bg-alt);
+}
+.col-head-label {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+.col-head-meta {
+  margin-left: auto;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--placeholder);
+}
+
+.col-body { flex: 1; overflow-y: auto; padding: 24px 22px 32px; }
+
+/* Materials column */
+.material-block { margin-bottom: 24px; }
+.material-block:last-child { margin-bottom: 0; }
+.material-tag {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.material-text {
+  font-family: var(--serif);
+  font-size: 14px;
+  line-height: 1.85;
+  color: var(--ink);
+}
+.material-text p { margin: 0 0 12px; }
+
+/* Answer column */
+.q-prompt { margin-bottom: 18px; }
+.q-prompt-eyebrow {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+.q-prompt-stem {
+  font-family: var(--serif);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--ink);
+  line-height: 1.6;
+  margin: 0 0 12px;
+  letter-spacing: -0.005em;
+}
+.q-prompt-meta {
+  display: flex;
+  gap: 14px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+  letter-spacing: .03em;
+}
+
+/* 田字格 textarea — 简化原型版 */
+.answer-area {
+  margin-top: 4px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--bg);
+  min-height: 460px;
+  padding: 18px 20px;
+  position: relative;
+}
+.answer-area textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 420px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  resize: none;
+  font-family: var(--serif);
+  font-size: 16px;
+  line-height: 2.1;
+  color: var(--ink);
+}
+.answer-area textarea::placeholder { color: var(--placeholder); font-family: var(--serif); }
+
+.answer-foot {
+  margin-top: 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.word-counter {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--muted);
+  letter-spacing: .03em;
+}
+.word-counter b { color: var(--ink); font-weight: 700; }
+.word-counter.warn b { color: var(--warn); }
+.word-counter.danger b { color: var(--danger); }
+
+/* Submit button — primary CTA, ink bg (NOT accent) */
+.btn {
+  font-family: var(--sans);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border: 0;
+  background: var(--ink);
+  color: #fff;
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.btn:hover { background: #000; }
+.btn.ghost {
+  background: transparent;
+  color: var(--ink);
+  border: 1px solid var(--line);
+}
+.btn.ghost:hover { border-color: var(--brand-200); background: var(--bg-alt); }
+.btn .arrow { font-family: var(--mono); }
+
+/* Scratch column */
+.scratch {
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--r-md);
+  padding: 14px;
+  background: var(--bg-alt);
+  min-height: 420px;
+  font-family: var(--serif);
+  font-size: 13px;
+  color: var(--ink-muted);
+  line-height: 1.85;
+}
+.scratch-hint {
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--placeholder);
+  margin-bottom: 8px;
+  display: block;
+}
+
+/* ============================================================
+   Annotations
+   ============================================================ */
+.callout {
+  margin-top: 20px;
+  padding: 16px 20px;
+  background: var(--bg);
+  border-left: 3px solid var(--ink);
+  border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  font-size: 13px;
+  color: var(--ink-muted);
+  line-height: 1.65;
+}
+.callout b { color: var(--ink); font-weight: 700; }
+.callout code {
+  font-family: var(--mono);
+  font-size: 12px;
+  background: var(--bg-alt);
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+</style>
+</head>
+<body>
+
+<div class="doc">
+
+<div class="doc-eyebrow">Phase D · 申论 · 专项练习 · 2026-05-08</div>
+<h1 class="doc-title">申论 · 专项练习原型</h1>
+<p class="doc-lede">
+  跨卷单题答题模式. 用申论题库 745 套真题的 5 大类标签 (归纳概括 / 大作文 / 综合分析 / 公文 · 应用文 / 提出对策),
+  让用户选一类专攻, 在 2916 题里跨卷集中刷. 不限时, 用时计时器代替倒计时. 复用 ExamShell 的视觉与交互结构.
+</p>
+
+<div class="decisions">
+  <h3>调性</h3>
+  <p>
+    备考同伴, 克制陪伴. <b>让备考从刷题变成思考</b>. ink-first (黑为主), 蓝仅 focus / 链接 / 单关键 accent.
+    主 CTA 永远 <code>--ink</code> 底, 不 <code>--accent</code>. 不 italic 表强调, 不 emoji.
+  </p>
+
+  <h3>路由</h3>
+  <p>
+    <b>列表</b> <code>/essay/specialty</code> · <b>答题</b> <code>/essay/specialty/{questionId}</code> ·
+    <b>评分结果</b> 复用 <code>/essay/grades/{recordId}</code>.
+  </p>
+
+  <h3>分类</h3>
+  <p>
+    走 DB <code>questions.canonical_subtype</code> (master agent verify). 5 大类:
+    归纳概括 742 / 大作文 634 / 综合分析 609 / 公文 · 应用文 579 / 提出对策 352. 总 2916 题.
+  </p>
+
+  <h3>API</h3>
+  <p>
+    新加 <code>GET /api/v2/essay/specialty/questions?subtype=&page=&pageSize=</code> (paginate).
+    答题用现有 <code>POST /api/v2/essay/grade</code> (questionId + answerText).
+    评分跳现有 <code>EssayGradingResult</code> view.
+  </p>
+
+  <h3>不做</h3>
+  <p>
+    不创建 SimpleEssayExam 大改 — 单题答题复用 ExamShell, 通过 <code>mode='single'</code> prop 关掉
+    倒计时 / 题号 strip / Cmd-Enter 整卷交卷. 不动 essay V2 整卷模考路径 (并行不冲突).
+  </p>
+</div>
+
+<!-- ============================================================
+     Scene 1 — 列表选题
+     ============================================================ -->
+<section class="scene">
+  <div class="scene-head">
+    <span class="scene-num">VIEW · 01</span>
+    <h2 class="scene-title">列表选题 — /essay/specialty</h2>
+    <span class="scene-sub">chip filter 切大类, 列出该类全部题, 点行进答题</span>
+  </div>
+
+  <div class="frame">
+    <div class="shell">
+      <!-- Sidebar (1:1 v3) -->
+      <aside class="side">
+        <div class="side-brand">
+          <div class="side-brand-mark">思</div>
+          <div>
+            <div class="side-brand-name">思考</div>
+            <div class="side-brand-tag">SIKAO · 公考备考</div>
+          </div>
+        </div>
+        <nav class="side-nav">
+          <div class="side-section">
+            <div class="side-label">主练习</div>
+            <a class="side-item">⌂ 首页</a>
+            <a class="side-group-head">≡ 行测试炼</a>
+            <div class="side-group-children">
+              <a class="side-child"><span class="side-dot"></span>专项练习</a>
+              <a class="side-child"><span class="side-dot"></span>套卷练习</a>
+            </div>
+            <a class="side-group-head">▤ 申论试炼</a>
+            <div class="side-group-children">
+              <a class="side-child active"><span class="side-dot"></span>专项练习</a>
+              <a class="side-child"><span class="side-dot"></span>套卷练习</a>
+            </div>
+          </div>
+          <div class="side-section">
+            <div class="side-label">复盘</div>
+            <a class="side-item">↺ 错题本</a>
+            <a class="side-item">▥ 学情数据</a>
+            <a class="side-item">▦ 考试日历</a>
+          </div>
+        </nav>
+        <div class="side-identity">
+          <div class="side-avatar">L</div>
+          <div>
+            <div class="side-id-name">LHR</div>
+            <div class="side-id-sub">2026 国考 · 申论主攻</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <div class="main">
+        <header class="topbar">
+          <div class="crumb">
+            <a>申论</a>
+            <span class="crumb-sep">/</span>
+            <span class="crumb-current">专项练习</span>
+          </div>
+          <div class="spacer"></div>
+          <div class="tb-meta">2916 道 · 745 套真题</div>
+        </header>
+
+        <div class="body">
+          <div class="hero">
+            <div class="hero-eyebrow">EYEBROW · SHENLUN SPECIALTY · 跨卷单题</div>
+            <h1 class="hero-title">申论 · 专项练习</h1>
+            <p class="hero-sub">选一类专攻, 跨真题卷集中刷. 不限时, 写完就提交.</p>
+            <div class="hero-tag">让备考从刷题变成思考.</div>
+          </div>
+
+          <div class="chips">
+            <div class="chip active">归纳概括 <span class="count">742</span></div>
+            <div class="chip">大作文 <span class="count">634</span></div>
+            <div class="chip">综合分析 <span class="count">609</span></div>
+            <div class="chip">公文 · 应用文 <span class="count">579</span></div>
+            <div class="chip">提出对策 <span class="count">352</span></div>
+          </div>
+
+          <div class="list-head">
+            <h2 class="list-h2">归纳概括 · 742 题</h2>
+            <div class="list-meta">1 — 20 / 742</div>
+          </div>
+
+          <div>
+            <div class="q-row">
+              <div class="q-no"><span class="num">01</span>FBSL · 2026</div>
+              <div>
+                <div class="q-stem">根据 "给定资料 1 — 4", 概括当前我国基层社会治理的主要做法和典型经验.</div>
+                <div class="q-source">2026 国考省级 · 第 1 题</div>
+              </div>
+              <div class="q-meta">
+                <span class="word">≤ 300 字</span>
+                <span class="full">满分 15</span>
+              </div>
+              <div class="q-status">
+                <span class="pill done"><span class="dot"></span>已练</span>
+              </div>
+            </div>
+
+            <div class="q-row">
+              <div class="q-no"><span class="num">02</span>FBSL · 2026</div>
+              <div>
+                <div class="q-stem">根据 "给定资料 2", 归纳概括 H 市推进 "一窗受理 · 集成服务" 改革的主要做法.</div>
+                <div class="q-source">2026 国考地市级 · 第 1 题</div>
+              </div>
+              <div class="q-meta">
+                <span class="word">≤ 250 字</span>
+                <span class="full">满分 15</span>
+              </div>
+              <div class="q-status">
+                <span class="pill untouched"><span class="dot"></span>未练</span>
+              </div>
+            </div>
+
+            <div class="q-row">
+              <div class="q-no"><span class="num">03</span>FBSL · 2025</div>
+              <div>
+                <div class="q-stem">根据 "给定资料 3", 概括 J 镇在乡村振兴中盘活集体土地资源的具体做法和成效.</div>
+                <div class="q-source">2025 国考省级 · 第 1 题</div>
+              </div>
+              <div class="q-meta">
+                <span class="word">≤ 300 字</span>
+                <span class="full">满分 15</span>
+              </div>
+              <div class="q-status">
+                <span class="pill done"><span class="dot"></span>已练</span>
+              </div>
+            </div>
+
+            <div class="q-row">
+              <div class="q-no"><span class="num">04</span>FBSL · 2025</div>
+              <div>
+                <div class="q-stem">"给定资料 1" 反映了某街道开展 "邻里议事厅" 工作的探索, 请概括其基本做法.</div>
+                <div class="q-source">2025 国考地市级 · 第 1 题</div>
+              </div>
+              <div class="q-meta">
+                <span class="word">≤ 200 字</span>
+                <span class="full">满分 10</span>
+              </div>
+              <div class="q-status">
+                <span class="pill untouched"><span class="dot"></span>未练</span>
+              </div>
+            </div>
+
+            <div class="q-row">
+              <div class="q-no"><span class="num">05</span>FBSL · 2024</div>
+              <div>
+                <div class="q-stem">根据 "给定资料 1, 2", 概括 W 市在历史文化保护与城市更新方面的具体做法.</div>
+                <div class="q-source">2024 国考省级 · 第 1 题</div>
+              </div>
+              <div class="q-meta">
+                <span class="word">≤ 250 字</span>
+                <span class="full">满分 15</span>
+              </div>
+              <div class="q-status">
+                <span class="pill untouched"><span class="dot"></span>未练</span>
+              </div>
+            </div>
+
+            <div class="q-row">
+              <div class="q-no"><span class="num">06</span>FBSL · 2024</div>
+              <div>
+                <div class="q-stem">根据 "给定资料 4", 归纳概括 N 县推行 "一户一档" 农村人居环境长效管护机制的特点.</div>
+                <div class="q-source">2024 国考地市级 · 第 2 题</div>
+              </div>
+              <div class="q-meta">
+                <span class="word">≤ 300 字</span>
+                <span class="full">满分 15</span>
+              </div>
+              <div class="q-status">
+                <span class="pill untouched"><span class="dot"></span>未练</span>
+              </div>
+            </div>
+
+            <div class="q-row">
+              <div class="q-no"><span class="num">07</span>FBSL · 2023</div>
+              <div>
+                <div class="q-stem">概括 "给定资料 2" 中 D 市在优化营商环境方面遇到的主要问题及成因.</div>
+                <div class="q-source">2023 国考省级 · 第 1 题</div>
+              </div>
+              <div class="q-meta">
+                <span class="word">≤ 350 字</span>
+                <span class="full">满分 20</span>
+              </div>
+              <div class="q-status">
+                <span class="pill done"><span class="dot"></span>已练</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="pager">
+            <button class="page-btn disabled">←</button>
+            <button class="page-btn active">1</button>
+            <button class="page-btn">2</button>
+            <button class="page-btn">3</button>
+            <button class="page-btn">4</button>
+            <span class="page-ellipsis">…</span>
+            <button class="page-btn">38</button>
+            <button class="page-btn">→</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>chip filter 行为</b>: 单选 (只能 active 一类), 切换 → 列表 reset 到 page 1, URL query
+    <code>?subtype=归纳概括&page=1</code> 同步. 默认 active 第一类 (归纳概括), 进 view 不空白.
+    <br><b>列表行</b>: 整行可点 → 进 <code>/essay/specialty/{questionId}</code>. 状态 pill
+    "已练" = 当前 user 在该题 essay_grading_records 表有 status=completed 记录, "未练" = 无.
+  </div>
+</section>
+
+<!-- ============================================================
+     Scene 2 — 单题答题
+     ============================================================ -->
+<section class="scene">
+  <div class="scene-head">
+    <span class="scene-num">VIEW · 02</span>
+    <h2 class="scene-title">单题答题 — /essay/specialty/{questionId}</h2>
+    <span class="scene-sub">复用 ExamShell 三栏视觉, single-question mode 关倒计时与多题 strip</span>
+  </div>
+
+  <div class="frame">
+    <div class="shell">
+      <!-- Sidebar (复用) -->
+      <aside class="side">
+        <div class="side-brand">
+          <div class="side-brand-mark">思</div>
+          <div>
+            <div class="side-brand-name">思考</div>
+            <div class="side-brand-tag">SIKAO · 公考备考</div>
+          </div>
+        </div>
+        <nav class="side-nav">
+          <div class="side-section">
+            <div class="side-label">主练习</div>
+            <a class="side-item">⌂ 首页</a>
+            <a class="side-group-head">≡ 行测试炼</a>
+            <div class="side-group-children">
+              <a class="side-child"><span class="side-dot"></span>专项练习</a>
+              <a class="side-child"><span class="side-dot"></span>套卷练习</a>
+            </div>
+            <a class="side-group-head">▤ 申论试炼</a>
+            <div class="side-group-children">
+              <a class="side-child active"><span class="side-dot"></span>专项练习</a>
+              <a class="side-child"><span class="side-dot"></span>套卷练习</a>
+            </div>
+          </div>
+          <div class="side-section">
+            <div class="side-label">复盘</div>
+            <a class="side-item">↺ 错题本</a>
+            <a class="side-item">▥ 学情数据</a>
+            <a class="side-item">▦ 考试日历</a>
+          </div>
+        </nav>
+        <div class="side-identity">
+          <div class="side-avatar">L</div>
+          <div>
+            <div class="side-id-name">LHR</div>
+            <div class="side-id-sub">2026 国考 · 申论主攻</div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- Main: simplified ExamShell (no countdown, no question strip) -->
+      <div class="main" style="background: var(--bg);">
+        <header class="topbar">
+          <div class="crumb">
+            <a>申论</a>
+            <span class="crumb-sep">/</span>
+            <a>专项</a>
+            <span class="crumb-sep">/</span>
+            <a>归纳概括</a>
+            <span class="crumb-sep">/</span>
+            <span class="crumb-current">第 1 题</span>
+          </div>
+          <div class="spacer"></div>
+          <div class="tb-meta">用时 04:32 · 已自动保存</div>
+        </header>
+
+        <div class="exam-shell">
+          <!-- Materials column -->
+          <div class="col">
+            <div class="col-head">
+              <span class="col-head-label">给定资料</span>
+              <span class="col-head-meta">4 段 · 2,860 字</span>
+            </div>
+            <div class="col-body">
+              <div class="material-block">
+                <div class="material-tag">资料 1</div>
+                <div class="material-text">
+                  <p>近年来, 各地基层社会治理实践不断深化. 在 H 市某街道, 社区干部牵头组建 "邻里议事厅", 由网格员、楼栋长、居民代表共同议事, 把矛盾化解在楼栋里, 把诉求收集在第一线.</p>
+                  <p>"过去开会都是干部讲, 居民听; 现在大家围坐一桌, 谁有话谁说. 真碰到难事, 街道、社区、社会组织一起出力, 也能拿出像样的方案." 一位社区书记这样说.</p>
+                </div>
+              </div>
+              <div class="material-block">
+                <div class="material-tag">资料 2</div>
+                <div class="material-text">
+                  <p>J 县推行 "一窗受理 · 集成服务" 改革, 把过去分散在多个部门的窗口整合为综合服务窗口. 群众办一件事, 进一道门、找一个人就够了, 平均办理时长从 5 个工作日压缩到 1 个工作日.</p>
+                  <p>该县纪委监委还设立 "效能监督专员", 对窗口受理、流转、办结全流程跟踪, 确保改革不打折扣.</p>
+                </div>
+              </div>
+              <div class="material-block">
+                <div class="material-tag">资料 3</div>
+                <div class="material-text">
+                  <p>W 市探索 "智慧治理" 模式, 通过统一平台归集水电气、视频监控、网格上报数据, 让基层干部对重点风险点位有 "看得见、管得住" 的把握.</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Answer column -->
+          <div class="col">
+            <div class="col-head">
+              <span class="col-head-label">作答</span>
+              <span class="col-head-meta">归纳概括 · ≤ 300 字</span>
+            </div>
+            <div class="col-body">
+              <div class="q-prompt">
+                <div class="q-prompt-eyebrow">第 1 题 · 来源 2026 国考省级</div>
+                <div class="q-prompt-stem">根据 "给定资料 1 — 4", 概括当前我国基层社会治理的主要做法和典型经验.</div>
+                <div class="q-prompt-meta">
+                  <span>归纳概括</span>
+                  <span>·</span>
+                  <span>≤ 300 字</span>
+                  <span>·</span>
+                  <span>满分 15</span>
+                </div>
+              </div>
+              <div class="answer-area">
+                <textarea placeholder="在这里写下你的答案. 写完点右下角 "提交评分" 让 AI 给出 5 维度反馈与示范答案.">基层社会治理主要做法: 一是创新议事机制, H 市以 "邻里议事厅" 把网格员、居民、社会组织聚到一起, 矛盾化解在源头; 二是流程整合, J 县 "一窗受理 · 集成服务" 把分散窗口归一, 办理时长从 5 日压到 1 日, 并配 "效能监督专员" 追踪全流程; 三是数字赋能, W 市统一平台归集水电气、监控、网格数据, 让基层 "看得见、管得住".</textarea>
+              </div>
+              <div class="answer-foot">
+                <span class="word-counter"><b>178</b> / 300 字</span>
+                <div class="spacer"></div>
+                <button class="btn ghost">保存草稿</button>
+                <button class="btn">提交评分 <span class="arrow">→</span></button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Scratch column -->
+          <div class="col">
+            <div class="col-head">
+              <span class="col-head-label">草稿纸</span>
+            </div>
+            <div class="col-body">
+              <div class="scratch">
+                <span class="scratch-hint">仅本机保存</span>
+                · 关键词 ·<br>
+                邻里议事厅 / 网格员 / 居民议事<br>
+                一窗受理 / 集成服务 / 效能监督<br>
+                智慧治理 / 数据归集 / 风险点位<br><br>
+                · 结构 ·<br>
+                ① 议事机制<br>
+                ② 流程整合<br>
+                ③ 数字赋能
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout">
+    <b>对比整卷模考</b>: single-question mode 与整卷模考共享 ExamShell 视觉, 但关掉以下:
+    <br>① 顶 bar 倒计时 → 改 "用时计时器" (走时不限时, 显示 elapsed). <br>② 题号 strip (1 题不需要导航).
+    <br>③ Cmd-Enter 整卷交卷 / SubmitDialog "弃考拦截" 文案 (单题不存在弃考概念, 直接显示 "提交评分 · 等待 1-3 秒").
+    <br>④ 5min 倒计时 warn toast.
+    <br>⑤ 整卷 PrestartModal "3 秒读完毕" 流程 (单题直接进可写态).
+    <br><b>提交后</b>: 跳现有 <code>/essay/grades/{recordId}</code>, 走 EssayGradingResult view (现存可用, 不重写).
+    <br><b>API</b>: 仍走 <code>POST /api/v2/essay/grade</code>, body <code>{questionId, answerText}</code> 不变.
+  </div>
+</section>
+
+<!-- ============================================================
+     Annotations — 实现要点
+     ============================================================ -->
+<section class="scene">
+  <div class="scene-head">
+    <span class="scene-num">IMPL · 03</span>
+    <h2 class="scene-title">实现要点 — 落地清单</h2>
+  </div>
+
+  <div class="decisions" style="grid-template-columns: 220px 1fr;">
+    <h3>Backend</h3>
+    <p>
+      新加 <code>GET /api/v2/essay/specialty/questions?subtype=&page=&pageSize=</code> 到 <code>essay_v2.py</code>. SQLAlchemy:
+      <code>WHERE question_kind='essay' AND canonical_subtype = :subtype</code> + <code>LIMIT N OFFSET M</code> +
+      LEFT JOIN <code>essay_grading_records</code> 取 latest createdAt (lastAnswered).
+      Pydantic <code>EssaySpecialtyQuestionListResponseV2</code>: <code>{items, total, page, pageSize}</code>.
+      pytest ≥ 3 case (5 类筛选 / 分页 / lastAnswered 标记).
+    </p>
+
+    <h3>Frontend</h3>
+    <p>
+      新 view <code>EssaySpecialty.tsx</code> + 复用 ExamShell with <code>mode='single'</code> prop 装 <code>EssaySpecialtyExam.tsx</code>.
+      Router 加两条 path. Sidebar 申论 · 专项 从 disabled 改 <code>to="/essay/specialty"</code>. apiQueries
+      加 <code>fetchEssaySpecialtyQuestions</code> + <code>essaySpecialtyKeys</code>.
+    </p>
+
+    <h3>ExamShell mode='single'</h3>
+    <p>
+      新增 prop <code>mode?: 'paper' | 'single'</code> (default 'paper' 不破老路径). single 时:
+      不渲染 <code>QuestionStrip</code> · 不渲染 5min warn · TopBar 隐藏 "暂停 / 整卷交卷" · 改 "提交评分" 单按钮 ·
+      Cmd-Enter 直接打开 SubmitDialog (一题简化版, 不带 D7=B 弃考拦截多题).
+    </p>
+
+    <h3>Test</h3>
+    <p>
+      <code>EssaySpecialty.test.tsx</code> ≥ 3 case (列表渲染 / chip filter 切换 / 行点击 navigate). vitest 全过 + tsc + lint:hardcode + build.
+    </p>
+  </div>
+</section>
+
+</div>
+
+</body>
+</html>

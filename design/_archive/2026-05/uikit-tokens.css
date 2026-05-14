@@ -1,0 +1,7 @@
+/*
+ * 思考 — UI Kit tokens (mirror of tokens.css)
+ *
+ * 跟 tokens.css 内容相同。保留独立文件名是给 UI Kit.html 历史 link 兼容；
+ * 修改时改 tokens.css，本文件 1:1 同步。
+ */
+@import url('./tokens.css');

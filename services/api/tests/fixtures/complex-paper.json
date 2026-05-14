@@ -1,0 +1,137 @@
+{
+  "paperCode": "D1",
+  "paperName": "复杂题演示卷",
+  "examYear": 2025,
+  "sourceProvider": "fixture",
+  "sourceKind": "mock",
+  "sortOrder": 2025,
+  "sections": [
+    {
+      "key": "language",
+      "title": "语言理解与表达",
+      "instructionText": "阅读题干后选择最佳答案。",
+      "blocks": [
+        {
+          "type": "question",
+          "sourceUuid": "d1-q1",
+          "questionKind": "single_choice",
+          "subtypeName": "普通单选",
+          "stemText": "这是一道带图片的普通单选题。",
+          "difficultyCode": "medium",
+          "options": [
+            {"key": "A", "text": "选项 A"},
+            {"key": "B", "text": "选项 B"},
+            {"key": "C", "text": "选项 C"},
+            {"key": "D", "text": "选项 D"}
+          ],
+          "answerKeys": ["B"],
+          "explanationText": "正确答案是 B。",
+          "assets": [
+            {"path": "sample-figure.svg", "role": "stem"}
+          ],
+          "typePayload": {},
+          "specialPayload": {},
+          "canonicalTaxonomy": {
+            "canonicalTopType": "判断推理",
+            "canonicalSubtype": "图形推理",
+            "rawRenderType": "single_choice",
+            "mappingSource": "fixture"
+          }
+        },
+        {
+          "type": "material_group",
+          "groupKind": "passage_reading",
+          "sourceGroupUuid": "d1-mg1",
+          "title": "材料一",
+          "instructionText": "请根据材料回答 2-3 题。",
+          "materialText": "某地开展公共服务调查，收集了大量样本数据。",
+          "assets": [
+            {"path": "sample-figure.svg", "role": "material"}
+          ],
+          "questions": [
+            {
+              "sourceUuid": "d1-q2",
+              "questionKind": "single_choice",
+              "subtypeName": "材料题单选",
+              "stemText": "根据材料，下列说法正确的是？",
+              "difficultyCode": "easy",
+              "options": [
+                {"key": "A", "text": "说法 A"},
+                {"key": "B", "text": "说法 B"},
+                {"key": "C", "text": "说法 C"},
+                {"key": "D", "text": "说法 D"}
+              ],
+              "answerKeys": ["A"],
+              "explanationText": "材料明确说明 A 正确。",
+              "canonicalTaxonomy": {
+                "canonicalTopType": "言语理解",
+                "canonicalSubtype": "片段阅读",
+                "rawRenderType": "single_choice",
+                "mappingSource": "fixture"
+              }
+            },
+            {
+              "sourceUuid": "d1-q3",
+              "questionKind": "single_choice",
+              "subtypeName": "材料题单选",
+              "stemText": "根据材料，最合理的推断是？",
+              "difficultyCode": "medium",
+              "options": [
+                {"key": "A", "text": "推断 A"},
+                {"key": "B", "text": "推断 B"},
+                {"key": "C", "text": "推断 C"},
+                {"key": "D", "text": "推断 D"}
+              ],
+              "answerKeys": ["C"],
+              "explanationText": "数据趋势支持 C。",
+              "canonicalTaxonomy": {
+                "canonicalTopType": "言语理解",
+                "canonicalSubtype": "片段阅读",
+                "rawRenderType": "single_choice",
+                "mappingSource": "fixture"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "key": "data-analysis",
+      "title": "资料分析",
+      "instructionText": "结合图表完成题目。",
+      "blocks": [
+        {
+          "type": "material_group",
+          "groupKind": "data_analysis",
+          "sourceGroupUuid": "d1-mg2",
+          "title": "材料二",
+          "instructionText": "请根据图表回答 4 题。",
+          "materialText": "某市季度经济指标如下。",
+          "questions": [
+            {
+              "sourceUuid": "d1-q4",
+              "questionKind": "single_choice",
+              "subtypeName": "资料分析单选",
+              "stemText": "根据图表，增长率最高的是哪一项？",
+              "difficultyCode": "medium",
+              "options": [
+                {"key": "A", "text": "指标 A"},
+                {"key": "B", "text": "指标 B"},
+                {"key": "C", "text": "指标 C"},
+                {"key": "D", "text": "指标 D"}
+              ],
+              "answerKeys": ["D"],
+              "explanationText": "图表中 D 的增长率最高。",
+              "canonicalTaxonomy": {
+                "canonicalTopType": "资料分析",
+                "canonicalSubtype": "增长率",
+                "rawRenderType": "single_choice",
+                "mappingSource": "fixture"
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" fill="none" stroke="#0b1120" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Empty wrongbook — congrats, all correct: stamp + checkmark + rays -->
+  <rect x="76" y="56" width="168" height="148" rx="6" fill="#f8fafc"/>
+  <path d="M82 70h156M82 86h120M82 102h140"/>
+  <circle cx="160" cy="148" r="38" fill="#ffffff" stroke="#0b1120" stroke-width="2"/>
+  <path d="M142 148l12 12 24-26" stroke="#0b1120" stroke-width="2.5"/>
+  <g stroke="#3f7ef1" stroke-width="1.5">
+    <path d="M114 110l-8-8M206 110l8-8M114 186l-8 8M206 186l8 8M160 100v-10M160 196v10M104 148h-10M216 148h10"/>
+  </g>
+</svg>

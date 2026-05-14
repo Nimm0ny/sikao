@@ -1,0 +1,418 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>思考 · 登录 · v1 极简</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<link rel="stylesheet" href="../../tokens.css">
+<style>
+  /* ── v1 minimal: claude.com 风格 ── 纯白卡片 + ink 大粗黑 button + 极少装饰 ── */
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    font-family: var(--sans);
+    font-size: var(--fs-base);
+    color: var(--ink);
+    background: var(--bg-alt);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    text-wrap: pretty;
+  }
+
+  /* ── Tab switcher (top bar, design canvas style) ────────────────── */
+  .tabs {
+    position: sticky; top: 0; z-index: 10;
+    background: rgba(255,255,255,.85);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--line);
+    display: flex; gap: 4px; padding: 12px 24px;
+    font-size: var(--fs-sm);
+  }
+  .tabs button {
+    appearance: none; background: transparent; border: 0; cursor: pointer;
+    padding: 8px 14px; border-radius: var(--r-btn);
+    font-family: inherit; font-size: inherit; color: var(--muted);
+    font-weight: 500;
+    transition: all var(--motion-fast) var(--motion-ease);
+  }
+  .tabs button:hover { color: var(--ink); background: var(--bg-alt); }
+  .tabs button.active {
+    color: var(--ink); background: var(--bg);
+    box-shadow: 0 0 0 1px var(--line);
+  }
+  .tabs .label {
+    margin-left: auto; font-size: var(--fs-xs); color: var(--muted);
+    align-self: center; letter-spacing: .04em;
+  }
+
+  /* ── Page shell ─────────────────────────────────────────────────── */
+  .page {
+    min-height: calc(100vh - 56px);
+    display: flex; align-items: center; justify-content: center;
+    padding: 48px 24px;
+  }
+  .view { display: none; width: 100%; }
+  .view.active { display: block; }
+
+  /* ── Card ────────────────────────────────────────────────────────── */
+  .card {
+    width: 100%; max-width: 400px;
+    margin: 0 auto;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 40px 32px 32px;
+    box-shadow: var(--shadow-card);
+  }
+
+  /* ── Wordmark + heading ──────────────────────────────────────────── */
+  .brand-mark {
+    display: inline-flex; align-items: center; gap: 8px;
+    margin-bottom: 28px;
+  }
+  .brand-mark .glyph {
+    width: 28px; height: 28px;
+    background: var(--ink); color: var(--bg);
+    border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 14px;
+  }
+  .brand-mark .name {
+    font-size: var(--fs-md); font-weight: 600; color: var(--ink);
+    letter-spacing: -.01em;
+  }
+
+  h1.title {
+    margin: 0 0 6px; font-size: var(--fs-2xl);
+    font-weight: 600; letter-spacing: -.02em;
+    color: var(--ink); line-height: 1.25;
+  }
+  p.sub {
+    margin: 0 0 28px; color: var(--muted);
+    font-size: var(--fs-base);
+  }
+
+  /* ── Form fields ─────────────────────────────────────────────────── */
+  .field { margin-bottom: 14px; }
+  .field label {
+    display: block; margin-bottom: 6px;
+    font-size: var(--fs-sm); font-weight: 500; color: var(--ink);
+  }
+  .field input {
+    width: 100%; padding: 11px 14px;
+    font-family: inherit; font-size: var(--fs-md);
+    color: var(--ink); background: var(--bg);
+    border: 1px solid var(--line-strong); border-radius: var(--r-md);
+    outline: none; transition: all var(--motion-fast) var(--motion-ease);
+  }
+  .field input::placeholder { color: var(--placeholder); }
+  .field input:hover { border-color: var(--ink-muted); }
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgb(63 126 241 / .15);
+  }
+  .field .help {
+    margin-top: 6px; font-size: var(--fs-xs); color: var(--muted);
+    line-height: 1.45;
+  }
+  .field-row {
+    display: flex; gap: 10px; align-items: stretch;
+  }
+  .field-row > .field { flex: 1; margin-bottom: 0; }
+
+  /* ── Buttons ─────────────────────────────────────────────────────── */
+  .btn {
+    width: 100%; padding: 12px 16px;
+    font-family: inherit; font-size: var(--fs-md); font-weight: 600;
+    border-radius: var(--r-btn); border: 1px solid transparent;
+    cursor: pointer;
+    transition: all var(--motion-fast) var(--motion-ease);
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: 8px;
+  }
+  .btn.primary {
+    background: var(--ink); color: #fff;
+    box-shadow: 0 1px 2px rgb(15 23 42 / .08);
+  }
+  .btn.primary:hover { background: #1e293b; }
+  .btn.primary:active { transform: translateY(1px); }
+  .btn.secondary {
+    background: var(--bg); color: var(--ink);
+    border-color: var(--line-strong);
+  }
+  .btn.secondary:hover { background: var(--bg-alt); border-color: var(--ink-muted); }
+  .btn.send-code {
+    width: auto; flex: 0 0 auto;
+    padding: 11px 16px; font-size: var(--fs-sm);
+    background: var(--bg); color: var(--ink);
+    border-color: var(--line-strong);
+  }
+  .btn.send-code:hover { background: var(--bg-alt); }
+  .btn.send-code[disabled] {
+    background: var(--bg-alt); color: var(--muted);
+    cursor: not-allowed; border-color: var(--line);
+  }
+
+  /* ── Link cluster ────────────────────────────────────────────────── */
+  .link {
+    color: var(--accent); text-decoration: none;
+    font-weight: 500;
+  }
+  .link:hover { text-decoration: underline; text-underline-offset: 2px; }
+  .auxrow {
+    margin-top: 18px;
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: var(--fs-sm); color: var(--muted);
+  }
+  .auxrow.center { justify-content: center; gap: 6px; }
+  .switch-row {
+    margin-top: 24px; padding-top: 20px;
+    border-top: 1px solid var(--line);
+    text-align: center;
+    font-size: var(--fs-sm); color: var(--muted);
+  }
+
+  /* ── Forgot success view ─────────────────────────────────────────── */
+  .success-bullet {
+    width: 44px; height: 44px;
+    background: var(--success-bg); color: var(--success);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    margin: 0 auto 18px;
+    font-size: var(--fs-xl); font-weight: 700;
+  }
+  .center-block { text-align: center; }
+
+  /* ── Inline note bar (under heading on phone register) ───────────── */
+  .note {
+    margin: -8px 0 24px;
+    padding: 10px 12px;
+    border-left: 2px solid var(--accent);
+    background: var(--accent-50, #eff6ff);
+    color: var(--ink-muted);
+    font-size: var(--fs-sm); line-height: 1.5;
+    border-radius: 0 var(--r-sm) var(--r-sm) 0;
+  }
+
+  /* ── Footer (small disclaimer) ───────────────────────────────────── */
+  .footer-text {
+    margin-top: 20px; padding: 0 8px;
+    font-size: var(--fs-xs); color: var(--muted);
+    text-align: center; line-height: 1.6;
+  }
+
+  @media (max-width: 480px) {
+    .page { padding: 24px 16px; }
+    .card { padding: 32px 20px 24px; }
+    h1.title { font-size: var(--fs-xl); }
+    .tabs { padding: 10px 12px; flex-wrap: wrap; }
+    .tabs .label { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- Tabs (design review only — not part of production UI) -->
+<nav class="tabs" role="tablist" aria-label="View switcher">
+  <button data-view="login" class="active">登录</button>
+  <button data-view="register-email">邮箱注册</button>
+  <button data-view="register-phone">手机注册</button>
+  <button data-view="forgot">找回密码</button>
+  <span class="label">v1 · claude minimal</span>
+</nav>
+
+<main class="page">
+
+  <!-- ── 1. Login ─────────────────────────────────────────── -->
+  <section class="view active" id="login">
+    <div class="card">
+      <div class="brand-mark">
+        <span class="glyph">思</span>
+        <span class="name">思考</span>
+      </div>
+      <h1 class="title">欢迎回来</h1>
+      <p class="sub">登录后继续你的备考。</p>
+
+      <form onsubmit="event.preventDefault()">
+        <div class="field">
+          <label for="login-id">账号</label>
+          <input id="login-id" type="text" autocomplete="username"
+            placeholder="email@example.com">
+          <div class="help">邮箱、手机号或用户名</div>
+        </div>
+        <div class="field" style="margin-bottom:18px;">
+          <label for="login-pw">密码</label>
+          <input id="login-pw" type="password" autocomplete="current-password"
+            placeholder="输入密码">
+        </div>
+
+        <button type="submit" class="btn primary">登录</button>
+
+        <div class="auxrow">
+          <span>&nbsp;</span>
+          <a class="link" href="#forgot" onclick="show('forgot')">忘记密码？</a>
+        </div>
+      </form>
+
+      <div class="switch-row">
+        还没账号？
+        <a class="link" href="#register-email" onclick="show('register-email')">用邮箱注册</a>
+        ·
+        <a class="link" href="#register-phone" onclick="show('register-phone')">用手机注册</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 2. Register · Email ──────────────────────────────── -->
+  <section class="view" id="register-email">
+    <div class="card">
+      <div class="brand-mark">
+        <span class="glyph">思</span>
+        <span class="name">思考</span>
+      </div>
+      <h1 class="title">用邮箱注册</h1>
+      <p class="sub">几秒搞定，开始你的备考节奏。</p>
+
+      <form onsubmit="event.preventDefault()">
+        <div class="field">
+          <label for="reg-email">邮箱</label>
+          <input id="reg-email" type="email" autocomplete="email"
+            placeholder="email@example.com">
+        </div>
+        <div class="field">
+          <label for="reg-name">显示名（可选）</label>
+          <input id="reg-name" type="text" autocomplete="nickname"
+            placeholder="留空自动用邮箱前缀">
+        </div>
+        <div class="field" style="margin-bottom:18px;">
+          <label for="reg-pw">密码</label>
+          <input id="reg-pw" type="password" autocomplete="new-password"
+            placeholder="至少 6 位">
+        </div>
+
+        <button type="submit" class="btn primary">创建账号</button>
+      </form>
+
+      <div class="footer-text">
+        创建账号即视为同意《用户协议》与《隐私政策》。
+      </div>
+
+      <div class="switch-row">
+        已有账号？
+        <a class="link" href="#login" onclick="show('login')">直接登录</a>
+        ·
+        <a class="link" href="#register-phone" onclick="show('register-phone')">改用手机注册</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 3. Register · Phone ──────────────────────────────── -->
+  <section class="view" id="register-phone">
+    <div class="card">
+      <div class="brand-mark">
+        <span class="glyph">思</span>
+        <span class="name">思考</span>
+      </div>
+      <h1 class="title">用手机注册</h1>
+      <p class="sub">中国大陆手机号，一次发码 10 分钟内有效。</p>
+
+      <form onsubmit="event.preventDefault()">
+        <div class="field">
+          <label for="reg-phone">手机号</label>
+          <input id="reg-phone" type="tel" autocomplete="tel"
+            placeholder="138 0013 8000" inputmode="numeric">
+        </div>
+
+        <div class="field">
+          <label for="reg-code">验证码</label>
+          <div class="field-row">
+            <div class="field">
+              <input id="reg-code" type="text" autocomplete="one-time-code"
+                placeholder="6 位数字" inputmode="numeric" maxlength="6">
+            </div>
+            <button type="button" class="btn send-code">发送验证码</button>
+          </div>
+          <div class="help">发送后 60 秒内有效，未收到可重发。</div>
+        </div>
+
+        <div class="field" style="margin-bottom:18px;">
+          <label for="reg-phone-pw">设置密码</label>
+          <input id="reg-phone-pw" type="password" autocomplete="new-password"
+            placeholder="至少 6 位">
+        </div>
+
+        <button type="submit" class="btn primary">完成注册</button>
+      </form>
+
+      <div class="switch-row">
+        已有账号？
+        <a class="link" href="#login" onclick="show('login')">直接登录</a>
+        ·
+        <a class="link" href="#register-email" onclick="show('register-email')">改用邮箱注册</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── 4. Forgot password (form + success state inline) ── -->
+  <section class="view" id="forgot">
+    <div class="card">
+      <div class="brand-mark">
+        <span class="glyph">思</span>
+        <span class="name">思考</span>
+      </div>
+      <h1 class="title">找回密码</h1>
+      <p class="sub">输入注册邮箱，我们发送一封重置链接给你。</p>
+
+      <form onsubmit="event.preventDefault();this.style.display='none';this.nextElementSibling.style.display='block';">
+        <div class="field" style="margin-bottom:18px;">
+          <label for="forgot-id">邮箱</label>
+          <input id="forgot-id" type="email" autocomplete="email"
+            placeholder="email@example.com">
+          <div class="help">链接 1 小时内有效。</div>
+        </div>
+        <button type="submit" class="btn primary">发送重置链接</button>
+      </form>
+
+      <!-- 成功态 (默认隐藏，提交后显示) -->
+      <div style="display:none">
+        <div class="center-block">
+          <div class="success-bullet">✓</div>
+          <h2 class="title" style="font-size:var(--fs-lg);margin-bottom:10px;">已发送</h2>
+          <p class="sub" style="margin-bottom:22px;">
+            如果邮箱已注册，几分钟内会收到重置链接。<br>
+            没收到？检查垃圾邮箱或<a class="link" href="#" onclick="event.preventDefault();this.closest('.center-block').parentElement.previousElementSibling.style.display='block';this.closest('div[style]').style.display='none';">重新发送</a>。
+          </p>
+        </div>
+      </div>
+
+      <div class="switch-row">
+        想起来了？
+        <a class="link" href="#login" onclick="show('login')">回登录</a>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<script>
+  // ── Tab switcher ──────────────────────────────────────────────────
+  function show(name) {
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    document.querySelectorAll('.tabs button').forEach(b => b.classList.remove('active'));
+    document.getElementById(name).classList.add('active');
+    document.querySelector(`.tabs button[data-view="${name}"]`).classList.add('active');
+    if (history.replaceState) history.replaceState(null, '', '#' + name);
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }
+  document.querySelectorAll('.tabs button').forEach(b =>
+    b.addEventListener('click', () => show(b.dataset.view))
+  );
+  // Initial load: respect hash
+  const initial = location.hash.slice(1);
+  if (['login','register-email','register-phone','forgot'].includes(initial)) show(initial);
+</script>
+
+</body>
+</html>

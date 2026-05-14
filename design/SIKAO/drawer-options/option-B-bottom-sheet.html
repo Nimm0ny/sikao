@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIKAO · 答题卡 Drawer · Option B · 底部 Sheet</title>
+<link rel="stylesheet" href="../handoff/design/tokens.css">
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: var(--t-body);
+    -webkit-font-smoothing: antialiased;
+  }
+  em, i { font-style: normal; }
+
+  /* ──── 背景: 模拟答题主屏 ──── */
+  .stage {
+    position: relative;
+    min-height: 100vh;
+    padding: var(--s5) var(--s6) calc(var(--s9) + 60vh);
+    max-width: 880px;
+    margin: 0 auto;
+  }
+  .topbar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: var(--s3) 0 var(--s5);
+    border-bottom: 1px solid var(--rule);
+    margin-bottom: var(--s5);
+  }
+  .topbar-left {
+    font-family: var(--serif);
+    font-size: var(--t-h3);
+    color: var(--ink);
+  }
+  .topbar-meta {
+    font-family: var(--mono);
+    font-size: var(--t-small);
+    color: var(--ink-3);
+    letter-spacing: 0.06em;
+  }
+  .topbar-right { display: flex; gap: var(--s3); align-items: center; }
+  .icon-btn {
+    width: 36px; height: 36px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent;
+    border: 1px solid var(--rule);
+    border-radius: var(--r-sm);
+    cursor: pointer;
+    color: var(--ink-2);
+    transition: background 120ms ease, color 120ms ease;
+  }
+  .icon-btn:hover { background: var(--paper-2); color: var(--ink); }
+  .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .icon-btn svg { width: 18px; height: 18px; }
+
+  .q-block {
+    padding: var(--s5) 0;
+    border-bottom: 1px solid var(--rule);
+  }
+  .q-num {
+    font-family: var(--mono);
+    font-size: var(--t-small);
+    color: var(--ink-3);
+    letter-spacing: 0.08em;
+    margin-bottom: var(--s2);
+  }
+  .q-stem {
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.78;
+    color: var(--ink);
+    margin: 0 0 var(--s4);
+  }
+  .q-opts { display: flex; flex-direction: column; gap: var(--s2); }
+  .q-opt {
+    display: flex; align-items: flex-start; gap: var(--s3);
+    padding: var(--s3) var(--s4);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-sm);
+    color: var(--ink-2);
+    line-height: 1.65;
+  }
+  .q-opt-letter {
+    font-family: var(--mono);
+    font-size: var(--t-small);
+    color: var(--ink-3);
+  }
+
+  /* ============================================================ */
+  /* Option B · 底部 Sheet                                         */
+  /* ============================================================ */
+
+  /* 遮罩 (轻一点, 因为 sheet 自身有阴影) */
+  .scrim {
+    position: fixed; inset: 0;
+    background: rgba(28, 26, 22, 0.30);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 200ms ease;
+    z-index: 50;
+  }
+  .scrim.is-open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  /* drawer 主体 (底部 sheet) */
+  .sheet {
+    position: fixed;
+    left: 0; right: 0; bottom: 0;
+    height: 60vh;
+    max-height: 720px;
+    background: var(--paper);
+    border-radius: var(--r-md) var(--r-md) 0 0;
+    box-shadow: var(--shadow-3);
+    display: flex; flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 280ms cubic-bezier(.4, 0, .2, 1);
+    z-index: 60;
+    border-top: 1px solid var(--rule);
+  }
+  .sheet.is-open { transform: translateY(0); }
+
+  /* 桌面 1280+ 时居中限宽 720, 配大圆角 */
+  @media (min-width: 768px) {
+    .sheet {
+      left: 50%;
+      right: auto;
+      width: 720px;
+      transform: translate(-50%, 100%);
+      bottom: var(--s4);
+      border-radius: var(--r-md);
+      border: 1px solid var(--rule);
+      max-height: 60vh;
+    }
+    .sheet.is-open {
+      transform: translate(-50%, 0);
+    }
+  }
+
+  /* swipe handle */
+  .sheet-handle {
+    flex-shrink: 0;
+    padding: 10px 0 6px;
+    display: flex; justify-content: center;
+    cursor: grab;
+  }
+  .sheet-handle::before {
+    content: '';
+    width: 36px; height: 4px;
+    background: var(--rule-strong);
+    border-radius: 2px;
+  }
+
+  /* sheet header */
+  .sheet-header {
+    flex-shrink: 0;
+    padding: 0 var(--s5) var(--s3);
+    display: flex; align-items: flex-end;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: var(--s4);
+  }
+  .sheet-header-info {
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .sheet-title {
+    font-family: var(--serif);
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--ink);
+  }
+  .sheet-progress {
+    display: flex; gap: var(--s3); align-items: baseline;
+    font-family: var(--mono);
+  }
+  .sheet-progress-num {
+    font-size: 18px;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+  }
+  .sheet-progress-num em { color: var(--ink-3); font-weight: 400; }
+  .sheet-progress-label {
+    font-size: var(--t-small);
+    color: var(--ink-3);
+    letter-spacing: 0.06em;
+  }
+
+  .sheet-close {
+    width: 32px; height: 32px;
+    display: inline-flex; align-items: center; justify-content: center;
+    background: transparent; border: none;
+    cursor: pointer;
+    color: var(--ink-3);
+    border-radius: var(--r-sm);
+    transition: color 120ms ease, background 120ms ease;
+  }
+  .sheet-close:hover { color: var(--ink); background: var(--paper-2); }
+  .sheet-close:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .sheet-close svg { width: 16px; height: 16px; }
+
+  /* progress bar 与 chips 一行显示 */
+  .sheet-toolbar {
+    flex-shrink: 0;
+    padding: var(--s3) var(--s5);
+    display: flex; align-items: center; gap: var(--s4);
+    border-bottom: 1px solid var(--rule);
+    overflow-x: auto;
+  }
+  .sheet-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--rule);
+    border-radius: 2px;
+    overflow: hidden;
+    min-width: 80px;
+  }
+  .sheet-bar-fill {
+    height: 100%;
+    background: var(--ink);
+    width: calc(22 / 35 * 100%);
+    border-radius: 2px;
+  }
+  .chips { display: flex; gap: var(--s2); flex-shrink: 0; }
+  .chip {
+    padding: 4px var(--s3);
+    border: 1px solid var(--rule);
+    border-radius: var(--r-sm);
+    background: transparent;
+    font-family: var(--sans);
+    font-size: var(--t-small);
+    color: var(--ink-3);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: color 120ms ease, border-color 120ms ease, background 120ms ease;
+  }
+  .chip:hover { color: var(--ink); border-color: var(--rule-strong); }
+  .chip.is-active {
+    background: var(--ink);
+    color: var(--paper);
+    border-color: var(--ink);
+  }
+
+  /* sheet body: 横向密度更大 8 列 */
+  .sheet-body {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--s5);
+  }
+
+  .grid-section { margin-bottom: var(--s5); }
+  .grid-section:last-child { margin-bottom: 0; }
+  .grid-section-label {
+    display: flex; align-items: center; gap: var(--s2);
+    font-family: var(--mono);
+    font-size: var(--t-eyebrow);
+    letter-spacing: 0.16em;
+    color: var(--ink-3);
+    text-transform: uppercase;
+    margin-bottom: var(--s3);
+  }
+  .grid-section-label::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+  /* 题组 (passage Q12-Q15) */
+  .grid-section.is-group {
+    background: var(--paper-2);
+    margin: 0 calc(var(--s5) * -1) var(--s5);
+    padding: var(--s4) var(--s5);
+    border-top: 1px solid var(--rule);
+    border-bottom: 1px solid var(--rule);
+  }
+  .grid-section.is-group .grid-section-label {
+    color: var(--ink-2);
+  }
+
+  /* 8 列横排, 每行 8 题 */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 12px;
+  }
+  @media (max-width: 480px) {
+    .grid {
+      grid-template-columns: repeat(7, 1fr);
+      gap: 10px;
+    }
+  }
+
+  /* 题号按钮 */
+  .q-btn {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background: transparent;
+    border: 1.4px solid var(--rule-strong);
+    font-family: var(--mono);
+    font-size: var(--t-small);
+    color: var(--ink-2);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    position: relative;
+    transition: transform 120ms ease, border-color 120ms ease;
+    font-variant-numeric: tabular-nums;
+    min-height: 32px;
+  }
+  .q-btn:hover { transform: scale(1.06); }
+  .q-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .q-btn.is-answered {
+    background: var(--ink);
+    border-color: var(--ink);
+    color: var(--paper);
+  }
+  .q-btn.is-marked {
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .q-btn.is-marked::after {
+    content: '';
+    position: absolute;
+    top: -2px; right: -2px;
+    width: 8px; height: 8px;
+    background: var(--accent);
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+  }
+  .q-btn.is-current {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--paper);
+    box-shadow: 0 0 0 4px var(--accent-50);
+  }
+  .q-btn.is-wrong {
+    border-color: var(--accent);
+    color: var(--accent);
+    background: transparent;
+  }
+  .q-btn.is-wrong::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(45deg, transparent 45%, var(--accent) 45%, var(--accent) 55%, transparent 55%),
+      linear-gradient(-45deg, transparent 45%, var(--accent) 45%, var(--accent) 55%, transparent 55%);
+    border-radius: 50%;
+  }
+  .q-btn.is-wrong > span { display: none; }
+
+  /* sheet footer (sticky CTA) */
+  .sheet-footer {
+    flex-shrink: 0;
+    padding: var(--s3) var(--s5) var(--s4);
+    border-top: 1px solid var(--rule);
+    background: var(--paper);
+    display: flex; align-items: center; gap: var(--s4);
+  }
+  .submit-meta-inline {
+    flex: 1;
+    font-family: var(--sans);
+    font-size: var(--t-small);
+    color: var(--ink-3);
+    line-height: 1.6;
+  }
+  .submit-meta-inline em {
+    color: var(--ink-2); font-weight: 500;
+    font-family: var(--mono);
+  }
+  .submit-btn {
+    height: 44px;
+    padding: 0 var(--s5);
+    background: var(--accent);
+    color: var(--paper);
+    border: none;
+    border-radius: var(--r-sm);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: var(--s2);
+    transition: background 120ms ease;
+    flex-shrink: 0;
+  }
+  .submit-btn:hover { background: var(--accent-2); }
+  .submit-btn:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .submit-btn svg { width: 16px; height: 16px; }
+
+  /* legend (放进 chips 旁) - 桌面端横向小 */
+  .legend-row {
+    padding: var(--s2) var(--s5) var(--s3);
+    display: flex; gap: var(--s4);
+    border-top: 1px dashed var(--rule);
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 6px;
+    font-family: var(--sans);
+    font-size: var(--t-small);
+    color: var(--ink-3);
+  }
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    border: 1.4px solid var(--rule-strong);
+  }
+  .legend-dot.dot-answered { background: var(--ink); border-color: var(--ink); }
+  .legend-dot.dot-marked { border-color: var(--accent); }
+  .legend-dot.dot-current { background: var(--accent); border-color: var(--accent); }
+
+  /* trigger button on stage */
+  .stage-trigger {
+    position: fixed;
+    bottom: var(--s5);
+    right: var(--s5);
+    width: 56px; height: 56px;
+    background: var(--paper);
+    border: 1px solid var(--rule);
+    border-radius: 50%;
+    box-shadow: var(--shadow-2);
+    cursor: pointer;
+    display: inline-flex; align-items: center; justify-content: center;
+    color: var(--ink-2);
+    transition: background 120ms ease;
+    z-index: 30;
+  }
+  .stage-trigger:hover { background: var(--paper-2); color: var(--ink); }
+  .stage-trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .stage-trigger svg { width: 24px; height: 24px; }
+  .stage-trigger-badge {
+    position: absolute;
+    bottom: -2px; right: -2px;
+    background: var(--ink);
+    color: var(--paper);
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 2px 5px;
+    border-radius: 8px;
+    border: 2px solid var(--paper);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<!-- 背景: 模拟行测主屏 -->
+<div class="stage" id="stage">
+  <header class="topbar">
+    <div class="topbar-left serif">2024 国考 · 行测</div>
+    <div class="topbar-meta">22 / 35 · 用时 38:14</div>
+    <div class="topbar-right">
+      <button class="icon-btn" type="button" aria-label="收藏">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M19 21l-7-5-7 5V5a2 2 0 012-2h10a2 2 0 012 2z"/>
+        </svg>
+      </button>
+      <button class="icon-btn" type="button" aria-label="设置">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"/>
+          <path d="M12 1v3m0 16v3M4.2 4.2l2.1 2.1m11.4 11.4l2.1 2.1M1 12h3m16 0h3M4.2 19.8l2.1-2.1m11.4-11.4l2.1-2.1"/>
+        </svg>
+      </button>
+      <button class="icon-btn" type="button" id="open-drawer" aria-label="答题卡">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="3" width="7" height="7" rx="1"/>
+          <rect x="14" y="3" width="7" height="7" rx="1"/>
+          <rect x="3" y="14" width="7" height="7" rx="1"/>
+          <rect x="14" y="14" width="7" height="7" rx="1"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <article class="q-block">
+    <div class="q-num">第 16 题 / 数量判断 · 数字推理</div>
+    <p class="q-stem">已知数列 2, 6, 12, 20, 30, ___ 的下一项为多少。该数列的递推关系隐含在相邻两项之差形成的等差数列中。</p>
+    <div class="q-opts">
+      <div class="q-opt"><span class="q-opt-letter">A</span><span>40</span></div>
+      <div class="q-opt"><span class="q-opt-letter">B</span><span>42</span></div>
+      <div class="q-opt"><span class="q-opt-letter">C</span><span>44</span></div>
+      <div class="q-opt"><span class="q-opt-letter">D</span><span>56</span></div>
+    </div>
+  </article>
+
+  <article class="q-block">
+    <div class="q-num">第 17 题 / 数量判断 · 工程问题</div>
+    <p class="q-stem">某工程甲乙两队合作 12 天可完成。如果甲队先做 6 天后, 乙队再加入合作 8 天恰好完成全部工程。问甲队单独完成需多少天?</p>
+    <div class="q-opts">
+      <div class="q-opt"><span class="q-opt-letter">A</span><span>20 天</span></div>
+      <div class="q-opt"><span class="q-opt-letter">B</span><span>24 天</span></div>
+      <div class="q-opt"><span class="q-opt-letter">C</span><span>30 天</span></div>
+      <div class="q-opt"><span class="q-opt-letter">D</span><span>36 天</span></div>
+    </div>
+  </article>
+
+  <article class="q-block">
+    <div class="q-num">第 18 题 / 数量判断 · 几何问题</div>
+    <p class="q-stem">一个正方形被对角线分成两个三角形, 现将其中一个三角形沿对角线翻折…</p>
+    <div class="q-opts">
+      <div class="q-opt"><span class="q-opt-letter">A</span><span>形成一个新的正方形</span></div>
+      <div class="q-opt"><span class="q-opt-letter">B</span><span>形成一个三角形</span></div>
+    </div>
+  </article>
+</div>
+
+<!-- floating trigger button (右下) -->
+<button class="stage-trigger" type="button" aria-label="答题卡, 还有 13 题未作答" onclick="document.getElementById('open-drawer').click()">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="3" y="3" width="7" height="7" rx="1"/>
+    <rect x="14" y="3" width="7" height="7" rx="1"/>
+    <rect x="3" y="14" width="7" height="7" rx="1"/>
+    <rect x="14" y="14" width="7" height="7" rx="1"/>
+  </svg>
+  <span class="stage-trigger-badge">13</span>
+</button>
+
+<!-- ──────────────────────────────────────── -->
+<!-- Option B · 底部 Sheet                     -->
+<!-- ──────────────────────────────────────── -->
+
+<div class="scrim" id="scrim" aria-hidden="true"></div>
+
+<aside class="sheet is-open" id="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-title">
+
+  <div class="sheet-handle" aria-hidden="true"></div>
+
+  <header class="sheet-header">
+    <div class="sheet-header-info">
+      <h2 class="sheet-title" id="sheet-title">答题卡</h2>
+      <div class="sheet-progress">
+        <span class="sheet-progress-num">22<em>/35</em></span>
+        <span class="sheet-progress-label">行测 · 标准</span>
+      </div>
+    </div>
+    <button class="sheet-close" type="button" aria-label="关闭答题卡" id="close-sheet">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="18" y1="6" x2="6" y2="18"/>
+        <line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </header>
+
+  <div class="sheet-toolbar">
+    <div class="sheet-bar"><div class="sheet-bar-fill"></div></div>
+    <div class="chips" role="group" aria-label="按模块筛选">
+      <button class="chip is-active" type="button">全部</button>
+      <button class="chip" type="button">言语</button>
+      <button class="chip" type="button">数判</button>
+      <button class="chip" type="button">资料</button>
+    </div>
+  </div>
+
+  <div class="sheet-body" id="sheet-body">
+
+    <!-- 言语 1-11 -->
+    <section class="grid-section">
+      <div class="grid-section-label">言语理解 · Q1—Q11</div>
+      <div class="grid" id="grid-1"></div>
+    </section>
+
+    <!-- 题组 passage Q12-Q15 -->
+    <section class="grid-section is-group">
+      <div class="grid-section-label">片段阅读 · Q12—Q15 · 共题干</div>
+      <div class="grid" id="grid-passage"></div>
+    </section>
+
+    <!-- 数判 16-25 -->
+    <section class="grid-section">
+      <div class="grid-section-label">数量判断 · Q16—Q25</div>
+      <div class="grid" id="grid-2"></div>
+    </section>
+
+    <!-- 资料 26-35 -->
+    <section class="grid-section">
+      <div class="grid-section-label">资料分析 · Q26—Q35</div>
+      <div class="grid" id="grid-3"></div>
+    </section>
+  </div>
+
+  <div class="legend-row">
+    <div class="legend-item"><span class="legend-dot"></span>未答</div>
+    <div class="legend-item"><span class="legend-dot dot-answered"></span>已答</div>
+    <div class="legend-item"><span class="legend-dot dot-marked"></span>已标记</div>
+    <div class="legend-item"><span class="legend-dot dot-current"></span>当前</div>
+  </div>
+
+  <footer class="sheet-footer">
+    <div class="submit-meta-inline">还有 <em>13 题</em> 未作答<br>已标记 <em>4 题</em> 待审</div>
+    <button class="submit-btn" type="button">
+      <span>提交</span>
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <line x1="5" y1="12" x2="19" y2="12"/>
+        <polyline points="13 6 19 12 13 18"/>
+      </svg>
+    </button>
+  </footer>
+</aside>
+
+<script>
+  // 数据 mock - 同 Option A
+  const QUESTIONS = [
+    { n: 1, state: 'answered' }, { n: 2, state: 'answered' }, { n: 3, state: 'answered' },
+    { n: 4, state: 'marked' },   { n: 5, state: 'answered' }, { n: 6, state: 'answered' },
+    { n: 7, state: 'unanswered' }, { n: 8, state: 'answered' }, { n: 9, state: 'answered' },
+    { n: 10, state: 'answered' }, { n: 11, state: 'answered' },
+    { n: 12, state: 'answered' }, { n: 13, state: 'answered' },
+    { n: 14, state: 'marked' },   { n: 15, state: 'unanswered' },
+    { n: 16, state: 'current' },  { n: 17, state: 'answered' }, { n: 18, state: 'answered' },
+    { n: 19, state: 'unanswered' }, { n: 20, state: 'unanswered' }, { n: 21, state: 'marked' },
+    { n: 22, state: 'unanswered' }, { n: 23, state: 'unanswered' }, { n: 24, state: 'unanswered' },
+    { n: 25, state: 'unanswered' },
+    { n: 26, state: 'answered' }, { n: 27, state: 'unanswered' }, { n: 28, state: 'unanswered' },
+    { n: 29, state: 'unanswered' }, { n: 30, state: 'unanswered' }, { n: 31, state: 'unanswered' },
+    { n: 32, state: 'marked' },   { n: 33, state: 'unanswered' }, { n: 34, state: 'unanswered' },
+    { n: 35, state: 'unanswered' },
+  ];
+
+  const STATE_LABEL = {
+    unanswered: '未答',
+    answered: '已答',
+    marked: '已标记',
+    current: '当前',
+    wrong: '答错',
+  };
+
+  function makeBtn(q) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'q-btn is-' + q.state;
+    b.setAttribute('aria-label', `第 ${q.n} 题, ${STATE_LABEL[q.state]}`);
+    b.innerHTML = `<span>${q.n}</span>`;
+    return b;
+  }
+  function renderRange(targetId, fromN, toN) {
+    const el = document.getElementById(targetId);
+    QUESTIONS.filter(q => q.n >= fromN && q.n <= toN).forEach(q => el.appendChild(makeBtn(q)));
+  }
+
+  renderRange('grid-1',       1,  11);
+  renderRange('grid-passage', 12, 15);
+  renderRange('grid-2',       16, 25);
+  renderRange('grid-3',       26, 35);
+
+  // sheet 开关
+  const sheet = document.getElementById('sheet');
+  const scrim = document.getElementById('scrim');
+  const openBtn  = document.getElementById('open-drawer');
+  const closeBtn = document.getElementById('close-sheet');
+
+  function openSheet() {
+    sheet.classList.add('is-open');
+    scrim.classList.add('is-open');
+  }
+  function closeSheet() {
+    sheet.classList.remove('is-open');
+    scrim.classList.remove('is-open');
+  }
+  openBtn.addEventListener('click', openSheet);
+  closeBtn.addEventListener('click', closeSheet);
+  scrim.addEventListener('click', closeSheet);
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') closeSheet();
+  });
+</script>
+
+</body>
+</html>

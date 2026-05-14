@@ -1,0 +1,39 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "useDefineForClassFields": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "types": ["vitest/globals", "node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@sikao/ui": ["../../packages/ui/src/index.ts"],
+      "@sikao/ui/*": ["../../packages/ui/src/*"],
+      "@sikao/design-system": ["../../packages/design-system/src/index.ts"],
+      "@sikao/design-system/*": ["../../packages/design-system/src/*"],
+      "@sikao/api-client": ["../../packages/api-client/src/index.ts"],
+      "@sikao/api-client/*": ["../../packages/api-client/src/*"],
+      "@sikao/domain": ["../../packages/domain/src/index.ts"],
+      "@sikao/domain/*": ["../../packages/domain/src/*"],
+      "@sikao/answer-engine": ["../../packages/answer-engine/src/index.ts"],
+      "@sikao/answer-engine/*": ["../../packages/answer-engine/src/*"],
+      "@sikao/editor": ["../../packages/editor/src/index.ts"],
+      "@sikao/editor/*": ["../../packages/editor/src/*"],
+      "@sikao/shared-utils": ["../../packages/shared-utils/src/index.ts"],
+      "@sikao/shared-utils/*": ["../../packages/shared-utils/src/*"],
+      "@sikao/config": ["../../packages/config/src/index.ts"],
+      "@sikao/config/*": ["../../packages/config/src/*"],
+      "@sikao/test-utils": ["../../tests/fixtures/index.ts"],
+      "@sikao/test-utils/*": ["../../tests/fixtures/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": [
+    "src/**/__tests__/**",
+    "src/**/*.test.ts",
+    "src/**/*.test.tsx",
+    "src/setupTests.ts"
+  ]
+}

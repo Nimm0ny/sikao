@@ -1,0 +1,1414 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="warm" data-density="cozy" data-reading="md">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=1440" />
+<title>SIKAO · Dashboard · 节奏感时间轴</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,ital,wght@8..60,0,400..700;8..60,1,400..700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" />
+<link rel="stylesheet" href="../../tokens.css" />
+<style>
+/* ============================================================
+   SIKAO · Dashboard 重设计 · 方向 1 「节奏感时间轴」
+   ------------------------------------------------------------
+   产品价值: 「时间在推进, 你在前进」
+   用户每次打开 dashboard 看到的是
+     (a) 时间轴上自己的位置 (昨天 / 今天 / 明天 + 距考试)
+     (b) 今天的具体下一步动作 (具体 + 时长 + 期望产出)
+     (c) 简洁的复盘信号 (昨日成果 + 本周进度环)
+   而不是 7 个功能模块的入口堆砌.
+
+   构图: Linear roadmap × macOS Calendar · ink-first paper-tint
+   留白多, 单一 accent 仅 1 处 (主 CTA), 时间感强而克制.
+
+   Token 全部用 var(--*), 字号 / 间距 / 半径 / letter-spacing 全走 SSOT.
+   ============================================================ */
+
+html, body { margin: 0; padding: 0; }
+body {
+  background: var(--paper-1);
+  color: var(--ink-1);
+  font-family: var(--font-sans);
+  font-size: var(--t-body);
+  line-height: var(--lh-normal);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; }
+
+.serif { font-family: var(--font-serif); }
+.mono { font-family: var(--font-mono); font-variant-numeric: tabular-nums; letter-spacing: var(--tracking-normal); }
+
+/* ── App shell ─────────────────────────────────────────────────── */
+.app {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  min-height: 100vh;
+}
+
+/* ── Sidebar (always-dark optional · here keep paper-tint for Quiet Read) ── */
+.sidebar {
+  background: var(--paper-2);
+  border-right: 1px solid var(--line-1);
+  padding: var(--sp-5) 0 var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-3);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.sb-logo {
+  width: 40px; height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-card);
+  background: var(--ink-1);
+  color: var(--paper-1);
+  font-family: var(--font-serif);
+  font-size: var(--t-h3);
+  font-weight: 700;
+  margin-bottom: var(--sp-4);
+}
+.sb-item {
+  width: 44px; height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-3);
+  border-radius: var(--r-card);
+  border: 1px solid transparent;
+  cursor: pointer;
+  position: relative;
+}
+.sb-item:hover { background: var(--paper-3); color: var(--ink-1); }
+.sb-item.active {
+  color: var(--ink-1);
+  background: var(--paper-1);
+  border-color: var(--line-2);
+  box-shadow: var(--shadow-card);
+}
+.sb-item.active::before {
+  content: '';
+  position: absolute;
+  left: -16px; top: 50%;
+  width: 3px; height: 22px;
+  background: var(--ink-1);
+  border-radius: var(--r-pill);
+  transform: translateY(-50%);
+}
+.sb-item svg { display: block; }
+.sb-spacer { flex: 1; }
+.sb-tooltip {
+  position: absolute;
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--ink-1);
+  color: var(--paper-1);
+  padding: 5px 10px;
+  border-radius: var(--r-tiny);
+  font-size: var(--t-meta);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms;
+  z-index: var(--z-popover);
+}
+.sb-item:hover .sb-tooltip { opacity: 1; }
+
+/* ── Top nav bar ───────────────────────────────────────────────── */
+.topbar {
+  height: 60px;
+  background: var(--paper-1);
+  border-bottom: 1px solid var(--line-1);
+  padding: 0 var(--sp-6);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: var(--z-nav);
+}
+.topbar-brand {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+}
+.brand-wordmark {
+  font-family: var(--font-serif);
+  font-size: var(--t-h3);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink-1);
+}
+.brand-tagline {
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  letter-spacing: var(--tracking-eyebrow);
+}
+.topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-6);
+}
+.topbar-nav a {
+  font-size: var(--t-small);
+  color: var(--ink-3);
+  padding: 8px 0;
+  border-bottom: 2px solid transparent;
+  transition: color 150ms, border-color 150ms;
+}
+.topbar-nav a:hover { color: var(--ink-1); }
+.topbar-nav a.current {
+  color: var(--ink-1);
+  border-bottom-color: var(--ink-1);
+}
+.topbar-right {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+.topbar-search {
+  background: var(--paper-2);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-tiny);
+  padding: 7px 12px 7px 32px;
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  width: 220px;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236B6358' stroke-width='1.5'><circle cx='11' cy='11' r='7'/><path d='m20 20-3.5-3.5'/></svg>");
+  background-repeat: no-repeat;
+  background-position: 12px center;
+}
+.topbar-search::placeholder { color: var(--ink-4); }
+.avatar {
+  width: 32px; height: 32px;
+  border-radius: var(--r-pill);
+  background: var(--paper-3);
+  color: var(--ink-1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-serif);
+  font-size: var(--t-small);
+  font-weight: 600;
+  border: 1px solid var(--line-2);
+  cursor: pointer;
+}
+
+/* ── Page wrap ─────────────────────────────────────────────────── */
+.page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 60px);
+}
+
+.main {
+  padding: var(--sp-6) var(--sp-7);
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── Timeline (sticky) ─────────────────────────────────────────── */
+.timeline {
+  position: sticky;
+  top: 60px;
+  background: var(--paper-1);
+  border-bottom: 1px solid var(--line-1);
+  padding: var(--sp-5) var(--sp-7) var(--sp-4);
+  z-index: calc(var(--z-nav) - 1);
+}
+.timeline-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--sp-6);
+  align-items: center;
+}
+
+.tl-track {
+  position: relative;
+  padding-top: 8px;
+}
+.tl-rail {
+  position: relative;
+  height: 2px;
+  background: var(--line-1);
+  border-radius: var(--r-pill);
+  margin: 0 6px;
+}
+.tl-rail::before {
+  /* progress fill: 今天为止 */
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 56%;
+  background: var(--ink-2);
+  border-radius: var(--r-pill);
+}
+.tl-nodes {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 0;
+  margin-top: -7px;
+  padding: 0 6px;
+}
+.tl-node {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.tl-dot {
+  width: 12px; height: 12px;
+  border-radius: var(--r-pill);
+  background: var(--paper-1);
+  border: 2px solid var(--line-3);
+  z-index: 1;
+}
+.tl-node.past .tl-dot { background: var(--ink-2); border-color: var(--ink-2); }
+.tl-node.today .tl-dot {
+  background: var(--ink-1);
+  border: 3px solid var(--paper-1);
+  outline: 2px solid var(--ink-1);
+  width: 14px; height: 14px;
+}
+.tl-node.future .tl-dot { background: var(--paper-1); border-color: var(--line-2); }
+.tl-label {
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  letter-spacing: var(--tracking-loose);
+  font-variant-numeric: tabular-nums;
+  font-family: var(--font-mono);
+}
+.tl-node.today .tl-label {
+  color: var(--ink-1);
+  font-weight: 600;
+}
+.tl-day {
+  font-size: var(--t-meta);
+  color: var(--ink-4);
+  font-family: var(--font-mono);
+  letter-spacing: var(--tracking-eyebrow);
+}
+.tl-node.today .tl-day { color: var(--ink-2); font-weight: 600; }
+
+/* event tag on node */
+.tl-event {
+  position: absolute;
+  top: -20px;
+  transform: translateX(-50%);
+  background: var(--ink-1);
+  color: var(--paper-1);
+  font-size: var(--t-tiny);
+  letter-spacing: var(--tracking-loose);
+  padding: 2px 8px;
+  border-radius: var(--r-tiny);
+  white-space: nowrap;
+}
+
+/* countdown to exam */
+.tl-countdown {
+  display: flex;
+  align-items: baseline;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-5);
+  background: var(--paper-2);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-card);
+}
+.tl-cd-label {
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+}
+.tl-cd-num {
+  /* design signature 大数字 (CLAUDE.md §4: serif italic 数字强调允许).
+     用 --t-display (44) 倒计时 hero scale, tabular-nums 保证位宽稳定. */
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--t-display);
+  font-weight: 600;
+  color: var(--ink-1);
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.tl-cd-unit {
+  font-size: var(--t-body);
+  color: var(--ink-2);
+}
+.tl-cd-exam {
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+
+/* ── Eyebrow / section header ──────────────────────────────────── */
+.eyebrow {
+  font-size: var(--t-tiny);
+  letter-spacing: var(--tracking-eyebrow);
+  color: var(--ink-3);
+  text-transform: uppercase;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.eyebrow .dot {
+  width: 4px; height: 4px;
+  border-radius: var(--r-pill);
+  background: var(--ink-2);
+  display: inline-block;
+}
+
+/* ── Hero row: 今日重点 + 昨日复盘 ──────────────────────────── */
+.hero-row {
+  display: grid;
+  grid-template-columns: 1.85fr 1fr;
+  gap: var(--sp-5);
+  margin-top: var(--sp-6);
+}
+
+.card {
+  background: var(--paper-2);
+  border: 1px solid var(--line-1);
+  border-radius: var(--r-card-lg);
+  padding: var(--sp-6);
+  box-shadow: var(--shadow-card);
+  position: relative;
+}
+
+/* card header with grip + collapse */
+.card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-4);
+}
+.card-head-left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.grip {
+  display: inline-grid;
+  grid-template-columns: repeat(2, 3px);
+  gap: 3px;
+  cursor: grab;
+  opacity: 0;
+  transition: opacity 150ms;
+  padding: 4px;
+  margin-left: -4px;
+}
+.card:hover .grip { opacity: 0.5; }
+.grip:hover { opacity: 1 !important; }
+.grip i {
+  width: 3px; height: 3px;
+  border-radius: var(--r-pill);
+  background: var(--ink-3);
+}
+.collapse-btn {
+  width: 26px; height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--r-tiny);
+  color: var(--ink-3);
+  cursor: pointer;
+  border: 0;
+  background: transparent;
+  transition: background 150ms, color 150ms;
+}
+.collapse-btn:hover {
+  background: var(--paper-3);
+  color: var(--ink-1);
+}
+.collapse-btn svg { display: block; }
+
+/* ── Hero / 今日重点 ──────────────────────────────────────────── */
+.hero {
+  background: var(--paper-1);
+  border: 1px solid var(--line-2);
+  padding: var(--sp-7);
+  border-radius: var(--r-card-lg);
+  box-shadow: var(--shadow-card);
+  position: relative;
+}
+.hero::before {
+  /* subtle paper texture indicator on left edge */
+  content: '';
+  position: absolute;
+  left: 0; top: var(--sp-6); bottom: var(--sp-6);
+  width: 3px;
+  background: var(--ink-1);
+  border-radius: 0 var(--r-pill) var(--r-pill) 0;
+}
+.hero-eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+}
+.hero-meta-right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--t-meta);
+  font-weight: 500;
+  background: var(--paper-2);
+  color: var(--ink-2);
+  border: 1px solid var(--line-2);
+  padding: 3px 9px;
+  border-radius: var(--r-tiny);
+  letter-spacing: var(--tracking-loose);
+}
+.chip.warn {
+  background: var(--warn-bg);
+  color: var(--warn);
+  border-color: var(--warn);
+}
+.hero-title {
+  font-family: var(--font-serif);
+  font-size: var(--t-h1);
+  font-weight: 600;
+  letter-spacing: var(--tracking-tight);
+  color: var(--ink-1);
+  line-height: 1.18;
+  margin: 0 0 var(--sp-3) 0;
+}
+.hero-sub {
+  font-size: var(--t-body);
+  color: var(--ink-2);
+  margin: 0 0 var(--sp-5);
+  max-width: 540px;
+}
+.hero-why {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  background: var(--paper-2);
+  border-left: 2px solid var(--ink-3);
+  border-radius: 0 var(--r-tiny) var(--r-tiny) 0;
+  margin-bottom: var(--sp-6);
+  max-width: 580px;
+}
+.hero-why-icon {
+  width: 16px; height: 16px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--ink-3);
+}
+.hero-why-text {
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  line-height: 1.6;
+  margin: 0;
+}
+.hero-why-text b { font-weight: 600; color: var(--ink-1); }
+
+.hero-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-5);
+  padding: var(--sp-4) 0;
+  border-top: 1px solid var(--line-1);
+  border-bottom: 1px solid var(--line-1);
+  margin-bottom: var(--sp-6);
+}
+.hero-stat-label {
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.hero-stat-value {
+  /* hero stat: 比 h3 大、比 h1 小, 走 --t-h2 (24) 保持 8 档 SSOT. */
+  font-family: var(--font-serif);
+  font-size: var(--t-h2);
+  font-weight: 600;
+  color: var(--ink-1);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1.2;
+}
+.hero-stat-value .unit {
+  font-size: var(--t-body);
+  color: var(--ink-3);
+  font-family: var(--font-sans);
+  font-weight: 400;
+  margin-left: 4px;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+.btn {
+  font-family: var(--font-sans);
+  font-size: var(--t-body);
+  font-weight: 600;
+  padding: 12px 22px;
+  border: 0;
+  background: var(--ink-1);
+  color: var(--paper-1);
+  cursor: pointer;
+  border-radius: var(--r-tiny);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  transition: background 150ms;
+}
+.btn:hover { background: var(--ink-2); }
+.btn svg { width: 16px; height: 16px; }
+.btn.ghost {
+  background: transparent;
+  color: var(--ink-2);
+  border: 1px solid var(--line-2);
+  font-weight: 500;
+}
+.btn.ghost:hover {
+  background: var(--paper-2);
+  color: var(--ink-1);
+}
+
+/* ── 昨日复盘 (Yesterday review) ──────────────────────────────── */
+.yesterday {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-4);
+}
+.yest-title {
+  font-family: var(--font-serif);
+  font-size: var(--t-h3);
+  font-weight: 600;
+  color: var(--ink-1);
+  margin: 0;
+  letter-spacing: var(--tracking-tight);
+}
+.yest-date {
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  letter-spacing: var(--tracking-loose);
+  font-family: var(--font-mono);
+}
+.yest-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+.yest-item {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--line-1);
+  align-items: center;
+}
+.yest-item:last-child { border-bottom: 0; }
+.yest-icon {
+  width: 24px; height: 24px;
+  border-radius: var(--r-tiny);
+  background: var(--paper-1);
+  border: 1px solid var(--line-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--ink-2);
+}
+.yest-text {
+  font-size: var(--t-small);
+  color: var(--ink-1);
+  line-height: 1.45;
+}
+.yest-text .sub {
+  display: block;
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  margin-top: 2px;
+}
+.yest-num {
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--t-h3);
+  color: var(--ink-1);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.yest-num.ok { color: var(--ok); }
+.yest-num.warn { color: var(--warn); }
+.yest-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: var(--sp-2);
+  padding-top: var(--sp-3);
+  border-top: 1px dashed var(--line-2);
+}
+.yest-cta {
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  border-bottom: 1px solid transparent;
+  transition: border-color 150ms, color 150ms;
+}
+.yest-cta:hover {
+  color: var(--ink-1);
+  border-bottom-color: var(--ink-2);
+}
+.yest-cta svg { width: 14px; height: 14px; }
+
+/* ── Trio row: 明日预告 / 本周进度 / 笔记 ─────────────────── */
+.trio {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--sp-5);
+  margin-top: var(--sp-6);
+}
+.trio .card {
+  padding: var(--sp-5) var(--sp-5);
+  background: var(--paper-1);
+  border: 1px solid var(--line-1);
+  box-shadow: var(--shadow-card);
+}
+.trio-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--sp-3);
+}
+.trio-title {
+  font-family: var(--font-serif);
+  font-size: var(--t-h3);
+  font-weight: 600;
+  color: var(--ink-1);
+  margin: 0;
+  letter-spacing: var(--tracking-tight);
+}
+.trio-caption {
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  letter-spacing: var(--tracking-loose);
+}
+
+/* 明日预告 */
+.tomo-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+  margin-top: var(--sp-3);
+}
+.tomo-task {
+  display: grid;
+  grid-template-columns: 28px 1fr auto;
+  gap: var(--sp-3);
+  padding: var(--sp-3) 0;
+  border-bottom: 1px solid var(--line-1);
+  align-items: center;
+}
+.tomo-task:last-child { border-bottom: 0; }
+.tomo-time {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  letter-spacing: var(--tracking-normal);
+}
+.tomo-name {
+  font-size: var(--t-small);
+  color: var(--ink-1);
+  font-weight: 500;
+}
+.tomo-name .sub {
+  display: block;
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  font-weight: 400;
+  margin-top: 2px;
+}
+.tomo-dur {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--ink-2);
+  background: var(--paper-2);
+  padding: 2px 8px;
+  border-radius: var(--r-tiny);
+  letter-spacing: var(--tracking-normal);
+}
+
+/* 本周进度环 */
+.ring-wrap {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: var(--sp-4);
+  align-items: center;
+  margin-top: var(--sp-3);
+}
+.ring {
+  position: relative;
+  width: 120px; height: 120px;
+}
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring-track { stroke: var(--paper-3); fill: none; stroke-width: 10; }
+.ring-fill { stroke: var(--ink-1); fill: none; stroke-width: 10; stroke-linecap: round; }
+.ring-num {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+.ring-num b {
+  /* signature 大数字 (CLAUDE.md §4: serif italic 数字强调允许) · --t-h1 32. */
+  font-family: var(--font-serif);
+  font-style: italic;
+  font-size: var(--t-h1);
+  font-weight: 600;
+  color: var(--ink-1);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: var(--tracking-tight);
+  line-height: 1;
+}
+.ring-num span {
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  letter-spacing: var(--tracking-loose);
+  margin-top: 4px;
+}
+.ring-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.ring-row {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 8px;
+  align-items: center;
+  font-size: var(--t-meta);
+  color: var(--ink-2);
+}
+.ring-row .label { color: var(--ink-3); letter-spacing: var(--tracking-loose); font-family: var(--font-mono); }
+.ring-row .bar {
+  height: 4px;
+  background: var(--paper-3);
+  border-radius: var(--r-pill);
+  position: relative;
+  overflow: hidden;
+}
+.ring-row .bar i {
+  display: block;
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  background: var(--ink-2);
+  border-radius: var(--r-pill);
+}
+.ring-row .val {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--ink-2);
+  font-variant-numeric: tabular-nums;
+  min-width: 28px;
+  text-align: right;
+}
+
+/* 笔记入口 */
+.note-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-2);
+  margin-top: var(--sp-3);
+}
+.note-row {
+  display: grid;
+  grid-template-columns: 22px 1fr auto;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-2);
+  margin: 0 -8px;
+  border-radius: var(--r-tiny);
+  cursor: pointer;
+  align-items: center;
+  transition: background 150ms;
+}
+.note-row:hover { background: var(--paper-2); }
+.note-icon {
+  width: 22px; height: 22px;
+  color: var(--ink-3);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.note-text {
+  font-size: var(--t-small);
+  color: var(--ink-1);
+  line-height: 1.45;
+}
+.note-text .meta {
+  display: block;
+  font-size: var(--t-meta);
+  color: var(--ink-3);
+  margin-top: 2px;
+  font-family: var(--font-mono);
+  letter-spacing: var(--tracking-loose);
+}
+.note-arrow {
+  color: var(--ink-4);
+  transition: transform 150ms, color 150ms;
+}
+.note-row:hover .note-arrow {
+  color: var(--ink-2);
+  transform: translateX(3px);
+}
+
+.see-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: var(--sp-4);
+  font-size: var(--t-small);
+  color: var(--ink-2);
+  cursor: pointer;
+  border-bottom: 1px solid var(--line-2);
+  padding-bottom: 1px;
+  transition: color 150ms, border-color 150ms;
+}
+.see-all:hover {
+  color: var(--ink-1);
+  border-bottom-color: var(--ink-1);
+}
+.see-all svg { width: 12px; height: 12px; }
+
+/* ── AI floating entry ─────────────────────────────────────────── */
+.ai-fab {
+  position: fixed;
+  right: var(--sp-6);
+  bottom: var(--sp-6);
+  z-index: var(--z-popover);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--sp-2);
+}
+.ai-fab-hint {
+  background: var(--ink-1);
+  color: var(--paper-1);
+  padding: 6px 12px;
+  border-radius: var(--r-tiny);
+  font-size: var(--t-meta);
+  letter-spacing: var(--tracking-loose);
+  box-shadow: var(--shadow-pop);
+  opacity: 0;
+  transform: translateX(10px);
+  transition: opacity 150ms, transform 150ms;
+  pointer-events: none;
+}
+.ai-fab:hover .ai-fab-hint {
+  opacity: 1;
+  transform: translateX(0);
+}
+.ai-fab-btn {
+  width: 52px; height: 52px;
+  border-radius: var(--r-pill);
+  background: var(--ink-1);
+  color: var(--paper-1);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  cursor: pointer;
+  box-shadow: var(--shadow-pop);
+  position: relative;
+}
+.ai-fab-btn::after {
+  content: '';
+  position: absolute;
+  top: 6px; right: 6px;
+  width: 8px; height: 8px;
+  border-radius: var(--r-pill);
+  background: var(--ok);
+  border: 2px solid var(--ink-1);
+}
+.ai-fab-btn:hover { background: var(--ink-2); }
+.ai-fab-btn svg { width: 22px; height: 22px; }
+
+/* ── Footer note ──────────────────────────────────────────────── */
+.foot {
+  margin-top: var(--sp-7);
+  padding: var(--sp-5) 0 var(--sp-6);
+  border-top: 1px solid var(--line-1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.foot-quote {
+  font-family: var(--font-serif);
+  font-size: var(--t-body);
+  color: var(--ink-3);
+  font-style: normal;
+}
+.foot-meta {
+  font-family: var(--font-mono);
+  font-size: var(--t-meta);
+  color: var(--ink-4);
+  letter-spacing: var(--tracking-loose);
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ====== Sidebar (72px collapsed) ====== -->
+  <aside class="sidebar" aria-label="主导航">
+    <div class="sb-logo" aria-label="思 SIKAO">思</div>
+
+    <button class="sb-item active" aria-label="工作台">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1"/><rect x="14" y="3" width="7" height="5" rx="1"/><rect x="14" y="12" width="7" height="9" rx="1"/><rect x="3" y="16" width="7" height="5" rx="1"/></svg>
+      <span class="sb-tooltip">工作台</span>
+    </button>
+
+    <button class="sb-item" aria-label="练习中心">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h12"/><circle cx="19" cy="17" r="2"/></svg>
+      <span class="sb-tooltip">练习中心</span>
+    </button>
+
+    <button class="sb-item" aria-label="错题本">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h11l3 3v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/><path d="M9 9h6"/><path d="M9 13h4"/></svg>
+      <span class="sb-tooltip">错题本</span>
+    </button>
+
+    <button class="sb-item" aria-label="申论">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>
+      <span class="sb-tooltip">申论写作</span>
+    </button>
+
+    <button class="sb-item" aria-label="笔记">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M9 13h6"/><path d="M9 17h4"/></svg>
+      <span class="sb-tooltip">复盘笔记</span>
+    </button>
+
+    <button class="sb-item" aria-label="备考计划">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h18"/><circle cx="12" cy="15" r="1.2" fill="currentColor"/></svg>
+      <span class="sb-tooltip">备考计划</span>
+    </button>
+
+    <button class="sb-item" aria-label="数据洞察">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      <span class="sb-tooltip">数据洞察</span>
+    </button>
+
+    <div class="sb-spacer"></div>
+
+    <button class="sb-item" aria-label="设置">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span class="sb-tooltip">设置</span>
+    </button>
+  </aside>
+
+  <!-- ====== Right column (topbar + page) ====== -->
+  <div class="page">
+
+    <!-- ===== Top nav bar ===== -->
+    <header class="topbar" role="banner">
+      <div class="topbar-brand">
+        <span class="brand-wordmark">SIKAO</span>
+        <span class="brand-tagline">让备考从刷题变成思考</span>
+      </div>
+      <nav class="topbar-nav" aria-label="主入口">
+        <a href="#" class="current">工作台</a>
+        <a href="#">练习</a>
+        <a href="#">复盘</a>
+        <a href="#">计划</a>
+      </nav>
+      <div class="topbar-right">
+        <input class="topbar-search" type="search" placeholder="搜索题目 / 笔记 / 知识点" aria-label="全局搜索" />
+        <button class="avatar" aria-label="用户菜单">L</button>
+      </div>
+    </header>
+
+    <!-- ===== Timeline (sticky) ===== -->
+    <section class="timeline" aria-label="时间轴">
+      <div class="timeline-inner">
+
+        <div class="tl-track" aria-label="本周节奏">
+          <div class="tl-rail" aria-hidden="true"></div>
+          <div class="tl-nodes">
+            <div class="tl-node past">
+              <span class="tl-dot"></span>
+              <span class="tl-label">5/07</span>
+              <span class="tl-day">周一</span>
+            </div>
+            <div class="tl-node past">
+              <span class="tl-dot"></span>
+              <span class="tl-label">5/08</span>
+              <span class="tl-day">周二</span>
+            </div>
+            <div class="tl-node past">
+              <span class="tl-event">小测</span>
+              <span class="tl-dot"></span>
+              <span class="tl-label">5/09</span>
+              <span class="tl-day">周三</span>
+            </div>
+            <div class="tl-node past">
+              <span class="tl-dot"></span>
+              <span class="tl-label">5/12</span>
+              <span class="tl-day">昨天</span>
+            </div>
+            <div class="tl-node today">
+              <span class="tl-event">今日</span>
+              <span class="tl-dot"></span>
+              <span class="tl-label">5/13</span>
+              <span class="tl-day">周三</span>
+            </div>
+            <div class="tl-node future">
+              <span class="tl-dot"></span>
+              <span class="tl-label">5/14</span>
+              <span class="tl-day">明天</span>
+            </div>
+            <div class="tl-node future">
+              <span class="tl-event">周复盘</span>
+              <span class="tl-dot"></span>
+              <span class="tl-label">5/16</span>
+              <span class="tl-day">周六</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="tl-countdown" aria-label="距考试倒计时">
+          <div>
+            <div class="tl-cd-label">距考试</div>
+            <div class="tl-cd-exam">2026 国考省考 · 6/12 周六</div>
+          </div>
+          <div style="display:flex; align-items:baseline; gap:6px;">
+            <span class="tl-cd-num">30</span>
+            <span class="tl-cd-unit">天</span>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ===== Main canvas ===== -->
+    <main class="main">
+
+      <!-- ── Hero row: 今日重点 + 昨日复盘 ── -->
+      <div class="hero-row">
+
+        <!-- 今日重点 (主卡, 不可拖) -->
+        <section class="hero" aria-label="今日重点">
+
+          <div class="hero-eyebrow">
+            <span class="eyebrow"><i class="dot"></i>下一步 · TODAY 5/13</span>
+            <div class="hero-meta-right">
+              <span class="chip warn">薄弱模块</span>
+              <span class="chip">节奏紧迫</span>
+            </div>
+          </div>
+
+          <h1 class="hero-title serif">把昨天判断推理的<br/>8 道错题做完。</h1>
+
+          <p class="hero-sub">从昨日错题清单中挑出 8 道判断推理高频错点，复盘 + 重做，争取在下次小测前把这一项从 47% 拉到 60%。</p>
+
+          <div class="hero-why">
+            <svg class="hero-why-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+            <p class="hero-why-text">
+              <b>推荐理由</b>：判断推理正确率最近 7 天 47%，是 5 项里最低；距考试还有 30 天，今天解决这块的边际收益最高。
+            </p>
+          </div>
+
+          <div class="hero-stats">
+            <div>
+              <div class="hero-stat-label">预计时长</div>
+              <div class="hero-stat-value">30<span class="unit">min</span></div>
+            </div>
+            <div>
+              <div class="hero-stat-label">期望产出</div>
+              <div class="hero-stat-value">8<span class="unit">题 + 1 篇笔记</span></div>
+            </div>
+            <div>
+              <div class="hero-stat-label">完成后能拉到</div>
+              <div class="hero-stat-value">≈60<span class="unit">% 正确率</span></div>
+            </div>
+          </div>
+
+          <div class="hero-actions">
+            <button class="btn">
+              开始今天的练习
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+            <button class="btn ghost">换一个任务</button>
+            <button class="btn ghost">跳过今天</button>
+          </div>
+
+        </section>
+
+        <!-- 昨日复盘 (辅助卡, 可拖 / 可折叠) -->
+        <section class="card yesterday" aria-label="昨日复盘">
+
+          <div class="card-head">
+            <div class="card-head-left">
+              <span class="grip" aria-label="拖动卡片"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+              <span class="eyebrow"><i class="dot"></i>YESTERDAY · 5/12</span>
+            </div>
+            <button class="collapse-btn" aria-label="折叠卡片">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+            </button>
+          </div>
+
+          <h2 class="yest-title">昨日做了什么</h2>
+          <div class="yest-date mono">2026/05/12 · 周二</div>
+
+          <ul class="yest-list">
+            <li class="yest-item">
+              <span class="yest-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7h18"/><path d="M3 12h18"/><path d="M3 17h12"/></svg>
+              </span>
+              <div class="yest-text">
+                行测真题 · 2024 国考<span class="sub">完成 1 套 · 用时 89 min</span>
+              </div>
+              <div class="yest-num ok">76%</div>
+            </li>
+            <li class="yest-item">
+              <span class="yest-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19V5a2 2 0 0 1 2-2h11l3 3v13a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z"/></svg>
+              </span>
+              <div class="yest-text">
+                错题复盘 · 判断推理<span class="sub">新增 8 题待重做</span>
+              </div>
+              <div class="yest-num warn">47%</div>
+            </li>
+            <li class="yest-item">
+              <span class="yest-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              </span>
+              <div class="yest-text">
+                复盘笔记 · 类比推理三步法<span class="sub">1 篇 · 412 字</span>
+              </div>
+              <div class="yest-num">1</div>
+            </li>
+          </ul>
+
+          <div class="yest-foot">
+            <span class="eyebrow"><i class="dot"></i>累计 2h 14m</span>
+            <span class="yest-cta">
+              查看完整昨日报告
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </span>
+          </div>
+
+        </section>
+
+      </div>
+
+      <!-- ── Trio: 明日预告 / 本周进度 / 笔记 ── -->
+      <div class="trio">
+
+        <!-- 明日预告 -->
+        <section class="card" aria-label="明日预告">
+          <div class="card-head">
+            <div class="card-head-left">
+              <span class="grip"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+              <span class="eyebrow"><i class="dot"></i>TOMORROW</span>
+            </div>
+            <button class="collapse-btn" aria-label="折叠">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+            </button>
+          </div>
+
+          <div class="trio-head">
+            <h3 class="trio-title">明日预告</h3>
+            <span class="trio-caption mono">5/14 · 周四</span>
+          </div>
+
+          <div class="tomo-block">
+            <div class="tomo-task">
+              <span class="tomo-time">08:30</span>
+              <div class="tomo-name">数量关系专项<span class="sub">薄弱: 行程问题</span></div>
+              <span class="tomo-dur">45 m</span>
+            </div>
+            <div class="tomo-task">
+              <span class="tomo-time">14:00</span>
+              <div class="tomo-name">申论小作文一篇<span class="sub">2023 国考 副省级</span></div>
+              <span class="tomo-dur">60 m</span>
+            </div>
+            <div class="tomo-task">
+              <span class="tomo-time">21:00</span>
+              <div class="tomo-name">错题日清<span class="sub">今日新增题目</span></div>
+              <span class="tomo-dur">20 m</span>
+            </div>
+          </div>
+
+          <span class="see-all">
+            打开明日计划
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </span>
+        </section>
+
+        <!-- 本周进度环 -->
+        <section class="card" aria-label="本周进度">
+          <div class="card-head">
+            <div class="card-head-left">
+              <span class="grip"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+              <span class="eyebrow"><i class="dot"></i>WEEK · 第 19 周</span>
+            </div>
+            <button class="collapse-btn" aria-label="折叠">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+            </button>
+          </div>
+
+          <div class="trio-head">
+            <h3 class="trio-title">本周节奏</h3>
+            <span class="trio-caption mono">5/11 → 5/17</span>
+          </div>
+
+          <div class="ring-wrap">
+            <div class="ring" aria-label="本周完成度 62%">
+              <svg viewBox="0 0 120 120">
+                <circle class="ring-track" cx="60" cy="60" r="50"/>
+                <circle class="ring-fill" cx="60" cy="60" r="50"
+                        stroke-dasharray="314" stroke-dashoffset="119"/>
+              </svg>
+              <div class="ring-num">
+                <b>62</b>
+                <span>% 完成</span>
+              </div>
+            </div>
+            <div class="ring-list">
+              <div class="ring-row">
+                <span class="label">行测</span>
+                <span class="bar"><i style="width:78%"></i></span>
+                <span class="val">7/9</span>
+              </div>
+              <div class="ring-row">
+                <span class="label">申论</span>
+                <span class="bar"><i style="width:50%"></i></span>
+                <span class="val">2/4</span>
+              </div>
+              <div class="ring-row">
+                <span class="label">错题</span>
+                <span class="bar"><i style="width:43%"></i></span>
+                <span class="val">26/60</span>
+              </div>
+              <div class="ring-row">
+                <span class="label">笔记</span>
+                <span class="bar"><i style="width:60%"></i></span>
+                <span class="val">3/5</span>
+              </div>
+            </div>
+          </div>
+
+          <span class="see-all">
+            打开本周复盘
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </span>
+        </section>
+
+        <!-- 最近笔记 -->
+        <section class="card" aria-label="最近笔记">
+          <div class="card-head">
+            <div class="card-head-left">
+              <span class="grip"><i></i><i></i><i></i><i></i><i></i><i></i></span>
+              <span class="eyebrow"><i class="dot"></i>NOTES</span>
+            </div>
+            <button class="collapse-btn" aria-label="折叠">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+            </button>
+          </div>
+
+          <div class="trio-head">
+            <h3 class="trio-title">最近复盘笔记</h3>
+            <span class="trio-caption">3 篇</span>
+          </div>
+
+          <div class="note-list">
+            <div class="note-row">
+              <span class="note-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              </span>
+              <div class="note-text">
+                类比推理三步法整理
+                <span class="meta">5/12 · 412 字</span>
+              </div>
+              <svg class="note-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+            <div class="note-row">
+              <span class="note-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              </span>
+              <div class="note-text">
+                申论大作文结构模板
+                <span class="meta">5/10 · 678 字</span>
+              </div>
+              <svg class="note-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+            <div class="note-row">
+              <span class="note-icon">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+              </span>
+              <div class="note-text">
+                行程问题常见陷阱
+                <span class="meta">5/08 · 245 字</span>
+              </div>
+              <svg class="note-arrow" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </div>
+          </div>
+
+          <span class="see-all">
+            查看全部笔记 (38)
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+          </span>
+        </section>
+
+      </div>
+
+      <!-- ── Footer quote ── -->
+      <div class="foot">
+        <span class="foot-quote">让备考从刷题变成思考。</span>
+        <span class="foot-meta">v2 · 节奏感时间轴 · 已自动保存布局</span>
+      </div>
+
+    </main>
+
+  </div>
+
+</div>
+
+<!-- ====== AI floating entry (collapsed) ====== -->
+<button class="ai-fab" aria-label="AI 助手">
+  <span class="ai-fab-hint">问 AI · 复盘今天</span>
+  <span class="ai-fab-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M12 2 14 8h6l-5 4 2 8-7-5-7 5 2-8-5-4h6z"/>
+    </svg>
+  </span>
+</button>
+
+</body>
+</html>

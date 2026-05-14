@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>v3-A 藏书阁 · 学情数据 (Dashboard)</title>
+<style>
+  :root {
+    --ink: #0b1120;
+    --ink-muted: #334155;
+    --muted: #5b6677;
+    --paper: #f5f1e8;
+    --paper-deep: #ece6d6;
+    --bg: #ffffff;
+    --line: #d9d2bf;
+    --line-strong: #b9af96;
+    --accent: #3f7ef1;
+    --success: #16a34a;
+    --warn: #c97a16;
+    --danger: #b91c1c;
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-btn: 10px;
+    --shadow-card: 0 1px 2px rgba(11,17,32,.04), 0 1px 3px rgba(11,17,32,.05);
+    --sans: 'Inter', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --serif: 'Source Serif 4', 'Songti SC', 'Noto Serif SC', Georgia, serif;
+    --mono: 'SF Mono', Monaco, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .vp { width: 1280px; height: 800px; overflow: hidden; background: var(--paper); margin: 0 auto; display: grid; grid-template-columns: 240px 1fr; }
+
+  /* sidebar (collapsed - 复用 home 模式) */
+  .sb { background: #1a1f2e; color: #cbd5e1; padding: 20px 16px; height: 800px; display: flex; flex-direction: column; gap: 8px; }
+  .sb-brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; border-bottom: 1px solid #2a3142; margin-bottom: 12px; }
+  .sb-brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+  .sb-brand-zh { font-family: var(--serif); font-size: 16px; font-weight: 700; color: #f1f5f9; letter-spacing: 0.02em; }
+  .sb-brand-en { font-size: 10px; color: #94a3b8; letter-spacing: 0.18em; text-transform: uppercase; margin-top: 2px; }
+  .sb-section { margin-top: 8px; padding: 0 8px; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #64748b; }
+  .sb-item, .sb-group-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-sm); font-size: 13px; color: #cbd5e1; cursor: pointer; }
+  .sb-item:hover, .sb-group-head:hover { background: #2a3142; }
+  .sb-item.active { background: #2a3142; color: #f8fafc; font-weight: 500; }
+  .sb-icon { width: 14px; height: 14px; flex-shrink: 0; color: #94a3b8; }
+  .sb-group-children { padding-left: 24px; display: flex; flex-direction: column; gap: 2px; }
+  .sb-child { padding: 6px 10px; font-size: 13px; color: #94a3b8; border-radius: var(--r-sm); cursor: pointer; }
+  .sb-spacer { flex: 1; }
+  .sb-foot { border-top: 1px solid #2a3142; padding: 12px 10px 4px; font-size: 11px; color: #64748b; }
+
+  /* main: dashboard 报刊版式 — 顶 KPI 行 + 中图表 + 底模块对比 */
+  .main { height: 800px; overflow: hidden; display: grid; grid-template-rows: auto auto 1fr auto; padding: 24px 32px; gap: 16px; }
+
+  .page-hd { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .page-eyebrow { font-size: 12px; font-weight: 600; color: var(--ink-muted); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4px; }
+  .page-title { font-family: var(--serif); font-size: 28px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--ink); }
+  .range-tabs { display: inline-flex; padding: 3px; background: var(--paper-deep); border-radius: 9999px; gap: 2px; }
+  .range-tab { padding: 6px 14px; border-radius: 9999px; font-size: 12px; color: var(--muted); cursor: pointer; font-weight: 500; }
+  .range-tab.active { background: var(--bg); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.06); }
+
+  /* KPI 行: 4 stat */
+  .kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; }
+  .stat { background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-md); padding: 18px 20px; display: flex; flex-direction: column; gap: 4px; }
+  .stat-eyebrow { font-size: 12px; font-weight: 600; color: var(--ink-muted); letter-spacing: 0.14em; text-transform: uppercase; }
+  .stat-value { font-family: var(--sans); font-weight: 800; font-size: 36px; line-height: 1.05; letter-spacing: -0.02em; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .stat-unit { font-size: 13px; font-weight: 500; color: var(--muted); margin-left: 2px; }
+  .stat-meta { font-size: 12px; color: var(--muted); }
+  .stat-trend { font-size: 12px; font-weight: 500; color: var(--success); }
+  .stat-trend.down { color: var(--danger); }
+
+  /* mid 双栏: 趋势图 + 模块表现 */
+  .mid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 16px; min-height: 0; }
+  .panel { background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-lg); padding: 18px 20px; display: flex; flex-direction: column; gap: 12px; }
+  .panel-hd { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px dashed var(--line); }
+  .panel-title { font-family: var(--serif); font-size: 16px; font-weight: 700; color: var(--ink); }
+  .panel-sub { font-size: 12px; color: var(--muted); }
+
+  .chart { flex: 1; min-height: 0; position: relative; }
+  .chart svg { width: 100%; height: 100%; }
+  .axis-label { font-size: 10px; fill: var(--muted); font-family: var(--sans); }
+  .axis-grid { stroke: var(--line); stroke-dasharray: 2 4; }
+  .line-curve { fill: none; stroke: var(--ink); stroke-width: 2; }
+  .line-curve.faded { stroke: var(--line-strong); stroke-width: 1.5; }
+  .dot { fill: var(--ink); }
+  .dot-label { font-size: 11px; font-weight: 600; fill: var(--ink); font-family: var(--sans); font-variant-numeric: tabular-nums; }
+  .legend { display: flex; gap: 14px; font-size: 12px; color: var(--ink-muted); }
+  .legend-dot { width: 10px; height: 2px; display: inline-block; vertical-align: middle; margin-right: 6px; }
+  .legend-dot.ink { background: var(--ink); }
+  .legend-dot.muted { background: var(--line-strong); }
+
+  /* 模块表现 list */
+  .mod-list { display: flex; flex-direction: column; gap: 10px; flex: 1; min-height: 0; }
+  .mod-row { display: grid; grid-template-columns: 80px 1fr 60px; gap: 10px; align-items: center; }
+  .mod-name { font-size: 13px; color: var(--ink); font-weight: 500; }
+  .mod-bar-wrap { height: 8px; background: var(--paper-deep); border-radius: 9999px; overflow: hidden; position: relative; }
+  .mod-bar-fill { height: 100%; background: var(--ink); border-radius: 9999px; }
+  .mod-pct { font-size: 13px; font-weight: 600; color: var(--ink); text-align: right; font-variant-numeric: tabular-nums; }
+  .mod-meta { font-size: 11px; color: var(--muted); }
+
+  /* 底栏: 学习时长 / 错题分布 mini stats */
+  .bot-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+  .mini-card { background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-md); padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; }
+  .mini-left { display: flex; flex-direction: column; gap: 2px; }
+  .mini-eyebrow { font-size: 11px; font-weight: 600; color: var(--ink-muted); letter-spacing: 0.14em; text-transform: uppercase; }
+  .mini-title { font-size: 13px; color: var(--ink); font-weight: 500; }
+  .mini-num { font-family: var(--sans); font-weight: 800; font-size: 22px; letter-spacing: -0.01em; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .mini-num span { font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 2px; }
+</style>
+</head>
+<body>
+<div class="vp">
+  <aside class="sb">
+    <div class="sb-brand">
+      <svg width="32" height="32" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-label="思考品牌标识" role="img">
+        <rect width="40" height="40" rx="10" fill="#0b1120"/>
+        <g stroke="#ffffff" stroke-width="1.8" stroke-linecap="round">
+          <line x1="11" y1="13" x2="29" y2="13"/><line x1="11" y1="22" x2="29" y2="22"/>
+          <line x1="11" y1="13" x2="11" y2="27"/><line x1="20" y1="13" x2="20" y2="27"/>
+          <line x1="29" y1="13" x2="29" y2="27"/><line x1="11" y1="27" x2="29" y2="27"/>
+        </g>
+        <circle cx="20" cy="34" r="2.2" fill="#ffffff"/>
+      </svg>
+      <div class="sb-brand-text"><span class="sb-brand-zh">思考</span><span class="sb-brand-en">SIKAO</span></div>
+    </div>
+    <div class="sb-section">主练习</div>
+    <div class="sb-item">首页</div>
+    <div class="sb-group-head">行测试炼</div>
+    <div class="sb-group-children"><div class="sb-child">专项练习</div><div class="sb-child">套卷练习</div></div>
+    <div class="sb-group-head">申论试炼</div>
+    <div class="sb-group-children"><div class="sb-child">专项练习</div><div class="sb-child">套卷练习</div></div>
+    <div class="sb-section">复盘</div>
+    <div class="sb-item">错题本</div>
+    <div class="sb-item active">学情数据</div>
+    <div class="sb-item">考试日历</div>
+    <div class="sb-spacer"></div>
+    <div class="sb-foot">让备考从刷题变成思考</div>
+  </aside>
+
+  <main class="main">
+    <header class="page-hd">
+      <div>
+        <div class="page-eyebrow">复盘 · 数据</div>
+        <h1 class="page-title">学情数据</h1>
+      </div>
+      <div class="range-tabs">
+        <span class="range-tab">7 天</span>
+        <span class="range-tab active">30 天</span>
+        <span class="range-tab">90 天</span>
+        <span class="range-tab">全程</span>
+      </div>
+    </header>
+
+    <!-- KPI 4 stats -->
+    <section class="kpi-row">
+      <div class="stat">
+        <span class="stat-eyebrow">累计答题</span>
+        <span class="stat-value">2,470<span class="stat-unit">题</span></span>
+        <span class="stat-meta">较上周 <span class="stat-trend">↑ 86</span></span>
+      </div>
+      <div class="stat">
+        <span class="stat-eyebrow">综合正确率</span>
+        <span class="stat-value">73<span class="stat-unit">%</span></span>
+        <span class="stat-meta">较上周 <span class="stat-trend">↑ 4</span> pt</span>
+      </div>
+      <div class="stat">
+        <span class="stat-eyebrow">学习时长</span>
+        <span class="stat-value">42<span class="stat-unit">小时</span></span>
+        <span class="stat-meta">日均 1.4 小时</span>
+      </div>
+      <div class="stat">
+        <span class="stat-eyebrow">错题待复</span>
+        <span class="stat-value">86<span class="stat-unit">题</span></span>
+        <span class="stat-meta"><span class="stat-trend down">↑ 12</span> 较上周</span>
+      </div>
+    </section>
+
+    <!-- mid 趋势 + 模块 -->
+    <section class="mid">
+      <article class="panel">
+        <div class="panel-hd">
+          <h2 class="panel-title">正确率趋势</h2>
+          <div class="legend">
+            <span><span class="legend-dot ink"></span>近 30 天</span>
+            <span><span class="legend-dot muted"></span>上一个 30 天</span>
+          </div>
+        </div>
+        <div class="chart">
+          <svg viewBox="0 0 600 240" preserveAspectRatio="none">
+            <!-- grid -->
+            <line class="axis-grid" x1="40" y1="40" x2="580" y2="40"/>
+            <line class="axis-grid" x1="40" y1="100" x2="580" y2="100"/>
+            <line class="axis-grid" x1="40" y1="160" x2="580" y2="160"/>
+            <line class="axis-grid" x1="40" y1="200" x2="580" y2="200"/>
+            <text class="axis-label" x="32" y="44" text-anchor="end">90%</text>
+            <text class="axis-label" x="32" y="104" text-anchor="end">75%</text>
+            <text class="axis-label" x="32" y="164" text-anchor="end">60%</text>
+            <text class="axis-label" x="32" y="204" text-anchor="end">45%</text>
+            <!-- prev faded -->
+            <path class="line-curve faded" d="M 40 150 L 100 145 L 160 158 L 220 140 L 280 148 L 340 132 L 400 138 L 460 125 L 520 122 L 580 118"/>
+            <!-- current ink -->
+            <path class="line-curve" d="M 40 130 L 100 125 L 160 138 L 220 110 L 280 118 L 340 92 L 400 95 L 460 78 L 520 82 L 580 70"/>
+            <!-- end dot -->
+            <circle class="dot" cx="580" cy="70" r="3.5"/>
+            <text class="dot-label" x="572" y="62" text-anchor="end">73%</text>
+            <!-- x labels -->
+            <text class="axis-label" x="40" y="226">04-08</text>
+            <text class="axis-label" x="220" y="226">04-15</text>
+            <text class="axis-label" x="400" y="226">04-22</text>
+            <text class="axis-label" x="580" y="226" text-anchor="end">05-08</text>
+          </svg>
+        </div>
+      </article>
+
+      <article class="panel">
+        <div class="panel-hd">
+          <h2 class="panel-title">各模块表现</h2>
+          <span class="panel-sub">按正确率排序</span>
+        </div>
+        <div class="mod-list">
+          <div class="mod-row">
+            <span class="mod-name">资料分析</span>
+            <div class="mod-bar-wrap"><div class="mod-bar-fill" style="width:84%"></div></div>
+            <span class="mod-pct">84%</span>
+          </div>
+          <div class="mod-row">
+            <span class="mod-name">言语理解</span>
+            <div class="mod-bar-wrap"><div class="mod-bar-fill" style="width:76%"></div></div>
+            <span class="mod-pct">76%</span>
+          </div>
+          <div class="mod-row">
+            <span class="mod-name">判断推理</span>
+            <div class="mod-bar-wrap"><div class="mod-bar-fill" style="width:71%"></div></div>
+            <span class="mod-pct">71%</span>
+          </div>
+          <div class="mod-row">
+            <span class="mod-name">数量关系</span>
+            <div class="mod-bar-wrap"><div class="mod-bar-fill" style="width:62%"></div></div>
+            <span class="mod-pct">62%</span>
+          </div>
+          <div class="mod-row">
+            <span class="mod-name">常识判断</span>
+            <div class="mod-bar-wrap"><div class="mod-bar-fill" style="width:58%"></div></div>
+            <span class="mod-pct">58%</span>
+          </div>
+          <div class="mod-row" style="margin-top:6px; padding-top:8px; border-top:1px dashed var(--line);">
+            <span class="mod-name" style="color:var(--ink-muted);">申论 · 综合</span>
+            <div class="mod-bar-wrap"><div class="mod-bar-fill" style="width:67%; background:var(--ink-muted);"></div></div>
+            <span class="mod-pct" style="color:var(--ink-muted);">67%</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- 底栏: 3 mini -->
+    <section class="bot-row">
+      <div class="mini-card">
+        <div class="mini-left">
+          <span class="mini-eyebrow">最弱模块</span>
+          <span class="mini-title">常识判断 · 法律法规</span>
+        </div>
+        <span class="mini-num">52<span>%</span></span>
+      </div>
+      <div class="mini-card">
+        <div class="mini-left">
+          <span class="mini-eyebrow">最长连击</span>
+          <span class="mini-title">资料分析 · 计算题</span>
+        </div>
+        <span class="mini-num">17<span>题</span></span>
+      </div>
+      <div class="mini-card">
+        <div class="mini-left">
+          <span class="mini-eyebrow">活跃日</span>
+          <span class="mini-title">最近 30 天里</span>
+        </div>
+        <span class="mini-num">23<span>/30 天</span></span>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

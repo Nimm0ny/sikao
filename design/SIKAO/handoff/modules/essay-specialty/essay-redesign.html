@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="paper">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>思考 — 申论专项 & 套卷 (SIKAO 重设计)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,400;8..60,500;8..60,600;8..60,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" />
+<style>
+  /* ============================================================
+   * SIKAO · tokens  — copied verbatim from design/tokens.css
+   * 90 % paper · 8 % ink · 2 % 暗朱  (1-2 accent uses per screen)
+   * ============================================================ */
+  :root {
+    --paper:#FAF7F0;
+    --paper-2:#F4F0E6;
+    --paper-3:#ECE6D7;
+    --rule:#E2DBC8;
+    --rule-strong:#C9C0A8;
+    --ink:#1A1815;
+    --ink-2:#3A352D;
+    --ink-3:#6B6358;
+    --ink-4:#948A7A;
+
+    --accent:#9B2F2F;
+    --accent-2:#7A2424;
+    --accent-50:#F5E6E2;
+
+    --ok:#4A6B3A; --ok-bg:#E7E9D9;
+    --warn:#A66A18; --warn-bg:#F4E5C8;
+    --err:#8B2F2F; --err-bg:#F1DCD7;
+
+    --serif:'Source Serif 4','Noto Serif SC',Georgia,'Songti SC',serif;
+    --sans:'Inter',system-ui,-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;
+    --mono:'JetBrains Mono','SF Mono',ui-monospace,Consolas,monospace;
+
+    --t-h1:44px; --t-h2:30px; --t-h3:22px; --t-h4:18px;
+    --t-body:15px; --t-sm:13px; --t-cap:12px; --t-eyebrow:11px;
+
+    --s1:4px; --s2:8px; --s3:12px; --s4:16px;
+    --s5:24px; --s6:32px; --s7:48px; --s8:72px;
+
+    --r-sm:4px; --r-md:6px; --r-lg:10px; --r-xl:14px;
+
+    --shadow-1:0 1px 0 rgba(26,24,21,.04),0 1px 2px rgba(26,24,21,.04);
+    --shadow-2:0 6px 24px -8px rgba(26,24,21,.16),0 2px 6px rgba(26,24,21,.05);
+
+    --sidebar:#0f0d09;
+    --sidebar-fg:#cbc6bb;
+    --sidebar-fg-muted:#8b867d;
+    --sidebar-fg-dim:#5e5a52;
+    --sidebar-line:#1f1d19;
+    --sidebar-hover:#1a1814;
+  }
+
+  /* === base ============================================== */
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:var(--t-body);line-height:1.55;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+  /* subtle paper grain — almost imperceptible noise */
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.35;mix-blend-mode:multiply;background-image:radial-gradient(circle at 25% 30%, rgba(180,160,120,.04) 0, transparent 60%),radial-gradient(circle at 80% 70%, rgba(180,160,120,.05) 0, transparent 55%);}
+  .app{position:relative;z-index:1;}
+  em,i{font-style:normal;}
+  b,strong{font-weight:600;}
+  a{color:inherit;text-decoration:none;}
+  button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer;}
+  svg{display:block;}
+
+  .serif{font-family:var(--serif);font-feature-settings:"ss01","onum";letter-spacing:-.01em;}
+  .mono{font-family:var(--mono);font-feature-settings:"tnum";font-variant-numeric:tabular-nums;}
+  .eyebrow{font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);}
+
+  /* SIKAO buttons ============================================ */
+  .btn{display:inline-flex;align-items:center;gap:var(--s2);height:36px;padding:0 var(--s4);border:1px solid transparent;border-radius:var(--r-sm);font-family:var(--mono);font-size:var(--t-cap);letter-spacing:.08em;text-transform:uppercase;font-weight:500;transition:all 120ms ease;white-space:nowrap;}
+  .btn-primary{background:var(--ink);color:var(--paper);}
+  .btn-primary:hover{background:#000;}
+  .btn-secondary{border-color:var(--ink);color:var(--ink);background:var(--paper);}
+  .btn-secondary:hover{background:var(--paper-2);}
+  .btn-ghost{color:var(--ink-2);}
+  .btn-ghost:hover{background:var(--paper-2);}
+  .btn-accent{background:var(--accent);color:#fff;}
+  .btn-accent:hover{background:var(--accent-2);}
+  .btn-sm{height:28px;padding:0 var(--s3);font-size:11px;}
+  .btn[disabled]{opacity:.4;pointer-events:none;}
+  .btn .ic{width:12px;height:12px;}
+
+  /* SIKAO chip ============================================== */
+  .chip{display:inline-flex;align-items:center;gap:6px;height:22px;padding:0 10px;border:1px solid var(--rule);border-radius:var(--r-sm);font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.04em;color:var(--ink-3);background:transparent;}
+  .chip.is-accent{background:var(--accent-50);border-color:transparent;color:var(--accent-2);}
+  .chip.is-ok{background:var(--ok-bg);color:var(--ok);border-color:transparent;}
+  .chip.is-warn{background:var(--warn-bg);color:var(--warn);border-color:transparent;}
+  .chip.is-err{background:var(--err-bg);color:var(--err);border-color:transparent;}
+
+  /* SIKAO stamp ============================================= */
+  .stamp{display:inline-flex;align-items:center;gap:10px;padding:6px 12px;border:1px solid var(--rule-strong);background:var(--paper);font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2);}
+  .stamp::before{content:"";width:6px;height:6px;background:var(--accent);border-radius:50%;flex-shrink:0;}
+
+  /* SIKAO mark =============================================== */
+  .mark{width:28px;height:28px;background:var(--ink);color:var(--paper);display:grid;place-items:center;border-radius:var(--r-md);flex-shrink:0;font-family:var(--serif);font-weight:600;font-size:16px;line-height:1;}
+  .mark.lg{width:38px;height:38px;border-radius:var(--r-md);font-size:20px;}
+
+  /* SIKAO card =============================================== */
+  .comp-card{border:1px solid var(--rule);background:var(--paper);}
+
+  /* ============================================================
+   * App shell
+   * ============================================================ */
+  .app{display:grid;grid-template-columns:240px 1fr;min-height:100vh;}
+
+  .side{background:var(--sidebar);color:var(--sidebar-fg);padding:20px 14px 28px;border-right:1px solid var(--sidebar-line);position:sticky;top:0;height:100vh;display:flex;flex-direction:column;gap:6px;font-family:var(--sans);}
+  .brand{display:flex;align-items:center;gap:12px;padding:6px 6px 16px;border-bottom:1px solid var(--sidebar-line);margin-bottom:10px;}
+  .brand .mark{background:var(--paper);color:var(--ink);}
+  .brand h1{margin:0;font-size:15px;font-weight:600;color:#f3eedf;letter-spacing:-.005em;}
+  .brand .sub{display:block;font-family:var(--mono);font-size:10px;letter-spacing:.16em;color:var(--sidebar-fg-dim);text-transform:uppercase;margin-top:3px;}
+
+  .side .group-label{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--sidebar-fg-dim);padding:14px 10px 6px;}
+  .nav{display:flex;flex-direction:column;}
+  .nav a{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--r-sm);color:var(--sidebar-fg-muted);font-size:13px;font-weight:500;transition:background 120ms,color 120ms;}
+  .nav a:hover{background:var(--sidebar-hover);color:#f3eedf;}
+  .nav a.active{background:#171510;color:#f3eedf;}
+  .nav a .ic{width:16px;height:16px;opacity:.75;}
+  .nav a.indent{padding-left:36px;font-size:13px;color:var(--sidebar-fg-dim);position:relative;}
+  .nav a.indent::before{content:"";position:absolute;left:25px;top:50%;width:3px;height:3px;background:currentColor;opacity:.55;transform:translateY(-50%);}
+  .nav a.indent:hover{color:var(--sidebar-fg);}
+  .nav a.indent.active{background:#171510;color:#f3eedf;}
+  .nav .chev{margin-left:auto;width:11px;height:11px;opacity:.55;}
+
+  .side .foot{margin-top:auto;border-top:1px solid var(--sidebar-line);padding-top:14px;display:flex;align-items:center;gap:10px;color:var(--sidebar-fg-muted);font-size:12px;}
+  .side .foot .avatar{width:28px;height:28px;border-radius:var(--r-md);background:#2a2520;display:grid;place-items:center;color:#f3eedf;font-family:var(--serif);font-weight:600;}
+
+  /* main ============================================================ */
+  .main{padding:48px 64px 96px;max-width:1200px;}
+
+  /* page header ============================================ */
+  .ph-row{display:flex;align-items:flex-start;justify-content:space-between;gap:var(--s5);margin-bottom:var(--s6);}
+  .ph .eyebrow-row{display:flex;align-items:center;gap:var(--s3);margin-bottom:var(--s4);}
+  .ph h1{margin:0;font-family:var(--serif);font-size:var(--t-h1);font-weight:500;letter-spacing:-.02em;color:var(--ink);line-height:1.1;}
+  .ph h1 .light{color:var(--ink-3);font-weight:400;}
+  .ph .lede{margin:var(--s4) 0 0;font-size:var(--t-body);color:var(--ink-2);max-width:62ch;line-height:1.6;}
+
+  /* page switcher (real app routes between these) ====== */
+  .page{display:none;}
+  .page.active{display:block;}
+
+  /* ============================================================
+   * PAGE A · 专项练习
+   * ============================================================ */
+
+  /* Continue-hero band — surfaces the single most useful action */
+  .resume{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:var(--s5);padding:22px 26px;background:var(--ink);color:var(--paper);margin-bottom:var(--s4);position:relative;overflow:hidden;}
+  .resume::after{content:"";position:absolute;top:0;right:0;bottom:0;width:280px;background:radial-gradient(ellipse at right, rgba(155,47,47,.18), transparent 70%);pointer-events:none;}
+  .resume .seal{width:54px;height:54px;border:1px solid rgba(242,234,216,.25);display:grid;place-items:center;font-family:var(--serif);font-size:24px;font-weight:500;color:#f3eedf;flex-shrink:0;letter-spacing:-.02em;}
+  .resume .seal .ord{display:block;font-family:var(--mono);font-size:9px;letter-spacing:.18em;color:rgba(242,234,216,.55);margin-top:2px;text-align:center;}
+  .resume .meta{min-width:0;}
+  .resume .meta .kicker{font-family:var(--mono);font-size:10px;letter-spacing:.22em;text-transform:uppercase;color:rgba(242,234,216,.55);margin-bottom:6px;display:flex;align-items:center;gap:10px;}
+  .resume .meta .kicker::before{content:"";width:5px;height:5px;background:var(--accent);border-radius:50%;}
+  .resume .meta h2{margin:0;font-family:var(--serif);font-size:22px;font-weight:500;letter-spacing:-.015em;color:#f3eedf;line-height:1.25;}
+  .resume .meta h2 .at{color:rgba(242,234,216,.55);font-weight:400;}
+  .resume .meta .bar{display:flex;align-items:center;gap:14px;margin-top:8px;font-family:var(--mono);font-size:11px;color:rgba(242,234,216,.55);letter-spacing:.06em;}
+  .resume .meta .bar .sep{width:1px;height:10px;background:rgba(242,234,216,.2);}
+  .resume .meta .bar strong{color:#f3eedf;font-weight:600;font-family:var(--mono);}
+  .resume .acts{position:relative;z-index:1;display:flex;gap:8px;}
+  .resume .acts .btn-primary{background:var(--paper);color:var(--ink);}
+  .resume .acts .btn-primary:hover{background:#fff;}
+  .resume .acts .btn-secondary{border-color:rgba(242,234,216,.35);color:#f3eedf;background:transparent;}
+  .resume .acts .btn-secondary:hover{background:rgba(242,234,216,.08);}
+
+  .stat-strip{display:flex;border:1px solid var(--rule);background:var(--paper);flex-shrink:0;}
+  .stat-strip .cell{padding:14px 22px;border-right:1px solid var(--rule);min-width:114px;}
+  .stat-strip .cell:last-child{border-right:0;}
+  .stat-strip .k{font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);}
+  .stat-strip .v{font-family:var(--serif);font-size:28px;font-weight:600;color:var(--ink);line-height:1.1;margin-top:6px;letter-spacing:-.015em;}
+  .stat-strip .v .small{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--ink-3);margin-left:3px;letter-spacing:0;}
+
+  .cat-list{display:flex;flex-direction:column;gap:var(--s4);}
+
+  .cat{background:var(--paper);border:1px solid var(--rule);transition:border-color 160ms;}
+  .cat:hover{border-color:var(--rule-strong);}
+  .cat[data-open="true"]{border-color:var(--ink);}
+
+  .cat-header{display:grid;grid-template-columns:56px 1fr 260px 150px auto;align-items:center;gap:var(--s5);padding:22px 26px;cursor:pointer;user-select:none;}
+  .cat[data-empty="true"] .cat-header{cursor:default;}
+
+  .cat-num{font-family:var(--serif);font-size:32px;font-weight:500;color:var(--ink-4);letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;transition:color 160ms;}
+  .cat[data-open="true"] .cat-num,
+  .cat:hover .cat-num{color:var(--ink);}
+
+  .cat-title{display:flex;flex-direction:column;gap:5px;min-width:0;}
+  .cat-title .name{font-family:var(--serif);font-size:var(--t-h3);font-weight:600;color:var(--ink);letter-spacing:-.01em;line-height:1.2;}
+  .cat-title .desc{font-size:var(--t-sm);color:var(--ink-3);}
+
+  .cat-bar-wrap{display:flex;flex-direction:column;gap:8px;}
+  .cat-bar{height:3px;background:var(--paper-3);overflow:hidden;}
+  .cat-bar > i{display:block;height:100%;background:var(--ink);transition:width 240ms ease;}
+  .cat[data-empty="true"] .cat-bar > i{background:var(--rule-strong);}
+  .cat-bar-label{display:flex;justify-content:space-between;font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.08em;color:var(--ink-3);text-transform:uppercase;}
+  .cat-bar-label .pct{color:var(--ink);font-weight:600;}
+
+  .cat-meta{font-family:var(--mono);font-size:var(--t-cap);color:var(--ink-3);text-align:right;text-transform:uppercase;letter-spacing:.12em;}
+  .cat-meta .big{font-family:var(--serif);font-size:22px;font-weight:600;color:var(--ink);letter-spacing:-.01em;display:block;text-transform:none;}
+  .cat-meta .big .of{font-family:var(--mono);font-size:13px;font-weight:500;color:var(--ink-4);margin-left:2px;letter-spacing:0;}
+
+  .cat-actions{justify-self:end;display:inline-flex;align-items:center;gap:var(--s3);}
+  .cat-chev{width:14px;height:14px;color:var(--ink-4);transition:transform 220ms ease,color 160ms;}
+  .cat[data-open="true"] .cat-chev{transform:rotate(180deg);color:var(--ink);}
+
+  .cat-body{display:none;border-top:1px solid var(--rule);background:var(--paper-2);padding:20px 26px 24px;}
+  .cat[data-open="true"] .cat-body{display:block;}
+
+  .body-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--s3);padding:0 2px;}
+  .body-head h3{margin:0;font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);font-weight:500;}
+  .body-head .custom{display:inline-flex;align-items:center;gap:5px;font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);}
+  .body-head .custom:hover{color:var(--ink);}
+  .body-head .custom svg{width:11px;height:11px;}
+
+  .sub-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--s2);}
+  .sub-row{display:flex;align-items:center;gap:14px;padding:14px 16px;background:var(--paper);border:1px solid var(--rule);transition:border-color 140ms,transform 120ms;cursor:pointer;text-align:left;}
+  .sub-row:hover{border-color:var(--ink);}
+  .sub-row .tick{width:18px;height:18px;border:1.5px solid var(--rule-strong);display:grid;place-items:center;flex-shrink:0;color:transparent;background:var(--paper);}
+  .sub-row.done .tick{background:var(--ok);border-color:var(--ok);color:#fff;}
+  .sub-row.progress .tick{background:var(--paper);border-color:var(--ink);color:var(--ink);position:relative;}
+  .sub-row.progress .tick::after{content:"";width:8px;height:8px;background:var(--ink);position:absolute;}
+  .sub-row .label{flex:1;font-size:var(--t-body);color:var(--ink);font-weight:500;min-width:0;line-height:1.3;}
+  .sub-row .label .meta{display:block;font-family:var(--mono);font-size:var(--t-eyebrow);color:var(--ink-3);font-weight:400;margin-top:4px;letter-spacing:.04em;}
+  .sub-row .prog{font-family:var(--mono);font-size:var(--t-cap);color:var(--ink-3);font-variant-numeric:tabular-nums;text-align:right;min-width:64px;letter-spacing:.02em;}
+  .sub-row .prog strong{color:var(--ink);font-weight:600;}
+  .sub-row .continue-mark{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--accent);font-weight:600;border:1px solid var(--accent);padding:3px 7px;}
+  .sub-row .arrow{width:13px;height:13px;color:var(--ink-3);transform:translateX(-4px);opacity:0;transition:all 160ms;}
+  .sub-row:hover .arrow{opacity:1;transform:translateX(0);color:var(--ink);}
+
+  /* ============================================================
+   * PAGE B · 套卷练习
+   * ============================================================ */
+  .filters{background:var(--paper);border:1px solid var(--rule);margin-bottom:var(--s4);}
+  .f-row{display:grid;grid-template-columns:96px 1fr;align-items:flex-start;gap:var(--s4);padding:14px 24px;border-bottom:1px solid var(--rule);}
+  .f-row:last-of-type{border-bottom:0;}
+  .f-row > .key{font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.18em;text-transform:uppercase;color:var(--ink-3);padding-top:9px;}
+  .f-row > .chips{display:flex;flex-wrap:wrap;gap:4px;}
+  .f-row.sub > .key{visibility:hidden;}
+  .f-row.sub{padding-top:4px;padding-bottom:14px;border-bottom:0;}
+
+  /* filter chips — CJK adapted: thin rule + sans, not mono uppercase */
+  .fchip{display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 14px;background:transparent;color:var(--ink-2);font-family:var(--sans);font-size:13px;font-weight:500;border:1px solid transparent;border-radius:var(--r-sm);transition:all 120ms ease;cursor:pointer;font-variant-numeric:tabular-nums;}
+  .fchip:hover{background:var(--paper-2);color:var(--ink);}
+  .fchip.active{background:var(--ink);color:var(--paper);}
+  .fchip .dot{width:5px;height:5px;background:var(--accent);border-radius:50%;display:inline-block;}
+
+  .filters-foot{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;background:var(--paper-2);border-top:1px solid var(--rule);}
+  .selected-summary{display:flex;align-items:center;gap:var(--s2);font-size:13px;color:var(--ink-3);flex-wrap:wrap;}
+  .sum-tag{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;background:var(--paper);border:1px solid var(--rule);font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.06em;color:var(--ink-2);text-transform:uppercase;}
+  .sum-tag .x{color:var(--ink-4);font-size:14px;line-height:1;cursor:pointer;}
+  .sum-tag .x:hover{color:var(--ink);}
+  .selected-summary .total{font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);}
+  .selected-summary .total strong{font-family:var(--serif);font-size:15px;font-weight:600;color:var(--ink);margin:0 4px;letter-spacing:-.01em;text-transform:none;}
+  .reset-btn{font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);text-decoration:underline;text-decoration-color:var(--ink-4);text-underline-offset:3px;cursor:pointer;}
+  .reset-btn:hover{color:var(--ink);}
+
+  /* list head */
+  .list-head{display:flex;align-items:baseline;justify-content:space-between;margin:var(--s5) 2px var(--s3);}
+  .list-head .count{font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);}
+  .list-head .count strong{font-family:var(--serif);font-size:17px;font-weight:600;color:var(--ink);margin:0 4px;letter-spacing:-.01em;text-transform:none;}
+  .sort{display:inline-flex;align-items:center;gap:var(--s4);font-family:var(--mono);font-size:var(--t-eyebrow);letter-spacing:.12em;text-transform:uppercase;color:var(--ink-3);}
+  .sort .opt{cursor:pointer;padding:4px 0;}
+  .sort .opt.active{color:var(--ink);font-weight:600;position:relative;}
+  .sort .opt.active::after{content:"";position:absolute;left:0;right:0;bottom:-3px;height:1px;background:var(--ink);}
+
+  /* paper list */
+  .paper-list{background:var(--paper);border:1px solid var(--rule);}
+  .paper-row{display:grid;grid-template-columns:88px 1fr 140px 140px 120px;align-items:center;gap:var(--s5);padding:20px 26px;border-bottom:1px solid var(--rule);cursor:pointer;transition:background 140ms;}
+  .paper-row:last-child{border-bottom:0;}
+  .paper-row:hover{background:var(--paper-2);}
+
+  .yr-block{display:flex;flex-direction:column;align-items:flex-start;gap:4px;}
+  .yr-block .yr{font-family:var(--serif);font-size:32px;font-weight:600;color:var(--ink);letter-spacing:-.025em;line-height:1;font-variant-numeric:tabular-nums;}
+  .yr-block .badge{font-family:var(--mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;padding:2px 7px;color:var(--ink-3);border:1px solid var(--rule-strong);}
+  .yr-block .badge.gk{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .yr-block .badge.sk{color:var(--ink-2);border-color:var(--ink-3);}
+
+  /* difficulty dots — 3 levels */
+  .diff{display:inline-flex;align-items:center;gap:3px;}
+  .diff .d{width:5px;height:5px;background:var(--rule-strong);border-radius:50%;}
+  .diff .d.on{background:var(--ink);}
+
+  /* last-attempt micro line */
+  .last-attempt{font-family:var(--mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-4);margin-top:5px;}
+  .last-attempt strong{color:var(--ink-2);font-weight:600;font-family:var(--serif);font-size:13px;letter-spacing:-.01em;text-transform:none;}
+
+  /* star / pin marker */
+  .paper-row .pin{position:absolute;left:0;top:0;bottom:0;width:3px;background:transparent;transition:background 160ms;}
+  .paper-row.pinned .pin{background:var(--accent);}
+  .paper-row{position:relative;}
+
+  .p-title{min-width:0;}
+  .p-title h4{margin:0 0 8px;font-family:var(--serif);font-size:17px;font-weight:600;color:var(--ink);letter-spacing:-.01em;line-height:1.35;}
+  .p-tags{display:flex;flex-wrap:wrap;gap:5px;}
+  .p-tags .t{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;padding:2px 7px;color:var(--ink-3);border:1px solid var(--rule);}
+  .p-tags .t.region{color:var(--ink);border-color:var(--rule-strong);font-weight:600;background:var(--paper-2);}
+
+  .p-stat{font-family:var(--mono);font-size:var(--t-eyebrow);color:var(--ink-3);letter-spacing:.12em;text-transform:uppercase;font-variant-numeric:tabular-nums;display:flex;flex-direction:column;gap:6px;}
+  .p-stat .line1{display:flex;align-items:baseline;gap:8px;}
+  .p-stat .big{font-family:var(--serif);font-size:18px;font-weight:600;color:var(--ink);letter-spacing:-.01em;text-transform:none;}
+  .p-stat .diff-row{display:flex;align-items:center;gap:8px;font-size:10px;color:var(--ink-4);}
+
+  .p-status{font-size:13px;}
+  .p-pill{display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 10px;border:1px solid var(--rule);border-radius:var(--r-sm);font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;}
+  .p-pill.todo{border-style:dashed;color:var(--ink-3);}
+  .p-pill.doing{background:var(--warn-bg);color:var(--warn);border-color:transparent;}
+  .p-pill.done{background:var(--ok-bg);color:var(--ok);border-color:transparent;}
+  .p-pill .num{font-family:var(--mono);}
+
+  .paper-row .row-cta{justify-self:end;}
+  .paper-row .row-cta .btn{background:transparent;border-color:var(--rule-strong);color:var(--ink-2);}
+  .paper-row:hover .row-cta .btn{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+
+  /* pagination */
+  .pager{display:flex;justify-content:center;align-items:center;gap:4px;margin-top:var(--s5);}
+  .pager button{min-width:34px;height:34px;padding:0 10px;border-radius:var(--r-sm);font-family:var(--mono);font-size:13px;color:var(--ink-3);background:var(--paper);border:1px solid var(--rule);transition:all 120ms;}
+  .pager button:hover{border-color:var(--ink-3);color:var(--ink);}
+  .pager button.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .pager .ell{color:var(--ink-4);padding:0 6px;font-family:var(--mono);}
+
+  .row-flex{display:flex;align-items:center;gap:var(--s3);}
+  .muted{color:var(--ink-3);}
+
+  /* =========== Tweaks panel (vanilla) =========== */
+  .tweaks-fab{position:fixed;right:24px;bottom:24px;z-index:50;width:42px;height:42px;background:var(--ink);color:var(--paper);border-radius:50%;display:none;place-items:center;box-shadow:var(--shadow-2);cursor:pointer;}
+  .tweaks-fab.show{display:grid;}
+  .tweaks-fab:hover{background:#000;}
+  .tweaks-fab svg{width:18px;height:18px;}
+
+  .tweaks{position:fixed;right:24px;bottom:24px;z-index:60;width:280px;background:var(--paper);border:1px solid var(--ink);box-shadow:var(--shadow-2);display:none;flex-direction:column;font-family:var(--sans);}
+  .tweaks.open{display:flex;}
+  .tweaks .twk-hd{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--rule);}
+  .tweaks .twk-hd .ttl{font-family:var(--mono);font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--ink-2);}
+  .tweaks .twk-hd .x{font-family:var(--mono);font-size:14px;color:var(--ink-3);width:22px;height:22px;display:grid;place-items:center;cursor:pointer;}
+  .tweaks .twk-hd .x:hover{color:var(--ink);background:var(--paper-2);}
+  .tweaks .twk-body{padding:14px 16px 16px;display:flex;flex-direction:column;gap:18px;}
+  .twk-grp{display:flex;flex-direction:column;gap:7px;}
+  .twk-grp .lbl{font-family:var(--mono);font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink-3);}
+  .twk-seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;border:1px solid var(--rule);}
+  .twk-seg button{padding:8px 0;font-family:var(--sans);font-size:12px;color:var(--ink-3);background:var(--paper);border-right:1px solid var(--rule);transition:all 120ms;}
+  .twk-seg button:last-child{border-right:0;}
+  .twk-seg button:hover{background:var(--paper-2);color:var(--ink);}
+  .twk-seg button.active{background:var(--ink);color:var(--paper);}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ============= SIDEBAR ============= -->
+  <aside class="side">
+    <div class="brand">
+      <div class="mark lg">思</div>
+      <div>
+        <h1>思考</h1>
+        <span class="sub">Sikao · 公考</span>
+      </div>
+    </div>
+
+    <span class="group-label">主练习</span>
+    <nav class="nav">
+      <a href="#">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12 12 4l9 8"/><path d="M5 10v10h14V10"/></svg>
+        首页
+      </a>
+      <a href="#">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        行测练习
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 9 6 6 6-6"/></svg>
+      </a>
+      <a href="#" class="indent">专项练习</a>
+      <a href="#" class="indent">套卷练习</a>
+
+      <a href="#">
+        <svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M7 4h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2Z"/><path d="M14 4v5h5"/></svg>
+        申论练习
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="m6 9 6 6 6-6"/></svg>
+      </a>
+      <a href="#" class="indent active" id="nav-specialty" data-page="specialty">专项练习</a>
+      <a href="#" class="indent" id="nav-papers" data-page="papers">套卷练习</a>
+    </nav>
+
+    <span class="group-label">复盘</span>
+    <nav class="nav">
+      <a href="#"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6h16v12H4zM4 10h16"/></svg>错题本</a>
+      <a href="#"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 19V5M4 19h16M9 14v5M14 9v10M19 12v7"/></svg>学情数据</a>
+      <a href="#"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="5" width="18" height="16" rx="1"/><path d="M3 9h18M8 3v4M16 3v4"/></svg>考试日历</a>
+    </nav>
+
+    <div class="foot">
+      <div class="avatar">墨</div>
+      <div>
+        <div style="color:#f3eedf;font-weight:500;">墨白</div>
+        <div style="font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--sidebar-fg-dim);">PRO · 距考试 47 天</div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ============= MAIN ============= -->
+  <main class="main">
+
+  <!-- ============================ PAGE A · 专项练习 ============================ -->
+  <section class="page active" data-page="specialty">
+
+    <div class="ph">
+      <div class="eyebrow-row">
+        <span class="eyebrow">04 · Essay / Specialty</span>
+        <span class="stamp">5 大类 · 23 子项</span>
+      </div>
+      <div class="ph-row">
+        <div>
+          <h1>申论 · 专项练习<br/><span class="light">挑一类专攻</span></h1>
+          <p class="lede">跨 745 套真题集中刷同类题型 — AI 即时批改，五维评分。展开任一大类查看子项分布；进度跟着实际作答更新。</p>
+        </div>
+        <div class="stat-strip" aria-label="总览">
+          <div class="cell"><div class="k">已练</div><div class="v">187<span class="small">/2337</span></div></div>
+          <div class="cell"><div class="k">连续</div><div class="v">14<span class="small">天</span></div></div>
+          <div class="cell"><div class="k">本周</div><div class="v">23<span class="small">题</span></div></div>
+          <div class="cell"><div class="k">平均分</div><div class="v">38.4<span class="small">/50</span></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Continue-hero: surfaces the single most useful action -->
+    <div class="resume">
+      <div class="seal">续<span class="ord">RESUME</span></div>
+      <div class="meta">
+        <div class="kicker">上次练到这里 · 2 小时前</div>
+        <h2>综合概括 <span class="at">/ 第 75·答题中</span></h2>
+        <div class="bar">
+          <span>近三次 <strong>34 · 41 · 38</strong>/50</span>
+          <span class="sep"></span>
+          <span>连续 <strong>14</strong> 天</span>
+          <span class="sep"></span>
+          <span>本周目标 <strong>30/50</strong> 题</span>
+        </div>
+      </div>
+      <div class="acts">
+        <button class="btn btn-secondary">留到下次</button>
+        <button class="btn btn-primary">继续作答 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button>
+      </div>
+    </div>
+
+    <div class="cat-list" id="cat-list">
+
+      <!-- 归纳概括 -->
+      <article class="cat" data-open="true">
+        <div class="cat-header" onclick="toggleCat(this)">
+          <div class="cat-num">01</div>
+          <div class="cat-title">
+            <span class="name">归纳概括</span>
+            <span class="desc">从材料中提炼问题、原因、影响、对策的基本功</span>
+          </div>
+          <div class="cat-bar-wrap">
+            <div class="cat-bar"><i style="width:34%"></i></div>
+            <div class="cat-bar-label"><span>4 子项</span><span><span class="pct">34%</span></span></div>
+          </div>
+          <div class="cat-meta">
+            <span class="big">253<span class="of">/742</span></span>
+            题
+          </div>
+          <div class="cat-actions">
+            <button class="btn btn-primary" onclick="event.stopPropagation();">继续上次 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button>
+            <svg class="cat-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+        <div class="cat-body">
+          <div class="body-head">
+            <h3>↓ 按题型 · 选一子项专攻</h3>
+            <a href="#" class="custom">＋ 自定义刷题</a>
+          </div>
+          <div class="sub-grid">
+            <button class="sub-row progress">
+              <span class="tick"></span>
+              <span class="label">全部 · 归纳概括<span class="meta">所有子项混合 · 推荐</span></span>
+              <span class="continue-mark">继续</span>
+              <span class="prog"><strong>253</strong>/742</span>
+              <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg>
+            </button>
+            <button class="sub-row done">
+              <span class="tick"><svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2.4"><path d="m3 6 2.5 2.5L9 4"/></svg></span>
+              <span class="label">单一概括<span class="meta">问题 / 原因 / 影响 之一</span></span>
+              <span class="prog"><strong>96</strong>/96</span>
+              <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg>
+            </button>
+            <button class="sub-row">
+              <span class="tick"></span>
+              <span class="label">综合概括<span class="meta">多要素同时归纳</span></span>
+              <span class="prog"><strong>74</strong>/238</span>
+              <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg>
+            </button>
+            <button class="sub-row">
+              <span class="tick"></span>
+              <span class="label">概括对策 / 经验<span class="meta">从材料中提取可复制做法</span></span>
+              <span class="prog"><strong>83</strong>/408</span>
+              <svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg>
+            </button>
+          </div>
+        </div>
+      </article>
+
+      <!-- 综合分析 -->
+      <article class="cat" data-open="false">
+        <div class="cat-header" onclick="toggleCat(this)">
+          <div class="cat-num">02</div>
+          <div class="cat-title">
+            <span class="name">综合分析</span>
+            <span class="desc">观点评析、词句理解、对比分析</span>
+          </div>
+          <div class="cat-bar-wrap">
+            <div class="cat-bar"><i style="width:12%"></i></div>
+            <div class="cat-bar-label"><span>3 子项</span><span><span class="pct">12%</span></span></div>
+          </div>
+          <div class="cat-meta">
+            <span class="big">73<span class="of">/609</span></span>
+            题
+          </div>
+          <div class="cat-actions">
+            <button class="btn btn-secondary" onclick="event.stopPropagation();">去练习 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button>
+            <svg class="cat-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+        <div class="cat-body">
+          <div class="body-head">
+            <h3>↓ 按题型 · 选一子项专攻</h3>
+            <a href="#" class="custom">＋ 自定义刷题</a>
+          </div>
+          <div class="sub-grid">
+            <button class="sub-row"><span class="tick"></span><span class="label">全部 · 综合分析<span class="meta">所有子项混合</span></span><span class="prog"><strong>73</strong>/609</span><svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg></button>
+            <button class="sub-row"><span class="tick"></span><span class="label">观点评析<span class="meta">阐释观点 / 表态 / 论证</span></span><span class="prog"><strong>38</strong>/247</span><svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg></button>
+            <button class="sub-row"><span class="tick"></span><span class="label">词句理解<span class="meta">解释含义、提炼内涵</span></span><span class="prog"><strong>22</strong>/186</span><svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg></button>
+            <button class="sub-row"><span class="tick"></span><span class="label">对比 / 启示分析<span class="meta">类比、借鉴、启发</span></span><span class="prog"><strong>13</strong>/176</span><svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg></button>
+          </div>
+        </div>
+      </article>
+
+      <!-- 提出对策 -->
+      <article class="cat" data-open="false">
+        <div class="cat-header" onclick="toggleCat(this)">
+          <div class="cat-num">03</div>
+          <div class="cat-title">
+            <span class="name">提出对策</span>
+            <span class="desc">针对问题给出可落地的解决方案</span>
+          </div>
+          <div class="cat-bar-wrap">
+            <div class="cat-bar"><i style="width:18%"></i></div>
+            <div class="cat-bar-label"><span>3 子项</span><span><span class="pct">18%</span></span></div>
+          </div>
+          <div class="cat-meta">
+            <span class="big">64<span class="of">/352</span></span>
+            题
+          </div>
+          <div class="cat-actions">
+            <button class="btn btn-secondary" onclick="event.stopPropagation();">去练习 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button>
+            <svg class="cat-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+        <div class="cat-body">
+          <div class="body-head">
+            <h3>↓ 按题型 · 选一子项专攻</h3>
+            <a href="#" class="custom">＋ 自定义刷题</a>
+          </div>
+          <div class="sub-grid">
+            <button class="sub-row"><span class="tick"></span><span class="label">全部 · 提出对策<span class="meta">所有子项混合</span></span><span class="prog"><strong>64</strong>/352</span><svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg></button>
+            <button class="sub-row"><span class="tick"></span><span class="label">单一对策<span class="meta">针对一个问题</span></span><span class="prog"><strong>32</strong>/142</span><svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg></button>
+            <button class="sub-row"><span class="tick"></span><span class="label">综合对策<span class="meta">多角度系统方案</span></span><span class="prog"><strong>21</strong>/121</span><svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg></button>
+            <button class="sub-row"><span class="tick"></span><span class="label">方案设计<span class="meta">完整工作方案 / 步骤</span></span><span class="prog"><strong>11</strong>/89</span><svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg></button>
+          </div>
+        </div>
+      </article>
+
+      <!-- 公文 · 应用文 -->
+      <article class="cat" data-open="false" data-empty="true">
+        <div class="cat-header" onclick="toggleCat(this)">
+          <div class="cat-num">04</div>
+          <div class="cat-title">
+            <span class="name">公文 · 应用文</span>
+            <span class="desc">通知、讲话稿、倡议书、调研报告等</span>
+          </div>
+          <div class="cat-bar-wrap">
+            <div class="cat-bar"><i style="width:8%"></i></div>
+            <div class="cat-bar-label"><span>题库导入中</span><span><span class="pct">—</span></span></div>
+          </div>
+          <div class="cat-meta">
+            <span class="big">—<span class="of">/—</span></span>
+            题库准备中
+          </div>
+          <div class="cat-actions">
+            <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();">通知我 →</button>
+          </div>
+        </div>
+      </article>
+
+      <!-- 大作文 -->
+      <article class="cat" data-open="false">
+        <div class="cat-header" onclick="toggleCat(this)">
+          <div class="cat-num">05</div>
+          <div class="cat-title">
+            <span class="name">大作文</span>
+            <span class="desc">议论文写作 · 1 000 字命题 · AI 五维评分</span>
+          </div>
+          <div class="cat-bar-wrap">
+            <div class="cat-bar"><i style="width:6%"></i></div>
+            <div class="cat-bar-label"><span>2 子项</span><span><span class="pct">6%</span></span></div>
+          </div>
+          <div class="cat-meta">
+            <span class="big">38<span class="of">/634</span></span>
+            题
+          </div>
+          <div class="cat-actions">
+            <button class="btn btn-secondary" onclick="event.stopPropagation();">去练习 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button>
+            <svg class="cat-chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg>
+          </div>
+        </div>
+        <div class="cat-body">
+          <div class="body-head">
+            <h3>↓ 按题型 · 选一子项专攻</h3>
+            <a href="#" class="custom">＋ 自定义刷题</a>
+          </div>
+          <div class="sub-grid">
+            <button class="sub-row"><span class="tick"></span><span class="label">全部 · 大作文<span class="meta">所有命题混合</span></span><span class="prog"><strong>38</strong>/634</span><svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg></button>
+            <button class="sub-row"><span class="tick"></span><span class="label">话题作文<span class="meta">围绕主题立意</span></span><span class="prog"><strong>24</strong>/412</span><svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg></button>
+            <button class="sub-row"><span class="tick"></span><span class="label">命题 / 半命题作文<span class="meta">给定题目或部分题目</span></span><span class="prog"><strong>14</strong>/222</span><svg class="arrow" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 4 5 4-5 4"/></svg></button>
+          </div>
+        </div>
+      </article>
+
+    </div>
+
+  </section>
+
+  <!-- ============================ PAGE B · 套卷练习 ============================ -->
+  <section class="page" data-page="papers">
+
+    <div class="ph">
+      <div class="eyebrow-row">
+        <span class="eyebrow">04 · Essay / Papers</span>
+        <span class="stamp">真题 132 套</span>
+      </div>
+      <div class="ph-row">
+        <div>
+          <h1>申论 · 套卷练习<br/><span class="light">挑一卷 · 选一题 · 落笔</span></h1>
+          <p class="lede">按地区或年份筛选定向冲刺。写完提交后获得 5 维度评分和示范答案 — 记录会自动落到「我的申论」。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters ============================ -->
+    <div class="filters" role="group" aria-label="筛选">
+
+      <div class="f-row">
+        <span class="key">视图</span>
+        <div class="chips">
+          <button class="fchip active">推荐</button>
+          <button class="fchip">最新真题</button>
+          <button class="fchip">高频考点</button>
+          <button class="fchip">未做 <span class="dot"></span></button>
+          <button class="fchip">进行中</button>
+        </div>
+      </div>
+
+      <div class="f-row">
+        <span class="key">地区</span>
+        <div class="chips">
+          <button class="fchip active">全部</button>
+          <button class="fchip">国考</button>
+          <button class="fchip">省考</button>
+          <button class="fchip">广东</button>
+          <button class="fchip">江苏</button>
+          <button class="fchip">浙江</button>
+          <button class="fchip">山东</button>
+          <button class="fchip">北京</button>
+          <button class="fchip">上海</button>
+          <button class="fchip">四川</button>
+          <button class="fchip">湖北</button>
+          <button class="fchip">湖南</button>
+          <button class="fchip">福建</button>
+          <button class="fchip">河南</button>
+          <button class="fchip">河北</button>
+          <button class="fchip">安徽</button>
+          <button class="fchip">辽宁</button>
+          <button class="fchip">天津</button>
+          <button class="fchip">陕西</button>
+          <button class="fchip">深圳</button>
+          <button class="fchip">更多 +</button>
+        </div>
+      </div>
+
+      <div class="f-row sub">
+        <span class="key">类型</span>
+        <div class="chips">
+          <button class="fchip active">全部卷型</button>
+          <button class="fchip">副省级</button>
+          <button class="fchip">地市级</button>
+          <button class="fchip">行政执法</button>
+          <button class="fchip">乡镇</button>
+          <button class="fchip">A 类</button>
+          <button class="fchip">B 类</button>
+          <button class="fchip">C 类</button>
+        </div>
+      </div>
+
+      <div class="f-row">
+        <span class="key">年份</span>
+        <div class="chips">
+          <button class="fchip active">近 5 年</button>
+          <button class="fchip">2026</button>
+          <button class="fchip">2025</button>
+          <button class="fchip">2024</button>
+          <button class="fchip">2023</button>
+          <button class="fchip">2022</button>
+          <button class="fchip">2021</button>
+          <button class="fchip">2020</button>
+          <button class="fchip">2019</button>
+          <button class="fchip">2018 及更早</button>
+        </div>
+      </div>
+
+      <div class="filters-foot">
+        <div class="selected-summary">
+          <span class="sum-tag">地区：全部 <span class="x">×</span></span>
+          <span class="sum-tag">近 5 年 <span class="x">×</span></span>
+          <span class="total">匹配 <strong>132</strong> 套</span>
+        </div>
+        <a class="reset-btn" href="#">重置筛选</a>
+      </div>
+    </div>
+
+    <!-- list head ============================ -->
+    <div class="list-head">
+      <div class="count">共 <strong>132</strong> 套 · 显示 <strong>1</strong>–<strong>10</strong></div>
+      <div class="sort">
+        <span class="opt active">默认</span>
+        <span class="opt">年份 ↓</span>
+        <span class="opt">难度 ↓</span>
+        <span class="opt">最近做过</span>
+      </div>
+    </div>
+
+    <!-- list ============================ -->
+    <div class="paper-list">
+
+      <div class="paper-row">
+        <div class="yr-block">
+          <span class="yr">2026</span>
+          <span class="badge sk">省考</span>
+        </div>
+        <div class="p-title">
+          <h4>2026 年浙江省公考《申论》题（A 卷）</h4>
+          <div class="p-tags">
+            <span class="t region">浙江</span><span class="t">A 类</span><span class="t">网友回忆</span>
+          </div>
+        </div>
+        <div class="p-stat"><span class="big">3</span> 题 · 180 分</div>
+        <div class="p-status"><span class="p-pill todo">未做</span></div>
+        <div class="row-cta"><button class="btn btn-secondary">开始 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button></div>
+      </div>
+
+      <div class="paper-row">
+        <div class="yr-block">
+          <span class="yr">2026</span>
+          <span class="badge gk">国考</span>
+        </div>
+        <div class="p-title">
+          <h4>2026 年国家公考《申论》题（行政执法）</h4>
+          <div class="p-tags">
+            <span class="t region">国考</span><span class="t">行政执法</span>
+          </div>
+        </div>
+        <div class="p-stat"><span class="big">5</span> 题 · 180 分</div>
+        <div class="p-status"><span class="p-pill doing">进行中 <span class="num">3/5</span></span></div>
+        <div class="row-cta"><button class="btn btn-secondary">继续 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button></div>
+      </div>
+
+      <div class="paper-row">
+        <div class="yr-block">
+          <span class="yr">2026</span>
+          <span class="badge sk">省考</span>
+        </div>
+        <div class="p-title">
+          <h4>2026 年广东省公考《申论》题（县镇）</h4>
+          <div class="p-tags">
+            <span class="t region">广东</span><span class="t">县镇</span>
+          </div>
+        </div>
+        <div class="p-stat"><span class="big">3</span> 题 · 150 分</div>
+        <div class="p-status"><span class="p-pill done">已做 <span class="num">×2</span></span></div>
+        <div class="row-cta"><button class="btn btn-secondary">再练 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button></div>
+      </div>
+
+      <div class="paper-row">
+        <div class="yr-block">
+          <span class="yr">2026</span>
+          <span class="badge sk">省考</span>
+        </div>
+        <div class="p-title">
+          <h4>2026 年广东省公考《申论》题（省市）</h4>
+          <div class="p-tags">
+            <span class="t region">广东</span><span class="t">省市</span>
+          </div>
+        </div>
+        <div class="p-stat"><span class="big">3</span> 题 · 180 分</div>
+        <div class="p-status"><span class="p-pill todo">未做</span></div>
+        <div class="row-cta"><button class="btn btn-secondary">开始 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button></div>
+      </div>
+
+      <div class="paper-row">
+        <div class="yr-block">
+          <span class="yr">2025</span>
+          <span class="badge gk">国考</span>
+        </div>
+        <div class="p-title">
+          <h4>2025 年国家公考《申论》题（副省级）</h4>
+          <div class="p-tags">
+            <span class="t region">国考</span><span class="t">副省级</span>
+          </div>
+        </div>
+        <div class="p-stat"><span class="big">5</span> 题 · 180 分</div>
+        <div class="p-status"><span class="p-pill done">已做 <span class="num">×4</span></span></div>
+        <div class="row-cta"><button class="btn btn-secondary">再练 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button></div>
+      </div>
+
+      <div class="paper-row">
+        <div class="yr-block">
+          <span class="yr">2025</span>
+          <span class="badge sk">省考</span>
+        </div>
+        <div class="p-title">
+          <h4>2025 年江苏省公考《申论》题（A 类）</h4>
+          <div class="p-tags">
+            <span class="t region">江苏</span><span class="t">A 类</span>
+          </div>
+        </div>
+        <div class="p-stat"><span class="big">5</span> 题 · 180 分</div>
+        <div class="p-status"><span class="p-pill todo">未做</span></div>
+        <div class="row-cta"><button class="btn btn-secondary">开始 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button></div>
+      </div>
+
+      <div class="paper-row">
+        <div class="yr-block">
+          <span class="yr">2024</span>
+          <span class="badge sk">省考</span>
+        </div>
+        <div class="p-title">
+          <h4>2024 年浙江省公考《申论》题（B 卷）</h4>
+          <div class="p-tags">
+            <span class="t region">浙江</span><span class="t">B 类</span>
+          </div>
+        </div>
+        <div class="p-stat"><span class="big">4</span> 题 · 150 分</div>
+        <div class="p-status"><span class="p-pill doing">进行中 <span class="num">1/4</span></span></div>
+        <div class="row-cta"><button class="btn btn-secondary">继续 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button></div>
+      </div>
+
+      <div class="paper-row">
+        <div class="yr-block">
+          <span class="yr">2024</span>
+          <span class="badge gk">国考</span>
+        </div>
+        <div class="p-title">
+          <h4>2024 年国家公考《申论》题（地市级）</h4>
+          <div class="p-tags">
+            <span class="t region">国考</span><span class="t">地市级</span>
+          </div>
+        </div>
+        <div class="p-stat"><span class="big">5</span> 题 · 180 分</div>
+        <div class="p-status"><span class="p-pill done">已做 <span class="num">×1</span></span></div>
+        <div class="row-cta"><button class="btn btn-secondary">再练 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button></div>
+      </div>
+
+      <div class="paper-row">
+        <div class="yr-block">
+          <span class="yr">2023</span>
+          <span class="badge sk">省考</span>
+        </div>
+        <div class="p-title">
+          <h4>2023 年广东省公考《申论》题（公安）</h4>
+          <div class="p-tags">
+            <span class="t region">广东</span><span class="t">公安</span>
+          </div>
+        </div>
+        <div class="p-stat"><span class="big">3</span> 题 · 150 分</div>
+        <div class="p-status"><span class="p-pill todo">未做</span></div>
+        <div class="row-cta"><button class="btn btn-secondary">开始 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button></div>
+      </div>
+
+      <div class="paper-row">
+        <div class="yr-block">
+          <span class="yr">2023</span>
+          <span class="badge sk">省考</span>
+        </div>
+        <div class="p-title">
+          <h4>2023 年北京市公考《申论》题</h4>
+          <div class="p-tags">
+            <span class="t region">北京</span><span class="t">A 类</span>
+          </div>
+        </div>
+        <div class="p-stat"><span class="big">4</span> 题 · 180 分</div>
+        <div class="p-status"><span class="p-pill done">已做 <span class="num">×3</span></span></div>
+        <div class="row-cta"><button class="btn btn-secondary">再练 <svg class="ic" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="2"><path d="m4 3 5 3-5 3"/></svg></button></div>
+      </div>
+
+    </div>
+
+    <!-- pagination ============================ -->
+    <div class="pager">
+      <button>‹</button>
+      <button class="active">1</button>
+      <button>2</button>
+      <button>3</button>
+      <button>4</button>
+      <span class="ell">…</span>
+      <button>14</button>
+      <button>›</button>
+    </div>
+
+  </section>
+
+  </main>
+</div>
+
+<!-- Tweaks: theme · density · reading -->
+<button class="tweaks-fab" id="twk-fab" title="Tweaks"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h0a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h0a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v0a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+<div class="tweaks" id="twk-panel" aria-hidden="true">
+  <div class="twk-hd"><span class="ttl">Tweaks</span><span class="x" id="twk-x">×</span></div>
+  <div class="twk-body">
+    <div class="twk-grp">
+      <span class="lbl">主题</span>
+      <div class="twk-seg" data-key="theme">
+        <button class="active" data-v="paper">纸暖</button>
+        <button data-v="pure">素白</button>
+        <button data-v="night">夜读</button>
+      </div>
+    </div>
+    <div class="twk-grp">
+      <span class="lbl">密度</span>
+      <div class="twk-seg" data-key="density">
+        <button data-v="compact">紧凑</button>
+        <button class="active" data-v="regular">常规</button>
+        <button data-v="cozy">宽松</button>
+      </div>
+    </div>
+    <div class="twk-grp">
+      <span class="lbl">阅读字号</span>
+      <div class="twk-seg" data-key="reading">
+        <button class="active" data-v="md">M</button>
+        <button data-v="lg">L</button>
+        <button data-v="xl">XL</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function setActivePage(name){
+    document.querySelectorAll('.page').forEach(p=>p.classList.toggle('active', p.dataset.page === name));
+    document.querySelectorAll('.nav a.indent').forEach(a=>{
+      if (!a.dataset.page) return;
+      a.classList.toggle('active', a.dataset.page === name);
+    });
+    window.scrollTo({top:0,behavior:'instant'});
+  }
+  document.getElementById('nav-specialty').addEventListener('click', e=>{e.preventDefault();setActivePage('specialty');});
+  document.getElementById('nav-papers').addEventListener('click', e=>{e.preventDefault();setActivePage('papers');});
+
+  function toggleCat(headerEl){
+    const cat = headerEl.parentElement;
+    if (cat.dataset.empty === 'true') return;
+    cat.dataset.open = cat.dataset.open === 'true' ? 'false' : 'true';
+  }
+
+  document.querySelectorAll('.f-row').forEach(row=>{
+    row.querySelectorAll('.fchip').forEach(c=>{
+      c.addEventListener('click', ()=>{
+        row.querySelectorAll('.fchip').forEach(x=>x.classList.remove('active'));
+        c.classList.add('active');
+      });
+    });
+  });
+
+  document.querySelectorAll('a[href="#"]').forEach(a=>a.addEventListener('click',e=>e.preventDefault()));
+
+  // ====== Paper-row enrichment (difficulty + last attempt) ======
+  const paperData = [
+    {diff:2, last:null},
+    {diff:3, last:null},
+    {diff:1, last:{score:38, when:'3 周前'}},
+    {diff:2, last:null},
+    {diff:3, last:{score:42, when:'8 天前'}},
+    {diff:2, last:null},
+    {diff:2, last:null},
+    {diff:3, last:{score:36, when:'1 个月前'}},
+    {diff:1, last:null},
+    {diff:2, last:{score:40, when:'2 个月前'}},
+  ];
+  document.querySelectorAll('.paper-row').forEach((row,i)=>{
+    const data = paperData[i]; if (!data) return;
+    row.insertAdjacentHTML('afterbegin','<span class="pin"></span>');
+    const stat = row.querySelector('.p-stat');
+    if (stat){
+      const orig = stat.innerHTML;
+      const dots = Array.from({length:3}, (_,k)=>`<span class="d ${k<data.diff?'on':''}"></span>`).join('');
+      stat.innerHTML = `<div class="line1">${orig}</div><div class="diff-row"><span class="diff" title="难度">${dots}</span><span>难度</span></div>`;
+    }
+    if (data.last){
+      const title = row.querySelector('.p-title');
+      if (title) title.insertAdjacentHTML('beforeend',`<div class="last-attempt">上次 <strong>${data.last.score}</strong>分 · ${data.last.when}</div>`);
+    }
+  });
+  // pin the first row to demonstrate marker
+  document.querySelectorAll('.paper-row')[2]?.classList.add('pinned');
+
+  // ====== Tweaks panel ======
+  const root = document.documentElement;
+  root.dataset.theme = root.dataset.theme || 'paper';
+  root.dataset.density = root.dataset.density || 'regular';
+  root.dataset.reading = root.dataset.reading || 'md';
+  const fab = document.getElementById('twk-fab');
+  const panel = document.getElementById('twk-panel');
+  fab.classList.add('show');
+  fab.addEventListener('click', ()=>{ panel.classList.toggle('open'); fab.style.display = panel.classList.contains('open') ? 'none' : 'grid'; });
+  document.getElementById('twk-x').addEventListener('click', ()=>{ panel.classList.remove('open'); fab.style.display='grid'; });
+  document.querySelectorAll('.twk-seg').forEach(seg=>{
+    const key = seg.dataset.key;
+    seg.querySelectorAll('button').forEach(b=>{
+      b.addEventListener('click', ()=>{
+        seg.querySelectorAll('button').forEach(x=>x.classList.remove('active'));
+        b.classList.add('active');
+        root.dataset[key] = b.dataset.v;
+      });
+    });
+  });
+</script>
+</body>
+</html>

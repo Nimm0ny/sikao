@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>v3-A 藏书阁 · 错题本 (WrongBook)</title>
+<style>
+  :root {
+    --ink: #0b1120;
+    --ink-muted: #334155;
+    --muted: #5b6677;
+    --paper: #f5f1e8;
+    --paper-deep: #ece6d6;
+    --bg: #ffffff;
+    --line: #d9d2bf;
+    --line-strong: #b9af96;
+    --accent: #3f7ef1;
+    --success: #16a34a;
+    --warn: #c97a16;
+    --danger: #b91c1c;
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-btn: 10px;
+    --shadow-card: 0 1px 2px rgba(11,17,32,.04), 0 1px 3px rgba(11,17,32,.05);
+    --sans: 'Inter', system-ui, 'PingFang SC', 'Microsoft YaHei', sans-serif;
+    --serif: 'Source Serif 4', 'Songti SC', 'Noto Serif SC', Georgia, serif;
+    --mono: 'SF Mono', Monaco, Consolas, monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { background: var(--paper); color: var(--ink); font-family: var(--sans); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  .vp { width: 1280px; height: 800px; overflow: hidden; background: var(--paper); margin: 0 auto; display: grid; grid-template-columns: 240px 1fr; }
+
+  .sb { background: #1a1f2e; color: #cbd5e1; padding: 20px 16px; height: 800px; display: flex; flex-direction: column; gap: 8px; }
+  .sb-brand { display: flex; align-items: center; gap: 10px; padding: 4px 8px 16px; border-bottom: 1px solid #2a3142; margin-bottom: 12px; }
+  .sb-brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+  .sb-brand-zh { font-family: var(--serif); font-size: 16px; font-weight: 700; color: #f1f5f9; letter-spacing: 0.02em; }
+  .sb-brand-en { font-size: 10px; color: #94a3b8; letter-spacing: 0.18em; text-transform: uppercase; margin-top: 2px; }
+  .sb-section { margin-top: 8px; padding: 0 8px; font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: #64748b; }
+  .sb-item, .sb-group-head { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: var(--r-sm); font-size: 13px; color: #cbd5e1; cursor: pointer; }
+  .sb-item:hover, .sb-group-head:hover { background: #2a3142; }
+  .sb-item.active { background: #2a3142; color: #f8fafc; font-weight: 500; }
+  .sb-group-children { padding-left: 24px; display: flex; flex-direction: column; gap: 2px; }
+  .sb-child { padding: 6px 10px; font-size: 13px; color: #94a3b8; border-radius: var(--r-sm); cursor: pointer; }
+  .sb-spacer { flex: 1; }
+  .sb-foot { border-top: 1px solid #2a3142; padding: 12px 10px 4px; font-size: 11px; color: #64748b; }
+
+  /* 错题本三栏: filter-rail (220) + list (380) + detail (1fr) */
+  .main { height: 800px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; padding: 24px 32px 20px; gap: 16px; }
+
+  .page-hd { display: flex; align-items: baseline; justify-content: space-between; padding-bottom: 10px; border-bottom: 1px solid var(--line); }
+  .page-eyebrow { font-size: 12px; font-weight: 600; color: var(--ink-muted); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 4px; }
+  .page-title { font-family: var(--serif); font-size: 28px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.2; color: var(--ink); }
+  .page-meta { font-size: 13px; color: var(--muted); }
+  .page-meta strong {
+    font-family: var(--sans);
+    font-weight: 800;
+    color: var(--ink);
+    font-size: 18px;
+    margin: 0 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .three-col { display: grid; grid-template-columns: 220px 380px 1fr; gap: 16px; min-height: 0; height: 100%; }
+  .col { background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-lg); display: flex; flex-direction: column; min-height: 0; }
+
+  /* col 1: filter rail */
+  .filter-hd { padding: 14px 16px; border-bottom: 1px dashed var(--line); }
+  .filter-title { font-family: var(--serif); font-size: 14px; font-weight: 700; color: var(--ink); }
+  .filter-sub { font-size: 11px; color: var(--muted); margin-top: 2px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+  .filter-body { padding: 12px 16px; flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
+  .filter-section h4 { font-size: 11px; font-weight: 700; color: var(--ink-muted); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 8px; }
+  .filter-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: var(--r-sm); font-size: 13px; color: var(--ink-muted); cursor: pointer; }
+  .filter-item:hover { background: var(--paper); }
+  .filter-item.active { background: var(--ink); color: #fff; font-weight: 500; }
+  .filter-item.active .filter-count { color: #cbd5e1; }
+  .filter-count { font-size: 12px; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+  /* col 2: list */
+  .list-hd { padding: 14px 16px; border-bottom: 1px dashed var(--line); display: flex; align-items: center; justify-content: space-between; }
+  .list-count { font-size: 13px; color: var(--ink); font-weight: 500; }
+  .list-count strong {
+    font-family: var(--sans); font-weight: 800; font-size: 16px;
+    margin-right: 3px; color: var(--ink); font-variant-numeric: tabular-nums;
+  }
+  .list-sort { font-size: 12px; color: var(--muted); cursor: pointer; }
+  .list-body { flex: 1; overflow-y: auto; }
+  .list-item { padding: 12px 16px; border-bottom: 1px solid var(--line); cursor: pointer; transition: background .15s; }
+  .list-item:hover { background: var(--paper); }
+  .list-item.active { background: var(--ink); color: #fff; }
+  .list-item.active .li-meta, .list-item.active .li-stem { color: #cbd5e1; }
+  .list-item.active .li-tag { background: rgba(255,255,255,.1); color: #f8fafc; border-color: transparent; }
+  .li-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
+  .li-tag { font-size: 11px; padding: 2px 8px; border-radius: 9999px; font-weight: 500; background: var(--paper-deep); color: var(--ink-muted); border: 1px solid var(--line); }
+  .li-mastery { font-size: 11px; padding: 2px 8px; border-radius: 9999px; font-weight: 500; }
+  .li-mastery.danger { background: rgba(185,28,28,.08); color: var(--danger); }
+  .li-mastery.warn { background: rgba(201,122,22,.1); color: var(--warn); }
+  .li-mastery.ok { background: rgba(22,163,74,.08); color: var(--success); }
+  .li-stem {
+    font-size: 13px; color: var(--ink); line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+    overflow: hidden; text-overflow: ellipsis;
+    margin-bottom: 4px;
+  }
+  .li-meta { font-size: 11px; color: var(--muted); display: flex; gap: 10px; }
+  .li-meta strong { color: var(--ink-muted); font-weight: 600; }
+
+  /* col 3: detail */
+  .detail-hd { padding: 16px 20px; border-bottom: 1px dashed var(--line); display: flex; align-items: center; justify-content: space-between; }
+  .detail-tags { display: flex; gap: 6px; }
+  .detail-actions { display: flex; gap: 8px; }
+  .btn { height: 32px; padding: 0 14px; border-radius: var(--r-btn); font-size: 13px; font-weight: 500; cursor: pointer; border: 1px solid transparent; }
+  .btn-primary { background: var(--ink); color: #fff; }
+  .btn-ghost { background: transparent; color: var(--ink); border-color: var(--line-strong); }
+  .btn-ghost:hover { background: var(--paper); }
+
+  .detail-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
+  .detail-meta { display: flex; gap: 16px; margin-bottom: 16px; font-size: 12px; color: var(--muted); padding-bottom: 14px; border-bottom: 1px dashed var(--line); }
+  .detail-meta-item { display: flex; flex-direction: column; gap: 2px; }
+  .detail-meta-key { font-size: 11px; font-weight: 600; color: var(--ink-muted); letter-spacing: 0.14em; text-transform: uppercase; }
+  .detail-meta-val { font-size: 13px; color: var(--ink); font-weight: 500; }
+
+  .detail-stem {
+    font-size: 14.5px;
+    line-height: 1.7;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .opts { display: flex; flex-direction: column; gap: 8px; margin-bottom: 18px; }
+  .opt { padding: 10px 14px; border: 1px solid var(--line); border-radius: var(--r-md); font-size: 13.5px; line-height: 1.5; display: flex; gap: 10px; }
+  .opt-key { font-weight: 700; color: var(--ink-muted); flex-shrink: 0; min-width: 18px; }
+  .opt.user-wrong { background: rgba(185,28,28,.04); border-color: rgba(185,28,28,.25); }
+  .opt.correct { background: rgba(22,163,74,.05); border-color: rgba(22,163,74,.3); }
+  .opt-tag { margin-left: auto; font-size: 11px; padding: 2px 8px; border-radius: 9999px; font-weight: 600; }
+  .opt.user-wrong .opt-tag { background: rgba(185,28,28,.1); color: var(--danger); }
+  .opt.correct .opt-tag { background: rgba(22,163,74,.1); color: var(--success); }
+
+  .expl-section { padding: 14px 16px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); margin-bottom: 12px; }
+  .expl-eyebrow { font-size: 11px; font-weight: 600; color: var(--ink-muted); letter-spacing: 0.14em; text-transform: uppercase; margin-bottom: 6px; }
+  .expl-text { font-size: 13.5px; line-height: 1.7; color: var(--ink); }
+
+  /* mastery panel — compact */
+  .mastery-panel { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 12px 16px; background: var(--paper); border: 1px solid var(--line); border-radius: var(--r-md); }
+  .mp-cell { display: flex; flex-direction: column; gap: 2px; align-items: center; }
+  .mp-num {
+    font-family: var(--sans); font-weight: 800; font-size: 22px;
+    color: var(--ink); line-height: 1.05; letter-spacing: -0.01em;
+    font-variant-numeric: tabular-nums;
+  }
+  .mp-num span { font-size: 12px; font-weight: 500; color: var(--muted); margin-left: 1px; }
+  .mp-label { font-size: 11px; color: var(--ink-muted); font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="vp">
+  <aside class="sb">
+    <div class="sb-brand">
+      <svg width="32" height="32" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-label="思考品牌标识" role="img">
+        <rect width="40" height="40" rx="10" fill="#0b1120"/>
+        <g stroke="#ffffff" stroke-width="1.8" stroke-linecap="round">
+          <line x1="11" y1="13" x2="29" y2="13"/><line x1="11" y1="22" x2="29" y2="22"/>
+          <line x1="11" y1="13" x2="11" y2="27"/><line x1="20" y1="13" x2="20" y2="27"/>
+          <line x1="29" y1="13" x2="29" y2="27"/><line x1="11" y1="27" x2="29" y2="27"/>
+        </g>
+        <circle cx="20" cy="34" r="2.2" fill="#ffffff"/>
+      </svg>
+      <div class="sb-brand-text"><span class="sb-brand-zh">思考</span><span class="sb-brand-en">SIKAO</span></div>
+    </div>
+    <div class="sb-section">主练习</div>
+    <div class="sb-item">首页</div>
+    <div class="sb-group-head">行测试炼</div>
+    <div class="sb-group-children"><div class="sb-child">专项练习</div><div class="sb-child">套卷练习</div></div>
+    <div class="sb-group-head">申论试炼</div>
+    <div class="sb-group-children"><div class="sb-child">专项练习</div><div class="sb-child">套卷练习</div></div>
+    <div class="sb-section">复盘</div>
+    <div class="sb-item active">错题本</div>
+    <div class="sb-item">学情数据</div>
+    <div class="sb-item">考试日历</div>
+    <div class="sb-spacer"></div>
+    <div class="sb-foot">让备考从刷题变成思考</div>
+  </aside>
+
+  <main class="main">
+    <header class="page-hd">
+      <div>
+        <div class="page-eyebrow">复盘 · 错题本</div>
+        <h1 class="page-title">错题本</h1>
+      </div>
+      <div class="page-meta">
+        共 <strong>247</strong> 题 · 待复习 <strong>86</strong> 题 · 已掌握 <strong>74</strong> 题
+      </div>
+    </header>
+
+    <section class="three-col">
+      <!-- col 1: filter rail -->
+      <aside class="col">
+        <div class="filter-hd">
+          <h3 class="filter-title">筛选</h3>
+          <p class="filter-sub">按模块 · 掌握度</p>
+        </div>
+        <div class="filter-body">
+          <div class="filter-section">
+            <h4>科目</h4>
+            <div class="filter-item active">全部 <span class="filter-count">247</span></div>
+            <div class="filter-item">行测 <span class="filter-count">189</span></div>
+            <div class="filter-item">申论 <span class="filter-count">58</span></div>
+          </div>
+          <div class="filter-section">
+            <h4>行测模块</h4>
+            <div class="filter-item">资料分析 <span class="filter-count">12</span></div>
+            <div class="filter-item">言语理解 <span class="filter-count">31</span></div>
+            <div class="filter-item">判断推理 <span class="filter-count">42</span></div>
+            <div class="filter-item">数量关系 <span class="filter-count">58</span></div>
+            <div class="filter-item">常识判断 <span class="filter-count">46</span></div>
+          </div>
+          <div class="filter-section">
+            <h4>掌握度</h4>
+            <div class="filter-item">未掌握 <span class="filter-count">86</span></div>
+            <div class="filter-item">复习中 <span class="filter-count">87</span></div>
+            <div class="filter-item">已掌握 <span class="filter-count">74</span></div>
+          </div>
+        </div>
+      </aside>
+
+      <!-- col 2: list -->
+      <section class="col">
+        <div class="list-hd">
+          <span class="list-count"><strong>247</strong>题 · 全部</span>
+          <span class="list-sort">最近做错 ↓</span>
+        </div>
+        <div class="list-body">
+          <article class="list-item active">
+            <div class="li-row">
+              <span class="li-tag">数量关系</span>
+              <span class="li-mastery danger">未掌握</span>
+            </div>
+            <p class="li-stem">某商品按定价的八折出售，仍可获利 25%。若按定价的九折出售，则每件可多获利 12 元。该商品的进价是？</p>
+            <div class="li-meta"><strong>2026 国考</strong><span>· 错 3 次</span><span>· 2 天前</span></div>
+          </article>
+          <article class="list-item">
+            <div class="li-row">
+              <span class="li-tag">判断推理</span>
+              <span class="li-mastery warn">复习中</span>
+            </div>
+            <p class="li-stem">所有的甲都是乙，有的乙不是丙，由此可以推出？</p>
+            <div class="li-meta"><strong>2024 联考</strong><span>· 错 2 次 / 对 1 次</span><span>· 5 天前</span></div>
+          </article>
+          <article class="list-item">
+            <div class="li-row">
+              <span class="li-tag">资料分析</span>
+              <span class="li-mastery ok">即将掌握</span>
+            </div>
+            <p class="li-stem">2023 年 1-9 月，全国规模以上工业企业实现利润总额 56,931.5 亿元，同比下降 9.0%。其中第三季度同比变化是？</p>
+            <div class="li-meta"><strong>2025 浙江</strong><span>· 错 1 次 / 对 2 次</span><span>· 1 周前</span></div>
+          </article>
+          <article class="list-item">
+            <div class="li-row">
+              <span class="li-tag">言语理解</span>
+              <span class="li-mastery warn">复习中</span>
+            </div>
+            <p class="li-stem">下列各句中，没有语病、句意明确的一句是？</p>
+            <div class="li-meta"><strong>2026 国考</strong><span>· 错 2 次</span><span>· 1 周前</span></div>
+          </article>
+          <article class="list-item">
+            <div class="li-row">
+              <span class="li-tag">常识判断</span>
+              <span class="li-mastery danger">未掌握</span>
+            </div>
+            <p class="li-stem">下列关于宪法基本原则的说法，错误的是？</p>
+            <div class="li-meta"><strong>2025 山东</strong><span>· 错 4 次</span><span>· 2 周前</span></div>
+          </article>
+          <article class="list-item">
+            <div class="li-row">
+              <span class="li-tag">数量关系</span>
+              <span class="li-mastery warn">复习中</span>
+            </div>
+            <p class="li-stem">甲、乙两人同时从 A、B 两地相向而行，甲速度 6 km/h，乙速度 4 km/h…</p>
+            <div class="li-meta"><strong>2024 联考</strong><span>· 错 1 次 / 对 1 次</span><span>· 3 周前</span></div>
+          </article>
+        </div>
+      </section>
+
+      <!-- col 3: detail -->
+      <article class="col">
+        <header class="detail-hd">
+          <div class="detail-tags">
+            <span class="li-tag">数量关系 · 利润问题</span>
+            <span class="li-mastery danger">未掌握</span>
+          </div>
+          <div class="detail-actions">
+            <button class="btn btn-ghost">标记已掌握</button>
+            <button class="btn btn-primary">再做一遍 →</button>
+          </div>
+        </header>
+        <div class="detail-body">
+          <div class="detail-meta">
+            <div class="detail-meta-item">
+              <span class="detail-meta-key">来源</span>
+              <span class="detail-meta-val">2026 国考 · 行测</span>
+            </div>
+            <div class="detail-meta-item">
+              <span class="detail-meta-key">错次/做次</span>
+              <span class="detail-meta-val">3 / 3</span>
+            </div>
+            <div class="detail-meta-item">
+              <span class="detail-meta-key">最近做错</span>
+              <span class="detail-meta-val">2 天前</span>
+            </div>
+            <div class="detail-meta-item">
+              <span class="detail-meta-key">下次复习</span>
+              <span class="detail-meta-val">明天 · Ebbinghaus</span>
+            </div>
+          </div>
+
+          <div class="detail-stem">
+            某商品按定价的八折出售，仍可获利 25%。若按定价的九折出售，则每件可多获利 12 元。该商品的进价是多少元？
+          </div>
+
+          <div class="opts">
+            <div class="opt">
+              <span class="opt-key">A</span>
+              <span>96 元</span>
+            </div>
+            <div class="opt user-wrong">
+              <span class="opt-key">B</span>
+              <span>120 元</span>
+              <span class="opt-tag">你的答案</span>
+            </div>
+            <div class="opt correct">
+              <span class="opt-key">C</span>
+              <span>80 元</span>
+              <span class="opt-tag">正确答案</span>
+            </div>
+            <div class="opt">
+              <span class="opt-key">D</span>
+              <span>150 元</span>
+            </div>
+          </div>
+
+          <div class="expl-section">
+            <div class="expl-eyebrow">官方解析</div>
+            <p class="expl-text">设进价为 x。八折售价为 0.8 × 定价 = 1.25x，得定价 = 1.5625x。九折售价 = 1.40625x。九折比八折多卖 0.15625x = 12 元，解得 x = 76.8 元。最接近选项 C。</p>
+          </div>
+
+          <div class="mastery-panel">
+            <div class="mp-cell"><span class="mp-num">3<span>次</span></span><span class="mp-label">错题次数</span></div>
+            <div class="mp-cell"><span class="mp-num">0<span>次</span></span><span class="mp-label">连续答对</span></div>
+            <div class="mp-cell"><span class="mp-num">2<span>次</span></span><span class="mp-label">还需答对</span></div>
+          </div>
+        </div>
+      </article>
+    </section>
+  </main>
+</div>
+</body>
+</html>

@@ -1,0 +1,1530 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="light">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>思考 · Home 重做原型 (3 方案 · v1)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400;1,8..60,600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    /* ─────────────────────────────────────────────────────────
+       Tokens 1:1 mirror of frontend/src/styles/tokens.css
+       (改任一处必须三处同步, 见 docs/design/style-guide.md §0)
+       ───────────────────────────────────────────────────────── */
+    :root {
+      --brand: #0b1120;
+      --brand-700: #000000;
+      --brand-50: #f1f5f9;
+      --brand-100: #e2e8f0;
+      --brand-200: #cbd5e1;
+      --accent: #3f7ef1;
+      --accent-50: #eff6ff;
+
+      --ink: #0b1120;
+      --ink-muted: #334155;
+      --muted: #64748b;
+      --placeholder: #94a3b8;
+
+      --bg: #ffffff;
+      --bg-alt: #f8fafc;
+      --sidebar: #020617;
+      --line: #e5e7eb;
+      --line-strong: #cbd5e1;
+
+      --sidebar-fg: #cbd5e1;
+      --sidebar-fg-muted: #94a3b8;
+      --sidebar-fg-dim: #64748b;
+      --sidebar-line: #1e293b;
+      --sidebar-hover: #1e293b;
+
+      --success: #16a34a;
+      --warn: #f59e0b;
+      --danger: #dc2626;
+
+      --r-sm: 8px;
+      --r-md: 12px;
+      --r-lg: 16px;
+      --r-xl: 20px;
+      --r-btn: 10px;
+      --r-pill: 9999px;
+
+      --shadow-card: 0 1px 2px 0 rgb(15 23 42 / .04), 0 1px 3px 0 rgb(15 23 42 / .06);
+      --shadow-pop:  0 10px 30px -10px rgb(15 23 42 / .15);
+      --shadow-hero: 0 25px 50px -12px rgb(15 23 42 / .25);
+
+      --motion-fast: 150ms;
+      --motion-base: 200ms;
+      --motion-slow: 300ms;
+      --motion-ease: cubic-bezier(.4,0,.2,1);
+
+      --sans:  'Inter', system-ui, -apple-system, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', 'Hiragino Sans GB', sans-serif;
+      --serif: 'Source Serif 4', 'Songti SC', 'Noto Serif SC', Georgia, 'Times New Roman', serif;
+      --mono:  'JetBrains Mono', 'SF Mono', Monaco, 'Cascadia Code', Consolas, monospace;
+
+      --fs-eyebrow: 11px;
+    }
+
+    *,*::before,*::after { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; }
+    body {
+      font-family: var(--sans);
+      font-size: 14px;
+      line-height: 1.65;
+      color: var(--ink);
+      background: var(--bg-alt);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+
+    button { font-family: inherit; cursor: pointer; }
+    a { color: var(--ink); text-decoration: none; }
+    code { font-family: var(--mono); font-size: 12px; }
+
+    /* ─────────────────────────────────────────────────────────
+       Meta shell — tabs + stage frame (不属于 3 方案视觉, 仅原型 chrome)
+       ───────────────────────────────────────────────────────── */
+    .meta-shell {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+    .meta-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--line);
+      margin-bottom: 24px;
+    }
+    .meta-brand {
+      display: inline-flex; align-items: center; gap: 10px;
+      font-weight: 700; letter-spacing: -.01em;
+    }
+    .meta-brand .logo {
+      width: 28px; height: 28px; border-radius: 8px;
+      background: var(--brand); position: relative;
+    }
+    .meta-brand .logo::before, .meta-brand .logo::after {
+      content: ""; position: absolute; background: #fff;
+    }
+    .meta-brand .logo::before {
+      left: 7px; right: 7px; top: 9px; bottom: 9px;
+      background:
+        linear-gradient(#fff,#fff) center/100% 1.4px no-repeat,
+        linear-gradient(#fff,#fff) center/100% 1.4px no-repeat,
+        linear-gradient(#fff,#fff) center/1.4px 100% no-repeat,
+        linear-gradient(#fff,#fff) center/1.4px 100% no-repeat;
+      background-position: 0 0, 0 100%, 0 0, 100% 0;
+      border: 1.4px solid #fff; background-clip: padding-box;
+    }
+    .meta-brand .logo::after {
+      width: 3px; height: 3px; border-radius: 50%;
+      left: 50%; transform: translateX(-50%); bottom: 4px;
+    }
+    .meta-brand-text { display: inline-flex; flex-direction: column; line-height: 1.1; }
+    .meta-brand-text small { color: var(--muted); font-weight: 500; font-size: 11px; letter-spacing: .04em; }
+    .meta-actions { display: inline-flex; gap: 8px; align-items: center; color: var(--muted); font-size: 12px; }
+
+    .meta-tabs {
+      display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px;
+    }
+    .meta-tab {
+      appearance: none; border: 1px solid var(--line);
+      background: var(--bg); color: var(--ink-muted);
+      padding: 10px 16px; border-radius: var(--r-pill);
+      font-size: 13px; font-weight: 600;
+      transition: all var(--motion-fast) var(--motion-ease);
+    }
+    .meta-tab:hover { border-color: var(--brand-200); color: var(--ink); }
+    .meta-tab.active {
+      background: var(--brand); color: #fff; border-color: var(--brand);
+    }
+    .meta-tab .kbd {
+      margin-left: 8px; font-family: var(--mono); font-size: 10px;
+      opacity: .6;
+    }
+    .tab-desc {
+      color: var(--muted); font-size: 13px; margin: 0 0 24px;
+      display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+    }
+    .tab-desc .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 10px; background: var(--brand-50);
+      color: var(--brand-700); font-size: 11px; font-weight: 600;
+      border-radius: var(--r-pill); border: 1px solid var(--brand-100);
+    }
+    .tab-desc .pill .dot {
+      width: 5px; height: 5px; border-radius: 50%; background: var(--brand);
+    }
+
+    /* ─────────────────────────────────────────────────────────
+       Stage — frame for an individual 方案
+       ───────────────────────────────────────────────────────── */
+    .stage {
+      background: var(--bg);
+      border-radius: var(--r-xl);
+      border: 1px solid var(--line);
+      box-shadow: var(--shadow-card);
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 232px 1fr;
+      min-height: 720px;
+      position: relative;
+    }
+    .stage-pane { display: none; grid-column: 1 / -1; grid-row: 1; }
+    .stage-pane.active { display: grid; grid-template-columns: 232px 1fr; }
+
+    /* AppShell sidebar — static replica, 不属于本次重做范围 */
+    .shell-side {
+      background: var(--sidebar);
+      color: var(--sidebar-fg);
+      padding: 24px 16px;
+      display: flex; flex-direction: column; gap: 24px;
+      border-right: 1px solid var(--sidebar-line);
+    }
+    .shell-side .brand-row { display: flex; align-items: center; gap: 12px; padding: 0 8px; }
+    .shell-side .brand-mark {
+      width: 36px; height: 36px; border-radius: 10px;
+      background: #fff; display: grid; place-items: center; flex-shrink: 0;
+    }
+    .shell-side .brand-mark svg { display: block; }
+    .shell-side .brand-name { color: #fff; font-weight: 700; letter-spacing: -.01em; font-size: 16px; }
+    .shell-side .brand-name small { display: block; color: var(--sidebar-fg-muted); font-weight: 500; font-size: 11px; letter-spacing: .04em; margin-top: 2px; }
+    .shell-side nav { display: flex; flex-direction: column; gap: 2px; }
+    .shell-side nav a {
+      display: flex; align-items: center; gap: 12px;
+      padding: 10px 12px; border-radius: var(--r-md);
+      color: var(--sidebar-fg-muted); font-size: 13px; font-weight: 500;
+      transition: all var(--motion-fast) var(--motion-ease);
+    }
+    .shell-side nav a:hover { background: var(--sidebar-hover); color: var(--sidebar-fg); }
+    .shell-side nav a.active { background: var(--sidebar-hover); color: #fff; font-weight: 600; }
+    .shell-side nav a .ico {
+      width: 16px; height: 16px; opacity: .8;
+    }
+    .shell-side .side-label {
+      font-size: 11px; letter-spacing: .08em; text-transform: uppercase;
+      color: var(--sidebar-fg-dim); padding: 0 12px; margin-bottom: 6px;
+    }
+    .shell-side .side-foot {
+      margin-top: auto; padding: 12px; border-top: 1px solid var(--sidebar-line);
+      font-size: 11px; color: var(--sidebar-fg-dim);
+      display: flex; align-items: center; gap: 10px;
+    }
+    .shell-side .side-foot .avatar {
+      width: 28px; height: 28px; border-radius: 50%;
+      background: var(--sidebar-hover); color: var(--sidebar-fg);
+      display: grid; place-items: center; font-weight: 600; font-size: 12px;
+    }
+
+    /* Content frame */
+    .shell-main {
+      background: var(--bg);
+      overflow: auto;
+    }
+
+    /* ─────────────────────────────────────────────────────────
+       Shared atoms — Card, Button, Badge
+       ───────────────────────────────────────────────────────── */
+    .card {
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: var(--r-lg);
+      box-shadow: var(--shadow-card);
+      transition: box-shadow var(--motion-fast) var(--motion-ease);
+    }
+    .card.hoverable:hover { box-shadow: var(--shadow-pop); border-color: var(--brand-200); }
+    .card.pad-sm { padding: 16px; }
+    .card.pad-md { padding: 20px; }
+    .card.pad-lg { padding: 28px; }
+
+    .btn {
+      appearance: none; border: 1px solid transparent;
+      padding: 10px 18px; border-radius: var(--r-btn);
+      font-size: 14px; font-weight: 600; line-height: 1;
+      display: inline-flex; align-items: center; gap: 8px;
+      transition: all var(--motion-fast) var(--motion-ease);
+    }
+    .btn.primary { background: var(--brand); color: #fff; }
+    .btn.primary:hover { background: #000; }
+    .btn.ghost { background: transparent; color: var(--ink); }
+    .btn.ghost:hover { background: var(--brand-50); }
+    .btn.sm { padding: 8px 12px; font-size: 13px; }
+    .btn.lg { padding: 14px 24px; font-size: 15px; }
+    .btn.invert { background: #fff; color: var(--brand); }
+    .btn.invert:hover { background: var(--brand-50); }
+    .btn.outline { background: transparent; color: #fff; border-color: rgba(255,255,255,.3); }
+    .btn.outline:hover { border-color: rgba(255,255,255,.6); background: rgba(255,255,255,.06); }
+
+    .badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 3px 10px; border-radius: var(--r-pill);
+      font-size: 11px; font-weight: 600; line-height: 1.4;
+      background: var(--brand-50); color: var(--brand-700); border: 1px solid var(--brand-100);
+    }
+    .badge.neutral { background: transparent; color: var(--muted); border-color: var(--line); }
+    .badge.warn { background: #fef3c7; color: #92400e; border-color: #fde68a; }
+    .badge.dot::before { content: ""; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .85; }
+    .badge.hairline { background: transparent; color: var(--muted); border-color: var(--line); }
+    .eyebrow {
+      font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted); line-height: 1.4;
+    }
+    .eyebrow.ink { color: var(--ink); }
+    .eyebrow.invert { color: rgba(255,255,255,.7); }
+    .ink-muted { color: var(--ink-muted); }
+    .muted { color: var(--muted); }
+    .num { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+    .mono { font-family: var(--mono); }
+    .serif { font-family: var(--serif); }
+    .italic { font-style: italic; }
+
+    .hairline {
+      height: 1px; background: var(--line); border: 0; margin: 0;
+    }
+
+    /* ─────────────────────────────────────────────────────────
+       Enter motion — 三方案共享, 仅在 stage-pane.active 触发一次
+       ───────────────────────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: none; }
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    @keyframes drawLine {
+      from { transform: scaleX(0); }
+      to { transform: scaleX(1); }
+    }
+    @keyframes glow {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    .stage-pane.active .anim-up {
+      animation: fadeUp var(--motion-base) var(--motion-ease) both;
+    }
+    .stage-pane.active .anim-fade {
+      animation: fadeIn var(--motion-slow) var(--motion-ease) both;
+    }
+    .stage-pane.active .anim-line {
+      transform-origin: left center;
+      animation: drawLine 600ms var(--motion-ease) both;
+    }
+    .stage-pane.active .anim-glow {
+      animation: glow 800ms var(--motion-ease) both;
+    }
+    .delay-1 { animation-delay: 60ms !important; }
+    .delay-2 { animation-delay: 120ms !important; }
+    .delay-3 { animation-delay: 180ms !important; }
+    .delay-4 { animation-delay: 240ms !important; }
+    .delay-5 { animation-delay: 300ms !important; }
+    .delay-6 { animation-delay: 360ms !important; }
+    .delay-7 { animation-delay: 420ms !important; }
+    .delay-8 { animation-delay: 480ms !important; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .stage-pane.active .anim-up,
+      .stage-pane.active .anim-fade,
+      .stage-pane.active .anim-line,
+      .stage-pane.active .anim-glow {
+        animation: none !important;
+      }
+    }
+
+    /* ──────── 共用 paper card grid (跨方案微调) ──────── */
+    .paper-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .paper-card {
+      display: flex; flex-direction: column; gap: 12px;
+      padding: 20px;
+    }
+    .paper-card .paper-head {
+      display: flex; justify-content: space-between; align-items: flex-start;
+    }
+    .paper-card .paper-rev {
+      font-family: var(--mono); font-size: 11px; color: var(--placeholder);
+      letter-spacing: .04em;
+    }
+    .paper-card .paper-title {
+      font-size: 16px; font-weight: 700; line-height: 1.4;
+    }
+    .paper-card .paper-desc {
+      color: var(--muted); font-size: 13px; line-height: 1.6;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .paper-card .paper-foot {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: auto; padding-top: 4px;
+    }
+    .paper-card .paper-meta { font-size: 12px; color: var(--muted); }
+
+    /* ─────────────────────────────────────────────────────────
+       方案 A · Quiet Companion ── L3 旗舰卡 + 横向 stat strip
+       ───────────────────────────────────────────────────────── */
+    .a-content {
+      max-width: 1080px; margin: 0 auto;
+      padding: 32px 32px 64px;
+      display: flex; flex-direction: column; gap: 56px;
+    }
+    .a-hero {
+      position: relative; overflow: hidden;
+      border-radius: var(--r-xl);
+      background: linear-gradient(135deg, #0b1120 0%, #1e293b 100%);
+      box-shadow: var(--shadow-hero);
+      color: #fff;
+      padding: 56px 48px;
+      isolation: isolate;
+    }
+    .a-hero::before {
+      content: ""; position: absolute; inset: 0; pointer-events: none;
+      background:
+        radial-gradient(700px circle at 100% 0%, rgba(63,126,241,.18), transparent 55%),
+        radial-gradient(500px circle at 0% 100%, rgba(63,126,241,.08), transparent 60%);
+      z-index: 0;
+    }
+    .a-hero > * { position: relative; z-index: 1; }
+    .a-hero .tagline-rail {
+      display: flex; align-items: center; gap: 12px;
+      font-family: var(--serif); font-style: italic;
+      color: rgba(255,255,255,.65); font-size: 14px;
+      letter-spacing: .01em;
+    }
+    .a-hero .tagline-rail .rule {
+      flex: 0 0 32px; height: 1px; background: rgba(255,255,255,.3);
+    }
+    .a-hero .a-eyebrow {
+      display: inline-flex; align-items: center; gap: 8px;
+      margin-top: 24px;
+      padding: 4px 12px; border-radius: var(--r-pill);
+      background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12);
+      font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: rgba(255,255,255,.85);
+    }
+    .a-hero .a-eyebrow .pulse {
+      width: 6px; height: 6px; border-radius: 50%;
+      background: var(--accent); box-shadow: 0 0 0 0 rgba(63,126,241,.5);
+      animation: aPulse 2.4s var(--motion-ease) infinite;
+    }
+    @keyframes aPulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(63,126,241,.45); }
+      50% { box-shadow: 0 0 0 6px rgba(63,126,241,0); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .a-hero .a-eyebrow .pulse { animation: none; }
+    }
+    .a-hero h1 {
+      font-size: 48px; font-weight: 800; line-height: 1.1;
+      letter-spacing: -.02em; margin: 20px 0 16px; max-width: 640px;
+    }
+    .a-hero p.lead {
+      color: rgba(255,255,255,.72); font-size: 16px; line-height: 1.65;
+      max-width: 540px; margin: 0 0 28px;
+    }
+    .a-hero .cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+    .a-hero .meta-row {
+      display: flex; gap: 24px; flex-wrap: wrap;
+      margin-top: 36px; padding-top: 24px;
+      border-top: 1px solid rgba(255,255,255,.1);
+      font-size: 12px; color: rgba(255,255,255,.55);
+    }
+    .a-hero .meta-row b { color: rgba(255,255,255,.85); font-weight: 600; }
+
+    .a-stats {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .a-stat {
+      padding: 24px 28px;
+      border-right: 1px solid var(--line);
+      display: flex; flex-direction: column; gap: 4px;
+    }
+    .a-stat:last-child { border-right: 0; }
+    .a-stat .stat-label {
+      font-size: 12px; color: var(--muted); letter-spacing: .02em;
+    }
+    .a-stat .stat-num {
+      font-size: 36px; font-weight: 700; letter-spacing: -.02em;
+      line-height: 1.1; margin-top: 4px;
+    }
+    .a-stat .stat-trail {
+      font-size: 12px; color: var(--muted); margin-top: 6px;
+    }
+    .a-stat .stat-trail b { color: var(--ink-muted); font-weight: 600; }
+
+    .a-section-head {
+      display: flex; justify-content: space-between; align-items: flex-end; gap: 16px;
+      margin-bottom: 20px;
+    }
+    .a-section-head h2 {
+      font-size: 22px; font-weight: 700; letter-spacing: -.01em;
+      margin: 0;
+    }
+    .a-section-head .head-sub {
+      font-size: 13px; color: var(--muted); margin-top: 4px;
+    }
+    .a-section-head a.more {
+      font-size: 13px; color: var(--accent); font-weight: 500;
+    }
+    .a-section-head a.more:hover { text-decoration: underline; }
+
+    .a-custom {
+      display: grid; grid-template-columns: 1fr auto;
+      gap: 24px; align-items: center;
+      padding: 28px;
+      border-radius: var(--r-lg);
+      border: 1px solid var(--line);
+      background: var(--bg);
+      transition: all var(--motion-fast) var(--motion-ease);
+    }
+    .a-custom:hover { border-color: var(--brand-200); box-shadow: var(--shadow-pop); }
+    .a-custom .a-custom-eyebrow {
+      font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .08em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .a-custom h3 {
+      font-size: 22px; font-weight: 700; margin: 8px 0 6px;
+    }
+    .a-custom p { color: var(--muted); margin: 0 0 14px; max-width: 60ch; line-height: 1.6; font-size: 14px; }
+    .a-custom .pairs { display: flex; gap: 18px; flex-wrap: wrap; }
+    .a-custom .pair { font-size: 12px; color: var(--muted); }
+    .a-custom .pair b { color: var(--ink); font-weight: 600; margin-right: 4px; }
+
+    /* ─────────────────────────────────────────────────────────
+       方案 B · Editorial Magazine ── 杂志栅格 + serif italic 大数字
+       ───────────────────────────────────────────────────────── */
+    .b-content {
+      max-width: 1180px; margin: 0 auto;
+      padding: 32px 40px 64px;
+      display: flex; flex-direction: column; gap: 72px;
+    }
+    .b-hero {
+      display: grid;
+      grid-template-columns: 7fr 4fr;
+      gap: 48px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--line);
+      align-items: end;
+    }
+    .b-hero-text .b-tagline {
+      font-family: var(--serif); font-style: italic;
+      font-size: 14px; color: var(--muted);
+      letter-spacing: .04em;
+      display: flex; align-items: center; gap: 14px;
+      margin-bottom: 32px;
+    }
+    .b-hero-text .b-tagline::before {
+      content: ""; width: 36px; height: 1px; background: var(--ink);
+      transform-origin: left center;
+    }
+    .b-hero-text .b-eyebrow {
+      font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--ink);
+      margin-bottom: 16px;
+    }
+    .b-hero-text .b-eyebrow .accent-dot {
+      display: inline-block; width: 6px; height: 6px; background: var(--accent);
+      border-radius: 50%; margin-right: 8px; vertical-align: middle;
+    }
+    .b-hero-text h1 {
+      font-size: 64px; font-weight: 800; line-height: 1.04;
+      letter-spacing: -.03em; margin: 0 0 20px;
+      max-width: 9ch;
+    }
+    .b-hero-text h1 .arrow {
+      font-family: var(--serif); font-style: italic; font-weight: 600;
+      color: var(--accent); margin-left: 4px;
+    }
+    .b-hero-text p.lead {
+      color: var(--ink-muted); font-size: 17px; line-height: 1.6;
+      max-width: 52ch; margin: 0 0 32px;
+    }
+    .b-hero-text .cta-row { display: flex; gap: 12px; align-items: center; }
+    .b-hero-text .cta-row .pipe {
+      width: 1px; height: 20px; background: var(--line); margin: 0 4px;
+    }
+
+    .b-hero-aside {
+      border-left: 1px solid var(--line);
+      padding-left: 32px;
+      display: flex; flex-direction: column; gap: 24px;
+    }
+    .b-hero-aside .aside-eyebrow {
+      font-size: var(--fs-eyebrow); font-weight: 700; letter-spacing: .12em;
+      text-transform: uppercase; color: var(--muted);
+    }
+    .b-hero-aside .aside-list {
+      display: flex; flex-direction: column;
+    }
+    .b-hero-aside .aside-item {
+      display: grid; grid-template-columns: 32px 1fr; gap: 16px;
+      padding: 16px 0;
+      border-bottom: 1px solid var(--line);
+      align-items: baseline;
+      transition: padding var(--motion-fast) var(--motion-ease);
+    }
+    .b-hero-aside .aside-item:last-child { border-bottom: 0; }
+    .b-hero-aside .aside-item:hover { padding-left: 8px; }
+    .b-hero-aside .aside-item:hover .aside-num { color: var(--ink); }
+    .b-hero-aside .aside-num {
+      font-family: var(--serif); font-style: italic;
+      font-size: 24px; font-weight: 600; color: var(--placeholder);
+      transition: color var(--motion-fast) var(--motion-ease);
+    }
+    .b-hero-aside .aside-body .aside-title {
+      font-size: 14px; font-weight: 600; line-height: 1.4;
+    }
+    .b-hero-aside .aside-body .aside-meta {
+      font-size: 12px; color: var(--muted); margin-top: 4px;
+      font-family: var(--mono);
+    }
+
+    .b-strip {
+      display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr;
+      gap: 48px;
+      padding-bottom: 40px;
+      border-bottom: 1px solid var(--line);
+    }
+    .b-strip .strip-prose {
+      font-family: var(--serif);
+      font-size: 18px; line-height: 1.6;
+      color: var(--ink-muted);
+      max-width: 32ch;
+    }
+    .b-strip .strip-prose b { color: var(--ink); font-weight: 600; }
+    .b-strip .strip-num {
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .b-strip .strip-num .label {
+      font-size: var(--fs-eyebrow); letter-spacing: .12em; text-transform: uppercase;
+      color: var(--muted); font-weight: 700;
+    }
+    .b-strip .strip-num .value {
+      font-family: var(--serif); font-weight: 600;
+      font-size: 56px; line-height: 1; letter-spacing: -.02em;
+      color: var(--ink);
+      font-variant-numeric: tabular-nums;
+    }
+    .b-strip .strip-num .value .unit {
+      font-size: 16px; color: var(--muted); font-style: italic; margin-left: 4px;
+    }
+    .b-strip .strip-num .foot {
+      font-size: 12px; color: var(--muted); margin-top: 4px;
+    }
+
+    .b-section h2 {
+      font-family: var(--sans);
+      font-size: 28px; font-weight: 700; letter-spacing: -.02em;
+      margin: 0 0 6px;
+    }
+    .b-section .b-section-sub {
+      font-family: var(--serif); font-style: italic;
+      color: var(--muted); font-size: 16px; margin-bottom: 28px;
+    }
+    .b-custom-row {
+      display: grid; grid-template-columns: 60px 1fr auto; gap: 32px;
+      align-items: center;
+      padding: 32px 0;
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--line);
+    }
+    .b-custom-row .b-cust-num {
+      font-family: var(--serif); font-style: italic;
+      font-size: 56px; font-weight: 600; color: var(--ink);
+      line-height: 1;
+    }
+    .b-custom-row .b-cust-body h3 {
+      font-size: 22px; font-weight: 700; margin: 0 0 6px;
+    }
+    .b-custom-row .b-cust-body p {
+      color: var(--muted); margin: 0; font-size: 14px;
+    }
+
+    .b-paper-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 0;
+      border-top: 1px solid var(--line);
+    }
+    .b-paper-card {
+      padding: 24px 24px 28px;
+      border-bottom: 1px solid var(--line);
+      border-right: 1px solid var(--line);
+      display: flex; flex-direction: column; gap: 16px;
+      background: var(--bg);
+      transition: background var(--motion-fast) var(--motion-ease);
+      position: relative;
+    }
+    .b-paper-card:nth-child(3n) { border-right: 0; }
+    .b-paper-card::before {
+      content: ""; position: absolute; left: 0; top: 0; right: 0;
+      height: 2px; background: var(--ink);
+      transform: scaleX(0); transform-origin: left center;
+      transition: transform var(--motion-base) var(--motion-ease);
+    }
+    .b-paper-card:hover { background: var(--bg-alt); }
+    .b-paper-card:hover::before { transform: scaleX(1); }
+    .b-paper-card .b-paper-head {
+      display: flex; justify-content: space-between; align-items: baseline;
+    }
+    .b-paper-card .b-paper-num {
+      font-family: var(--serif); font-style: italic;
+      font-size: 22px; font-weight: 600; color: var(--placeholder);
+    }
+    .b-paper-card .b-paper-title {
+      font-size: 18px; font-weight: 700; line-height: 1.35;
+    }
+    .b-paper-card .b-paper-desc {
+      font-family: var(--serif); color: var(--ink-muted);
+      font-size: 14px; line-height: 1.6;
+      display: -webkit-box; -webkit-line-clamp: 2; line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .b-paper-card .b-paper-foot {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-top: auto; padding-top: 8px;
+      border-top: 1px dashed var(--line);
+    }
+
+    /* ─────────────────────────────────────────────────────────
+       方案 C · Library Bench ── 极致克制 / 阅读室 / hairline 排版
+       ───────────────────────────────────────────────────────── */
+    .c-content {
+      max-width: 920px; margin: 0 auto;
+      padding: 64px 40px 80px;
+      display: flex; flex-direction: column; gap: 80px;
+    }
+    .c-hero { position: relative; }
+    .c-hero .c-rail {
+      display: grid; grid-template-columns: auto 1fr auto;
+      gap: 16px; align-items: center;
+      font-family: var(--serif); font-style: italic;
+      font-size: 13px; color: var(--muted);
+      margin-bottom: 36px;
+    }
+    .c-hero .c-rail .c-rail-line {
+      height: 1px; background: var(--line);
+      transform-origin: left;
+    }
+    .c-hero h1 {
+      font-size: 56px; font-weight: 800; line-height: 1.05;
+      letter-spacing: -.025em; margin: 0;
+      max-width: 14ch;
+    }
+    .c-hero h1 em {
+      font-family: var(--serif); font-style: italic; font-weight: 600;
+      color: var(--ink-muted);
+    }
+    .c-hero .c-lead {
+      font-family: var(--serif);
+      font-size: 19px; line-height: 1.65; color: var(--ink-muted);
+      max-width: 56ch; margin: 28px 0 36px;
+    }
+    .c-hero .c-cta {
+      display: flex; gap: 20px; align-items: center;
+    }
+    .c-hero .c-cta-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 14px; font-weight: 600; color: var(--ink);
+      padding: 4px 0;
+      border-bottom: 1px solid var(--ink);
+      transition: color var(--motion-fast) var(--motion-ease);
+    }
+    .c-hero .c-cta-link:hover { color: var(--accent); border-color: var(--accent); }
+    .c-hero .c-cta-link .arrow { font-family: var(--serif); font-style: italic; }
+
+    .c-bench {
+      display: grid; grid-template-columns: repeat(3, 1fr);
+      gap: 32px;
+      padding: 24px 0;
+      border-top: 1px solid var(--ink);
+      border-bottom: 1px solid var(--line);
+    }
+    .c-bench-item {
+      display: flex; flex-direction: column; gap: 8px;
+    }
+    .c-bench-item .c-bench-label {
+      font-size: 11px; letter-spacing: .12em; text-transform: uppercase;
+      color: var(--muted); font-weight: 700;
+    }
+    .c-bench-item .c-bench-value {
+      font-size: 40px; font-weight: 700; letter-spacing: -.02em;
+      line-height: 1; font-variant-numeric: tabular-nums;
+      display: flex; align-items: baseline; gap: 6px;
+    }
+    .c-bench-item .c-bench-value small {
+      font-size: 14px; color: var(--muted); font-weight: 500;
+      font-family: var(--serif); font-style: italic;
+    }
+    .c-bench-item .c-bench-foot {
+      font-size: 12px; color: var(--muted);
+    }
+
+    .c-section-head {
+      display: flex; align-items: baseline; justify-content: space-between;
+      gap: 16px; margin-bottom: 24px;
+    }
+    .c-section-head .c-section-num {
+      font-family: var(--serif); font-style: italic; font-weight: 600;
+      color: var(--placeholder); font-size: 18px;
+    }
+    .c-section-head h2 {
+      font-size: 22px; font-weight: 700; letter-spacing: -.01em;
+      margin: 0; flex: 1;
+    }
+    .c-section-head .c-section-meta {
+      font-size: 12px; color: var(--muted); font-family: var(--mono);
+    }
+
+    .c-custom {
+      display: grid; grid-template-columns: 1fr auto; gap: 32px;
+      align-items: end;
+      padding: 24px 0 28px;
+      border-top: 1px solid var(--line);
+    }
+    .c-custom h3 {
+      font-size: 20px; font-weight: 700; margin: 0 0 6px;
+    }
+    .c-custom p {
+      color: var(--muted); margin: 0 0 12px; max-width: 56ch; font-size: 14px; line-height: 1.6;
+    }
+    .c-custom .c-custom-pairs {
+      display: flex; gap: 24px; font-size: 12px; color: var(--muted);
+    }
+    .c-custom .c-custom-pairs b { color: var(--ink); font-weight: 600; margin-right: 4px; }
+    .c-custom .c-custom-cta {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 4px 0;
+      border-bottom: 1px solid var(--ink);
+      font-size: 14px; font-weight: 600;
+      transition: color var(--motion-fast) var(--motion-ease);
+    }
+    .c-custom .c-custom-cta:hover { color: var(--accent); border-color: var(--accent); }
+
+    .c-paper-list {
+      display: flex; flex-direction: column;
+      border-top: 1px solid var(--ink);
+    }
+    .c-paper-row {
+      display: grid;
+      grid-template-columns: 56px 1fr auto auto;
+      gap: 24px; align-items: center;
+      padding: 20px 0 22px;
+      border-bottom: 1px solid var(--line);
+      transition: padding var(--motion-fast) var(--motion-ease), background var(--motion-fast) var(--motion-ease);
+      position: relative;
+    }
+    .c-paper-row:hover {
+      padding-left: 12px; padding-right: 12px;
+      background: var(--bg-alt);
+    }
+    .c-paper-row .c-paper-num {
+      font-family: var(--serif); font-style: italic; font-weight: 600;
+      color: var(--placeholder); font-size: 22px;
+    }
+    .c-paper-row:hover .c-paper-num { color: var(--ink); }
+    .c-paper-row .c-paper-body .c-paper-title {
+      font-size: 16px; font-weight: 700; line-height: 1.4;
+    }
+    .c-paper-row .c-paper-body .c-paper-desc {
+      font-family: var(--serif);
+      color: var(--muted); font-size: 13px; line-height: 1.5;
+      margin-top: 2px;
+      display: -webkit-box; -webkit-line-clamp: 1; line-clamp: 1;
+      -webkit-box-orient: vertical; overflow: hidden;
+    }
+    .c-paper-row .c-paper-meta {
+      font-family: var(--mono); font-size: 12px; color: var(--muted);
+      white-space: nowrap;
+    }
+    .c-paper-row .c-paper-cta {
+      display: inline-flex; align-items: center; gap: 4px;
+      color: var(--ink); font-weight: 600; font-size: 13px;
+      padding: 4px 0;
+      border-bottom: 1px solid transparent;
+      transition: border-color var(--motion-fast) var(--motion-ease);
+    }
+    .c-paper-row:hover .c-paper-cta { border-color: var(--ink); }
+    .c-paper-row .c-paper-cta .arrow { font-family: var(--serif); font-style: italic; }
+
+    /* Footer */
+    .meta-footer {
+      margin-top: 32px;
+      font-size: 12px; color: var(--muted);
+      display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+      padding-top: 16px; border-top: 1px solid var(--line);
+    }
+    .meta-footer .left { display: flex; gap: 16px; flex-wrap: wrap; }
+    .meta-footer code { background: var(--bg); padding: 2px 6px; border: 1px solid var(--line); border-radius: 4px; }
+
+  </style>
+</head>
+<body>
+  <div class="meta-shell">
+    <header class="meta-header">
+      <div class="meta-brand">
+        <span class="logo" aria-hidden="true"></span>
+        <span class="meta-brand-text">
+          思考 · Home 重做
+          <small>3 方案 · prototype v1 · 2026-05-06</small>
+        </span>
+      </div>
+      <div class="meta-actions">
+        <span>切 tab 重播动画 ·</span>
+        <span class="mono">prefers-reduced-motion 自动尊重</span>
+      </div>
+    </header>
+
+    <nav class="meta-tabs" id="tabs" role="tablist">
+      <button class="meta-tab active" data-tab="a" role="tab" aria-selected="true">A · Quiet 陪伴<span class="kbd">1</span></button>
+      <button class="meta-tab" data-tab="b" role="tab" aria-selected="false">B · Editorial 杂志<span class="kbd">2</span></button>
+      <button class="meta-tab" data-tab="c" role="tab" aria-selected="false">C · Library 桌面<span class="kbd">3</span></button>
+    </nav>
+    <p class="tab-desc" id="tab-desc">
+      <span class="pill"><span class="dot"></span><span id="tab-name">Quiet</span></span>
+      <span id="tab-summary">L3 旗舰卡 hero (黑底渐变 + accent radial glow) + 横向 stat strip,enter motion fade-up stagger 60ms,数字 mono</span>
+    </p>
+
+    <main class="stage" id="stage">
+
+      <!-- ═════════════════════════════════════════════════════════════════
+           方案 A · Quiet Companion
+           ═════════════════════════════════════════════════════════════════ -->
+      <section class="stage-pane active" data-stage="a" role="tabpanel" aria-labelledby="tab-a">
+        <aside class="shell-side">
+          <div class="brand-row">
+            <span class="brand-mark">
+              <svg viewBox="0 0 40 40" width="24" height="24" aria-hidden="true">
+                <rect width="40" height="40" rx="10" fill="#0b1120"/>
+                <g stroke="#fff" stroke-width="1.8" stroke-linecap="round">
+                  <line x1="11" y1="13" x2="29" y2="13"/>
+                  <line x1="11" y1="22" x2="29" y2="22"/>
+                  <line x1="11" y1="13" x2="11" y2="27"/>
+                  <line x1="20" y1="13" x2="20" y2="27"/>
+                  <line x1="29" y1="13" x2="29" y2="27"/>
+                  <line x1="11" y1="27" x2="29" y2="27"/>
+                </g>
+                <circle cx="20" cy="34" r="2.2" fill="#fff"/>
+              </svg>
+            </span>
+            <span class="brand-name">思考<small>SIKAO · 公考备考</small></span>
+          </div>
+          <div>
+            <div class="side-label">主练习</div>
+            <nav>
+              <a class="active" href="#">⌂  首页</a>
+              <a href="#">📋  套卷练习</a>
+              <a href="#">⊞  专项训练</a>
+              <a href="#">✎  申论批改</a>
+            </nav>
+          </div>
+          <div>
+            <div class="side-label">复盘</div>
+            <nav>
+              <a href="#">↺  错题本</a>
+              <a href="#">⌚  历史会话</a>
+              <a href="#">📅  考试日历</a>
+            </nav>
+          </div>
+          <div class="side-foot">
+            <div class="avatar">L</div>
+            <div>
+              lhr<br/>
+              <span style="font-size:11px;">2026 国考 · 行测主攻</span>
+            </div>
+          </div>
+        </aside>
+
+        <main class="shell-main">
+          <div class="a-content">
+
+            <!-- HERO (L3 旗舰卡) -->
+            <section class="a-hero anim-up">
+              <div class="tagline-rail anim-fade">
+                <span class="rule"></span>
+                <span>让备考从刷题变成思考</span>
+              </div>
+              <div class="a-eyebrow anim-up delay-1">
+                <span class="pulse"></span>
+                <span>2026 国考 · 今日推荐</span>
+              </div>
+              <h1 class="anim-up delay-2">每天 60 分钟,<br/>把考点想清楚。</h1>
+              <p class="lead anim-up delay-3">按套卷练习 · 自动判分 · 错题回看。专为公考真题场景设计,不做花哨功能。</p>
+              <div class="cta-row anim-up delay-4">
+                <button class="btn invert lg">立即开始 →</button>
+                <button class="btn outline lg">查看全部题库</button>
+              </div>
+              <div class="meta-row anim-up delay-5">
+                <span>距 2026 国考 <b class="num mono">187</b> 天</span>
+                <span>本周已完成 <b class="num mono">3</b> 套</span>
+                <span>上次练习 <b>2026-05-03</b></span>
+              </div>
+            </section>
+
+            <!-- STATS (hairline strip, 真数据派生自 /papers/me/status overlay) -->
+            <section class="a-stats anim-up delay-3">
+              <div class="a-stat">
+                <span class="stat-label">已完成套卷</span>
+                <span class="stat-num num">12</span>
+                <span class="stat-trail">本周 +<b class="num">2</b> · 同比上周持平</span>
+              </div>
+              <div class="a-stat">
+                <span class="stat-label">进行中</span>
+                <span class="stat-num num">2</span>
+                <span class="stat-trail">最近 <b>2025 国考行测</b> · <span class="num">76</span>/135</span>
+              </div>
+              <div class="a-stat">
+                <span class="stat-label">可用套卷</span>
+                <span class="stat-num num">762</span>
+                <span class="stat-trail">来自 <code>/api/v2/papers</code></span>
+              </div>
+            </section>
+
+            <!-- CUSTOM PRACTICE -->
+            <section class="anim-up delay-4">
+              <div class="a-section-head">
+                <div>
+                  <h2>专项训练</h2>
+                  <div class="head-sub">只练一个目标 —— 选题型、限定年份与题量。</div>
+                </div>
+              </div>
+              <div class="a-custom">
+                <div>
+                  <div class="a-custom-eyebrow">分类训练</div>
+                  <h3>选一个考点,把它做透</h3>
+                  <p>政治理论 / 时政 / 常识 / 言语理解 / 判断推理 / 资料分析 / 数量关系。限定年份和题量,练完直接看错题归类。</p>
+                  <div class="pairs">
+                    <span class="pair"><b>题型</b>行测 7 类</span>
+                    <span class="pair"><b>题量</b>1–50</span>
+                    <span class="pair"><b>年份</b>2018–2025</span>
+                  </div>
+                </div>
+                <button class="btn primary lg">制作专项练习</button>
+              </div>
+            </section>
+
+            <!-- PAPER LIST -->
+            <section class="anim-up delay-5">
+              <div class="a-section-head">
+                <div>
+                  <h2>推荐套卷</h2>
+                  <div class="head-sub">来自 <code>GET /api/v2/papers</code> 的真实数据 · 762 套</div>
+                </div>
+                <a class="more" href="#">查看全部 →</a>
+              </div>
+              <div class="paper-grid">
+                <article class="card hoverable paper-card">
+                  <div class="paper-head">
+                    <span class="badge">2025-国考-行测</span>
+                    <span class="badge hairline">未做</span>
+                  </div>
+                  <div class="paper-rev">rev#0a3d12</div>
+                  <div class="paper-title">2025 国家公务员考试 行测真题</div>
+                  <div class="paper-desc">真题原卷,含言语理解、数量关系、判断推理、资料分析、常识判断 5 大模块。</div>
+                  <div class="paper-foot">
+                    <span class="paper-meta num">135 题</span>
+                    <button class="btn primary sm">开始练习</button>
+                  </div>
+                </article>
+                <article class="card hoverable paper-card">
+                  <div class="paper-head">
+                    <span class="badge">2025-国考-申论</span>
+                    <span class="badge warn dot">进行中 76/135</span>
+                  </div>
+                  <div class="paper-rev">rev#1f8e44</div>
+                  <div class="paper-title">2025 国考副省级 申论真题</div>
+                  <div class="paper-desc">归纳概括 + 综合分析 + 提出对策 + 应用文 + 大作文,5 题型完整覆盖。</div>
+                  <div class="paper-foot">
+                    <span class="paper-meta num">5 题</span>
+                    <button class="btn primary sm">继续练习</button>
+                  </div>
+                </article>
+                <article class="card hoverable paper-card">
+                  <div class="paper-head">
+                    <span class="badge">2024-粤-行测</span>
+                    <span class="badge neutral">已做 2 次</span>
+                  </div>
+                  <div class="paper-rev">rev#73b201</div>
+                  <div class="paper-title">2024 广东省考 行测真题(县级)</div>
+                  <div class="paper-desc">含资料分析增量题型,难度 B,适合做完国考真题后的进阶练习。</div>
+                  <div class="paper-foot">
+                    <span class="paper-meta num">120 题</span>
+                    <button class="btn primary sm">再做一次</button>
+                  </div>
+                </article>
+              </div>
+            </section>
+
+          </div>
+        </main>
+      </section>
+
+      <!-- ═════════════════════════════════════════════════════════════════
+           方案 B · Editorial Magazine
+           ═════════════════════════════════════════════════════════════════ -->
+      <section class="stage-pane" data-stage="b" role="tabpanel" aria-labelledby="tab-b">
+        <aside class="shell-side">
+          <div class="brand-row">
+            <span class="brand-mark">
+              <svg viewBox="0 0 40 40" width="24" height="24" aria-hidden="true">
+                <rect width="40" height="40" rx="10" fill="#0b1120"/>
+                <g stroke="#fff" stroke-width="1.8" stroke-linecap="round">
+                  <line x1="11" y1="13" x2="29" y2="13"/>
+                  <line x1="11" y1="22" x2="29" y2="22"/>
+                  <line x1="11" y1="13" x2="11" y2="27"/>
+                  <line x1="20" y1="13" x2="20" y2="27"/>
+                  <line x1="29" y1="13" x2="29" y2="27"/>
+                  <line x1="11" y1="27" x2="29" y2="27"/>
+                </g>
+                <circle cx="20" cy="34" r="2.2" fill="#fff"/>
+              </svg>
+            </span>
+            <span class="brand-name">思考<small>SIKAO · 公考备考</small></span>
+          </div>
+          <div>
+            <div class="side-label">主练习</div>
+            <nav>
+              <a class="active" href="#">⌂  首页</a>
+              <a href="#">📋  套卷练习</a>
+              <a href="#">⊞  专项训练</a>
+              <a href="#">✎  申论批改</a>
+            </nav>
+          </div>
+          <div>
+            <div class="side-label">复盘</div>
+            <nav>
+              <a href="#">↺  错题本</a>
+              <a href="#">⌚  历史会话</a>
+              <a href="#">📅  考试日历</a>
+            </nav>
+          </div>
+          <div class="side-foot">
+            <div class="avatar">L</div>
+            <div>lhr<br/><span style="font-size:11px;">2026 国考 · 行测主攻</span></div>
+          </div>
+        </aside>
+
+        <main class="shell-main">
+          <div class="b-content">
+
+            <!-- HERO (杂志栅格 7/4) -->
+            <section class="b-hero">
+              <div class="b-hero-text">
+                <div class="b-tagline anim-up">
+                  让备考从刷题变成思考。
+                </div>
+                <div class="b-eyebrow anim-up delay-1">
+                  <span class="accent-dot"></span>
+                  Vol.05 · 2026 国考 · 今日推荐
+                </div>
+                <h1 class="anim-up delay-2">每天 60 分钟,把考点想清楚<span class="arrow">→</span></h1>
+                <p class="lead anim-up delay-3">
+                  按套卷练习 · 自动判分 · 错题回看。专为公考真题场景设计,不做花哨功能。
+                </p>
+                <div class="cta-row anim-up delay-4">
+                  <button class="btn primary lg">立即开始</button>
+                  <span class="pipe"></span>
+                  <button class="btn ghost lg">查看全部 762 套 →</button>
+                </div>
+              </div>
+              <div class="b-hero-aside anim-up delay-5">
+                <div class="aside-eyebrow">今日清单 · 3 套</div>
+                <div class="aside-list">
+                  <div class="aside-item">
+                    <span class="aside-num">01</span>
+                    <div class="aside-body">
+                      <div class="aside-title">2025 国考行测真题</div>
+                      <div class="aside-meta">135 题 · 未做 · 推荐先做</div>
+                    </div>
+                  </div>
+                  <div class="aside-item">
+                    <span class="aside-num">02</span>
+                    <div class="aside-body">
+                      <div class="aside-title">2025 国考副省级 申论真题</div>
+                      <div class="aside-meta">5 题 · 进行中 76/135</div>
+                    </div>
+                  </div>
+                  <div class="aside-item">
+                    <span class="aside-num">03</span>
+                    <div class="aside-body">
+                      <div class="aside-title">2024 广东省考 行测(县级)</div>
+                      <div class="aside-meta">120 题 · 已做 2 次</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <!-- STATS strip 杂志感: 一段 prose + 3 个右对齐 serif italic 大数字 -->
+            <section class="b-strip">
+              <div class="strip-prose anim-up">
+                你的<b>第 187 天</b>。本周完成 <b>3</b> 套,
+                正在进行 <b>2</b> 套。<br/>
+                <span class="muted" style="font-size:14px;">距 2026 国考还有 6 个月,
+                每周保留 <b>≥ 4</b> 套即可达成节奏目标。</span>
+              </div>
+              <div class="strip-num anim-up delay-1">
+                <span class="label">已完成</span>
+                <span class="value">12<span class="unit">套</span></span>
+                <span class="foot">本周 +2 · 同比上周持平</span>
+              </div>
+              <div class="strip-num anim-up delay-2">
+                <span class="label">进行中</span>
+                <span class="value">2<span class="unit">套</span></span>
+                <span class="foot">最近 76 / 135 题</span>
+              </div>
+              <div class="strip-num anim-up delay-3">
+                <span class="label">可用套卷</span>
+                <span class="value">762</span>
+                <span class="foot">/api/v2/papers</span>
+              </div>
+            </section>
+
+            <!-- CUSTOM PRACTICE row -->
+            <section class="b-section anim-up">
+              <h2>专项训练</h2>
+              <div class="b-section-sub">只练一个目标 —— 选题型,限定年份与题量。</div>
+              <div class="b-custom-row">
+                <span class="b-cust-num">04</span>
+                <div class="b-cust-body">
+                  <h3>选一个考点,把它做透</h3>
+                  <p>政治理论 / 时政 / 常识 / 言语 / 判断 / 资料 / 数量。1–50 题随选,练完直接错题归类。</p>
+                </div>
+                <button class="btn primary lg">制作专项 →</button>
+              </div>
+            </section>
+
+            <!-- PAPER GRID (3 cols, no gap, hairline rule on hover) -->
+            <section class="b-section anim-up delay-1">
+              <h2>推荐套卷</h2>
+              <div class="b-section-sub">真实数据,选好就开练。</div>
+              <div class="b-paper-grid">
+                <article class="b-paper-card">
+                  <div class="b-paper-head">
+                    <span class="badge">2025-国考-行测</span>
+                    <span class="b-paper-num">01</span>
+                  </div>
+                  <div class="b-paper-title">2025 国家公务员考试 行测真题</div>
+                  <div class="b-paper-desc">真题原卷,含言语 / 数量 / 判断 / 资料 / 常识 5 大模块,适合作为基线测试。</div>
+                  <div class="b-paper-foot">
+                    <span class="paper-meta num mono">135 题 · 120 min</span>
+                    <a href="#" class="btn ghost sm">开始 →</a>
+                  </div>
+                </article>
+                <article class="b-paper-card">
+                  <div class="b-paper-head">
+                    <span class="badge warn dot">进行中</span>
+                    <span class="b-paper-num">02</span>
+                  </div>
+                  <div class="b-paper-title">2025 国考副省级 申论真题</div>
+                  <div class="b-paper-desc">归纳概括 + 综合分析 + 提出对策 + 应用文 + 大作文,5 题型完整覆盖。</div>
+                  <div class="b-paper-foot">
+                    <span class="paper-meta num mono">5 题 · 76/135</span>
+                    <a href="#" class="btn ghost sm">继续 →</a>
+                  </div>
+                </article>
+                <article class="b-paper-card">
+                  <div class="b-paper-head">
+                    <span class="badge neutral">已做 2 次</span>
+                    <span class="b-paper-num">03</span>
+                  </div>
+                  <div class="b-paper-title">2024 广东省考 行测(县级)</div>
+                  <div class="b-paper-desc">含资料分析增量题型,难度 B,适合做完国考真题后的进阶。</div>
+                  <div class="b-paper-foot">
+                    <span class="paper-meta num mono">120 题 · 110 min</span>
+                    <a href="#" class="btn ghost sm">再做一次 →</a>
+                  </div>
+                </article>
+                <article class="b-paper-card">
+                  <div class="b-paper-head">
+                    <span class="badge">2024-苏-行测</span>
+                    <span class="b-paper-num">04</span>
+                  </div>
+                  <div class="b-paper-title">2024 江苏省考 行测真题(A 类)</div>
+                  <div class="b-paper-desc">江苏 A 类独立卷,数学占比偏高,适合数量关系专项检验。</div>
+                  <div class="b-paper-foot">
+                    <span class="paper-meta num mono">120 题 · 100 min</span>
+                    <a href="#" class="btn ghost sm">开始 →</a>
+                  </div>
+                </article>
+                <article class="b-paper-card">
+                  <div class="b-paper-head">
+                    <span class="badge">2023-国考-市地</span>
+                    <span class="b-paper-num">05</span>
+                  </div>
+                  <div class="b-paper-title">2023 国考市地级 行测真题</div>
+                  <div class="b-paper-desc">入门套卷,难度 A,适合刚开始备考时建立基线。</div>
+                  <div class="b-paper-foot">
+                    <span class="paper-meta num mono">130 题 · 120 min</span>
+                    <a href="#" class="btn ghost sm">开始 →</a>
+                  </div>
+                </article>
+                <article class="b-paper-card">
+                  <div class="b-paper-head">
+                    <span class="badge">2023-京-行测</span>
+                    <span class="b-paper-num">06</span>
+                  </div>
+                  <div class="b-paper-title">2023 北京市考 行测真题</div>
+                  <div class="b-paper-desc">京字独立卷,题型分布与国考有差异,适合扩展刷题面。</div>
+                  <div class="b-paper-foot">
+                    <span class="paper-meta num mono">135 题 · 120 min</span>
+                    <a href="#" class="btn ghost sm">开始 →</a>
+                  </div>
+                </article>
+              </div>
+            </section>
+
+          </div>
+        </main>
+      </section>
+
+      <!-- ═════════════════════════════════════════════════════════════════
+           方案 C · Library Bench
+           ═════════════════════════════════════════════════════════════════ -->
+      <section class="stage-pane" data-stage="c" role="tabpanel" aria-labelledby="tab-c">
+        <aside class="shell-side">
+          <div class="brand-row">
+            <span class="brand-mark">
+              <svg viewBox="0 0 40 40" width="24" height="24" aria-hidden="true">
+                <rect width="40" height="40" rx="10" fill="#0b1120"/>
+                <g stroke="#fff" stroke-width="1.8" stroke-linecap="round">
+                  <line x1="11" y1="13" x2="29" y2="13"/>
+                  <line x1="11" y1="22" x2="29" y2="22"/>
+                  <line x1="11" y1="13" x2="11" y2="27"/>
+                  <line x1="20" y1="13" x2="20" y2="27"/>
+                  <line x1="29" y1="13" x2="29" y2="27"/>
+                  <line x1="11" y1="27" x2="29" y2="27"/>
+                </g>
+                <circle cx="20" cy="34" r="2.2" fill="#fff"/>
+              </svg>
+            </span>
+            <span class="brand-name">思考<small>SIKAO · 公考备考</small></span>
+          </div>
+          <div>
+            <div class="side-label">主练习</div>
+            <nav>
+              <a class="active" href="#">⌂  首页</a>
+              <a href="#">📋  套卷练习</a>
+              <a href="#">⊞  专项训练</a>
+              <a href="#">✎  申论批改</a>
+            </nav>
+          </div>
+          <div>
+            <div class="side-label">复盘</div>
+            <nav>
+              <a href="#">↺  错题本</a>
+              <a href="#">⌚  历史会话</a>
+              <a href="#">📅  考试日历</a>
+            </nav>
+          </div>
+          <div class="side-foot">
+            <div class="avatar">L</div>
+            <div>lhr<br/><span style="font-size:11px;">2026 国考 · 行测主攻</span></div>
+          </div>
+        </aside>
+
+        <main class="shell-main">
+          <div class="c-content">
+
+            <!-- HERO (极致克制 hairline rail) -->
+            <section class="c-hero">
+              <div class="c-rail anim-fade">
+                <span>Tonight</span>
+                <span class="c-rail-line anim-line"></span>
+                <span class="num mono" style="letter-spacing:.06em;">21:42 · 距 2026 国考 187 天</span>
+              </div>
+              <h1 class="anim-up delay-1">让备考从刷题<br/>变成<em>思考。</em></h1>
+              <p class="c-lead anim-up delay-2">
+                每天 60 分钟,把考点想清楚。按套卷练习,自动判分,
+                错题回看。专为公考真题场景设计,不做花哨功能。
+              </p>
+              <div class="c-cta anim-up delay-3">
+                <button class="btn primary lg">立即开始</button>
+                <a href="#" class="c-cta-link">查看全部 762 套 <span class="arrow">→</span></a>
+              </div>
+            </section>
+
+            <!-- BENCH 极简 stat row, 数字 + label -->
+            <section class="c-bench">
+              <div class="c-bench-item anim-up">
+                <span class="c-bench-label">已完成</span>
+                <span class="c-bench-value num">12 <small>套</small></span>
+                <span class="c-bench-foot">本周 +2 · 同比上周持平</span>
+              </div>
+              <div class="c-bench-item anim-up delay-1">
+                <span class="c-bench-label">进行中</span>
+                <span class="c-bench-value num">2 <small>套</small></span>
+                <span class="c-bench-foot">最近 2025 国考行测 · 76/135</span>
+              </div>
+              <div class="c-bench-item anim-up delay-2">
+                <span class="c-bench-label">可用</span>
+                <span class="c-bench-value num">762</span>
+                <span class="c-bench-foot">/api/v2/papers</span>
+              </div>
+            </section>
+
+            <!-- CUSTOM -->
+            <section class="anim-up">
+              <div class="c-section-head">
+                <span class="c-section-num">§ 01</span>
+                <h2>专项训练</h2>
+                <span class="c-section-meta">7 题型 · 1–50 题</span>
+              </div>
+              <div class="c-custom">
+                <div>
+                  <h3>选一个考点,把它做透</h3>
+                  <p>政治理论 / 时政 / 常识 / 言语理解 / 判断推理 / 资料分析 / 数量关系。限定年份与题量,练完直接错题归类。</p>
+                  <div class="c-custom-pairs">
+                    <span><b>题型</b>行测 7 类</span>
+                    <span><b>题量</b>1–50</span>
+                    <span><b>年份</b>2018–2025</span>
+                  </div>
+                </div>
+                <a href="#" class="c-custom-cta">制作专项 →</a>
+              </div>
+            </section>
+
+            <!-- PAPER LIST (rows, hairline) -->
+            <section class="anim-up delay-1">
+              <div class="c-section-head">
+                <span class="c-section-num">§ 02</span>
+                <h2>推荐套卷</h2>
+                <span class="c-section-meta">762 套 · 真实真题</span>
+              </div>
+              <div class="c-paper-list">
+                <article class="c-paper-row">
+                  <span class="c-paper-num">01</span>
+                  <div class="c-paper-body">
+                    <div class="c-paper-title">2025 国家公务员考试 行测真题</div>
+                    <div class="c-paper-desc">真题原卷,5 大模块完整覆盖,适合作为基线测试。</div>
+                  </div>
+                  <span class="c-paper-meta">135 题 · 120 min · 未做</span>
+                  <a href="#" class="c-paper-cta">开始 <span class="arrow">→</span></a>
+                </article>
+                <article class="c-paper-row">
+                  <span class="c-paper-num">02</span>
+                  <div class="c-paper-body">
+                    <div class="c-paper-title">2025 国考副省级 申论真题</div>
+                    <div class="c-paper-desc">归纳概括 + 综合分析 + 提出对策 + 应用文 + 大作文。</div>
+                  </div>
+                  <span class="c-paper-meta">5 题 · 进行中 76/135</span>
+                  <a href="#" class="c-paper-cta">继续 <span class="arrow">→</span></a>
+                </article>
+                <article class="c-paper-row">
+                  <span class="c-paper-num">03</span>
+                  <div class="c-paper-body">
+                    <div class="c-paper-title">2024 广东省考 行测(县级)</div>
+                    <div class="c-paper-desc">含资料分析增量题型,难度 B,适合做完国考后的进阶。</div>
+                  </div>
+                  <span class="c-paper-meta">120 题 · 已做 2 次</span>
+                  <a href="#" class="c-paper-cta">再做 <span class="arrow">→</span></a>
+                </article>
+                <article class="c-paper-row">
+                  <span class="c-paper-num">04</span>
+                  <div class="c-paper-body">
+                    <div class="c-paper-title">2024 江苏省考 行测真题(A 类)</div>
+                    <div class="c-paper-desc">江苏 A 类独立卷,数学占比偏高,适合数量关系专项检验。</div>
+                  </div>
+                  <span class="c-paper-meta">120 题 · 100 min · 未做</span>
+                  <a href="#" class="c-paper-cta">开始 <span class="arrow">→</span></a>
+                </article>
+                <article class="c-paper-row">
+                  <span class="c-paper-num">05</span>
+                  <div class="c-paper-body">
+                    <div class="c-paper-title">2023 国考市地级 行测真题</div>
+                    <div class="c-paper-desc">入门套卷,难度 A,适合刚开始备考时建立基线。</div>
+                  </div>
+                  <span class="c-paper-meta">130 题 · 120 min · 未做</span>
+                  <a href="#" class="c-paper-cta">开始 <span class="arrow">→</span></a>
+                </article>
+              </div>
+            </section>
+
+          </div>
+        </main>
+      </section>
+
+    </main>
+
+    <footer class="meta-footer">
+      <div class="left">
+        <span>Tokens 1:1 镜像 <code>frontend/src/styles/tokens.css</code></span>
+        <span>规范 <code>docs/design/style-guide.md</code></span>
+        <span>动效 <code>--motion-{fast,base,slow}</code> + <code>prefers-reduced-motion</code> 尊重</span>
+      </div>
+      <div>合规守则: 90/8/2 比例 · ink-first · 禁抖动弹跳闪烁 (§9 + §11)</div>
+    </footer>
+  </div>
+
+  <script>
+    /* ───── tab 切换 + enter motion 重播 ─────
+       切 tab 时 remove .active → force reflow → add .active, 让动画重跑.
+       不引外部 lib, 50 行内. */
+    const tabs = document.querySelectorAll('.meta-tab');
+    const panes = document.querySelectorAll('.stage-pane');
+    const tabName = document.getElementById('tab-name');
+    const tabSummary = document.getElementById('tab-summary');
+
+    const meta = {
+      a: {
+        name: 'Quiet · 克制陪伴',
+        summary: 'L3 旗舰卡 hero (黑底渐变 + accent radial glow) + 横向 stat strip · enter motion fade-up stagger 60ms · 数字 mono · CTA 反白'
+      },
+      b: {
+        name: 'Editorial · 杂志栅格',
+        summary: '2/3 + 1/3 杂志栅格 + display 64 + serif italic 大数字 + 卷号 01-06 · 顶 hairline rule hover 滑入 · 文字感最强'
+      },
+      c: {
+        name: 'Library · 阅读桌面',
+        summary: '极致克制留白 · hairline rail "Tonight 21:42" · 套卷做成 row list 不是 card · 仅 page fade-in 一次 · 静感最强'
+      }
+    };
+
+    function activate(key) {
+      tabs.forEach((t) => {
+        const on = t.dataset.tab === key;
+        t.classList.toggle('active', on);
+        t.setAttribute('aria-selected', on ? 'true' : 'false');
+      });
+      panes.forEach((p) => {
+        const on = p.dataset.stage === key;
+        p.classList.remove('active');
+        if (on) {
+          // force reflow so animation re-fires
+          void p.offsetWidth;
+          p.classList.add('active');
+        }
+      });
+      const m = meta[key];
+      if (m) {
+        tabName.textContent = m.name;
+        tabSummary.textContent = m.summary;
+      }
+    }
+
+    tabs.forEach((t) => {
+      t.addEventListener('click', () => activate(t.dataset.tab));
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === '1') activate('a');
+      else if (e.key === '2') activate('b');
+      else if (e.key === '3') activate('c');
+    });
+
+    // 支持 #a / #b / #c 直链, 方便 chrome --headless --screenshot 截特定方案.
+    const initial = (location.hash || '').replace('#', '');
+    if (['a', 'b', 'c'].includes(initial)) {
+      activate(initial);
+    }
+  </script>
+</body>
+</html>

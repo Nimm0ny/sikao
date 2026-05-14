@@ -1,0 +1,476 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1280">
+<title>v3-C 禅 Zen 单焦 · 学习中心 (Home)</title>
+<style>
+  /* ── tokens (v3-C Zen 单焦覆盖, 极浅 paper) ─────────────────────── */
+  :root {
+    --ink: #0b1120;
+    --ink-muted: #334155;     /* caption ≥14px 走 ink-muted, 不 placeholder */
+    --muted: #64748b;
+    --paper: #f9f6ef;         /* v3-C: 比 v3-A 更浅的 paper-tint */
+    --paper-deep: #f1ece0;
+    --bg: #ffffff;
+    --line: #e7e2d4;          /* hairline 极淡 */
+    --line-strong: #cdc6b3;
+    --accent: #3f7ef1;        /* 仅圆点 1 处使用 */
+    --accent-50: #eff6ff;
+    --success: #16a34a;
+
+    --r-sm: 8px;
+    --r-md: 12px;
+    --r-lg: 16px;
+    --r-btn: 10px;
+    --r-pill: 9999px;
+
+    --shadow-card: 0 1px 2px rgba(11,17,32,.03);
+
+    /* 反馈 B: Zen 数字 PingFang SC Heavy, 不 serif italic */
+    --sans: 'PingFang SC', 'Source Han Sans CN', 'Microsoft YaHei',
+            'Hiragino Sans GB', system-ui, sans-serif;
+    --num: 'PingFang SC', 'Source Han Sans CN', system-ui, sans-serif;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 14px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* viewport guard: 1280×800, overflow:hidden */
+  .vp {
+    width: 1280px;
+    height: 800px;
+    overflow: hidden;
+    background: var(--paper);
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 200px 1fr;     /* Zen sidebar: 200px (比 v3-A 240px 窄) */
+  }
+
+  /* ── sidebar (Zen 极简: 200px / 字号小 / 色淡 / 大留白) ──────────── */
+  .sb {
+    background: transparent;        /* Zen sidebar 不要深底, 走 paper-tint 同底, 仅一道右 hairline */
+    border-right: 1px solid var(--line);
+    color: var(--muted);
+    padding: 28px 18px 20px;
+    height: 800px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .sb-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 6px 24px;
+    margin-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .sb-brand-mark { flex-shrink: 0; }
+  .sb-brand-text {
+    display: flex;
+    flex-direction: column;
+    line-height: 1.1;
+  }
+  .sb-brand-zh {
+    font-size: 15px;
+    font-weight: 600;
+    color: var(--ink);
+    letter-spacing: 0.02em;
+  }
+  .sb-brand-en {
+    font-size: 9px;
+    color: var(--muted);
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    margin-top: 3px;
+  }
+  .sb-section {
+    margin-top: 14px;
+    margin-bottom: 6px;
+    padding: 0 6px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--muted);
+    opacity: .7;
+  }
+  .sb-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 8px;
+    border-radius: var(--r-sm);
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    transition: color .15s, background .15s;
+  }
+  .sb-item:hover {
+    color: var(--ink);
+    background: rgba(11,17,32,.03);
+  }
+  .sb-item.active {
+    color: var(--ink);
+    font-weight: 500;
+    background: rgba(11,17,32,.04);
+  }
+  .sb-item.active::before {
+    content: '';
+    width: 2px;
+    height: 14px;
+    background: var(--ink);
+    border-radius: 1px;
+    margin-left: -10px;
+    margin-right: -2px;
+  }
+  .sb-icon {
+    width: 13px;
+    height: 13px;
+    flex-shrink: 0;
+    opacity: .7;
+  }
+  .sb-spacer { flex: 1; }
+  .sb-foot {
+    padding: 0 6px;
+    font-size: 11px;
+    color: var(--muted);
+    opacity: .65;
+    letter-spacing: 0.04em;
+    line-height: 1.5;
+    border-top: 1px solid var(--line);
+    padding-top: 14px;
+    margin-top: 10px;
+  }
+
+  /* ── main: Zen 单焦 — 单列纵向, 大留白, 1 hero + 1 stat row + 1 footer ── */
+  .main {
+    height: 800px;
+    overflow: hidden;
+    padding: 56px 96px 40px;       /* 极大左右内边距 = 留白 */
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 0;
+  }
+
+  /* page header: 极简 — 仅日期 + 倒计时 */
+  .page-hd {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-bottom: 0;
+  }
+  .page-eyebrow {
+    font-size: 14px;            /* 反馈 C: ≥14px, regular weight */
+    font-weight: 400;
+    color: var(--ink-muted);
+    letter-spacing: 0.06em;
+  }
+  .page-greeting {
+    font-size: 14px;
+    color: var(--ink-muted);
+    letter-spacing: 0.04em;
+  }
+  .page-greeting strong {
+    font-family: var(--num);
+    font-weight: 600;
+    color: var(--ink);
+    margin: 0 4px;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* hero: 单焦 — 一句话 + 一套题 + 1 主 CTA, 居中, 大留白 */
+  .focus {
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 0 0 40px;
+  }
+  .focus-question {
+    font-size: 32px;
+    font-weight: 400;
+    line-height: 1.45;
+    color: var(--ink);
+    letter-spacing: 0.01em;
+  }
+  .focus-question span.dim { color: var(--muted); }
+
+  .focus-card {
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    padding: 32px 32px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    transition: border-color .2s;
+  }
+  .focus-card:hover { border-color: var(--line-strong); }
+  .focus-card-eyebrow {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+  }
+  .focus-card-title {
+    font-size: 22px;
+    font-weight: 500;
+    color: var(--ink);
+    line-height: 1.4;
+    letter-spacing: 0.005em;
+  }
+  .focus-card-meta {
+    display: flex;
+    gap: 28px;
+    font-size: 14px;
+    color: var(--ink-muted);
+    align-items: center;
+    padding-top: 4px;
+    border-top: 1px solid var(--line);
+  }
+  .focus-card-meta-item {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+  }
+  .focus-card-meta-num {
+    font-family: var(--num);
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.01em;
+  }
+  .focus-card-meta-label {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .focus-actions {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    margin-top: 4px;
+  }
+  .btn-primary {
+    height: 44px;
+    padding: 0 24px;
+    border-radius: var(--r-btn);
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: #fff;
+    transition: all .15s;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    letter-spacing: 0.04em;
+  }
+  .btn-primary:hover { background: #1a2235; }
+  .btn-quiet {
+    background: transparent;
+    border: none;
+    padding: 0 8px;
+    font-size: 13px;
+    color: var(--muted);
+    cursor: pointer;
+    letter-spacing: 0.04em;
+    transition: color .15s;
+  }
+  .btn-quiet:hover { color: var(--ink); }
+
+  /* footer-row: 3 stat (横排, 极简) — Zen 数字大但少 */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    border-top: 1px solid var(--line);
+    padding-top: 28px;
+    gap: 0;
+  }
+  .stat {
+    padding: 4px 24px;
+    border-right: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .stat:first-child { padding-left: 0; }
+  .stat:last-child { border-right: none; padding-right: 0; }
+  .stat-eyebrow {
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--ink-muted);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+  }
+  .stat-value {
+    font-family: var(--num);   /* 反馈 B: PingFang SC heavy, 不 serif italic */
+    font-weight: 700;
+    font-size: 56px;            /* Zen 数字大 — 但是中文 sans, 不夸张 */
+    line-height: 1;
+    letter-spacing: 0.005em;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+    margin-top: 6px;
+  }
+  .stat-unit {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--muted);
+    margin-left: 4px;
+    letter-spacing: 0.04em;
+  }
+  .stat-meta {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 4px;
+    letter-spacing: 0.02em;
+  }
+  .stat-trend {
+    color: var(--success);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* tagline (底部, 极淡) */
+  .tagline {
+    text-align: center;
+    font-size: 13px;
+    color: var(--muted);
+    opacity: .7;
+    letter-spacing: 0.16em;
+    padding-top: 24px;
+    margin-top: 24px;
+  }
+</style>
+</head>
+<body>
+<div class="vp">
+  <!-- ── sidebar Zen: 200px / 极简 / 大留白 ─────────────────────── -->
+  <aside class="sb">
+    <div class="sb-brand">
+      <!-- LogoMark frozen 图案 + Zen 配色: 白底黑线 + 圆点 accent (创新点) -->
+      <svg class="sb-brand-mark" width="32" height="32" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" aria-label="思考品牌标识" role="img">
+        <rect width="40" height="40" rx="10" fill="#ffffff" stroke="#0b1120" stroke-width="1.4"/>
+        <g stroke="#0b1120" stroke-width="1.8" stroke-linecap="round">
+          <line x1="11" y1="13" x2="29" y2="13"/>
+          <line x1="11" y1="22" x2="29" y2="22"/>
+          <line x1="11" y1="13" x2="11" y2="27"/>
+          <line x1="20" y1="13" x2="20" y2="27"/>
+          <line x1="29" y1="13" x2="29" y2="27"/>
+          <line x1="11" y1="27" x2="29" y2="27"/>
+        </g>
+        <circle cx="20" cy="34" r="2.2" fill="#3f7ef1"/>
+      </svg>
+      <div class="sb-brand-text">
+        <span class="sb-brand-zh">思考</span>
+        <span class="sb-brand-en">SIKAO</span>
+      </div>
+    </div>
+
+    <div class="sb-section">主练习</div>
+    <div class="sb-item active">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12l9-9 9 9M5 10v10h4v-6h6v6h4V10"/></svg>
+      首页
+    </div>
+    <div class="sb-item">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M8 7h8M8 12h8M8 17h5"/></svg>
+      行测试炼
+    </div>
+    <div class="sb-item">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+      申论试炼
+    </div>
+
+    <div class="sb-section">复盘</div>
+    <div class="sb-item">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+      错题本
+    </div>
+    <div class="sb-item">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 3v18h18"/><path d="M7 16l4-4 4 4 5-7"/></svg>
+      学情数据
+    </div>
+    <div class="sb-item">
+      <svg class="sb-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+      考试日历
+    </div>
+
+    <div class="sb-spacer"></div>
+    <div class="sb-foot">让备考从<br>刷题变成思考</div>
+  </aside>
+
+  <!-- ── main: Zen 单焦 — 一日一焦点 ───────────────────────────── -->
+  <main class="main">
+    <!-- page header: 极简日期 + 倒计时 -->
+    <header class="page-hd">
+      <span class="page-eyebrow">2026 · 5 月 8 日 · 周五</span>
+      <span class="page-greeting">距 2026 国考 <strong>164</strong> 天</span>
+    </header>
+
+    <!-- focus: 单焦, 居中 —— 一句话 + 一套题 + 1 CTA -->
+    <section class="focus">
+      <h1 class="focus-question">
+        今天<span class="dim">，</span>你打算<br>
+        思考什么<span class="dim">？</span>
+      </h1>
+
+      <article class="focus-card">
+        <span class="focus-card-eyebrow">下一步</span>
+        <h2 class="focus-card-title">2024 国考行政职业能力测验（地市级）</h2>
+        <div class="focus-card-meta">
+          <div class="focus-card-meta-item">
+            <span class="focus-card-meta-num">73</span>
+            <span class="focus-card-meta-label">题待答</span>
+          </div>
+          <div class="focus-card-meta-item">
+            <span class="focus-card-meta-num">120</span>
+            <span class="focus-card-meta-label">分钟</span>
+          </div>
+          <div class="focus-card-meta-item">
+            <span class="focus-card-meta-num">39%</span>
+            <span class="focus-card-meta-label">已完成</span>
+          </div>
+        </div>
+        <div class="focus-actions">
+          <button class="btn-primary">继续作答 →</button>
+          <button class="btn-quiet">换一套</button>
+        </div>
+      </article>
+    </section>
+
+    <!-- stats-row: 3 stat 横排, 仅 metric, 不要装饰 -->
+    <section class="stats-row">
+      <div class="stat">
+        <span class="stat-eyebrow">累计答题</span>
+        <span class="stat-value">2,470<span class="stat-unit">题</span></span>
+        <span class="stat-meta"><span class="stat-trend">↑ 86</span> · 近 7 天</span>
+      </div>
+      <div class="stat">
+        <span class="stat-eyebrow">当前正确率</span>
+        <span class="stat-value">73<span class="stat-unit">%</span></span>
+        <span class="stat-meta">较上周 <span class="stat-trend">↑ 4</span> pt</span>
+      </div>
+      <div class="stat">
+        <span class="stat-eyebrow">连续学习</span>
+        <span class="stat-value">12<span class="stat-unit">天</span></span>
+        <span class="stat-meta">最长 24 天</span>
+      </div>
+    </section>
+  </main>
+</div>
+</body>
+</html>

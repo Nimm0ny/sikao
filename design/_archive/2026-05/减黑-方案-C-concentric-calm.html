@@ -1,0 +1,915 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>减黑方案 C · Concentric Calm — 80px icon rail + 极简留白 (2026-05-08)</title>
+<link rel="stylesheet" href="./tokens.css" />
+<style>
+/*
+ * 方案 C — "Concentric Calm"
+ *
+ * 设计理由 (跟 brand 调性):
+ * - "图书馆隔壁桌"安静感最大化: sidebar 收窄到 80px icon rail, 占视觉面积从
+ *   ~25% 降到 ~5%, 主区获得更多留白
+ * - "让思考成为习惯": 极简 hero 单聚焦今日 1 件事, 不 stat 不 grid 干扰, 是
+ *   "走进图书馆只看一本书"的心流隐喻
+ * - 黑色面积压到极低 (~5%), 主 CTA + active rail item dot 反衬保留
+ * - hover icon rail 自动展开 240px (CSS transition), 不丢 nav label, 但默认隐
+ *
+ * 视觉权重重分布:
+ * - 黑色: ~5% (主 CTA + active item dot + brand logo)
+ * - 白 (--bg): sidebar + cards, ~50%
+ * - 浅灰 (--bg-alt): main bg, ~40%
+ * - accent 蓝: focus + active rail dot, ~3%
+ * - 留白增 ~50% (上下间距 64px, 之前 32px)
+ *
+ * Tradeoff (master 拍板时考虑):
+ * - + 视觉最克制, brand 调性最纯
+ * - + 长 session 视觉疲劳最低
+ * - - 默认收窄丢"导航明确"感, 新用户可能困惑 ("nav 都是 icon 看不懂")
+ * - - 实施成本最高 (需 hover transition + a11y label 兜底)
+ */
+:root {
+  --frame-w: 1480px;
+  --frame-h: 900px;
+  --canvas-bg: #e8eaee;
+  --rail-w: 80px;
+  --rail-w-expanded: 240px;
+}
+
+body {
+  margin: 0;
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--canvas-bg);
+  padding: 32px;
+}
+
+.doc-head {
+  max-width: 1400px;
+  margin: 0 auto 24px;
+}
+.doc-head h1 {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+}
+.doc-head p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.frame {
+  width: var(--frame-w);
+  height: var(--frame-h);
+  margin: 0 auto 48px;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: var(--rail-w) 1fr;
+}
+
+.frame.expanded {
+  grid-template-columns: var(--rail-w-expanded) 1fr;
+}
+
+/* ── Sidebar (icon rail, 默认 80px 收窄) ────────────────────── */
+.sb {
+  background: var(--bg);
+  border-right: 1px solid var(--line);
+  padding: 24px 0;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  transition: width var(--motion-base) var(--motion-ease);
+}
+.sb-brand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 20px 24px;
+  border-bottom: 1px solid var(--line);
+  gap: 12px;
+}
+.sb-brand-logo {
+  width: 40px;
+  height: 40px;
+  background: var(--ink);
+  color: #fff;
+  border-radius: var(--r-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--serif);
+  font-size: 20px;
+  font-weight: 700;
+  font-style: italic;
+  flex-shrink: 0;
+}
+.sb-brand-text {
+  display: none;
+}
+.frame.expanded .sb-brand {
+  justify-content: flex-start;
+}
+.frame.expanded .sb-brand-text {
+  display: block;
+}
+.sb-brand-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.sb-brand-sub {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+}
+
+.sb-group {
+  padding: 20px 0 8px;
+}
+.sb-group-label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--muted);
+  letter-spacing: var(--tracking-eyebrow);
+  text-transform: uppercase;
+  padding: 0 24px 8px;
+  display: none;
+}
+.frame.expanded .sb-group-label {
+  display: block;
+}
+
+.sb-item {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 20px;
+  font-size: 13.5px;
+  color: var(--ink-muted);
+  cursor: pointer;
+  position: relative;
+  transition: background var(--motion-fast) var(--motion-ease),
+              color var(--motion-fast) var(--motion-ease);
+}
+.sb-item:hover {
+  background: var(--bg-alt);
+  color: var(--ink);
+}
+.sb-item.active {
+  color: var(--ink);
+  font-weight: 600;
+}
+.sb-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 24px;
+  background: var(--ink);
+  border-radius: 0 2px 2px 0;
+}
+.sb-item.active .sb-icon {
+  background: var(--ink);
+  color: #fff;
+}
+.sb-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-sm);
+  background: var(--bg-alt);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  flex-shrink: 0;
+  transition: background var(--motion-fast) var(--motion-ease),
+              color var(--motion-fast) var(--motion-ease);
+}
+.sb-item-label {
+  display: none;
+}
+.frame.expanded .sb-item-label {
+  display: block;
+}
+.frame.expanded .sb-item {
+  justify-content: flex-start;
+}
+
+.sb-foot {
+  margin-top: auto;
+  padding: 16px 20px;
+  border-top: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+.sb-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 14px;
+  flex-shrink: 0;
+}
+.sb-user-text {
+  display: none;
+}
+.frame.expanded .sb-user-text {
+  display: block;
+}
+.frame.expanded .sb-foot {
+  justify-content: flex-start;
+}
+.sb-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.sb-user-email {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+}
+
+/* ── Main (bg-alt 形成对比) ────────────────────────────────── */
+.main {
+  background: var(--bg-alt);
+  padding: 64px 80px;
+  overflow-y: auto;
+}
+.main-eyebrow {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+}
+.main-title {
+  font-size: 44px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 12px;
+  line-height: 1.05;
+}
+.main-sub {
+  font-size: 14px;
+  color: var(--muted);
+  margin: 0 0 64px;
+  max-width: 520px;
+  line-height: 1.65;
+}
+
+/* Hero — 极简, 1 行 prompt + 1 button */
+.hero {
+  max-width: 720px;
+  padding: 48px 0 64px;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 64px;
+}
+.hero-pre {
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: var(--mono);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin: 0 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.hero-pre::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.hero-h1 {
+  font-size: 48px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: var(--ink);
+  margin: 0 0 20px;
+  line-height: 1.1;
+}
+.hero-h1 span {
+  font-family: var(--serif);
+  font-style: italic;
+  color: var(--accent);
+}
+.hero-meta {
+  font-size: 15px;
+  color: var(--ink-muted);
+  margin-bottom: 28px;
+  line-height: 1.6;
+  max-width: 480px;
+}
+.hero-actions {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+}
+.hero-btn-primary {
+  background: var(--ink);
+  color: #fff;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 14px 28px;
+  border: 0;
+  border-radius: var(--r-md);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.hero-btn-primary:hover {
+  background: #000;
+}
+.hero-btn-text {
+  background: transparent;
+  color: var(--muted);
+  font-weight: 500;
+  font-size: 14px;
+  padding: 0;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+}
+.hero-btn-text:hover {
+  color: var(--ink);
+}
+
+/* Stats — mono 横排, 字号缩, 4 个一行更轻 */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  padding: 32px 0;
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 64px;
+}
+.stat {
+  padding: 0 32px;
+  border-right: 1px solid var(--line);
+}
+.stat:last-child {
+  border-right: 0;
+}
+.stat-label {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+}
+.stat-num {
+  font-family: var(--mono);
+  font-size: 36px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink-muted);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  margin: 0 0 8px;
+}
+.stat-num small {
+  font-size: 16px;
+  color: var(--muted);
+  margin-left: 2px;
+  font-weight: 400;
+}
+.stat-desc {
+  font-size: 11px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+/* 推荐套卷 */
+.section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 6px;
+  letter-spacing: -0.01em;
+}
+.section-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0 0 24px;
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+}
+.papers {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.paper-card {
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: 24px;
+  cursor: pointer;
+  transition: border-color var(--motion-fast) var(--motion-ease);
+}
+.paper-card:hover {
+  border-color: var(--ink);
+}
+.paper-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+.paper-code {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--muted);
+}
+.paper-status {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+}
+.paper-title {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--ink);
+  line-height: 1.5;
+  margin: 0 0 16px;
+  min-height: 42px;
+}
+.paper-meta {
+  font-size: 11px;
+  color: var(--muted);
+  margin-bottom: 20px;
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+}
+.paper-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 16px;
+  border-top: 1px solid var(--line);
+}
+.paper-q {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+}
+.paper-cta {
+  font-size: 12px;
+  font-weight: 600;
+  background: transparent;
+  color: var(--ink);
+  padding: 6px 0;
+  border: 0;
+  cursor: pointer;
+  font-family: var(--mono);
+  letter-spacing: 0.04em;
+}
+.paper-cta::after {
+  content: ' →';
+}
+
+/* Dashboard preview frame */
+.dash-frame {
+  width: var(--frame-w);
+  height: 540px;
+  margin: 0 auto;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  box-shadow: var(--shadow-pop);
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: var(--rail-w) 1fr;
+}
+.dash-main {
+  background: var(--bg-alt);
+  padding: 48px 64px;
+  overflow-y: auto;
+}
+.dash-h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  margin: 0 0 8px;
+}
+.dash-sub {
+  font-size: 13px;
+  color: var(--muted);
+  margin: 0 0 40px;
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+}
+.dash-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  padding: 24px 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: 40px;
+}
+.metric-card {
+  padding: 0 28px;
+  border-right: 1px solid var(--line);
+}
+.metric-card:last-child { border-right: 0; }
+.metric-label {
+  font-size: 10px;
+  color: var(--muted);
+  font-family: var(--mono);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0 0 12px;
+}
+.metric-num {
+  font-family: var(--mono);
+  font-size: 32px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink-muted);
+  line-height: 1;
+  margin: 0 0 6px;
+  font-variant-numeric: tabular-nums;
+}
+.metric-num small {
+  font-size: 16px;
+  color: var(--muted);
+  margin-left: 2px;
+  font-weight: 400;
+}
+.metric-trend {
+  font-size: 11px;
+  color: var(--success);
+  font-family: var(--mono);
+  letter-spacing: 0.06em;
+}
+
+.section-head {
+  max-width: 1400px;
+  margin: 0 auto 16px;
+}
+.section-head h2 {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0 0 4px;
+  letter-spacing: -0.01em;
+}
+.section-head p {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+}
+
+</style>
+</head>
+<body>
+
+<div class="doc-head">
+  <h1>减黑方案 C · Concentric Calm</h1>
+  <p>
+    sidebar 收窄到 80px icon rail (hover/expanded 展开 240px) / sidebar 全白 / main bg-alt 对比 / Home hero 极简
+    单聚焦今日 1 件事 / stat 用 mono 横排 + ink-muted / accent 蓝色仅 focus + dot ·
+    黑色面积 ~60% → ~5% · 调性「极简 / 集中力」
+  </p>
+</div>
+
+<!-- ── Frame 1: Home /app, sidebar 默认收窄 80px ────────────── -->
+<div class="section-head">
+  <h2>1 · Home (/app) · sidebar 默认收窄 80px</h2>
+  <p>极简 hero, mono stat, 大留白. 黑色仅在主 CTA + brand logo</p>
+</div>
+<div class="frame">
+  <aside class="sb">
+    <div class="sb-brand">
+      <div class="sb-brand-logo">思</div>
+      <div class="sb-brand-text">
+        <div class="sb-brand-name">思考</div>
+        <div class="sb-brand-sub">SIKAO</div>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">主练习</div>
+      <div class="sb-item active">
+        <span class="sb-icon">⌂</span>
+        <span class="sb-item-label">首页</span>
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">≡</span>
+        <span class="sb-item-label">行测试炼</span>
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">✎</span>
+        <span class="sb-item-label">申论试炼</span>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">复盘</div>
+      <div class="sb-item">
+        <span class="sb-icon">↺</span>
+        <span class="sb-item-label">错题本</span>
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">📊</span>
+        <span class="sb-item-label">学情数据</span>
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">📅</span>
+        <span class="sb-item-label">考试日历</span>
+      </div>
+    </div>
+
+    <div class="sb-foot">
+      <div class="sb-avatar">L</div>
+      <div class="sb-user-text">
+        <div class="sb-user-name">LHR</div>
+        <div class="sb-user-email">lhr@sikao.dev</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <p class="main-eyebrow">学习中心 · 2026-05-08</p>
+    <h1 class="main-title">下午好, LHR</h1>
+    <p class="main-sub">今天的练习从这里开始. 不计时, 不强求. 慢一点, 把每道题的"为什么"想清楚.</p>
+
+    <!-- Hero 极简 -->
+    <div class="hero">
+      <p class="hero-pre">今日 · 推荐</p>
+      <h2 class="hero-h1">先做 <span>3</span> 道行测题</h2>
+      <p class="hero-meta">言语 / 常识 各 1 道, 不计时, 认识题型即可.</p>
+      <div class="hero-actions">
+        <button class="hero-btn-primary">去做这个 →</button>
+        <button class="hero-btn-text">查看全部题库</button>
+      </div>
+    </div>
+
+    <!-- Stats mono 横排 -->
+    <div class="stats">
+      <div class="stat">
+        <p class="stat-label">累计答题</p>
+        <p class="stat-num">847</p>
+        <p class="stat-desc">所有 session 答题总量</p>
+      </div>
+      <div class="stat">
+        <p class="stat-label">正确率</p>
+        <p class="stat-num">62<small>%</small></p>
+        <p class="stat-desc">累计答对 / 累计答题</p>
+      </div>
+      <div class="stat">
+        <p class="stat-label">连续打卡</p>
+        <p class="stat-num">12<small>天</small></p>
+        <p class="stat-desc">本地日倒推</p>
+      </div>
+      <div class="stat">
+        <p class="stat-label">已掌握</p>
+        <p class="stat-num">38<small>/124</small></p>
+        <p class="stat-desc">做对 2 次自动掌握</p>
+      </div>
+    </div>
+
+    <!-- 推荐套卷 -->
+    <h3 class="section-title">推荐套卷</h3>
+    <p class="section-sub">3 卷 · 完整 1509 套在套卷题库</p>
+    <div class="papers">
+      <div class="paper-card">
+        <div class="paper-head">
+          <span class="paper-code">FENBI-4990641</span>
+          <span class="paper-status">未做</span>
+        </div>
+        <h4 class="paper-title">2026 年江西省公务员录用考试《行测》题</h4>
+        <p class="paper-meta">省考真题 · 130 题</p>
+        <div class="paper-foot">
+          <span class="paper-q">130 题</span>
+          <button class="paper-cta">开始</button>
+        </div>
+      </div>
+      <div class="paper-card">
+        <div class="paper-head">
+          <span class="paper-code">FBSL-5254772</span>
+          <span class="paper-status">未做</span>
+        </div>
+        <h4 class="paper-title">2026 年浙江省公考《申论》题（C 卷）</h4>
+        <p class="paper-meta">省考真题 · 3 题</p>
+        <div class="paper-foot">
+          <span class="paper-q">3 题</span>
+          <button class="paper-cta">开始</button>
+        </div>
+      </div>
+      <div class="paper-card">
+        <div class="paper-head">
+          <span class="paper-code">FENBI-5823069</span>
+          <span class="paper-status" style="color: var(--success);">已做</span>
+        </div>
+        <h4 class="paper-title">2026 国考《行测》（副省级）</h4>
+        <p class="paper-meta">国考真题 · 135 题</p>
+        <div class="paper-foot">
+          <span class="paper-q">135 题</span>
+          <button class="paper-cta">再练</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Frame 2: sidebar expanded 240px (hover 后) ──────────────── -->
+<div class="section-head">
+  <h2>2 · Home (/app) · sidebar hover 展开 240px</h2>
+  <p>icon rail hover 后展开, label 显现 (CSS transition var(--motion-base) var(--motion-ease))</p>
+</div>
+<div class="frame expanded">
+  <aside class="sb">
+    <div class="sb-brand">
+      <div class="sb-brand-logo">思</div>
+      <div class="sb-brand-text">
+        <div class="sb-brand-name">思考</div>
+        <div class="sb-brand-sub">SIKAO · 公考备考</div>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">主练习</div>
+      <div class="sb-item active">
+        <span class="sb-icon">⌂</span>
+        <span class="sb-item-label">首页</span>
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">≡</span>
+        <span class="sb-item-label">行测试炼</span>
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">✎</span>
+        <span class="sb-item-label">申论试炼</span>
+      </div>
+    </div>
+
+    <div class="sb-group">
+      <div class="sb-group-label">复盘</div>
+      <div class="sb-item">
+        <span class="sb-icon">↺</span>
+        <span class="sb-item-label">错题本</span>
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">📊</span>
+        <span class="sb-item-label">学情数据</span>
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">📅</span>
+        <span class="sb-item-label">考试日历</span>
+      </div>
+    </div>
+
+    <div class="sb-foot">
+      <div class="sb-avatar">L</div>
+      <div class="sb-user-text">
+        <div class="sb-user-name">LHR</div>
+        <div class="sb-user-email">lhr@sikao.dev</div>
+      </div>
+    </div>
+  </aside>
+
+  <main class="main">
+    <p class="main-eyebrow">学习中心 · 2026-05-08</p>
+    <h1 class="main-title">下午好, LHR</h1>
+    <p class="main-sub">今天的练习从这里开始. 不计时, 不强求.</p>
+
+    <div class="hero">
+      <p class="hero-pre">今日 · 推荐</p>
+      <h2 class="hero-h1">先做 <span>3</span> 道行测题</h2>
+      <p class="hero-meta">言语 / 常识 各 1 道, 不计时, 认识题型即可.</p>
+      <div class="hero-actions">
+        <button class="hero-btn-primary">去做这个 →</button>
+        <button class="hero-btn-text">查看全部题库</button>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat">
+        <p class="stat-label">累计答题</p>
+        <p class="stat-num">847</p>
+        <p class="stat-desc">所有 session 答题总量</p>
+      </div>
+      <div class="stat">
+        <p class="stat-label">正确率</p>
+        <p class="stat-num">62<small>%</small></p>
+        <p class="stat-desc">累计答对 / 累计答题</p>
+      </div>
+      <div class="stat">
+        <p class="stat-label">连续打卡</p>
+        <p class="stat-num">12<small>天</small></p>
+        <p class="stat-desc">本地日倒推</p>
+      </div>
+      <div class="stat">
+        <p class="stat-label">已掌握</p>
+        <p class="stat-num">38<small>/124</small></p>
+        <p class="stat-desc">做对 2 次自动掌握</p>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- ── Frame 3: Dashboard ────────────────────────────────── -->
+<div class="section-head">
+  <h2>3 · Dashboard (学情数据) · sidebar 收窄</h2>
+  <p>4 metric card 走 mono 横排 (StatCallout 同 SSOT, 字号收到 32px)</p>
+</div>
+<div class="dash-frame">
+  <aside class="sb">
+    <div class="sb-brand">
+      <div class="sb-brand-logo">思</div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-item">
+        <span class="sb-icon">⌂</span>
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">≡</span>
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">✎</span>
+      </div>
+    </div>
+    <div class="sb-group">
+      <div class="sb-item">
+        <span class="sb-icon">↺</span>
+      </div>
+      <div class="sb-item active">
+        <span class="sb-icon">📊</span>
+      </div>
+      <div class="sb-item">
+        <span class="sb-icon">📅</span>
+      </div>
+    </div>
+  </aside>
+
+  <main class="dash-main">
+    <h1 class="dash-h1">学情数据</h1>
+    <p class="dash-sub">最近 30 天 · 你的进步轨迹</p>
+
+    <div class="dash-metrics">
+      <div class="metric-card">
+        <p class="metric-label">总答题</p>
+        <p class="metric-num">847</p>
+        <p class="metric-trend">+58 / 7 天</p>
+      </div>
+      <div class="metric-card">
+        <p class="metric-label">正确率</p>
+        <p class="metric-num">62<small>%</small></p>
+        <p class="metric-trend">+3.2 / 7 天</p>
+      </div>
+      <div class="metric-card">
+        <p class="metric-label">已掌握</p>
+        <p class="metric-num">38</p>
+        <p class="metric-trend">+5 / 7 天</p>
+      </div>
+      <div class="metric-card">
+        <p class="metric-label">错题</p>
+        <p class="metric-num">21</p>
+        <p class="metric-trend" style="color: var(--warn);">+2 / 7 天</p>
+      </div>
+    </div>
+
+    <h3 class="section-title">趋势图区域</h3>
+    <p class="section-sub">[chart placeholder · 1180 × 200]</p>
+    <div style="background: var(--bg); border: 1px dashed var(--line-strong); border-radius: var(--r-md); height: 200px; display: flex; align-items: center; justify-content: center; font-family: var(--mono); font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--placeholder);">
+      Recharts / Chart.js · trend line
+    </div>
+  </main>
+</div>
+
+</body>
+</html>

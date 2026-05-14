@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 240" fill="none" stroke="#0b1120" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+  <!-- Empty history — calendar + hourglass overlay -->
+  <rect x="64" y="60" width="148" height="132" rx="6" fill="#f8fafc"/>
+  <path d="M64 90h148"/>
+  <path d="M92 50v20M184 50v20" stroke-width="2"/>
+  <g stroke="#cbd5e1">
+    <path d="M88 112h100M88 132h100M88 152h100M88 172h100M108 100v92M132 100v92M156 100v92M180 100v92"/>
+  </g>
+  <g transform="translate(204 96)" stroke="#0b1120">
+    <rect x="0" y="0" width="64" height="88" rx="4" fill="#ffffff"/>
+    <path d="M10 8h44M10 80h44"/>
+    <path d="M14 12c0 16 36 24 36 32s-36 16-36 32"/>
+    <path d="M50 12c0 16-36 24-36 32s36 16 36 32"/>
+    <path d="M22 28h20M26 64h12" stroke="#3f7ef1"/>
+  </g>
+</svg>
