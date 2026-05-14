@@ -1,5 +1,4 @@
 import type { AnswerSession, Paper, Question, SubmitResult } from '@sikao/domain/shenlun/types';
-import { PAPER_BY_CODE } from '@sikao/test-utils';
 import { api } from './request';
 import {
   mapBackendEssayPaper,
@@ -37,11 +36,9 @@ export interface EssayClient {
 
 export const mockEssayClient: EssayClient = {
   async getPaper(code) {
-    const paper = PAPER_BY_CODE[code];
-    if (!paper) {
-      throw new Error(`mock paper not found: ${code}`);
-    }
-    return paper;
+    throw new Error(
+      `mockEssayClient.getPaper is test-only; import @sikao/api-client/essay-client.mock for ${code}`,
+    );
   },
 
   async loadSnapshot(paperCode) {

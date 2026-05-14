@@ -48,7 +48,11 @@ async def init_limiter(redis_url: str | None) -> None:
         logger.info("limiter.disabled redis_url=None (dev/test noop)")
         return
     import redis.asyncio as redis_asyncio
-    from fastapi_limiter import FastAPILimiter
+    try:
+        from fastapi_limiter import FastAPILimiter
+    except ImportError:
+        logger.warning("limiter.disabled fastapi_limiter.FastAPILimiter unavailable")
+        return
 
     redis_client = redis_asyncio.from_url(
         redis_url, encoding="utf-8", decode_responses=False
@@ -95,8 +99,14 @@ def make_limiter(
         identifier: async callable extracting rate-limit key from Request.
             Default None → fastapi-limiter default (IP + path)
     """
-    from fastapi_limiter import FastAPILimiter
-    from fastapi_limiter.depends import RateLimiter
+    try:
+        from fastapi_limiter import FastAPILimiter
+        from fastapi_limiter.depends import RateLimiter
+    except ImportError:
+        async def _noop(request: Request, response: Any = None) -> None:
+            return
+
+        return _noop
 
     rate_limiter = RateLimiter(
         times=times,

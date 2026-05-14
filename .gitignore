@@ -28,12 +28,14 @@ venv/
 .vscode/
 
 # Local data (本轮迁移不带数据)
-data/
+/data/
 *.db
 *.sqlite
 
 # Backend runtime data (assets / uploads / sqlite / imports)
 services/api/var/
+services/api/src/var/
+database/seeds/mvp-demo/generated/
 
 # Misc
 .claude/

@@ -53,7 +53,7 @@ DEFAULT_DATABASE_URL = f"sqlite:///{_DEFAULT_DB_PATH.as_posix()}"
 
 # Slice 0a (LLM infra): apikey 文件 fallback 路径.
 # `<repo_root>/.env/apikey` — gitignored 目录, lhr 把 DeepSeek apikey 放这.
-# `_EXAM_API_ROOT.parent.parent` = apps/exam-api/.parent.parent = repo root.
+# `_EXAM_API_ROOT.parent.parent` = services/api/.parent.parent = repo root.
 _APIKEY_FILE = _EXAM_API_ROOT.parent.parent / ".env" / "apikey"
 
 
@@ -112,7 +112,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         # 绝对路径让 BaseSettings 不依赖 cwd (root cwd 会撞 repo 根的 .env/
         # 目录, 导致 BaseSettings fallback 默认值 → backend 用错 db). 走
-        # _EXAM_API_ROOT (config.py 文件位置推算) 直接锚到 apps/exam-api/.env.
+        # _EXAM_API_ROOT (config.py 文件位置推算) 直接锚到 services/api/src/.env.
         env_file=str(_EXAM_API_ROOT / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
@@ -130,7 +130,7 @@ class Settings(BaseSettings):
     schema_version: str = "unmigrated"
     log_level: str = "info"
 
-    # Default 见 DEFAULT_DATABASE_URL —— absolute path 指向 apps/exam-api/var/exam_papers.db，
+    # Default 见 DEFAULT_DATABASE_URL —— absolute path 指向 services/api/src/var/exam_papers.db，
     # cwd-independent。dev 启动 + cli 任何 entry point 不传 DATABASE_URL 都进同一个 DB。
     database_url: str = DEFAULT_DATABASE_URL
     db_pool_size: int = 5
@@ -291,7 +291,7 @@ class Settings(BaseSettings):
 
         ARCH §7.3 P2 修复: `.env` 写 `sqlite:///./var/local-run/exam_api.db`
         时 pydantic-settings 直接传给 SQLAlchemy, SA 把 ./ 解析成进程 cwd.
-        cwd ≠ apps/exam-api/ (e.g. .claude/import-one-paper.py 从 repo root 跑)
+        cwd ≠ services/api/src (e.g. scripts/import/* 从 repo root 跑)
         → sqlite 把 DB 写到错误路径 → backend 看不到 import 数据.
         这里在 settings 层 normalize: 任何 relative sqlite 路径都用
         _EXAM_API_ROOT 解析, cwd-independent.
@@ -331,7 +331,7 @@ class Settings(BaseSettings):
         """`.env` 上的 ./var/... 走 _EXAM_API_ROOT 解析, 跟 database_url 同思路.
 
         Default `Path("./var/uploads")` 在 Settings() 实例化时受 cwd 影响 —
-        cwd 不在 apps/exam-api/ 时 mkdir 会写到调用者目录. 在 settings 层 absolutize.
+        cwd 不在 services/api/src 时 mkdir 会写到调用者目录. 在 settings 层 absolutize.
         """
         return value if value.is_absolute() else (_EXAM_API_ROOT / value).resolve()
 

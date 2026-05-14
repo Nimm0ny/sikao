@@ -10,4 +10,4 @@
 //   from '@sikao/api-client/essay-client'
 
 export type { EssayClient } from './essay-client';
-export { essayClient, mockEssayClient, realEssayClient } from './essay-client';
+export { essayClient, realEssayClient } from './essay-client';
