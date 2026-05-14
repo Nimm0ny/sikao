@@ -3,8 +3,8 @@
 PR-2 (study today page):
   - study_plan_tasks.result_payload JSONB: stores task completion result payload
     (e.g. session_id for practice tasks, record_id for essay tasks).
-  - Extend study_plan_task_kind enum: add 'wrongbook_review', 'progress_review'.
-    'quota_purchase' deliberately omitted (PR-7 billing, blocked on lhr approval).
+  - No task_kind DDL change needed: study_plan_tasks.task_kind is VARCHAR(32)
+    (not a PG enum), so supported values are enforced at the application layer only.
 
 PR-3 (xingce wrong-reason diagnosis):
   - practice_session_answers.elapsed_seconds INTEGER: time spent on question.
@@ -13,9 +13,7 @@ PR-3 (xingce wrong-reason diagnosis):
   - practice_session_answers.wrong_reason_source VARCHAR(16): 'ai' | 'user'.
     DEFAULT 'ai' — set to 'user' when user overrides AI diagnosis.
 
-No new tables. study_plan_task_kind enum extended via ALTER TYPE on PG; SQLite
-workaround: new column with default (SQLite enum is VARCHAR, no ALTER TYPE).
-Downgrade removes the 3 columns and drops the 2 new enum values.
+No new tables. Downgrade removes the 4 added columns.
 """
 
 from __future__ import annotations
@@ -31,13 +29,6 @@ depends_on = None
 
 _JSONB_COMPAT = sa.JSON().with_variant(JSONB(), "postgresql")
 
-_NEW_TASK_KINDS = ("wrongbook_review", "progress_review")
-
-
-def _is_postgresql() -> bool:
-    bind = op.get_bind()
-    return bind.dialect.name == "postgresql"
-
 
 def upgrade() -> None:
     # ── study_plan_tasks: result_payload ─────────────────────────────────
@@ -45,18 +36,6 @@ def upgrade() -> None:
         "study_plan_tasks",
         sa.Column("result_payload", _JSONB_COMPAT, nullable=True),
     )
-
-    # ── study_plan_task_kind enum extension ───────────────────────────────
-    # PG: ALTER TYPE ... ADD VALUE (non-transactional in PG < 12; >= 12 OK).
-    # SQLite: VARCHAR(32) — no enum DDL, just adding values is a no-op for the
-    # underlying column; application-level validation enforces allowed values.
-    if _is_postgresql():
-        for kind in _NEW_TASK_KINDS:
-            op.execute(
-                sa.text(
-                    f"ALTER TYPE study_plan_task_kind ADD VALUE IF NOT EXISTS :{kind}"
-                ).bindparams(**{kind: kind})
-            )
 
     # ── practice_session_answers: diagnosis columns ───────────────────────
     op.add_column(
@@ -83,6 +62,3 @@ def downgrade() -> None:
     op.drop_column("practice_session_answers", "wrong_reason_code")
     op.drop_column("practice_session_answers", "elapsed_seconds")
     op.drop_column("study_plan_tasks", "result_payload")
-    # PG: Cannot remove enum values without DROP TYPE + recreate (high risk).
-    # Downgrade intentionally leaves 'wrongbook_review' and 'progress_review'
-    # in the enum; they are harmless orphan values.
