@@ -61,6 +61,11 @@ const pages = {
   // device-aware shell — tablet landscape (TD1/TD1b) / tablet portrait (TD2)
   // / desktop fallback. P1 shell-only, 子布局 P2-P4 填.
   shenlunSession: lazy(() => import('@/views/ShenlunSession/ShenlunSession')),
+  // MVP AI 公考提分闭环 (PR-1/2/6): study onboarding, diagnosis result, today page, progress
+  studyOnboarding: lazy(() => import('@/views/study/Onboarding')),
+  diagnosisResult: lazy(() => import('@/views/study/DiagnosisResult')),
+  studyToday: lazy(() => import('@/views/study/StudyToday')),
+  progress: lazy(() => import('@/views/Progress')),
   marketing: lazy(() => import('@/views/marketing').then((mod) => ({ default: mod.Marketing }))),
   login: lazy(() => import('@/views/auth/Login')),
   registerEmail: lazy(() => import('@/views/auth/RegisterEmail')),
@@ -291,6 +296,11 @@ export const router = createBrowserRouter([
       { path: '/plan', element: routeElement(<pages.plan />) },
       { path: '/study-plan/history', element: <Navigate to="/plan" replace /> },
       { path: '/study-plan/history/:planId', element: <Navigate to="/plan" replace /> },
+      // MVP AI 公考提分闭环 (PR-1/2/6): 用户引导 + 今日任务 + 进度看板
+      { path: '/study/onboarding', element: routeElement(<pages.studyOnboarding />) },
+      { path: '/study/diagnosis-result', element: routeElement(<pages.diagnosisResult />) },
+      { path: '/study/today', element: routeElement(<pages.studyToday />) },
+      { path: '/progress', element: routeElement(<pages.progress />) },
       // SIKAO Wave 4 Phase 2D (2026-05-12): /notes 主页 + /notes/:noteId 编辑器.
       // /notes/new 走同一 NoteEditor 组件 (内部 isNew = (noteId === 'new')). 集成
       // 入口推 Phase 5.
