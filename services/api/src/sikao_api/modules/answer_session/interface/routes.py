@@ -474,3 +474,32 @@ def get_weakness_modules(
     from sikao_api.modules.wrong_book.application.weakness import compute_weakness
 
     return compute_weakness(session, user_id=user.id, limit=limit)
+
+
+@router.patch(
+    "/sessions/{session_id}/answers/{answer_id}/diagnosis",
+    response_model=schemas.WrongReasonOutV2,
+    dependencies=[Depends(verify_csrf_token)],
+)
+def update_answer_wrong_reason(
+    session_id: int,
+    answer_id: int,
+    payload: schemas.WrongReasonUpdateV2,
+    user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> schemas.WrongReasonOutV2:
+    """PR-3: Update wrong-reason diagnosis on a submitted answer.
+
+    Both AI-generated diagnosis (source='ai') and user-override (source='user')
+    go through this endpoint. Ownership enforced: answer must belong to a
+    session owned by the current user.
+    """
+    from sikao_api.modules.answer_session.application.diagnosis import update_wrong_reason
+
+    return update_wrong_reason(
+        session,
+        session_id=session_id,
+        answer_id=answer_id,
+        user_id=user.id,
+        payload=payload,
+    )

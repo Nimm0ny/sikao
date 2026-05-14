@@ -48,3 +48,19 @@ def me_put_goals(
     session: Annotated[Session, Depends(get_db_session)],
 ) -> schemas.UserGoalV2:
     return upsert_user_goal(session, user_id=user.id, payload=payload)
+
+
+@router.get("/onboarding-status", response_model=schemas.OnboardingStatusV2)
+def me_onboarding_status(
+    user: Annotated[User, Depends(get_current_user)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> schemas.OnboardingStatusV2:
+    """PR-1: Check whether current user has completed onboarding.
+
+    Returns has_goal (UserGoal row exists) + has_exam (any UserExam row exists)
+    + is_onboarded (both). FE uses this on /dashboard mount to redirect to
+    /study/onboarding when is_onboarded=False.
+    """
+    from sikao_api.modules.user.application.onboarding import get_onboarding_status
+
+    return get_onboarding_status(session, user_id=user.id)

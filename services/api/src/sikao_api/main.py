@@ -29,6 +29,7 @@ from sikao_api.modules.study_record.interface import routes as study_plan_v2
 from sikao_api.modules.system.interface import ops
 from sikao_api.modules.system.interface import routes as system_v2
 from sikao_api.modules.user.interface import exams as user_exams_v2
+from sikao_api.modules.analytics.interface import progress as progress_v2
 from sikao_api.modules.user.interface import routes as me_v2
 
 from sikao_api.core.config import Settings, get_settings
@@ -136,7 +137,9 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
     app.include_router(note_social_v2.router)
     app.include_router(admin_note_reports_v2.router)
     app.include_router(user_exams_v2.router)
+    app.include_router(progress_v2.router)
     return app
 
 
 app = create_app()
+
