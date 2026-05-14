@@ -32,6 +32,7 @@ export const STUDY_COPY = {
     TITLE: '今日任务',
     EMPTY_TITLE: '今天还没有学习任务',
     EMPTY_DESC: '去练习一套行测真题，或完成一篇申论练习',
+    TASK_START: '开始',
     TASK_DONE: '已完成',
     TASK_SKIP: '跳过',
     TASK_SKIP_CONFIRM: '确认跳过这项任务？',

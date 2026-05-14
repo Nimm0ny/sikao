@@ -142,4 +142,3 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
 
 
 app = create_app()
-

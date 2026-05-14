@@ -445,6 +445,9 @@ class PracticeSessionAnswer(Base):
     correct_answer_snapshot: Mapped[str] = mapped_column(String(50), nullable=False)
     is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False)
     answered_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False, index=True)
+    elapsed_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    wrong_reason_code: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    wrong_reason_source: Mapped[str | None] = mapped_column(String(16), nullable=True, server_default="ai")
 
     session: Mapped[PracticeSession] = relationship(back_populates="answers")
     question: Mapped[Question] = relationship(back_populates="practice_answers")
@@ -1019,6 +1022,7 @@ class StudyPlanTask(Base):
         String(16), nullable=False, default="pending"
     )
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    result_payload: Mapped[dict | None] = mapped_column(JSONB_COMPAT, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, nullable=False
     )
