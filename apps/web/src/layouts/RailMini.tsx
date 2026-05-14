@@ -34,7 +34,7 @@ interface RailItem {
 
 const RAIL_ITEMS: readonly RailItem[] = [
   {
-    to: '/app',
+    to: '/study/today',
     icon: SubjectHomeIcon,
     ariaLabel: '首页',
     testId: 'rail-mini-home',

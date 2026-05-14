@@ -38,7 +38,7 @@ interface TabEntry {
 
 const TABS: readonly TabEntry[] = [
   {
-    to: '/app',
+    to: '/study/today',
     icon: SubjectHomeIcon,
     label: '首页',
     ariaLabel: '首页',

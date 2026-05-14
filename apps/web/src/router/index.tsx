@@ -5,7 +5,7 @@ import { RedirectGuard } from '@/components/auth/RedirectGuard';
 import { RedirectPreserveQuery } from './RedirectPreserveQuery';
 
 const pages = {
-  // SIKAO Wave 1 (2026-05-11, IA 拍板 #1): Home 退役, /app → redirect /dashboard.
+  // PR-2 MVP (2026-05-14): /app → /study/today 今日提分任务首页.
   // Dashboard 接管学习中心入口 (SIKAO 02 hifi). 旧 home 模块已删除.
   // 9view-audit batch 3 (2026-05-08): /papers 行测套卷题库独立 view, 替代
   // sidebar 旧 /app#paper-list anchor.
@@ -87,7 +87,7 @@ function routeElement(element: ReactElement): ReactElement {
 // Phase 5.6b 路由改造（方案 A）：
 //   /           → Marketing（未登录着陆页；已登录自动跳 /app）
 //   /login      → 极简 Login 页
-//   /app        → 原 Home（题库中心，已登录后主页）
+//   /app        → 今日提分任务首页（已登录后主页）
 //   /practice/* → 答题流（require-auth）
 //   /wrong-book → 错题本（require-auth）
 //   /dashboard  → 学情数据（require-auth；route path 保持 /dashboard 不改, sidebar
@@ -176,10 +176,9 @@ export const router = createBrowserRouter([
       </RedirectGuard>,
     ),
     children: [
-      // SIKAO Wave 1 (2026-05-11, IA 拍板 #1): /app 永久重定向 /dashboard.
-      // Dashboard SIKAO 02 hifi 接管学习中心入口语义. 旧 Home (4 sections)
-      // 已退役. 老书签 / 外链自动跳转, 0 页面 404.
-      { path: '/app', element: <Navigate to="/dashboard" replace /> },
+      // PR-2 MVP (2026-05-14): /app canonical 到今日提分任务首页.
+      // /dashboard 仍保留为学情数据页, 老书签 / 外链自动跳转, 0 页面 404.
+      { path: '/app', element: <Navigate to="/study/today" replace /> },
       // PR16 (2026-05-13, lhr 用户价值 supreme): 行测/申论 4 入口合并为
       // /practice/center 单一 hub. 顶层 view 行测/申论 tab + 2 大入口 (分类/套卷),
       // sub-route 复用现有 Papers/CategoryTree/EssayPapers/EssaySpecialty 4 view

@@ -36,7 +36,7 @@ export default function Onboarding() {
     if (isNaN(score) || score < 0 || score > 150) { toast.error('目标分数必须在 0-150 之间'); return; }
     setGoalMutation.mutate({ targetScore: score }, {
       onSuccess: () => setStep('exam'),
-      onError: (err) => { logger.error('goal save failed', err); toast.error('保存目标失败，请重试'); },
+      onError: (err) => { logger.error('goal save failed', { err: String(err) }); toast.error('保存目标失败，请重试'); },
     });
   }
 
@@ -53,7 +53,7 @@ export default function Onboarding() {
       { name: examName.trim(), examDate, ...(examEventId ? { examEventId: parseInt(examEventId, 10) } : {}) },
       {
         onSuccess: () => navigate('/study/diagnosis-result'),
-        onError: (err) => { logger.error('exam save failed', err); toast.error('保存考试失败，请重试'); },
+        onError: (err) => { logger.error('exam save failed', { err: String(err) }); toast.error('保存考试失败，请重试'); },
       },
     );
   }

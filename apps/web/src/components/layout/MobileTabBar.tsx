@@ -26,7 +26,7 @@ import { useAuthStore } from '@sikao/domain/auth/useAuthStore';
  * stacking context 够用。
  *
  * Tab 设计（决策固化于 docs/ui-rollout/phase5-rebrand.md §Phase 5.7）：
- *   首页 (/app) ／ 错题 (/wrong-book) ／ 数据 (/dashboard) ／ 我的 (sheet)
+ *   首页 (/study/today) ／ 错题 (/wrong-book) ／ 数据 (/dashboard) ／ 我的 (sheet)
  */
 
 type TabSlug = 'home' | 'wrong-book' | 'dashboard';
@@ -45,9 +45,9 @@ const TAB_ENTRIES: readonly TabEntry[] = [
     slug: 'home',
     label: '首页',
     icon: SubjectHomeIcon,
-    to: '/app',
+    to: '/study/today',
     testId: 'mobile-tab-home',
-    match: (p) => p === '/app' || p === '/',
+    match: (p) => p === '/study/today' || p === '/app' || p === '/',
   },
   {
     slug: 'wrong-book',

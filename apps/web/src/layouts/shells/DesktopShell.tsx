@@ -111,7 +111,7 @@ type NavEntry = NavLinkEntry | NavGroupEntry;
  * Sidebar v3 nav 结构 — 行测试炼 + 申论试炼 嵌套分组.
  *
  * 路由策略 (D1, 详见 design/sidebar-redesign-2026-05-08.html):
- *   - 首页 → /app (学习中心整合 hub)
+ *   - 首页 → /study/today (今日提分任务首页)
  *   - 行测·专项练习 → /xingce/specialty (Wave 5c IA cleanup, 跟 /essay/specialty
  *     对称; /categories 老路径由 router Navigate redirect 兼容老书签)
  *   - 行测·套卷练习 → /papers (9view-audit batch 3 独立 view, 替代旧
@@ -126,14 +126,11 @@ const NAV_ENTRIES: readonly NavEntry[] = [
     slug: 'home',
     label: '首页',
     icon: SubjectHomeIcon,
-    // SIKAO Wave 1 (2026-05-11, IA 拍板 #1): 首页链改 /dashboard (Dashboard
-    // SIKAO 02 hifi 接管学习中心入口). /app 由 router redirect /dashboard,
+    // PR-2 MVP (2026-05-14): 首页链改 /study/today. /app 由 router redirect,
     // 老书签 / 外链自动 follow. match 仍接受 /app / / 让历史路径 active 兼容.
-    to: '/dashboard',
+    to: '/study/today',
     testId: 'nav-home',
-    // brief 显式约定: match (p) => p === '/dashboard' || p === '/'. 仍兼容
-    // /app (router 已 redirect /dashboard, 此处仅守门极端冷启动 path snapshot).
-    match: (p) => p === '/dashboard' || p === '/' || p === '/app',
+    match: (p) => p === '/study/today' || p === '/' || p === '/app',
   },
   {
     kind: 'group',
@@ -215,9 +212,6 @@ const NAV_ENTRIES: readonly NavEntry[] = [
     testId: 'nav-notes',
     match: (p) => p.startsWith('/notes'),
   },
-  // Wave 1 Round 2 (2026-05-11): 删 'dashboard' nav entry. IA #1 立意 sidebar
-  // home → /dashboard (学习中心), 独立"学情数据"nav 跟首页落点重叠 = redundant.
-  // /dashboard 路由仍保留 (sidebar home logo + /app redirect 均落到该路由).
   {
     kind: 'link',
     slug: 'calendar',

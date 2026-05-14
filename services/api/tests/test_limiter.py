@@ -73,10 +73,14 @@ def test_close_limiter_when_not_init_is_noop() -> None:
 def test_make_limiter_noop_when_redis_not_initialized() -> None:
     """When FastAPILimiter.redis is None, dependency should pass without
     raising — this is the dev/test noop path."""
-    from fastapi_limiter import FastAPILimiter
+    try:
+        from fastapi_limiter import FastAPILimiter
+    except ImportError:
+        FastAPILimiter = None
 
     # Force redis to None (simulating dev mode where init wasn't called).
-    FastAPILimiter.redis = None
+    if FastAPILimiter is not None:
+        FastAPILimiter.redis = None
 
     limiter_dep = make_limiter(times=1, seconds=60)
     request = _make_request(body_bytes=b'{"phone": "13800138000"}')

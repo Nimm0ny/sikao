@@ -66,7 +66,10 @@ async def close_limiter() -> None:
 
     No-op when limiter not initialized (redis_url=None / init failed).
     """
-    from fastapi_limiter import FastAPILimiter
+    try:
+        from fastapi_limiter import FastAPILimiter
+    except ImportError:
+        return
 
     if getattr(FastAPILimiter, "redis", None):
         await FastAPILimiter.close()

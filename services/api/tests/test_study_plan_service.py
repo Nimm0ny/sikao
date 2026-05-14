@@ -363,6 +363,30 @@ def test_cold_start_fallback_no_llm_call(
     assert plan.tasks[0].payload_json["questionIds"] == _FALLBACK_TEST_QUESTION_IDS
 
 
+def test_cold_start_fallback_uses_visible_demo_paper_when_fenbi_missing(
+    session: Session, settings: Settings
+) -> None:
+    """本地 MVP demo 库无 FENBI fallback 时, 用当前可见行测题生成今日任务."""
+    user = _seed_user(session)
+    demo_ids = [101, 102, 103, 104]
+    _seed_paper_with_questions(
+        session,
+        paper_code="MVPXC001",
+        question_ids=demo_ids,
+        question_source_uuids=[f"MVPXC001-q{i}" for i in range(1, 5)],
+    )
+
+    service = StudyPlanService(session, settings)
+    with patch("sikao_api.modules.study_record.application.study_plans.build_llm_provider") as mock_build:
+        plan, outcome = _run(service.get_or_create_today(user_id=user.id))
+
+    mock_build.assert_not_called()
+    assert outcome.generation_status == "fallback_cold_start"
+    assert len(plan.tasks) == 1
+    assert plan.tasks[0].payload_json["paperCode"] == "MVPXC001"
+    assert plan.tasks[0].payload_json["questionIds"] == demo_ids[:3]
+
+
 # ── 3. LLM 正常生成 ───────────────────────────────────────────────────────
 
 
@@ -824,11 +848,23 @@ def test_health_check_passes_when_paper_and_questions_present(
     assert_fallback_paper_loadable(session)
 
 
+def test_health_check_passes_with_visible_demo_paper_when_fenbi_missing(
+    session: Session,
+) -> None:
+    _seed_paper_with_questions(
+        session,
+        paper_code="MVPXC001",
+        question_ids=[101, 102, 103, 104],
+        question_source_uuids=["MVPXC001-q1", "MVPXC001-q2", "MVPXC001-q3", "MVPXC001-q4"],
+    )
+    assert_fallback_paper_loadable(session)
+
+
 def test_health_check_raises_when_paper_missing(session: Session) -> None:
-    """空 DB → paper not found."""
+    """空 DB → no fallback practice source."""
     with pytest.raises(FallbackPaperMissingError) as exc_info:
         assert_fallback_paper_loadable(session)
-    assert _FALLBACK_PAPER_CODE in str(exc_info.value)
+    assert "no fallback practice paper" in str(exc_info.value)
 
 
 def test_health_check_raises_when_question_missing(session: Session) -> None:

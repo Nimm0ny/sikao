@@ -20,9 +20,9 @@ export default function Progress() {
   const [trendDays, setTrendDays] = useState<TrendDays>(30);
   const { data: weekly, isLoading: weeklyLoading } = useWeeklyProgress();
   const { data: trend } = useAccuracyTrend(trendDays);
-  const { data: countdown } = useNationalExamCountdown();
+  const countdown = useNationalExamCountdown();
 
-  const daysLeft = countdown?.daysUntilNextEvent ?? null;
+  const daysLeft = countdown.daysUntil;
 
   if (weeklyLoading) {
     return <div style={{ padding: 40, fontSize: 'var(--t-body)', color: 'var(--ink-3)' }}>加载中…</div>;

@@ -87,12 +87,17 @@ _MIN_TASKS_AFTER_SANITY = 3
 # fallback paperCode + question source UUIDs — D5 lhr 方案 2: 1 task 含 3 题入门.
 # FENBI-7274732 (2024 广东省考行测 80 题真卷); 选三道不依赖 material_group
 # 的 single_choice。DB question.id 是导入顺序相关自增值，不能作为配置常量。
+#
+# MVP demo/local DB may intentionally omit the full FENBI bank. In that case
+# fallback resolves from any visible current paper with >= 3 enabled non-essay
+# questions, so clone + seed can open PR-2 without project-external data.
 _FALLBACK_PAPER_CODE = "FENBI-7274732"
 _FALLBACK_QUESTION_SOURCE_UUIDS: list[str] = [
     "fenbi-10204418",
     "fenbi-16593303",
     "fenbi-16593304",
 ]
+_FALLBACK_QUESTION_COUNT = len(_FALLBACK_QUESTION_SOURCE_UUIDS)
 
 # 文案严格按 docs/design/style-guide.md §1.3 voice & tone — 安静陈述, 不打鸡血.
 _FALLBACK_TASK_TITLE = "先做 3 道行测题"
@@ -372,11 +377,12 @@ class StudyPlanService:
     ) -> StudyPlan:
         """构造 fallback plan ORM 实例 (1 task / 3 题), 不落库. caller 自己
         decide 用 _add_plan_with_savepoint 提交 + 处理 UNIQUE 撞.
-        写死 _FALLBACK_PAPER_CODE / _FALLBACK_QUESTION_SOURCE_UUIDS, 跳过 sanity.
+        优先用正式 FENBI fallback; 本地 demo 库无 FENBI 时动态挑可见行测题.
+        fallback path 跳过 sanity.
         """
-        question_ids = _load_fallback_question_ids(self.session)
+        paper_code, question_ids = _resolve_fallback_practice_task(self.session)
         payload = PracticeTaskPayload(
-            paper_code=_FALLBACK_PAPER_CODE,
+            paper_code=paper_code,
             question_ids=question_ids,
             title=_FALLBACK_TASK_TITLE,
             subtitle=_FALLBACK_TASK_SUBTITLE,
@@ -860,24 +866,63 @@ def _load_fallback_question_ids(session: Session) -> list[int]:
     ]
 
 
-def assert_fallback_paper_loadable(session: Session) -> None:
-    """Startup health check (plan §10 R4). 校验 _FALLBACK_PAPER_CODE 在 papers 表
-    且 _FALLBACK_QUESTION_SOURCE_UUIDS 都属于该 paper.current_revision + enabled.
+def _load_dynamic_fallback_practice_task(session: Session) -> tuple[str, list[int]]:
+    """Pick a visible current paper with enough enabled non-essay questions.
 
-    缺任何一条 → raise FallbackPaperMissingError, app startup 失败. ops 必须
-    确认 prod DB 已 import FENBI-7274732 + 3 sourceUuid.
+    This is the self-contained MVP/demo fallback for environments that do not
+    import the production FENBI paper. It deliberately uses current public data
+    only, matching what users can open from the practice center.
     """
+    candidates = session.execute(
+        select(Paper.paper_code, PaperRevision.id)
+        .join(Paper.current_revision)
+        .where(
+            Paper.current_revision_id.is_not(None),
+            PaperRevision.visible_in_public.is_(True),
+        )
+        .order_by(PaperRevision.sort_order.desc(), Paper.paper_code.asc())
+    ).all()
+
+    for paper_code, revision_id in candidates:
+        question_ids = list(
+            session.scalars(
+                select(Question.id)
+                .where(
+                    Question.paper_revision_id == revision_id,
+                    Question.enabled.is_(True),
+                    Question.renderer_key != "essay",
+                )
+                .order_by(Question.position.asc())
+                .limit(_FALLBACK_QUESTION_COUNT)
+            ).all()
+        )
+        if len(question_ids) >= _FALLBACK_QUESTION_COUNT:
+            return paper_code, question_ids
+
+    raise FallbackPaperMissingError(
+        "no fallback practice paper found: need at least "
+        f"{_FALLBACK_QUESTION_COUNT} enabled non-essay questions in a visible "
+        "current paper. Import FENBI-7274732 or run `npm run seed:mvp-demo`."
+    )
+
+
+def _resolve_fallback_practice_task(session: Session) -> tuple[str, list[int]]:
+    """Resolve fallback paperCode + question IDs for cold-start study plans."""
     paper_exists = session.scalar(
         select(exists().where(Paper.paper_code == _FALLBACK_PAPER_CODE))
     )
-    if not paper_exists:
-        raise FallbackPaperMissingError(
-            f"fallback paperCode {_FALLBACK_PAPER_CODE!r} not found in papers; "
-            "import the paper before starting the app (see "
-            "docs/plan/slice-3a-study-plan-be.md §12)."
-        )
+    if paper_exists:
+        return _FALLBACK_PAPER_CODE, _load_fallback_question_ids(session)
+    return _load_dynamic_fallback_practice_task(session)
 
-    _load_fallback_question_ids(session)
+
+def assert_fallback_paper_loadable(session: Session) -> None:
+    """Startup health check (plan §10 R4). 校验 fallback task 可生成.
+
+    生产库仍优先校验 FENBI-7274732 + 3 sourceUuid. 本地 MVP demo 库未导入
+    FENBI 时, 允许从可见 current paper 动态挑 3 道非申论题.
+    """
+    _resolve_fallback_practice_task(session)
 
 
 __all__ = [

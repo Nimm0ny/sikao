@@ -19,7 +19,7 @@ dependencies = [
   "httpx>=0.28.1",
   "python-multipart>=0.0.20",
   "cryptography>=44.0",
-  "fastapi-limiter>=0.1.6",
+  "fastapi-limiter>=0.1.6,<0.2.0",
 ]
 
 [project.optional-dependencies]

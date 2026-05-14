@@ -13,9 +13,8 @@ import { AppShell } from '../AppShell';
 //   3. Disabled 子项 (申论·专项练习) 不可点 + 显示"敬请期待" badge
 //   4. Active 检测 — 子项匹配 pathname / hash, group 内任一 active 自动展开
 //
-// Wave 1 Round 2 (2026-05-11): 删 'dashboard' nav entry (IA #1 立意 sidebar home
-// → /dashboard, 独立"学情数据"nav 重叠 redundant). /dashboard 路由保留, 走 logo
-// 或 /app redirect 进入.
+// PR-2 MVP (2026-05-14): sidebar home → /study/today, /dashboard 路由保留为
+// 学情数据页, 不作为顶层 nav entry.
 //
 // PR16 (2026-05-13): 行测/申论 4 入口收编进 /practice/center hub. sidebar 4 个
 // 子项 to 全切到 /practice/center/{xingce|essay}/{categories|papers} 新 canonical;
@@ -36,6 +35,7 @@ const renderShell = (initialEntries: readonly string[] = ['/app']) => {
     <Routes>
       <Route element={<AppShell />}>
         <Route path="/app" element={<div data-testid="page-app" />} />
+        <Route path="/study/today" element={<div data-testid="page-study-today" />} />
         <Route path="/papers" element={<div data-testid="page-papers" />} />
         <Route path="/categories" element={<div data-testid="page-categories" />} />
         <Route path="/xingce/specialty" element={<div data-testid="page-xingce-specialty" />} />
@@ -84,6 +84,7 @@ describe('AppShell sidebar v3 (Block H)', () => {
   it('renders top-level NavLinks (首页 / 错题本 / 日历)', () => {
     renderShell(['/app']);
     expect(screen.getByTestId('nav-home')).toBeInTheDocument();
+    expect(screen.getByTestId('nav-home')).toHaveAttribute('href', '/study/today');
     expect(screen.getByTestId('nav-wrong-book')).toBeInTheDocument();
     expect(screen.queryByTestId('nav-dashboard')).not.toBeInTheDocument();
     expect(screen.getByTestId('nav-calendar')).toBeInTheDocument();
