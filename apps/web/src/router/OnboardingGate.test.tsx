@@ -51,4 +51,46 @@ describe('OnboardingGate', () => {
     });
     expect(screen.queryByTestId('protected-page')).not.toBeInTheDocument();
   });
+
+  it('shows a loading gate before onboarding status resolves for protected routes', async () => {
+    server.use(
+      http.get('/api/v2/me/onboarding-status', async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return HttpResponse.json({
+          hasGoal: true,
+          hasExam: true,
+          isOnboarded: true,
+        });
+      }),
+    );
+
+    renderGate();
+    expect(screen.getByTestId('onboarding-gate-loading')).toBeInTheDocument();
+    expect(screen.queryByTestId('protected-page')).not.toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByTestId('protected-page')).toBeInTheDocument();
+    });
+  });
+
+  it('allows the onboarding route itself and redirects onboarded users away from it', async () => {
+    renderWithProviders(
+      <Routes>
+        <Route
+          path="/study/onboarding"
+          element={
+            <OnboardingGate>
+              <div data-testid="onboarding-page">onboarding</div>
+            </OnboardingGate>
+          }
+        />
+        <Route path="/study/today" element={<div data-testid="today-page">today</div>} />
+      </Routes>,
+      { initialEntries: ['/study/onboarding'] },
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId('today-page')).toBeInTheDocument();
+    });
+    expect(screen.queryByTestId('onboarding-page')).not.toBeInTheDocument();
+  });
 });

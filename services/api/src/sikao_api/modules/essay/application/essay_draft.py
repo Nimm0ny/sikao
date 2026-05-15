@@ -63,7 +63,10 @@ class EssayDraftService:
         )
         if existing is not None:
             existing.typed_draft = typed_draft
-            existing.handwritten_draft_metadata = handwritten_draft_metadata
+            existing.handwritten_draft_metadata = self._merge_handwritten_metadata(
+                existing.handwritten_draft_metadata,
+                handwritten_draft_metadata,
+            )
             existing.updated_at = utc_now()
             self.session.flush()
             return existing
@@ -89,8 +92,9 @@ class EssayDraftService:
                 # fail-fast: 抛出原始错误的语义, 不静默兜底.
                 raise
             existing_after_race.typed_draft = typed_draft
-            existing_after_race.handwritten_draft_metadata = (
-                handwritten_draft_metadata
+            existing_after_race.handwritten_draft_metadata = self._merge_handwritten_metadata(
+                existing_after_race.handwritten_draft_metadata,
+                handwritten_draft_metadata,
             )
             existing_after_race.updated_at = utc_now()
             self.session.flush()
@@ -119,3 +123,12 @@ class EssayDraftService:
             .limit(1)
         )
         return self.session.scalar(stmt)
+
+    @staticmethod
+    def _merge_handwritten_metadata(
+        existing: dict[str, Any] | None,
+        incoming: dict[str, Any] | None,
+    ) -> dict[str, Any] | None:
+        if incoming is not None:
+            return incoming
+        return existing

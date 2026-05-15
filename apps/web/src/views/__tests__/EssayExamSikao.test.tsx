@@ -190,6 +190,54 @@ describe('EssayExamSikao', () => {
     });
   });
 
+  it('autosave still saves typed draft when loading the existing draft fails', async () => {
+    let savedDraftBody: { questionId: number; typedDraft: string } | null = null;
+    server.use(
+      http.get('/api/v2/papers/:code/questions', () => HttpResponse.json(mockEssayQuestions)),
+      http.get('/api/v2/essay/drafts/:questionId', () =>
+        HttpResponse.json({ detail: 'draft boom' }, { status: 500 }),
+      ),
+      http.post('/api/v2/essay/drafts', async ({ request }) => {
+        savedDraftBody = (await request.json()) as {
+          questionId: number;
+          typedDraft: string;
+        };
+        return HttpResponse.json({
+          id: 1,
+          questionId: savedDraftBody.questionId,
+          typedDraft: savedDraftBody.typedDraft,
+          handwrittenDraftMetadata: null,
+          savedAt: '2026-05-14T00:00:00Z',
+          updatedAt: '2026-05-14T00:00:00Z',
+        });
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderWithProviders(<EssayExamSikao />, {
+      initialEntries: ['/essay/exam/AIPTA-2026-01'],
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-shell-sikao-submit')).toBeInTheDocument();
+    });
+
+    useExamSession.setState({
+      textsByQ: ['读旧稿失败也要保存'],
+      phase: 'running',
+    });
+
+    await user.click(screen.getByTestId('mock-shell-sikao-autosave'));
+
+    await waitFor(() => {
+      expect(savedDraftBody).toEqual({
+        questionId: 1001,
+        typedDraft: '读旧稿失败也要保存',
+        handwrittenDraftMetadata: null,
+      });
+    });
+  });
+
   it('autosave preserves existing handwritten draft metadata', async () => {
     let savedDraftBody: {
       questionId: number;
@@ -253,7 +301,6 @@ describe('EssayExamSikao', () => {
   it('handleSubmit success → navigate to /essay/exam/results with paperCode/ids/total', async () => {
     navigate.mockClear();
     let analyticsBody: { eventName: string; properties?: Record<string, string> } | null = null;
-    let patchedTaskBody: { status: string } | null = null;
     server.use(
       http.get('/api/v2/papers/:code/questions', () => HttpResponse.json(mockEssayQuestions)),
       http.post('/api/v2/analytics/event', async ({ request }) => {
@@ -262,23 +309,6 @@ describe('EssayExamSikao', () => {
           properties?: Record<string, string>;
         };
         return HttpResponse.json({ received: true }, { status: 202 });
-      }),
-      http.patch('/api/v2/study-plan/tasks/:taskId', async ({ request }) => {
-        patchedTaskBody = (await request.json()) as { status: string };
-        return HttpResponse.json({
-          id: 9,
-          taskKind: 'essay_writing',
-          payload: {
-            paperCode: 'AIPTA-2026-01',
-            questionId: 1001,
-            title: '申论任务',
-            subtitle: null,
-          },
-          displayOrder: 0,
-          status: 'completed',
-          completedAt: '2026-05-14T00:00:00Z',
-          createdAt: '2026-05-14T00:00:00Z',
-        });
       }),
       http.post('/api/v2/essay/grade', async ({ request }) => {
         const body = (await request.json()) as { questionId: number };
@@ -324,7 +354,7 @@ describe('EssayExamSikao', () => {
     expect(navUrl).toContain('paperCode=AIPTA-2026-01');
     expect(navUrl).toContain('ids=1001');
     expect(navUrl).toContain('total=1');
-    expect(patchedTaskBody).toEqual({ status: 'completed' });
+    expect(navUrl).toContain('studyTaskId=9');
     expect(analyticsBody).toEqual({
       eventName: 'essay_exam_submitted',
       sessionId: 'AIPTA-2026-01',

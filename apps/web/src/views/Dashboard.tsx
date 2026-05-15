@@ -23,7 +23,6 @@ import { useAuthStore } from '@sikao/domain/auth/useAuthStore';
 import { useDevice } from '@sikao/shared-utils/hooks/useDevice';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
-import { OnboardingGate } from '@/router/OnboardingGate';
 import { DashboardMobile } from './dashboard/DashboardMobile';
 
 /**
@@ -95,14 +94,6 @@ function formatHeroEyebrow(now: Date): string {
  * unmount 另一个 mount, react-query cache 立刻命中, 不会丢请求结果.
  */
 export default function Dashboard() {
-  return (
-    <OnboardingGate>
-      <DashboardEntry />
-    </OnboardingGate>
-  );
-}
-
-function DashboardEntry() {
   const device = useDevice();
   if (device === 'mobile') return <DashboardMobile />;
   return <DashboardDesktop />;

@@ -249,16 +249,7 @@ async function saveDraftedTextsByPaper(
 ): Promise<void> {
   await Promise.all(
     paper.questions.map(async (question, index) => {
-      let existingDraft: EssayDraft | null;
-      try {
-        existingDraft = await fetchEssayDraft(question.backendId);
-      } catch (err) {
-        logger.warn('essay-draft.save_skipped', {
-          questionId: question.backendId,
-          err: String(err),
-        });
-        return;
-      }
+      const existingDraft = await fetchEssayDraftBestEffort(question.backendId);
       await saveEssayDraft({
         questionId: question.backendId,
         typedDraft: data.textsByQ[index] ?? '',

@@ -6,19 +6,10 @@ import { STUDY_COPY } from '@/lib/ui-copy';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
 import type { StudyTaskResponse } from '@sikao/api-client/types/study-plan';
-import { OnboardingGate } from '@/router/OnboardingGate';
 
 // PR-2 MVP: today task list
 const KIND_LABEL: Record<string, string> = { practice: '行测练习', review_wrong: '错题复习', essay_writing: '申论练习' };
 export default function StudyToday() {
-  return (
-    <OnboardingGate>
-      <StudyTodayContent />
-    </OnboardingGate>
-  );
-}
-
-function StudyTodayContent() {
   const navigate = useNavigate();
   const { data: plan, isLoading, isError, refetch } = useStudyPlanToday();
   const patchTask = usePatchStudyTask();

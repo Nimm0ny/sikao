@@ -11,6 +11,7 @@
   "scripts": {
     "dev": "npm run dev -w @sikao/web",
     "build": "npm run build -w @sikao/web",
+    "generate:types": "bash scripts/generate-api-types.sh",
     "bootstrap:mvp-demo": "bash scripts/dev-python.sh -m scripts.import.import_mvp_demo",
     "seed:mvp-demo": "bash scripts/dev-python.sh -m scripts.import.import_mvp_demo --skip-migrations",
     "lint": "npm run lint --workspaces --if-present",

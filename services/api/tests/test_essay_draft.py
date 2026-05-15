@@ -211,6 +211,36 @@ def test_save_draft_updates_existing(client) -> None:
     assert body2["savedAt"] == body1["savedAt"]
 
 
+def test_save_draft_preserves_existing_handwritten_metadata_when_payload_omits_it(client) -> None:
+    c, _ = client
+    _register(c)
+    qid = _seed_essay_question_via_app(c)
+
+    resp1 = c.post(
+        "/api/v2/essay/drafts",
+        json={
+            "questionId": qid,
+            "typedDraft": "手写稿 v1",
+            "handwrittenDraftMetadata": {"assetId": 42, "strokeCount": 8},
+        },
+        headers=_csrf(c),
+    )
+    assert resp1.status_code == 200
+
+    resp2 = c.post(
+        "/api/v2/essay/drafts",
+        json={"questionId": qid, "typedDraft": "只更新 typedDraft"},
+        headers=_csrf(c),
+    )
+    assert resp2.status_code == 200
+    body2 = resp2.json()
+    assert body2["typedDraft"] == "只更新 typedDraft"
+    assert body2["handwrittenDraftMetadata"] == {
+        "assetId": 42,
+        "strokeCount": 8,
+    }
+
+
 # ── Body validation ─────────────────────────────────────────────────────────
 
 

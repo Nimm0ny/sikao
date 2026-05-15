@@ -42,6 +42,7 @@ import {
   pickResultHeadline,
   type QuestionBreakdownItem,
 } from '@/components/result';
+import { usePatchStudyTask } from '@sikao/api-client/queries/studyPlanQueries';
 import {
   essayGradingKeys,
   fetchEssayGrading,
@@ -54,6 +55,7 @@ import { ESSAY_GRADING_COPY } from '@/lib/ui-copy';
 import { useApplyExamTheme } from '@/styles/useThemeStore';
 import { api } from '@sikao/api-client/request';
 import type { EssayGradingV2 } from '@sikao/api-client/types/api';
+import { logger, toast } from '@sikao/shared-utils';
 
 // 局部 type — 跟 backend PaperQuestionItemV2 子集对齐. 只声明本 view 用到的
 // 字段 (frontend/CLAUDE.md §3.4 不一次性全量), 跟 EssayPaperDetail.tsx 同模式.
@@ -77,6 +79,7 @@ export default function EssayExamResults() {
   const paperCode = params.get('paperCode') ?? undefined;
   const idsParam = params.get('ids') ?? '';
   const totalParam = params.get('total') ?? '';
+  const studyTaskIdParam = params.get('studyTaskId');
 
   // recordIds 长度 = paper.questions.length, null slot 表示空答案/失败/未提交
   // (review P0 #9). csv 序列化 null → 空段 (e.g. "1,2,,4,5"). 解析时空段返
@@ -103,6 +106,11 @@ export default function EssayExamResults() {
     const n = Number(totalParam);
     return Number.isFinite(n) && n > 0 ? n : null;
   }, [totalParam]);
+  const studyTaskId = useMemo<number | null>(() => {
+    if (studyTaskIdParam == null || studyTaskIdParam === '') return null;
+    const n = Number(studyTaskIdParam);
+    return Number.isFinite(n) && n > 0 ? n : null;
+  }, [studyTaskIdParam]);
 
   const onBackHistory = useCallback(() => navigate('/essay/history'), [navigate]);
 
@@ -141,6 +149,7 @@ export default function EssayExamResults() {
       submittedCount={submittedCount}
       total={total}
       paperCode={paperCode}
+      studyTaskId={studyTaskId}
       onBackHistory={onBackHistory}
     />
   );
@@ -151,6 +160,7 @@ interface ResultsContentProps {
   readonly submittedCount: number;
   readonly total: number;
   readonly paperCode: string | undefined;
+  readonly studyTaskId: number | null;
   readonly onBackHistory: () => void;
 }
 
@@ -159,12 +169,17 @@ function ResultsContent({
   submittedCount,
   total,
   paperCode,
+  studyTaskId,
   onBackHistory,
 }: ResultsContentProps) {
   // navigate 用于 retry 替换 ids URL.
   const navigate = useNavigate();
 
   const queryClient = useQueryClient();
+  const patchStudyTask = usePatchStudyTask();
+  const taskCompletionSyncRef = useRef<'idle' | 'syncing' | 'done' | 'failed'>(
+    'idle',
+  );
 
   // N 个并发 useQuery — 长度严格 = recordIds.length, null slot 用 enabled:false
   // 跳过 fetch 但保留位置 (review P0 #9 — list idx 直接对齐 paper.questions 顺序).
@@ -243,6 +258,36 @@ function ResultsContent({
     );
   }, [queries, fullScoreByQuestionId]);
 
+  const allSubmittedCompleted = useMemo(() => {
+    const submittedQueries = queries.filter((q) => q.data !== undefined);
+    if (submittedQueries.length !== submittedCount) return false;
+    return submittedQueries.every((q) => q.data?.status === 'completed');
+  }, [queries, submittedCount]);
+
+  useEffect(() => {
+    if (
+      studyTaskId === null ||
+      taskCompletionSyncRef.current !== 'idle' ||
+      !allSubmittedCompleted
+    ) {
+      return;
+    }
+    taskCompletionSyncRef.current = 'syncing';
+    void patchStudyTask
+      .mutateAsync({ id: studyTaskId, status: 'completed' })
+      .then(() => {
+        taskCompletionSyncRef.current = 'done';
+      })
+      .catch((err) => {
+        logger.error('essay_exam_results.task_complete_failed', {
+          studyTaskId,
+          err: String(err),
+        });
+        toast.warn('申论报告已就绪，但今日任务状态同步失败');
+        taskCompletionSyncRef.current = 'failed';
+      });
+  }, [allSubmittedCompleted, patchStudyTask, studyTaskId]);
+
   const handleRetrySwap = useCallback(
     (idx: number, newId: number) => {
       const next: Array<number | null> = [...recordIds];
@@ -250,6 +295,9 @@ function ResultsContent({
       const search = new URLSearchParams();
       if (paperCode !== undefined && paperCode !== '') {
         search.set('paperCode', paperCode);
+      }
+      if (studyTaskId !== null) {
+        search.set('studyTaskId', String(studyTaskId));
       }
       search.set(
         'ids',
@@ -260,7 +308,7 @@ function ResultsContent({
         replace: true,
       });
     },
-    [recordIds, paperCode, total, navigate],
+    [recordIds, paperCode, studyTaskId, total, navigate],
   );
 
   const partialMissing = total > submittedCount;

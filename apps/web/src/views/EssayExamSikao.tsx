@@ -5,7 +5,6 @@ import { AlertCircleIcon, RefreshIcon } from '@sikao/ui/icons';
 import { Button, EmptyState } from '@sikao/ui/ui';
 import { EssayShellSikao } from '@/components/essay/sikao';
 import { essayClient } from '@sikao/api-client/essay-client';
-import { usePatchStudyTask } from '@sikao/api-client/queries/studyPlanQueries';
 import { trackEvent } from '@/lib/analytics';
 import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
 import { ERROR_COPY } from '@/lib/ui-copy';
@@ -33,7 +32,6 @@ export default function EssayExamSikao() {
   const startSubmitting = useExamSession((s) => s.startSubmitting);
   const finish = useExamSession((s) => s.finish);
   const toSnapshot = useExamSession((s) => s.toSnapshot);
-  const patchStudyTask = usePatchStudyTask();
   const locationState = location.state as EssayExamLocationState | null;
   const studyTaskId =
     typeof locationState?.studyTaskId === 'number'
@@ -102,27 +100,15 @@ export default function EssayExamSikao() {
               studyTaskId: studyTaskId === null ? 'none' : String(studyTaskId),
             },
           });
-          if (studyTaskId !== null) {
-            try {
-              await patchStudyTask.mutateAsync({
-                id: studyTaskId,
-                status: 'completed',
-              });
-            } catch (err) {
-              logger.error('study_plan.essay_task.complete_failed', {
-                taskId: studyTaskId,
-                paperCode,
-                err: String(err),
-              });
-              toast.warn('申论已提交，但今日任务状态同步失败');
-            }
-          }
           const idsCsv = recordIds.map((id) => (id === null ? '' : id)).join(',');
           const search = new URLSearchParams({
             paperCode,
             ids: idsCsv,
             total: String(paper.questions.length),
           });
+          if (studyTaskId !== null) {
+            search.set('studyTaskId', String(studyTaskId));
+          }
           finish();
           navigate(`/essay/exam/results?${search.toString()}`);
         })
@@ -132,7 +118,7 @@ export default function EssayExamSikao() {
           toast.error('交卷失败,请稍后再试');
         });
     },
-    [finish, navigate, paperCode, patchStudyTask, query.data, startSubmitting, studyTaskId, toSnapshot],
+    [finish, navigate, paperCode, query.data, startSubmitting, studyTaskId, toSnapshot],
   );
 
   if (query.isLoading) {

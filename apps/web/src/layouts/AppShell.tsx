@@ -1,4 +1,5 @@
 import { useDevice } from '@sikao/shared-utils/hooks/useDevice';
+import { OnboardingGate } from '@/router/OnboardingGate';
 import { AsideOutletProvider } from './AsideOutlet';
 import { DesktopShell } from './shells/DesktopShell';
 import { MobileShell } from './shells/MobileShell';
@@ -32,7 +33,9 @@ import { TabletShell } from './shells/TabletShell';
 export function AppShell() {
   return (
     <AsideOutletProvider>
-      <AppShellDispatcher />
+      <OnboardingGate>
+        <AppShellDispatcher />
+      </OnboardingGate>
     </AsideOutletProvider>
   );
 }

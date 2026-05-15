@@ -101,10 +101,6 @@ export default function Onboarding() {
                 disabled={setGoalMutation.isPending}>
                 {setGoalMutation.isPending ? '保存中…' : '下一步'}
               </button>
-              <button type="button" className="py-2 px-4 rounded-tiny" style={ghostSty}
-                onClick={() => navigate('/dashboard')}>
-                {STUDY_COPY.ONBOARDING.SKIP}
-              </button>
             </div>
           </form>
         )}
@@ -145,8 +141,8 @@ export default function Onboarding() {
                 {createExamMutation.isPending ? '保存中…' : STUDY_COPY.ONBOARDING.CONFIRM}
               </button>
               <button type="button" className="py-2 px-4 rounded-tiny" style={ghostSty}
-                onClick={() => navigate('/dashboard')}>
-                {STUDY_COPY.ONBOARDING.SKIP}
+                onClick={() => setStep('goal')}>
+                上一步
               </button>
             </div>
           </form>

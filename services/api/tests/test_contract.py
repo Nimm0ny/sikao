@@ -17,6 +17,7 @@ self-contained 不 cross-import，避免测试间隐式耦合。
 from __future__ import annotations
 
 import base64
+import json
 import re
 import shutil
 from collections.abc import Iterator
@@ -261,6 +262,29 @@ def test_result_score_is_percentage(tmp_path: Path) -> None:
         expected = round(correct / total * 100) if total else 0
         assert score == expected, f"score={score} ≠ percent {expected} (correct={correct}, total={total})"
         assert 0 <= score <= 100
+
+
+def test_checked_in_openapi_exposes_wrong_reason_fields() -> None:
+    spec_path = Path(__file__).resolve().parents[1] / "spec" / "openapi.json"
+    spec = json.loads(spec_path.read_text(encoding="utf-8"))
+    answer_schema = spec["components"]["schemas"]["PracticeSessionAnswerOutV2"]
+    props = answer_schema["properties"]
+    assert "wrongReasonCode" in props
+    assert "wrongReasonSource" in props
+
+
+def test_generated_types_expose_wrong_reason_fields() -> None:
+    generated_path = (
+        Path(__file__).resolve().parents[3]
+        / "packages"
+        / "api-client"
+        / "src"
+        / "types"
+        / "api.generated.ts"
+    )
+    text = generated_path.read_text(encoding="utf-8")
+    assert "wrongReasonCode" in text
+    assert "wrongReasonSource" in text
 
 
 # --- 6. T-C3 真前后端契约对齐 schema 锁 ----------------------------------------

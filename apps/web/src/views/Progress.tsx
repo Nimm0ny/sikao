@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useWeeklyProgress, useAccuracyTrend } from '@sikao/api-client/queries/progressQueries';
 import { useNationalExamCountdown } from '@sikao/api-client/queries/examEventsQueries';
 import { trackEvent } from '@/lib/analytics';
-import { OnboardingGate } from '@/router/OnboardingGate';
 
 // PR-6 MVP: /progress -- progress dashboard.
 const TREND_DAYS = [7, 30, 90, 180] as const;
@@ -19,14 +18,6 @@ function StatCard({ label, value, sub }: { label: string; value: string | number
 }
 
 export default function Progress() {
-  return (
-    <OnboardingGate>
-      <ProgressContent />
-    </OnboardingGate>
-  );
-}
-
-function ProgressContent() {
   const [trendDays, setTrendDays] = useState<TrendDays>(30);
   const { data: weekly, isLoading: weeklyLoading } = useWeeklyProgress();
   const { data: trend } = useAccuracyTrend(trendDays);
