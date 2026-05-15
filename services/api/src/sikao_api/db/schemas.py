@@ -387,6 +387,8 @@ class PracticeSessionAnswerOutV2(CamelModel):
     correct_answer_keys: list[str]
     is_correct: bool
     answered_at: UtcDatetime
+    wrong_reason_code: str | None = None
+    wrong_reason_source: str | None = None
 
 
 # v0.2 slice 3 — knowledge-point aggregation. Two layers, both 1-to-1 with

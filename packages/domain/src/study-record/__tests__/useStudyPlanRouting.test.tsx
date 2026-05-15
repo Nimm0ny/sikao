@@ -27,14 +27,19 @@ vi.mock('react-router-dom', async () => {
 });
 
 const toastError = vi.fn();
-vi.mock('@/lib/toast', () => ({
-  toast: {
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: (title: string) => toastError(title),
-    dismiss: vi.fn(),
-  },
-}));
+vi.mock('@sikao/shared-utils', async () => {
+  const actual =
+    await vi.importActual<typeof import('@sikao/shared-utils')>('@sikao/shared-utils');
+  return {
+    ...actual,
+    toast: {
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: (title: string) => toastError(title),
+      dismiss: vi.fn(),
+    },
+  };
+});
 
 function makeClient() {
   return new QueryClient({
@@ -96,7 +101,9 @@ describe('useStudyPlanRouting · 跳转 wiring', () => {
       wrapper: wrapper(client),
     });
     act(() => result.current.handleTaskClick(ESSAY_TASK));
-    expect(navigate).toHaveBeenCalledWith('/essay/exam/E1');
+    expect(navigate).toHaveBeenCalledWith('/essay/exam/E1', {
+      state: { studyTaskId: 3 },
+    });
   });
 
   it('practice w/ questionIds → POST /study-plan/start → /practice/sessions/:sid', async () => {
@@ -118,6 +125,7 @@ describe('useStudyPlanRouting · 跳转 wiring', () => {
       expect(navigate).toHaveBeenCalledWith('/practice/sessions/555'),
     );
     expect(usePracticeStore.getState().sessionData?.sessionId).toBe(555);
+    expect(usePracticeStore.getState().currentStudyTaskId).toBe(1);
   });
 
   it('review_wrong → POST /study-plan/start → /practice/sessions/:sid', async () => {
@@ -139,6 +147,7 @@ describe('useStudyPlanRouting · 跳转 wiring', () => {
       expect(navigate).toHaveBeenCalledWith('/practice/sessions/777'),
     );
     expect(usePracticeStore.getState().sessionData?.sessionId).toBe(777);
+    expect(usePracticeStore.getState().currentStudyTaskId).toBe(2);
   });
 
   it('completed task: handleTaskClick 不调 navigate 也不调 mutation (review P1-7)', () => {

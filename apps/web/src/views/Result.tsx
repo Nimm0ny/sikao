@@ -1,9 +1,10 @@
-import { useCallback, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useApplyExamTheme } from '@/styles/useThemeStore';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from '@sikao/api-client/request';
 import { useDevice } from '@sikao/shared-utils/hooks/useDevice';
+import { logger, toast } from '@sikao/shared-utils';
 import { ResultMobile } from './result/ResultMobile';
 import { Button, EmptyState, SidePanel, Tooltip } from '@sikao/ui/ui';
 import { AlertCircleIcon, HelpIcon, RefreshIcon } from '@sikao/ui/icons';
@@ -41,6 +42,7 @@ import {
 } from '@/components/result/_resultHelpers';
 import { pickSlowestQuestions } from '@sikao/shared-utils';
 import type { PracticeSessionResultV2 } from '@sikao/api-client/types/api';
+import type { WrongReasonCode } from '@/components/result/wrongReason';
 
 // Phase 3.3 rewrite — drops the legacy in-view Sidebar/Trophy hero
 // (AppShell + ResultHero replace it) and consumes the richer result
@@ -224,6 +226,7 @@ function ResultBody({
   viewWrongDisabled,
 }: ResultBodyProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const cells = buildComparisonCells(result);
   const cardCells = buildAnswerCardCells(result);
   const wrongItems = buildWrongItems(result);
@@ -238,6 +241,8 @@ function ResultBody({
   const activeTabId = useScrollSpyTab(tabIds);
   // PR10 AskDrawer state — 点错题卡 ask 按钮打开. 单一活动 question.
   const [askQid, setAskQid] = useState<string | null>(null);
+  const [savingAnswerId, setSavingAnswerId] = useState<number | null>(null);
+  const syncedWrongReasonIdsRef = useRef<Set<number>>(new Set());
   const onAsk = useCallback((qid: string): void => setAskQid(qid), []);
   const closeAsk = useCallback((): void => setAskQid(null), []);
   const onSlowestSelect = useCallback(
@@ -260,6 +265,82 @@ function ResultBody({
   const durationSeconds = result.session !== undefined
     ? calcDurationSeconds(result.session.startedAt, result.session.completedAt)
     : undefined;
+  const resultSessionId = result.sessionId ?? result.session?.sessionId ?? null;
+
+  const mergeWrongReasonIntoCache = useCallback(
+    (answerId: number, wrongReasonCode: WrongReasonCode, source: 'ai' | 'user') => {
+      if (resultSessionId === null) return;
+      queryClient.setQueryData<PracticeSessionResultV2>(
+        ['practiceResult', String(resultSessionId)],
+        (previous) => {
+          if (previous?.answers === undefined) return previous;
+          return {
+            ...previous,
+            answers: previous.answers.map((answer) =>
+              Number(answer.id) === answerId
+                ? { ...answer, wrongReasonCode, wrongReasonSource: source }
+                : answer,
+            ),
+          };
+        },
+      );
+    },
+    [queryClient, resultSessionId],
+  );
+
+  const saveWrongReason = useCallback(
+    async (
+      answerId: number,
+      wrongReasonCode: WrongReasonCode,
+      source: 'ai' | 'user',
+    ) => {
+      if (resultSessionId === null) return;
+      await api.patch(`/practice/sessions/${resultSessionId}/answers/${answerId}/diagnosis`, {
+        wrongReasonCode,
+        source,
+      });
+      mergeWrongReasonIntoCache(answerId, wrongReasonCode, source);
+    },
+    [mergeWrongReasonIntoCache, resultSessionId],
+  );
+
+  useEffect(() => {
+    wrongItems.forEach((item) => {
+      if (
+        item.answerId === undefined ||
+        item.wrongReasonCode === undefined ||
+        item.needsDiagnosisSync !== true ||
+        syncedWrongReasonIdsRef.current.has(item.answerId)
+      ) {
+        return;
+      }
+      syncedWrongReasonIdsRef.current.add(item.answerId);
+      void saveWrongReason(item.answerId, item.wrongReasonCode, 'ai').catch((err) => {
+        logger.error('result.auto_wrong_reason_failed', {
+          answerId: item.answerId,
+          err: String(err),
+        });
+      });
+    });
+  }, [saveWrongReason, wrongItems]);
+
+  const handleSetWrongReason = useCallback(
+    (answerId: number, wrongReasonCode: WrongReasonCode): void => {
+      setSavingAnswerId(answerId);
+      void saveWrongReason(answerId, wrongReasonCode, 'user')
+        .catch((err) => {
+          logger.error('result.wrong_reason_save_failed', {
+            answerId,
+            err: String(err),
+          });
+          toast.error('错因保存失败', '请稍后重试');
+        })
+        .finally(() => {
+          setSavingAnswerId((current) => (current === answerId ? null : current));
+        });
+    },
+    [saveWrongReason],
+  );
 
   // SIKAO Wave 2 Phase 2 — hifi 05 paper-tint res-shell 双段 layout 仅
   // 用于 hero + cat-table + aside; 之后 ResultTabNav + 4 个 anchor section
@@ -370,6 +451,8 @@ function ResultBody({
               items={wrongItems}
               registerRef={panel.registerWrongRef}
               onAsk={onAsk}
+              onSetWrongReason={handleSetWrongReason}
+              savingAnswerId={savingAnswerId}
             />
           ) : null}
         </div>

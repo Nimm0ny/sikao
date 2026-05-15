@@ -1,15 +1,21 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircleIcon, RefreshIcon } from '@sikao/ui/icons';
 import { Button, EmptyState } from '@sikao/ui/ui';
 import { EssayShellSikao } from '@/components/essay/sikao';
 import { essayClient } from '@sikao/api-client/essay-client';
+import { usePatchStudyTask } from '@sikao/api-client/queries/studyPlanQueries';
+import { trackEvent } from '@/lib/analytics';
 import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
 import { ERROR_COPY } from '@/lib/ui-copy';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
 import { useApplyExamTheme } from '@/styles/useThemeStore';
+
+interface EssayExamLocationState {
+  readonly studyTaskId?: number;
+}
 
 // EssayExamSikao — SIKAO V3 申论考场 (双栏 + 草稿纸 + MmStrip) 的 /essay/exam/:paperCode
 // route entry. 复用 EssayExam.tsx 的 query / hydrate / autosave / submit 全套
@@ -21,11 +27,18 @@ export default function EssayExamSikao() {
   // 申论考场属考场态, 应用 examTheme — 跟 ExamShell 路径完全一致.
   useApplyExamTheme();
   const { paperCode } = useParams<{ paperCode: string }>();
+  const location = useLocation();
   const navigate = useNavigate();
   const hydrate = useExamSession((s) => s.hydrate);
   const startSubmitting = useExamSession((s) => s.startSubmitting);
   const finish = useExamSession((s) => s.finish);
   const toSnapshot = useExamSession((s) => s.toSnapshot);
+  const patchStudyTask = usePatchStudyTask();
+  const locationState = location.state as EssayExamLocationState | null;
+  const studyTaskId =
+    typeof locationState?.studyTaskId === 'number'
+      ? locationState.studyTaskId
+      : null;
 
   const query = useQuery({
     queryKey: ['essay-exam-paper', paperCode],
@@ -34,10 +47,8 @@ export default function EssayExamSikao() {
       if (!paperCode) {
         throw new Error('paper code missing');
       }
-      const [paper, snapshot] = await Promise.all([
-        essayClient.getPaper(paperCode),
-        essayClient.loadSnapshot(paperCode),
-      ]);
+      const paper = await essayClient.getPaper(paperCode);
+      const snapshot = await essayClient.loadSnapshot(paperCode, paper);
       return { paper, snapshot };
     },
   });
@@ -57,11 +68,13 @@ export default function EssayExamSikao() {
       if (!paperCode) return;
       const snap = toSnapshot();
       if (!snap) return;
+      const paper = query.data?.paper;
+      if (!paper) return;
       void essayClient
-        .saveSnapshot(paperCode, snap)
+        .saveSnapshot(paperCode, snap, paper)
         .catch((err: unknown) => logger.error('essay-exam.autosave-failed', { err: String(err) }));
     },
-    [paperCode, toSnapshot],
+    [paperCode, query.data?.paper, toSnapshot],
   );
 
   const handleSubmit = useMemo(
@@ -76,7 +89,34 @@ export default function EssayExamSikao() {
       startSubmitting();
       void essayClient
         .submit(paperCode, snap, paper.questions)
-        .then(({ recordIds }) => {
+        .then(async ({ recordIds }) => {
+          trackEvent({
+            eventName: 'essay_exam_submitted',
+            sessionId: paperCode,
+            properties: {
+              paperCode,
+              totalQuestions: String(paper.questions.length),
+              submittedRecords: String(
+                recordIds.filter((id) => id !== null).length,
+              ),
+              studyTaskId: studyTaskId === null ? 'none' : String(studyTaskId),
+            },
+          });
+          if (studyTaskId !== null) {
+            try {
+              await patchStudyTask.mutateAsync({
+                id: studyTaskId,
+                status: 'completed',
+              });
+            } catch (err) {
+              logger.error('study_plan.essay_task.complete_failed', {
+                taskId: studyTaskId,
+                paperCode,
+                err: String(err),
+              });
+              toast.warn('申论已提交，但今日任务状态同步失败');
+            }
+          }
           const idsCsv = recordIds.map((id) => (id === null ? '' : id)).join(',');
           const search = new URLSearchParams({
             paperCode,
@@ -92,7 +132,7 @@ export default function EssayExamSikao() {
           toast.error('交卷失败,请稍后再试');
         });
     },
-    [paperCode, toSnapshot, startSubmitting, finish, navigate, query.data],
+    [finish, navigate, paperCode, patchStudyTask, query.data, startSubmitting, studyTaskId, toSnapshot],
   );
 
   if (query.isLoading) {

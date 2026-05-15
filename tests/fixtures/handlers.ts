@@ -8,6 +8,43 @@ import { http, HttpResponse } from 'msw';
 // 临时 override 此 handler — afterEach 会 reset 回这里的 default.
 
 export const handlers = [
+  // —— Onboarding gate ——
+  http.get('/api/v2/me/onboarding-status', () =>
+    HttpResponse.json({
+      hasGoal: true,
+      hasExam: true,
+      isOnboarded: true,
+    }),
+  ),
+
+  // —— Analytics event ingest ——
+  http.post('/api/v2/analytics/event', () =>
+    HttpResponse.json({ received: true }, { status: 202 }),
+  ),
+
+  // —— Essay draft persistence ——
+  // Default: no existing draft for the current user/question.
+  // Callers should treat 404 as "first time, empty draft", not a hard error.
+  http.get('/api/v2/essay/drafts/:questionId', () =>
+    HttpResponse.json({ detail: 'draft not found' }, { status: 404 }),
+  ),
+
+  // —— Wrong-reason diagnosis ——
+  http.patch(
+    '/api/v2/practice/sessions/:sessionId/answers/:answerId/diagnosis',
+    async ({ params, request }) => {
+      const body = (await request.json()) as {
+        wrongReasonCode: string;
+        source?: string;
+      };
+      return HttpResponse.json({
+        answerId: Number(params.answerId),
+        wrongReasonCode: body.wrongReasonCode,
+        wrongReasonSource: body.source ?? 'user',
+      });
+    },
+  ),
+
   // —— Papers list (Home view) ——
   http.get('/api/v2/papers', () =>
     HttpResponse.json([

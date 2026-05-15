@@ -72,12 +72,14 @@ const successFixture = {
     },
   ],
   answers: [
-    { questionId: 1, selectedAnswerKeys: ['A'], correctAnswerKeys: ['A'], isCorrect: true, answeredAt: '2026-04-28T10:01:00Z' },
-    { questionId: 2, selectedAnswerKeys: ['B'], correctAnswerKeys: ['C'], isCorrect: false, answeredAt: '2026-04-28T10:02:00Z' },
+    { id: 1, questionId: 1, selectedAnswerKeys: ['A'], correctAnswerKeys: ['A'], isCorrect: true, answeredAt: '2026-04-28T10:01:00Z', wrongReasonCode: null, wrongReasonSource: null },
+    { id: 2, questionId: 2, selectedAnswerKeys: ['B'], correctAnswerKeys: ['C'], isCorrect: false, answeredAt: '2026-04-28T10:02:00Z', wrongReasonCode: null, wrongReasonSource: null },
   ],
   questions: [
     {
       questionId: 1,
+      subject: '言语理解',
+      canonicalSubtype: '片段阅读',
       paperRevisionId: '1',
       sectionId: 's1',
       blockId: 'b1',
@@ -88,6 +90,8 @@ const successFixture = {
     },
     {
       questionId: 2,
+      subject: '数量关系',
+      canonicalSubtype: '数学运算',
       paperRevisionId: '1',
       sectionId: 's1',
       blockId: 'b1',
@@ -211,6 +215,39 @@ describe('Result success rendering', () => {
     const btn = await screen.findByTestId('result-back-home');
     await user.click(btn);
     expect(navigateSpy).toHaveBeenCalledWith('/app');
+  });
+
+  it('shows wrong-reason diagnosis and saves manual override', async () => {
+    const user = userEvent.setup();
+    let patchedBody: { wrongReasonCode: string; source: string } | null = null;
+    server.use(
+      http.patch(
+        '/api/v2/practice/sessions/:sessionId/answers/:answerId/diagnosis',
+        async ({ request }) => {
+          patchedBody = (await request.json()) as {
+            wrongReasonCode: string;
+            source: string;
+          };
+          return HttpResponse.json({
+            answerId: 2,
+            wrongReasonCode: patchedBody.wrongReasonCode,
+            wrongReasonSource: patchedBody.source,
+          });
+        },
+      ),
+    );
+
+    renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
+
+    const select = await screen.findByTestId('wrong-reason-select-2');
+    expect(select).toHaveValue('calculation_error');
+    await user.selectOptions(select, 'careless_mistake');
+    await waitFor(() => {
+      expect(patchedBody).toEqual({
+        wrongReasonCode: 'careless_mistake',
+        source: 'user',
+      });
+    });
   });
 });
 

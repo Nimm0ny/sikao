@@ -1496,6 +1496,8 @@ class ExamPaperService:
                 correct_answer_keys=deserialize_answer_text(item.correct_answer_snapshot),
                 is_correct=item.is_correct,
                 answered_at=item.answered_at,
+                wrong_reason_code=item.wrong_reason_code,
+                wrong_reason_source=item.wrong_reason_source,
             )
             for item in answers
         ]
@@ -1560,6 +1562,8 @@ class ExamPaperService:
                 correct_answer_keys=deserialize_answer_text(item.correct_answer_snapshot),
                 is_correct=item.is_correct,
                 answered_at=item.answered_at,
+                wrong_reason_code=item.wrong_reason_code,
+                wrong_reason_source=item.wrong_reason_source,
             )
             for item in answers
         ]

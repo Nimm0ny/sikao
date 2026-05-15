@@ -2,6 +2,7 @@ import { Card, EmptyState } from '@sikao/ui/ui';
 import { EMPTY_COPY } from '@/lib/ui-copy';
 import { WrongReviewCard } from './WrongReviewCard';
 import type { QuestionDetailV2 } from '@sikao/api-client/types/api';
+import type { WrongReasonCode } from './wrongReason';
 
 // Outer Card wrapping a list of WrongReviewCard. Owns the empty state so the
 // smart container doesn't have to branch on `items.length === 0` itself —
@@ -13,6 +14,10 @@ export interface WrongReviewItem {
   readonly userKeys: readonly string[];
   readonly correctKeys: readonly string[];
   readonly categoryLabel?: string;
+  readonly answerId?: number;
+  readonly wrongReasonCode?: WrongReasonCode;
+  readonly wrongReasonSource?: 'ai' | 'user';
+  readonly needsDiagnosisSync?: boolean;
 }
 
 export interface WrongReviewSectionProps {
@@ -21,9 +26,17 @@ export interface WrongReviewSectionProps {
   readonly registerRef?: (questionId: string, el: HTMLElement | null) => void;
   /** PR10: "问 AI" callback, 透传 WrongReviewCard 渲染 IconBtn. */
   readonly onAsk?: (questionId: string) => void;
+  readonly onSetWrongReason?: (answerId: number, code: WrongReasonCode) => void;
+  readonly savingAnswerId?: number | null;
 }
 
-export function WrongReviewSection({ items, registerRef, onAsk }: WrongReviewSectionProps) {
+export function WrongReviewSection({
+  items,
+  registerRef,
+  onAsk,
+  onSetWrongReason,
+  savingAnswerId,
+}: WrongReviewSectionProps) {
   return (
     <Card padding="md" data-testid="wrong-review-section">
       <h3 className="font-bold text-ink mb-3">错题解析</h3>
@@ -51,6 +64,11 @@ export function WrongReviewSection({ items, registerRef, onAsk }: WrongReviewSec
                   registerRef !== undefined ? (el) => registerRef(qid, el) : undefined
                 }
                 onAsk={onAsk}
+                answerId={item.answerId}
+                wrongReasonCode={item.wrongReasonCode}
+                wrongReasonSource={item.wrongReasonSource}
+                onSetWrongReason={onSetWrongReason}
+                isSavingWrongReason={savingAnswerId === item.answerId}
               />
             );
           })}

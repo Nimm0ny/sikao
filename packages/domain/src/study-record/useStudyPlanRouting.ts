@@ -83,7 +83,9 @@ export function useStudyPlanRouting(): RoutingResult {
 
       if (isEssayWritingTask(task)) {
         // 单题练习已下线 — 跳整卷考场, 由用户在 V2 ExamShell 内自行选当前要写的题.
-        navigate(`/essay/exam/${task.payload.paperCode}`);
+        navigate(`/essay/exam/${task.payload.paperCode}`, {
+          state: { studyTaskId: task.id },
+        });
         return;
       }
 
@@ -101,7 +103,7 @@ export function useStudyPlanRouting(): RoutingResult {
               if (!hasSessionId(sessionData)) {
                 throw new Error('study_plan.start missing sessionId');
               }
-              initSession(sessionData);
+              initSession(sessionData, { studyTaskId: task.id });
               navigate(`/practice/sessions/${sessionData.sessionId}`);
             },
             onError: (err) => {
@@ -120,7 +122,7 @@ export function useStudyPlanRouting(): RoutingResult {
               if (!hasSessionId(sessionData)) {
                 throw new Error('study_plan.start missing sessionId');
               }
-              initSession(sessionData);
+              initSession(sessionData, { studyTaskId: task.id });
               navigate(`/practice/sessions/${sessionData.sessionId}`);
             },
             onError: (err) => {

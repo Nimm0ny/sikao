@@ -975,6 +975,62 @@ def test_session_result_handles_partial_wrong_and_unanswered(tmp_path: Path) -> 
         assert len(result["questions"]) == 4
 
 
+def test_result_exposes_persisted_wrong_reason_after_diagnosis_patch(tmp_path: Path) -> None:
+    with build_client(tmp_path) as client:
+        import_payload = import_standard_json(
+            client,
+            files=[(COMPLEX_PAPER_PATH.name, COMPLEX_PAPER_PATH.read_bytes())],
+            base_dir=FIXTURES_DIR,
+        )
+        publish_revision(client, "D1", import_payload["items"][0]["revisionId"])
+        alice_token = login(client, "alice", "alice-pass")
+        start_response = client.post(
+            "/api/v2/practice/papers/D1/start", headers=bearer_headers(alice_token)
+        )
+        assert start_response.status_code == 200
+        session_payload = start_response.json()
+        session_id = session_payload["sessionId"]
+
+        questions = iter_session_questions(session_payload)
+        qid = str(questions[0]["questionId"])
+        correct_map = build_answer_map(client, session_payload)
+        wrong_keys = _pick_wrong_keys(correct_map[qid])
+
+        complete = client.post(
+            f"/api/v2/practice/sessions/{session_id}/complete",
+            json={"answers": {qid: wrong_keys}},
+            headers=bearer_headers(alice_token),
+        )
+        assert complete.status_code == 204
+
+        result_response = client.get(
+            f"/api/v2/practice/sessions/{session_id}/result",
+            headers=bearer_headers(alice_token),
+        )
+        assert result_response.status_code == 200
+        wrong_answer = next(
+            answer for answer in result_response.json()["answers"] if answer["isCorrect"] is False
+        )
+
+        patch_response = client.patch(
+            f"/api/v2/practice/sessions/{session_id}/answers/{wrong_answer['id']}/diagnosis",
+            json={"wrongReasonCode": "logic_error", "source": "user"},
+            headers=bearer_headers(alice_token),
+        )
+        assert patch_response.status_code == 200
+
+        refreshed = client.get(
+            f"/api/v2/practice/sessions/{session_id}/result",
+            headers=bearer_headers(alice_token),
+        )
+        assert refreshed.status_code == 200
+        refreshed_wrong = next(
+            answer for answer in refreshed.json()["answers"] if answer["id"] == wrong_answer["id"]
+        )
+        assert refreshed_wrong["wrongReasonCode"] == "logic_error"
+        assert refreshed_wrong["wrongReasonSource"] == "user"
+
+
 # ── Phase 5.4 wrong-book + mastery tests ────────────────────────────────────
 
 

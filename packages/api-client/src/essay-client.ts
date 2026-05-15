@@ -4,6 +4,8 @@ import {
   mapBackendEssayPaper,
   type BackendEssayQuestion,
 } from '@sikao/domain/shenlun/mapBackendPaper';
+import { logger } from '@sikao/shared-utils';
+import type { components } from './types/api.generated';
 
 // EssayClient 鈥?abstraction so PRs 2-8 don't bind to mock vs real API.
 // PR1 鍒囩湡鍚庣 submit (Promise.allSettled 骞跺彂 N 娆?POST /essay/grade).
@@ -15,6 +17,9 @@ import {
 
 const SNAPSHOT_KEY_PREFIX = 'exam-session-v2:';
 
+type EssayDraft = components['schemas']['EssayDraftV2'];
+type EssayDraftSubmission = components['schemas']['EssayDraftSubmissionV2'];
+
 // 鍚庣 EssayGradingV2 schema 瀛愰泦 (鎴戜滑鍙 id 鏉ユ瀯 recordIds).
 // 瀹屾暣 shape 鍦?frontend/src/types/api.ts EssayGradingV2 (auto-generated).
 interface GradingRecordResponse {
@@ -23,8 +28,8 @@ interface GradingRecordResponse {
 
 export interface EssayClient {
   getPaper(code: string): Promise<Paper>;
-  loadSnapshot(paperCode: string): Promise<AnswerSession | null>;
-  saveSnapshot(paperCode: string, data: AnswerSession): Promise<void>;
+  loadSnapshot(paperCode: string, paper?: Paper): Promise<AnswerSession | null>;
+  saveSnapshot(paperCode: string, data: AnswerSession, paper?: Paper): Promise<void>;
   // submit 鏁村嵎 = N 娆?POST /essay/grade. questions 绗?3 鍙傜敱 EssayExam.tsx
   // 閫忎紶 paper.questions (EssayClient 鑷繁鎷夸笉鍒? store 鍦?useExamSession).
   submit(
@@ -79,12 +84,20 @@ export const realEssayClient: EssayClient = {
     return mapBackendEssayPaper(code, questions);
   },
 
-  async loadSnapshot(paperCode) {
-    return mockEssayClient.loadSnapshot(paperCode);
+  async loadSnapshot(paperCode, paper) {
+    const local = await mockEssayClient.loadSnapshot(paperCode);
+    if (!paper) return local;
+    const draftedTexts = await loadDraftedTextsByPaper(paper);
+    if (draftedTexts.every((text) => text === null)) {
+      return local;
+    }
+    return mergeDraftTextsIntoSnapshot(local, paper, draftedTexts);
   },
 
-  async saveSnapshot(paperCode, data) {
-    return mockEssayClient.saveSnapshot(paperCode, data);
+  async saveSnapshot(paperCode, data, paper) {
+    await mockEssayClient.saveSnapshot(paperCode, data);
+    if (!paper) return;
+    await saveDraftedTextsByPaper(data, paper);
   },
 
   async submit(_paperCode, data, questions) {
@@ -156,3 +169,102 @@ function writeStorage(key: string, value: string): void {
 }
 
 export const essayClient: EssayClient = realEssayClient;
+
+async function fetchEssayDraft(questionId: number): Promise<EssayDraft | null> {
+  try {
+    return await api.get<EssayDraft>(`/essay/drafts/${questionId}`);
+  } catch (err) {
+    const status = (err as { response?: { status?: number } })?.response?.status;
+    if (status === 404) return null;
+    throw err;
+  }
+}
+
+async function fetchEssayDraftBestEffort(questionId: number): Promise<EssayDraft | null> {
+  try {
+    return await fetchEssayDraft(questionId);
+  } catch (err) {
+    logger.warn('essay-draft.load_failed', {
+      questionId,
+      err: String(err),
+    });
+    return null;
+  }
+}
+
+async function saveEssayDraft(payload: EssayDraftSubmission): Promise<void> {
+  await api.post<EssayDraft, EssayDraftSubmission>('/essay/drafts', payload);
+}
+
+async function loadDraftedTextsByPaper(
+  paper: Paper,
+): Promise<ReadonlyArray<string | null>> {
+  const drafts = await Promise.all(
+    paper.questions.map(async (question) => {
+      const draft = await fetchEssayDraftBestEffort(question.backendId);
+      return draft?.typedDraft ?? null;
+    }),
+  );
+  return drafts;
+}
+
+function mergeDraftTextsIntoSnapshot(
+  local: AnswerSession | null,
+  paper: Paper,
+  draftedTexts: ReadonlyArray<string | null>,
+): AnswerSession {
+  const base =
+    local && local.paperId === paper.id
+      ? local
+      : createEmptySnapshot(paper);
+  const nextTextsByQ = paper.questions.map((_, index) => {
+    const drafted = draftedTexts[index];
+    if (drafted !== null) return drafted;
+    return base.textsByQ[index] ?? '';
+  });
+  return {
+    ...base,
+    textsByQ: nextTextsByQ,
+    savedAt: Date.now(),
+  };
+}
+
+function createEmptySnapshot(paper: Paper): AnswerSession {
+  return {
+    paperId: paper.id,
+    startedAt: Date.now(),
+    phase: 'prestart',
+    currentQ: 0,
+    textsByQ: paper.questions.map(() => ''),
+    elapsedByQ: paper.questions.map(() => 0),
+    highlights: {},
+    scratch: '',
+    savedAt: Date.now(),
+  };
+}
+
+async function saveDraftedTextsByPaper(
+  data: AnswerSession,
+  paper: Paper,
+): Promise<void> {
+  await Promise.all(
+    paper.questions.map(async (question, index) => {
+      let existingDraft: EssayDraft | null;
+      try {
+        existingDraft = await fetchEssayDraft(question.backendId);
+      } catch (err) {
+        logger.warn('essay-draft.save_skipped', {
+          questionId: question.backendId,
+          err: String(err),
+        });
+        return;
+      }
+      await saveEssayDraft({
+        questionId: question.backendId,
+        typedDraft: data.textsByQ[index] ?? '',
+        handwrittenDraftMetadata:
+          existingDraft?.handwrittenDraftMetadata ?? null,
+      });
+    }),
+  );
+}

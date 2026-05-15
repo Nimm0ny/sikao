@@ -17,13 +17,17 @@ export interface ScratchClip {
 
 interface PracticeState {
   sessionData: PracticeSessionStartV2 | null;
+  currentStudyTaskId: number | null;
   answers: Record<string, string[]>;
   flaggedQuestions: Set<string>;
   // SIKAO Phase 3: 跨题 scratch chips (note: 不跟题级 NoteEditor 混淆).
   scratchClips: readonly ScratchClip[];
   // 当前题 id / 有限窗口 focus rail / dock selection.
   currentVisibleQuestionId: string | null;
-  initSession: (data: PracticeSessionStartV2) => void;
+  initSession: (
+    data: PracticeSessionStartV2,
+    options?: { studyTaskId?: number | null },
+  ) => void;
   updateAnswer: (questionId: string, answer: string[]) => void;
   getAnswer: (questionId: string) => string[];
   toggleFlag: (questionId: string) => void;
@@ -42,15 +46,17 @@ function nextClipId(): string {
 
 export const usePracticeStore = create<PracticeState>((set, get) => ({
   sessionData: null,
+  currentStudyTaskId: null,
   answers: {},
   flaggedQuestions: new Set<string>(),
   scratchClips: [],
   currentVisibleQuestionId: null,
-  initSession: (data) => {
+  initSession: (data, options) => {
     // Freeze large data to prevent overhead
     const frozenData = Object.freeze(data);
     set({
       sessionData: frozenData,
+      currentStudyTaskId: options?.studyTaskId ?? null,
       answers: { ...data.savedAnswers },
       flaggedQuestions: new Set<string>(),
       scratchClips: [],
@@ -113,6 +119,7 @@ export const usePracticeStore = create<PracticeState>((set, get) => ({
   clearSession: () => {
     set({
       sessionData: null,
+      currentStudyTaskId: null,
       answers: {},
       flaggedQuestions: new Set<string>(),
       scratchClips: [],

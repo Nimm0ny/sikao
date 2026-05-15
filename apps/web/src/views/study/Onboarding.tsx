@@ -8,6 +8,7 @@ import {
   useExamEvents,
   useCreateUserExam,
 } from '@sikao/api-client/queries/onboardingQueries';
+import { trackEvent } from '@/lib/analytics';
 import { STUDY_COPY } from '@/lib/ui-copy';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
@@ -35,7 +36,13 @@ export default function Onboarding() {
     const score = parseInt(targetScore, 10);
     if (isNaN(score) || score < 0 || score > 150) { toast.error('目标分数必须在 0-150 之间'); return; }
     setGoalMutation.mutate({ targetScore: score }, {
-      onSuccess: () => setStep('exam'),
+      onSuccess: () => {
+        trackEvent({
+          eventName: 'onboarding_goal_saved',
+          properties: { targetScore: String(score) },
+        });
+        setStep('exam');
+      },
       onError: (err) => { logger.error('goal save failed', { err: String(err) }); toast.error('保存目标失败，请重试'); },
     });
   }
@@ -52,7 +59,16 @@ export default function Onboarding() {
     createExamMutation.mutate(
       { name: examName.trim(), examDate, ...(examEventId ? { examEventId: parseInt(examEventId, 10) } : {}) },
       {
-        onSuccess: () => navigate('/study/diagnosis-result'),
+        onSuccess: () => {
+          trackEvent({
+            eventName: 'onboarding_exam_saved',
+            properties: {
+              examDate,
+              hasExamEventId: examEventId ? 'true' : 'false',
+            },
+          });
+          navigate('/study/diagnosis-result');
+        },
         onError: (err) => { logger.error('exam save failed', { err: String(err) }); toast.error('保存考试失败，请重试'); },
       },
     );
@@ -70,10 +86,11 @@ export default function Onboarding() {
 
         {step === 'goal' && (
           <form onSubmit={handleGoalSubmit}>
-            <label className="block font-medium mb-2" style={{ fontSize: 'var(--t-body)', color: 'var(--ink-2)' }}>
+            <label htmlFor="target-score" className="block font-medium mb-2" style={{ fontSize: 'var(--t-body)', color: 'var(--ink-2)' }}>
               {STUDY_COPY.ONBOARDING.GOAL_LABEL}
             </label>
-            <input type="number" min={0} max={150} className={inputCls + ' mb-1'} style={inputSty}
+            <input id="target-score" type="number" min={0} max={150} className={inputCls + ' mb-1'} style={inputSty}
+              aria-label={STUDY_COPY.ONBOARDING.GOAL_LABEL}
               placeholder={STUDY_COPY.ONBOARDING.GOAL_PLACEHOLDER}
               value={targetScore} onChange={(e) => setTargetScore(e.target.value)} required />
             <p className="mb-6" style={{ fontSize: 'var(--t-tiny)', color: 'var(--ink-4)' }}>
@@ -96,10 +113,11 @@ export default function Onboarding() {
           <form onSubmit={handleExamSubmit}>
             {examEvents && examEvents.items.length > 0 && (
               <div className="mb-4">
-                <label className="block font-medium mb-2" style={{ fontSize: 'var(--t-body)', color: 'var(--ink-2)' }}>
+                <label htmlFor="exam-event" className="block font-medium mb-2" style={{ fontSize: 'var(--t-body)', color: 'var(--ink-2)' }}>
                   {STUDY_COPY.ONBOARDING.SELECT_EXAM}
                 </label>
-                <select className={inputCls} style={inputSty} value={examEventId}
+                <select id="exam-event" className={inputCls} style={inputSty} value={examEventId}
+                  aria-label={STUDY_COPY.ONBOARDING.SELECT_EXAM}
                   onChange={(e) => handleExamSelect(e.target.value)}>
                   <option value="">— 手动填写 —</option>
                   {examEvents.items.map((ev) => (
@@ -108,16 +126,18 @@ export default function Onboarding() {
                 </select>
               </div>
             )}
-            <label className="block font-medium mb-2" style={{ fontSize: 'var(--t-body)', color: 'var(--ink-2)' }}>
+            <label htmlFor="exam-name" className="block font-medium mb-2" style={{ fontSize: 'var(--t-body)', color: 'var(--ink-2)' }}>
               {STUDY_COPY.ONBOARDING.EXAM_LABEL}
             </label>
-            <input type="text" className={inputCls + ' mb-4'} style={inputSty}
+            <input id="exam-name" type="text" className={inputCls + ' mb-4'} style={inputSty}
+              aria-label={STUDY_COPY.ONBOARDING.EXAM_LABEL}
               placeholder={STUDY_COPY.ONBOARDING.EXAM_NAME_PLACEHOLDER}
               value={examName} onChange={(e) => setExamName(e.target.value)} required />
-            <label className="block font-medium mb-2" style={{ fontSize: 'var(--t-body)', color: 'var(--ink-2)' }}>
+            <label htmlFor="exam-date" className="block font-medium mb-2" style={{ fontSize: 'var(--t-body)', color: 'var(--ink-2)' }}>
               {STUDY_COPY.ONBOARDING.EXAM_DATE_LABEL}
             </label>
-            <input type="date" className={inputCls + ' mb-6'} style={inputSty}
+            <input id="exam-date" type="date" className={inputCls + ' mb-6'} style={inputSty}
+              aria-label={STUDY_COPY.ONBOARDING.EXAM_DATE_LABEL}
               value={examDate} onChange={(e) => setExamDate(e.target.value)} required />
             <div className="flex gap-3">
               <button type="submit" className="flex-1 py-2 rounded-tiny font-medium" style={primarySty}

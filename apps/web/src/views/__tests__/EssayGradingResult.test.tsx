@@ -63,7 +63,15 @@ describe('EssayGradingResult', () => {
   });
 
   it('completed status → 渲染批改报告 + 复盘列表 + 对照答案 + 动作区', async () => {
+    let analyticsBody: { eventName: string; properties?: Record<string, string> } | null = null;
     server.use(
+      http.post('/api/v2/analytics/event', async ({ request }) => {
+        analyticsBody = (await request.json()) as {
+          eventName: string;
+          properties?: Record<string, string>;
+        };
+        return HttpResponse.json({ received: true }, { status: 202 });
+      }),
       http.get('/api/v2/essay/grades/:id', () => HttpResponse.json(RECORD('completed'))),
     );
     renderAt('/essay/grades/42');
@@ -85,6 +93,15 @@ describe('EssayGradingResult', () => {
     // 注意: "AI · 思考" 是新 hifi tag, 它本身被允许 — 不属于"机器在评分"暗示;
     // 只要不出现 "LLM" / "智能评分" / "Pro" / "模型" 字样.
     expect(screen.queryByText(/LLM|智能评分|模型/i)).not.toBeInTheDocument();
+    expect(analyticsBody).toEqual({
+      eventName: 'essay_grading_viewed',
+      sessionId: '42',
+      properties: {
+        recordId: '42',
+        questionId: '9001',
+        score: '78',
+      },
+    });
   });
 
   it('completed actions → 再练一次走 specialty 路由, 打印调用 window.print', async () => {

@@ -15,7 +15,7 @@
 // retry on failed: 拉原 question.answerText (已落 record.answerText), 走
 // POST /grade 创新 record + navigate(/grades/new-id). 旧 record immutable.
 
-import { useCallback, useMemo } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useNavigate, useParams } from 'react-router-dom';
 import { AlertCircleIcon, NavBackIcon, RefreshIcon } from '@sikao/ui/icons';
@@ -47,6 +47,7 @@ import {
 } from '@sikao/api-client/apiQueries';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
+import { trackEvent } from '@/lib/analytics';
 import { ERROR_COPY, ESSAY_GRADING_COPY } from '@/lib/ui-copy';
 import { useApplyExamTheme } from '@/styles/useThemeStore';
 import type { EssayFeedbackV2, EssayGradingV2 } from '@sikao/api-client/types/api';
@@ -100,6 +101,21 @@ export default function EssayGradingResult() {
     (questionId: number) => navigate(`/essay/specialty/${questionId}`),
     [navigate],
   );
+  const trackedRecord = query.data;
+
+  useEffect(() => {
+    if (trackedRecord?.status !== 'completed') return;
+    trackEvent({
+      eventName: 'essay_grading_viewed',
+      sessionId: String(trackedRecord.id),
+      properties: {
+        recordId: String(trackedRecord.id),
+        questionId: String(trackedRecord.questionId),
+        score:
+          trackedRecord.score == null ? 'none' : String(trackedRecord.score),
+      },
+    });
+  }, [trackedRecord]);
 
   if (!Number.isFinite(recordId)) {
     return (

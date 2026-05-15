@@ -3,6 +3,11 @@ import { Badge, Button, IconBtn, OptionRow } from '@sikao/ui/ui';
 import { ToolAiIcon } from '@sikao/ui/icons';
 import { LLM_QA_COPY } from '@/lib/ui-copy';
 import type { QuestionDetailV2, QuestionOption } from '@sikao/api-client/types/api';
+import {
+  getWrongReasonLabel,
+  WRONG_REASON_OPTIONS,
+  type WrongReasonCode,
+} from './wrongReason';
 
 // Phase 5.3d rewrite —— 从"整卡红色底" editorial 化：hairline 白卡 +
 // 左 border-l-4 danger 状态条 + Badge hairline 错题标签 + 选项用 OptionRow
@@ -16,6 +21,9 @@ export interface WrongReviewCardProps {
   readonly userKeys: readonly string[];
   readonly correctKeys: readonly string[];
   readonly categoryLabel?: string;
+  readonly answerId?: number;
+  readonly wrongReasonCode?: WrongReasonCode;
+  readonly wrongReasonSource?: 'ai' | 'user';
   /** 答题卡跳转用 anchor id, e.g. "wrong-question-123" */
   readonly anchorId?: string;
   /** ref callback, Result 持有 wrongRefs map */
@@ -24,6 +32,8 @@ export interface WrongReviewCardProps {
   readonly onViewDetail?: (questionId: string) => void;
   /** PR10: "问 AI" callback. 在 WrongHeader 右侧渲染 IconBtn. */
   readonly onAsk?: (questionId: string) => void;
+  readonly onSetWrongReason?: (answerId: number, code: WrongReasonCode) => void;
+  readonly isSavingWrongReason?: boolean;
 }
 
 function optionStatus(
@@ -83,10 +93,15 @@ export function WrongReviewCard({
   userKeys,
   correctKeys,
   categoryLabel,
+  answerId,
+  wrongReasonCode,
+  wrongReasonSource,
   anchorId,
   registerRef,
   onViewDetail,
   onAsk,
+  onSetWrongReason,
+  isSavingWrongReason = false,
 }: WrongReviewCardProps) {
   const stemHtml = { __html: DOMPurify.sanitize(question.content.stem ?? '') };
   const explanation = question.content.explanation ?? '';
@@ -126,6 +141,43 @@ export function WrongReviewCard({
           />
         ))}
       </div>
+      {wrongReasonCode !== undefined ? (
+        <div className="mt-3 rounded-card bg-surface-alt border border-line px-4 py-4">
+          <div className="flex items-center gap-2 mb-2 flex-wrap">
+            <div className="text-tiny font-bold text-ink-3">错因诊断</div>
+            <Badge tone={wrongReasonSource === 'user' ? 'accent' : 'neutral'} variant="hairline">
+              {wrongReasonSource === 'user' ? '已手动修正' : '系统建议'}
+            </Badge>
+          </div>
+          {onSetWrongReason !== undefined && answerId !== undefined ? (
+            <label className="flex flex-col gap-2 text-sm text-ink">
+              <span className="sr-only">选择错因</span>
+              <select
+                className="w-full rounded-tiny border border-line bg-surface px-3 py-2 text-sm text-ink"
+                value={wrongReasonCode}
+                onChange={(event) =>
+                  onSetWrongReason(answerId, event.target.value as WrongReasonCode)
+                }
+                disabled={isSavingWrongReason}
+                data-testid={`wrong-reason-select-${answerId}`}
+              >
+                {WRONG_REASON_OPTIONS.map((option) => (
+                  <option key={option.code} value={option.code}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : (
+            <div
+              className="text-sm text-ink"
+              data-testid={`wrong-reason-label-${question.questionId}`}
+            >
+              {getWrongReasonLabel(wrongReasonCode)}
+            </div>
+          )}
+        </div>
+      ) : null}
       {explanation !== '' ? (
         <div className="mt-3 rounded-card bg-surface-alt border border-line px-4 py-4">
           <div className="text-tiny font-bold text-ink-3 mb-2">解析</div>

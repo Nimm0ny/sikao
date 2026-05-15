@@ -25,6 +25,15 @@ import type {
   PracticeSessionResultV2,
   QuestionDetailV2,
 } from '@sikao/api-client/types/api';
+import {
+  deriveFallbackWrongReason,
+  type WrongReasonCode,
+} from './wrongReason';
+
+interface PracticeSessionAnswerWithDiagnosis extends PracticeSessionAnswerV2 {
+  readonly wrongReasonCode?: WrongReasonCode | null;
+  readonly wrongReasonSource?: 'ai' | 'user' | null;
+}
 
 export function pickTitle(result: PracticeSessionResultV2): string {
   return result.session?.paperName ?? '练习结果';
@@ -148,7 +157,26 @@ export function buildWrongItems(
   const questions = result.questions;
   const answers = result.answers;
   if (questions === undefined || answers === undefined) return [];
-  return buildWrongItemsPure(questions, answers) as readonly WrongReviewItem[];
+  const answersById = new Map<string, PracticeSessionAnswerWithDiagnosis>(
+    answers.map((answer) => [String(answer.questionId), answer]),
+  );
+  return buildWrongItemsPure(
+    questions,
+    answers,
+  ).map((item) => {
+    const answer = answersById.get(String(item.question.questionId));
+    const answerIdRaw = answer?.id;
+    const answerIdNumber =
+      answerIdRaw === undefined ? NaN : Number(answerIdRaw);
+    return {
+      ...item,
+      answerId: Number.isFinite(answerIdNumber) ? answerIdNumber : undefined,
+      wrongReasonCode:
+        answer?.wrongReasonCode ?? deriveFallbackWrongReason(item.question),
+      wrongReasonSource: answer?.wrongReasonSource ?? 'ai',
+      needsDiagnosisSync: answer?.wrongReasonCode == null,
+    };
+  }) as readonly WrongReviewItem[];
 }
 
 export function calcDurationSeconds(

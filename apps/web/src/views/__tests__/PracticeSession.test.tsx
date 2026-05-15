@@ -351,6 +351,69 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     });
   });
 
+  it('marks the originating study-plan task completed after submit', async () => {
+    const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
+    let patchBody: { status: string } | null = null;
+    let analyticsBody: { eventName: string; properties?: Record<string, string> } | null = null;
+    server.use(
+      http.post('/api/v2/practice/sessions/:id/complete', () =>
+        HttpResponse.json({ ok: true }),
+      ),
+      http.post('/api/v2/analytics/event', async ({ request }) => {
+        analyticsBody = (await request.json()) as {
+          eventName: string;
+          properties?: Record<string, string>;
+        };
+        return HttpResponse.json({ received: true }, { status: 202 });
+      }),
+      http.patch('/api/v2/study-plan/tasks/:taskId', async ({ request }) => {
+        patchBody = (await request.json()) as { status: string };
+        return HttpResponse.json({
+          id: 9,
+          taskKind: 'practice',
+          payload: {
+            paperCode: 'paper-1',
+            questionIds: [101, 102],
+            title: '任务',
+            subtitle: null,
+          },
+          displayOrder: 0,
+          status: 'completed',
+          completedAt: '2026-05-14T00:00:00Z',
+          createdAt: '2026-05-14T00:00:00Z',
+        });
+      }),
+    );
+    usePracticeStore.setState({
+      sessionData: makeSessionData(),
+      currentStudyTaskId: 9,
+      answers: { '101': ['B'] },
+      flaggedQuestions: new Set(),
+      scratchClips: [],
+      currentVisibleQuestionId: null,
+    });
+    renderWithProviders(<PracticeSession />, {
+      initialEntries: ['/practice/sessions/42'],
+    });
+    const submit = await screen.findByTestId('practice-bottom-dock-submit');
+    await user.click(submit);
+    await waitFor(() => {
+      expect(patchBody).toEqual({ status: 'completed' });
+    });
+    expect(analyticsBody).toEqual({
+      eventName: 'practice_session_completed',
+      sessionId: '42',
+      properties: {
+        answeredCount: '1',
+        studyTaskId: '9',
+      },
+    });
+    await waitFor(() => {
+      expect(usePracticeStore.getState().currentStudyTaskId).toBeNull();
+      expect(usePracticeStore.getState().sessionData).toBeNull();
+    });
+  });
+
   it('blocks submit when a multi-choice question has fewer than 2 selected (SPEC §11 #6)', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     let completeCalled = false;

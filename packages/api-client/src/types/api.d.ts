@@ -45,6 +45,8 @@ export interface QuestionDetailV2 {
   questionNo: number;
   questionKind: string;
   rendererKey: string;
+  subject?: string | null;
+  canonicalSubtype?: string | null;
   content: {
     stem: string;
     options?: QuestionOption[];
@@ -253,6 +255,16 @@ export interface PracticeSessionAnswerV2 {
   correctAnswerKeys: readonly string[];
   isCorrect: boolean;
   answeredAt: string;
+  wrongReasonCode?:
+    | 'calculation_error'
+    | 'concept_gap'
+    | 'careless_mistake'
+    | 'question_misread'
+    | 'knowledge_missing'
+    | 'logic_error'
+    | 'other'
+    | null;
+  wrongReasonSource?: 'ai' | 'user' | null;
 }
 
 // v0.2 slice 3 — knowledge-point aggregation. Mirrors backend

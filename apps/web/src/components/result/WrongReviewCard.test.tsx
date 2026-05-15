@@ -118,4 +118,25 @@ describe('WrongReviewCard', () => {
     );
     expect(screen.queryByTestId('wrong-review-detail-9001')).not.toBeInTheDocument();
   });
+
+  it('renders wrong-reason selector and triggers save callback', async () => {
+    const user = userEvent.setup();
+    const onSetWrongReason = vi.fn();
+    render(
+      <WrongReviewCard
+        question={makeQuestion()}
+        questionNo={12}
+        userKeys={['A']}
+        correctKeys={['B']}
+        answerId={77}
+        wrongReasonCode="logic_error"
+        wrongReasonSource="ai"
+        onSetWrongReason={onSetWrongReason}
+      />,
+    );
+    const select = screen.getByTestId('wrong-reason-select-77');
+    expect(select).toHaveValue('logic_error');
+    await user.selectOptions(select, 'careless_mistake');
+    expect(onSetWrongReason).toHaveBeenCalledWith(77, 'careless_mistake');
+  });
 });

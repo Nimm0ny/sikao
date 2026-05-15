@@ -27,10 +27,21 @@ vi.mock('@/components/essay/sikao', async () => {
   );
   return {
     ...actual,
-    EssayShellSikao: ({ onSubmit }: { onSubmit: () => void }) => (
-      <button data-testid="mock-shell-sikao-submit" onClick={onSubmit}>
-        mock sikao submit
-      </button>
+    EssayShellSikao: ({
+      onSubmit,
+      onAutosave,
+    }: {
+      onSubmit: () => void;
+      onAutosave?: () => void;
+    }) => (
+      <div>
+        <button data-testid="mock-shell-sikao-submit" onClick={onSubmit}>
+          mock sikao submit
+        </button>
+        <button data-testid="mock-shell-sikao-autosave" onClick={() => onAutosave?.()}>
+          mock sikao autosave
+        </button>
+      </div>
     ),
   };
 });
@@ -92,10 +103,183 @@ describe('EssayExamSikao', () => {
     expect(screen.getByTestId('essay-exam-loading')).toBeInTheDocument();
   });
 
-  it('handleSubmit success → navigate to /essay/exam/results with paperCode/ids/total', async () => {
-    navigate.mockClear();
+  it('hydrates typed draft from backend essay draft when available', async () => {
     server.use(
       http.get('/api/v2/papers/:code/questions', () => HttpResponse.json(mockEssayQuestions)),
+      http.get('/api/v2/essay/drafts/:questionId', ({ params }) =>
+        HttpResponse.json({
+          id: 1,
+          questionId: Number(params.questionId),
+          typedDraft: '后端草稿内容',
+          handwrittenDraftMetadata: null,
+          savedAt: '2026-05-14T00:00:00Z',
+          updatedAt: '2026-05-14T00:00:00Z',
+        }),
+      ),
+    );
+
+    renderWithProviders(<EssayExamSikao />, {
+      initialEntries: ['/essay/exam/AIPTA-2026-01'],
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-shell-sikao-submit')).toBeInTheDocument();
+    });
+    expect(useExamSession.getState().textsByQ[0]).toBe('后端草稿内容');
+  });
+
+  it('ignores essay draft load failure and still renders the exam shell', async () => {
+    server.use(
+      http.get('/api/v2/papers/:code/questions', () => HttpResponse.json(mockEssayQuestions)),
+      http.get('/api/v2/essay/drafts/:questionId', () =>
+        HttpResponse.json({ detail: 'draft boom' }, { status: 500 }),
+      ),
+    );
+
+    renderWithProviders(<EssayExamSikao />, {
+      initialEntries: ['/essay/exam/AIPTA-2026-01'],
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-shell-sikao-submit')).toBeInTheDocument();
+    });
+  });
+
+  it('autosave syncs typed draft to backend essay drafts', async () => {
+    let savedDraftBody: { questionId: number; typedDraft: string } | null = null;
+    server.use(
+      http.get('/api/v2/papers/:code/questions', () => HttpResponse.json(mockEssayQuestions)),
+      http.post('/api/v2/essay/drafts', async ({ request }) => {
+        savedDraftBody = (await request.json()) as {
+          questionId: number;
+          typedDraft: string;
+        };
+        return HttpResponse.json({
+          id: 1,
+          questionId: savedDraftBody.questionId,
+          typedDraft: savedDraftBody.typedDraft,
+          handwrittenDraftMetadata: null,
+          savedAt: '2026-05-14T00:00:00Z',
+          updatedAt: '2026-05-14T00:00:00Z',
+        });
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderWithProviders(<EssayExamSikao />, {
+      initialEntries: ['/essay/exam/AIPTA-2026-01'],
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-shell-sikao-submit')).toBeInTheDocument();
+    });
+
+    useExamSession.setState({
+      textsByQ: ['本次自动保存正文'],
+      phase: 'running',
+    });
+
+    await user.click(screen.getByTestId('mock-shell-sikao-autosave'));
+
+    await waitFor(() => {
+      expect(savedDraftBody).toEqual({
+        questionId: 1001,
+        typedDraft: '本次自动保存正文',
+        handwrittenDraftMetadata: null,
+      });
+    });
+  });
+
+  it('autosave preserves existing handwritten draft metadata', async () => {
+    let savedDraftBody: {
+      questionId: number;
+      typedDraft: string;
+      handwrittenDraftMetadata: Record<string, unknown> | null;
+    } | null = null;
+    server.use(
+      http.get('/api/v2/papers/:code/questions', () => HttpResponse.json(mockEssayQuestions)),
+      http.get('/api/v2/essay/drafts/:questionId', ({ params }) =>
+        HttpResponse.json({
+          id: 2,
+          questionId: Number(params.questionId),
+          typedDraft: '旧稿',
+          handwrittenDraftMetadata: { asset_id: 7, stroke_count: 12 },
+          savedAt: '2026-05-14T00:00:00Z',
+          updatedAt: '2026-05-14T00:00:00Z',
+        }),
+      ),
+      http.post('/api/v2/essay/drafts', async ({ request }) => {
+        savedDraftBody = (await request.json()) as {
+          questionId: number;
+          typedDraft: string;
+          handwrittenDraftMetadata: Record<string, unknown> | null;
+        };
+        return HttpResponse.json({
+          id: 2,
+          questionId: savedDraftBody.questionId,
+          typedDraft: savedDraftBody.typedDraft,
+          handwrittenDraftMetadata: savedDraftBody.handwrittenDraftMetadata,
+          savedAt: '2026-05-14T00:00:00Z',
+          updatedAt: '2026-05-14T00:00:00Z',
+        });
+      }),
+    );
+
+    const user = userEvent.setup();
+    renderWithProviders(<EssayExamSikao />, {
+      initialEntries: ['/essay/exam/AIPTA-2026-01'],
+    });
+
+    await waitFor(() => {
+      expect(screen.getByTestId('mock-shell-sikao-submit')).toBeInTheDocument();
+    });
+
+    useExamSession.setState({
+      textsByQ: ['新正文'],
+      phase: 'running',
+    });
+
+    await user.click(screen.getByTestId('mock-shell-sikao-autosave'));
+
+    await waitFor(() => {
+      expect(savedDraftBody).toEqual({
+        questionId: 1001,
+        typedDraft: '新正文',
+        handwrittenDraftMetadata: { asset_id: 7, stroke_count: 12 },
+      });
+    });
+  });
+
+  it('handleSubmit success → navigate to /essay/exam/results with paperCode/ids/total', async () => {
+    navigate.mockClear();
+    let analyticsBody: { eventName: string; properties?: Record<string, string> } | null = null;
+    let patchedTaskBody: { status: string } | null = null;
+    server.use(
+      http.get('/api/v2/papers/:code/questions', () => HttpResponse.json(mockEssayQuestions)),
+      http.post('/api/v2/analytics/event', async ({ request }) => {
+        analyticsBody = (await request.json()) as {
+          eventName: string;
+          properties?: Record<string, string>;
+        };
+        return HttpResponse.json({ received: true }, { status: 202 });
+      }),
+      http.patch('/api/v2/study-plan/tasks/:taskId', async ({ request }) => {
+        patchedTaskBody = (await request.json()) as { status: string };
+        return HttpResponse.json({
+          id: 9,
+          taskKind: 'essay_writing',
+          payload: {
+            paperCode: 'AIPTA-2026-01',
+            questionId: 1001,
+            title: '申论任务',
+            subtitle: null,
+          },
+          displayOrder: 0,
+          status: 'completed',
+          completedAt: '2026-05-14T00:00:00Z',
+          createdAt: '2026-05-14T00:00:00Z',
+        });
+      }),
       http.post('/api/v2/essay/grade', async ({ request }) => {
         const body = (await request.json()) as { questionId: number };
         return HttpResponse.json({
@@ -113,7 +297,12 @@ describe('EssayExamSikao', () => {
     );
     const user = userEvent.setup();
     renderWithProviders(<EssayExamSikao />, {
-      initialEntries: ['/essay/exam/AIPTA-2026-01'],
+      initialEntries: [
+        {
+          pathname: '/essay/exam/AIPTA-2026-01',
+          state: { studyTaskId: 9 },
+        },
+      ],
     });
 
     await waitFor(() => {
@@ -135,6 +324,17 @@ describe('EssayExamSikao', () => {
     expect(navUrl).toContain('paperCode=AIPTA-2026-01');
     expect(navUrl).toContain('ids=1001');
     expect(navUrl).toContain('total=1');
+    expect(patchedTaskBody).toEqual({ status: 'completed' });
+    expect(analyticsBody).toEqual({
+      eventName: 'essay_exam_submitted',
+      sessionId: 'AIPTA-2026-01',
+      properties: {
+        paperCode: 'AIPTA-2026-01',
+        totalQuestions: '1',
+        submittedRecords: '1',
+        studyTaskId: '9',
+      },
+    });
   });
 
   it('handleSubmit failure → phase rolled back to running (user can retry)', async () => {

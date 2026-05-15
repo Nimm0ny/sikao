@@ -1,14 +1,24 @@
 import { useNavigate } from 'react-router-dom';
 import { useStudyPlanToday, usePatchStudyTask } from '@sikao/api-client/queries/studyPlanQueries';
 import { useStudyPlanRouting } from '@sikao/domain/study-record/useStudyPlanRouting';
+import { trackEvent } from '@/lib/analytics';
 import { STUDY_COPY } from '@/lib/ui-copy';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
 import type { StudyTaskResponse } from '@sikao/api-client/types/study-plan';
+import { OnboardingGate } from '@/router/OnboardingGate';
 
 // PR-2 MVP: today task list
 const KIND_LABEL: Record<string, string> = { practice: '行测练习', review_wrong: '错题复习', essay_writing: '申论练习' };
 export default function StudyToday() {
+  return (
+    <OnboardingGate>
+      <StudyTodayContent />
+    </OnboardingGate>
+  );
+}
+
+function StudyTodayContent() {
   const navigate = useNavigate();
   const { data: plan, isLoading, isError, refetch } = useStudyPlanToday();
   const patchTask = usePatchStudyTask();
@@ -18,8 +28,24 @@ export default function StudyToday() {
   const done = tasks.filter((t) => t.status !== 'pending');
   function handleSkip(taskId: number) {
     patchTask.mutate({ id: taskId, status: 'skipped' }, {
+      onSuccess: () => {
+        trackEvent({
+          eventName: 'study_task_skipped',
+          properties: { taskId: String(taskId) },
+        });
+      },
       onError: (err) => { logger.error('skip task failed', { err: String(err) }); toast.error('跳过任务失败'); },
     });
+  }
+  function handleStart(task: StudyTaskResponse) {
+    trackEvent({
+      eventName: 'study_task_started',
+      properties: {
+        taskId: String(task.id),
+        taskKind: task.taskKind,
+      },
+    });
+    handleTaskClick(task);
   }
   const cs = { background: 'var(--paper-2)', boxShadow: 'var(--shadow-card)' };
   const ts = { ...cs, border: '1px solid var(--line-1)' };
@@ -58,7 +84,7 @@ export default function StudyToday() {
         {tasks.length === 0 && (<div className='p-6 rounded-card mb-4' style={cs}><p className='font-bold mb-1' style={{ fontSize: 'var(--t-body)', color: 'var(--ink-2)' }}>{STUDY_COPY.TODAY.EMPTY_TITLE}</p><button className='mt-3 py-2 px-4 rounded-tiny font-medium' style={{ background: 'var(--accent-1)', color: '#fff', fontSize: 'var(--t-body)' }} onClick={() => navigate('/practice/center')}>{STUDY_COPY.TODAY.GO_PRACTICE}</button></div>)}
         {tasks.length > 0 && pending.length === 0 && (<div className='p-4 rounded-card mb-4' style={cs}><p className='font-bold' style={{ color: 'var(--ok)', fontSize: 'var(--t-h3)' }}>{STUDY_COPY.TODAY.ALL_DONE_TITLE}</p></div>)}
         <div className='space-y-3 mb-6'>
-          {pending.map((t) => (<div key={t.id} className='p-4 rounded-card' style={ts}><p className='font-medium mb-1' style={{ fontSize: 'var(--t-body)', color: 'var(--ink-1)' }}>{t.payload.title || (KIND_LABEL[t.taskKind] ?? t.taskKind)}</p>{t.payload.subtitle ? <p className='mb-3' style={{ fontSize: 'var(--t-small)', color: 'var(--ink-3)' }}>{t.payload.subtitle}</p> : <p className='mb-3' style={{ fontSize: 'var(--t-small)', color: 'var(--ink-3)' }}>{KIND_LABEL[t.taskKind] ?? t.taskKind}</p>}<div className='flex gap-2'><button className='flex-1 py-2 rounded-tiny font-medium' style={{ background: 'var(--accent-1)', color: '#fff', fontSize: 'var(--t-small)' }} onClick={() => handleTaskClick(t)} disabled={startingTaskId !== null || patchTask.isPending}>{STUDY_COPY.TODAY.TASK_START}</button><button className='py-2 px-3 rounded-tiny' style={{ fontSize: 'var(--t-small)', color: 'var(--ink-4)', border: '1px solid var(--line-2)' }} onClick={() => handleSkip(t.id)} disabled={patchTask.isPending || startingTaskId !== null}>{STUDY_COPY.TODAY.TASK_SKIP}</button></div></div>))}
+          {pending.map((t) => (<div key={t.id} className='p-4 rounded-card' style={ts}><p className='font-medium mb-1' style={{ fontSize: 'var(--t-body)', color: 'var(--ink-1)' }}>{t.payload.title || (KIND_LABEL[t.taskKind] ?? t.taskKind)}</p>{t.payload.subtitle ? <p className='mb-3' style={{ fontSize: 'var(--t-small)', color: 'var(--ink-3)' }}>{t.payload.subtitle}</p> : <p className='mb-3' style={{ fontSize: 'var(--t-small)', color: 'var(--ink-3)' }}>{KIND_LABEL[t.taskKind] ?? t.taskKind}</p>}<div className='flex gap-2'><button className='flex-1 py-2 rounded-tiny font-medium' style={{ background: 'var(--accent-1)', color: '#fff', fontSize: 'var(--t-small)' }} onClick={() => handleStart(t)} disabled={startingTaskId !== null || patchTask.isPending}>{STUDY_COPY.TODAY.TASK_START}</button><button className='py-2 px-3 rounded-tiny' style={{ fontSize: 'var(--t-small)', color: 'var(--ink-4)', border: '1px solid var(--line-2)' }} onClick={() => handleSkip(t.id)} disabled={patchTask.isPending || startingTaskId !== null}>{STUDY_COPY.TODAY.TASK_SKIP}</button></div></div>))}
           {done.map((t) => (<div key={t.id} className='p-4 rounded-card opacity-60' style={{ background: 'var(--paper-2)' }}><p style={{ fontSize: 'var(--t-body)', color: 'var(--ink-3)', textDecoration: t.status === 'completed' ? 'line-through' : 'none' }}>{t.payload.title || (KIND_LABEL[t.taskKind] ?? t.taskKind)}</p></div>))}
         </div>
         <div className='flex gap-3'>
