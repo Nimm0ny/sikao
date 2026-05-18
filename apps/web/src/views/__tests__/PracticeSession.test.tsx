@@ -23,22 +23,39 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+const intersectionObservers: StubIntersectionObserver[] = [];
+
 class StubIntersectionObserver {
-  observe = vi.fn();
-  unobserve = vi.fn();
+  readonly callback: IntersectionObserverCallback;
+  readonly observed = new Set<Element>();
+  observe = vi.fn((target: Element) => {
+    this.observed.add(target);
+  });
+  unobserve = vi.fn((target: Element) => {
+    this.observed.delete(target);
+  });
   disconnect = vi.fn();
   takeRecords = vi.fn(() => []);
   root = null;
   rootMargin = '';
   thresholds: ReadonlyArray<number> = [];
-  constructor(_cb: IntersectionObserverCallback) {
-    void _cb;
+  constructor(cb: IntersectionObserverCallback) {
+    this.callback = cb;
+    intersectionObservers.push(this);
+  }
+  emit(entries: ReadonlyArray<{ readonly target: Element; readonly isIntersecting: boolean }>) {
+    const records = entries.map((entry) => ({
+      target: entry.target,
+      isIntersecting: entry.isIntersecting,
+    })) as IntersectionObserverEntry[];
+    this.callback(records, this as unknown as IntersectionObserver);
   }
 }
 
 describe('PracticeSession (SIKAO Fb core)', () => {
   beforeEach(() => {
     vi.useFakeTimers({ shouldAdvanceTime: true });
+    intersectionObservers.length = 0;
     usePracticeStore.setState({
       sessionData: null,
       answers: {},
@@ -86,11 +103,13 @@ describe('PracticeSession (SIKAO Fb core)', () => {
       initialEntries: ['/practice/sessions/42'],
     });
     expect(await screen.findByTestId('practice-session-fb')).toBeInTheDocument();
-    expect(screen.getByTestId('fb-layout')).toHaveClass('grid-cols-1');
+    expect(screen.getByTestId('fb-layout')).toBeInTheDocument();
     expect(screen.getByTestId('fb-topbar')).toHaveClass('fb-top');
     expect(screen.getByTestId('fb-card-101')).toHaveClass('fb-card');
-    await userEvent.click(screen.getByTestId('practice-bottom-dock-open-drawer'));
-    expect(screen.getByTestId('fb-dock-panel')).toHaveClass('fb-dock');
+    expect(screen.getByTestId('fb-floating-answer-drawer')).toHaveAttribute(
+      'data-collapsed',
+      'true',
+    );
   });
 
   it('renders the first and second questions together in the core answering area', async () => {
@@ -108,7 +127,7 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     expect(screen.getByText('第二题题干')).toBeInTheDocument();
   });
 
-  it('scrolls to the selected question from dock and closes the dock', async () => {
+  it('scrolls to the selected question from floating answer drawer and collapses it', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     usePracticeStore.setState({
       sessionData: makeSessionData(),
@@ -124,9 +143,9 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     const cardNode102 = await screen.findByTestId('fb-question-card-node-102');
     const scrollIntoView = vi.fn();
     cardNode102.scrollIntoView = scrollIntoView;
-    await user.click(screen.getByTestId('practice-bottom-dock-open-drawer'));
-    expect(screen.getByTestId('fb-dock-panel')).toBeInTheDocument();
-    await user.click(screen.getByTestId('fb-dock-cell-102'));
+    await user.click(screen.getByTestId('fb-floating-answer-toggle'));
+    expect(screen.getByTestId('fb-floating-answer-body')).toBeInTheDocument();
+    await user.click(screen.getByTestId('fb-floating-cell-102'));
     await waitFor(() => {
       expect(scrollIntoView).toHaveBeenCalledWith({
         behavior: 'smooth',
@@ -137,13 +156,41 @@ describe('PracticeSession (SIKAO Fb core)', () => {
       expect(card102).toHaveAttribute('data-current', 'true');
     });
     await waitFor(() => {
-      expect(screen.getByTestId('fb-dock-panel')).toHaveStyle({
-        transform: 'translateX(100%)',
-      });
+      expect(screen.getByTestId('fb-floating-answer-drawer')).toHaveAttribute(
+        'data-collapsed',
+        'true',
+      );
     });
   });
 
-  it('hides scratch col before 5 answers (progressive disclosure)', async () => {
+  it('updates the current question when a normal question card becomes visible', async () => {
+    usePracticeStore.setState({
+      sessionData: makeSessionData(),
+      answers: {},
+      flaggedQuestions: new Set(),
+      scratchClips: [],
+      currentVisibleQuestionId: null,
+    });
+    renderWithProviders(<PracticeSession />, {
+      initialEntries: ['/practice/sessions/42'],
+    });
+    const card102Node = await screen.findByTestId('fb-question-card-node-102');
+    const observer = intersectionObservers.at(-1);
+    if (observer === undefined) {
+      throw new Error('Expected PracticeSession to create a visibility observer.');
+    }
+
+    act(() => {
+      observer.emit([{ target: card102Node, isIntersecting: true }]);
+    });
+
+    await waitFor(() => {
+      expect(usePracticeStore.getState().currentVisibleQuestionId).toBe('102');
+    });
+    expect(screen.getByTestId('fb-card-102')).toHaveAttribute('data-current', 'true');
+  });
+
+  it('hides scratch FAB before 5 answers (progressive disclosure)', async () => {
     usePracticeStore.setState({
       sessionData: makeSessionData(),
       answers: { '101': ['A'], '102': ['B'] },
@@ -154,12 +201,11 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     renderWithProviders(<PracticeSession />, {
       initialEntries: ['/practice/sessions/42'],
     });
-    const scratchCol = await screen.findByTestId('fb-scratch-col');
-    expect(scratchCol).toHaveAttribute('data-show', 'false');
-    expect(scratchCol).toHaveAttribute('aria-hidden', 'true');
+    await screen.findByTestId('practice-session-fb');
+    expect(screen.queryByTestId('fb-scratch-fab')).not.toBeInTheDocument();
   });
 
-  it('shows scratch col after 5 answers (progressive disclosure)', async () => {
+  it('shows scratch FAB after 5 answers (progressive disclosure)', async () => {
     usePracticeStore.setState({
       sessionData: makeBigSessionData(),
       answers: { '1': ['A'], '2': ['A'], '3': ['A'], '4': ['A'], '5': ['A'] },
@@ -170,9 +216,8 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     renderWithProviders(<PracticeSession />, {
       initialEntries: ['/practice/sessions/42'],
     });
-    const scratchCol = await screen.findByTestId('fb-scratch-col');
-    expect(scratchCol).toHaveAttribute('data-show', 'true');
-    expect(scratchCol).toHaveAttribute('aria-hidden', 'false');
+    expect(await screen.findByTestId('fb-scratch-fab')).toBeInTheDocument();
+    expect(screen.getByTestId('fb-scratch-col')).toHaveAttribute('data-show', 'true');
   });
 
   it('selecting an option updates store.answers', async () => {
@@ -195,7 +240,7 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     });
   });
 
-  it('opens FbDrawer on bottom dock open-drawer button click', async () => {
+  it('expands floating answer drawer from its toggle', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     usePracticeStore.setState({
       sessionData: makeSessionData(),
@@ -207,14 +252,14 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     renderWithProviders(<PracticeSession />, {
       initialEntries: ['/practice/sessions/42'],
     });
-    expect(screen.queryByTestId('fb-dock-panel')).not.toBeInTheDocument();
-    await user.click(screen.getByTestId('practice-bottom-dock-open-drawer'));
+    expect(screen.queryByTestId('fb-floating-answer-body')).not.toBeInTheDocument();
+    await user.click(screen.getByTestId('fb-floating-answer-toggle'));
     await waitFor(() =>
-      expect(screen.getByTestId('fb-dock-panel')).toBeInTheDocument(),
+      expect(screen.getByTestId('fb-floating-answer-body')).toBeInTheDocument(),
     );
   });
 
-  it('keeps complete question navigation inside the dock', async () => {
+  it('keeps complete question navigation inside the floating answer drawer', async () => {
     const user = userEvent.setup({ advanceTimers: vi.advanceTimersByTime });
     usePracticeStore.setState({
       sessionData: makeSessionData(),
@@ -226,10 +271,10 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     renderWithProviders(<PracticeSession />, {
       initialEntries: ['/practice/sessions/42'],
     });
-    expect(screen.queryByTestId('fb-dock-cell-102')).not.toBeInTheDocument();
-    await user.click(screen.getByTestId('practice-bottom-dock-open-drawer'));
-    expect(screen.getByTestId('fb-dock-cell-101')).toBeInTheDocument();
-    expect(screen.getByTestId('fb-dock-cell-102')).toBeInTheDocument();
+    expect(screen.queryByTestId('fb-floating-cell-102')).not.toBeInTheDocument();
+    await user.click(screen.getByTestId('fb-floating-answer-toggle'));
+    expect(screen.getByTestId('fb-floating-cell-101')).toBeInTheDocument();
+    expect(screen.getByTestId('fb-floating-cell-102')).toBeInTheDocument();
   });
 
   it('uses SVG-only accessible tool buttons without native title attributes', async () => {
@@ -244,20 +289,16 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     renderWithProviders(<PracticeSession />, {
       initialEntries: ['/practice/sessions/42'],
     });
-    await user.click(screen.getByTestId('practice-bottom-dock-open-drawer'));
+    await user.click(screen.getByTestId('fb-floating-answer-toggle'));
     const toolButtons = [
-      screen.getByTestId('practice-bottom-dock-open-drawer'),
-      screen.getByTestId('practice-bottom-dock-submit'),
-      screen.getByTestId('practice-bottom-dock-prev'),
-      screen.getByTestId('practice-bottom-dock-next'),
+      screen.getByTestId('fb-floating-answer-toggle'),
+      screen.getByTestId('fb-topbar-back'),
       screen.getByTestId('fb-topbar-pause'),
       screen.getByTestId('fb-topbar-settings'),
-      screen.getByTestId('fb-reading-exit'),
       screen.getByTestId('fb-action-fav-101'),
       screen.getByTestId('fb-action-mark-101'),
       screen.getByTestId('fb-action-note-101'),
-      screen.getByTestId('fb-dock-close'),
-      screen.getByTestId('fb-scratch-add-submit'),
+      screen.getByTestId('fb-scratch-fab'),
     ];
     for (const button of toolButtons) {
       expect(button).toHaveAccessibleName();
@@ -265,15 +306,13 @@ describe('PracticeSession (SIKAO Fb core)', () => {
       expect(button.querySelector('svg')).not.toBeNull();
       expect(button).toHaveTextContent('');
     }
-    await user.type(screen.getByTestId('fb-scratch-add-input'), 'mark this');
-    await waitFor(() =>
-      expect(screen.getByTestId('fb-scratch-add-submit')).not.toBeDisabled(),
-    );
-    await user.hover(screen.getByTestId('fb-dock-close'));
-    expect(await screen.findByRole('tooltip', { name: '关闭' })).toBeInTheDocument();
-    await user.unhover(screen.getByTestId('fb-dock-close'));
-    await user.hover(screen.getByTestId('fb-scratch-add-submit'));
-    expect(await screen.findByRole('tooltip', { name: '添加便签' })).toBeInTheDocument();
+    const submit = screen.getByTestId('fb-topbar-submit');
+    expect(submit).toHaveAccessibleName('交卷');
+    expect(submit.querySelector('svg')).not.toBeNull();
+    expect(submit).toHaveTextContent('交卷');
+    expect(submit).not.toHaveAttribute('title');
+    await user.hover(screen.getByTestId('fb-floating-answer-toggle'));
+    expect(await screen.findByRole('tooltip', { name: '收起答题卡' })).toBeInTheDocument();
   });
 
   it('does not render AI, Pro, or LLM copy in the session core', async () => {
@@ -321,7 +360,7 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     });
     const card = await screen.findByTestId('fb-card-101');
     expect(card).toHaveAttribute('data-current', 'true');
-    expect(card).toHaveClass('border-l-2');
+    expect(card).toHaveClass('border-exam-accent');
   });
 
   it('submits answers via /complete and navigates to result', async () => {
@@ -344,7 +383,7 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     renderWithProviders(<PracticeSession />, {
       initialEntries: ['/practice/sessions/42'],
     });
-    const submit = await screen.findByTestId('practice-bottom-dock-submit');
+    const submit = await screen.findByTestId('fb-topbar-submit');
     await user.click(submit);
     await waitFor(() => {
       expect(capturedAnswers).toEqual({ '101': ['B'] });
@@ -434,7 +473,7 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     renderWithProviders(<PracticeSession />, {
       initialEntries: ['/practice/sessions/42'],
     });
-    const submit = await screen.findByTestId('practice-bottom-dock-submit');
+    const submit = await screen.findByTestId('fb-topbar-submit');
     await user.click(submit);
     // submit 不应该被调到 BE.
     expect(completeCalled).toBe(false);
@@ -459,7 +498,7 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     renderWithProviders(<PracticeSession />, {
       initialEntries: ['/practice/sessions/42'],
     });
-    const submit = await screen.findByTestId('practice-bottom-dock-submit');
+    const submit = await screen.findByTestId('fb-topbar-submit');
     await user.click(submit);
     await waitFor(() => {
       expect(completeCalled).toBe(true);

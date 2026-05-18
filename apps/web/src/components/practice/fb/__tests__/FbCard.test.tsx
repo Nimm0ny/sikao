@@ -44,14 +44,14 @@ describe('FbCard', () => {
     onOpenNote: vi.fn(),
   };
 
-  it('renders bare question number in serif 30px (no Q prefix)', () => {
+  it('renders compact question number in serif (no Q prefix)', () => {
     render(<FbCard {...baseProps} />);
     const num = screen.getByLabelText('第 16 题');
     expect(num).toBeInTheDocument();
-    expect(num.textContent).toBe('16');
+    expect(num.textContent).toBe('16.');
     expect(screen.queryByText('Q16')).not.toBeInTheDocument();
-    expect(num.style.fontSize).toBe('30px');
     expect(num.className).toMatch(/font-serif/);
+    expect(num.className).toMatch(/text-h3/);
   });
 
   it('renders section title and stem', () => {
@@ -60,32 +60,32 @@ describe('FbCard', () => {
     expect(screen.getByText('题干文字')).toBeInTheDocument();
   });
 
-  it('isCurrent=true sets data-current + aria-current + 72px sidebar grid', () => {
+  it('isCurrent=true sets data-current + aria-current + compact card grid', () => {
     render(<FbCard {...baseProps} isCurrent />);
     const card = screen.getByTestId('fb-card-101');
     expect(card).toHaveAttribute('data-current');
     expect(card).toHaveAttribute('aria-current', 'true');
-    expect(card.style.gridTemplateColumns).toBe('72px 1fr');
+    expect(card.className).toContain('md:grid-cols-[32px_minmax(0,1fr)_auto]');
   });
 
   it('isCurrent=true uses exam-accent (not generic accent)', () => {
     render(<FbCard {...baseProps} isCurrent />);
     const card = screen.getByTestId('fb-card-101');
-    expect(card.className).toContain('border-l-exam-accent');
+    expect(card.className).toContain('border-exam-accent');
     const num = screen.getByLabelText('第 16 题');
     expect(num.className).toMatch(/text-exam-accent/);
   });
 
-  it('isAnswered + non-current → opacity-85 (focus dim)', () => {
+  it('isAnswered + non-current → opacity-90 (focus dim)', () => {
     render(<FbCard {...baseProps} isAnswered isCurrent={false} />);
     const card = screen.getByTestId('fb-card-101');
-    expect(card.className).toContain('opacity-85');
+    expect(card.className).toContain('opacity-90');
   });
 
   it('isCurrent overrides isAnswered (focus, no dim)', () => {
     render(<FbCard {...baseProps} isAnswered isCurrent />);
     const card = screen.getByTestId('fb-card-101');
-    expect(card.className).not.toContain('opacity-85');
+    expect(card.className).not.toContain('opacity-90');
     expect(card.className).toContain('opacity-100');
   });
 

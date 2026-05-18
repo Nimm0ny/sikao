@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { Route, Routes } from 'react-router-dom';
-import { screen } from '@testing-library/react';
-import { type ReactNode } from 'react';
+import { fireEvent, screen } from '@testing-library/react';
+import { useMemo, type ReactNode } from 'react';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { TabletShell } from '../TabletShell';
 import { AsideOutletProvider } from '../../AsideOutlet';
@@ -42,7 +42,11 @@ const matchMediaMock = (orientation: 'portrait' | 'landscape') => {
 
 function PanelInjector({ children }: { readonly children: ReactNode }) {
   // 注入一个 analysis panel 让 Aside 在 landscape 显示.
-  useAsideSet('analysis', <div data-testid="injected-analysis">解析内容</div>);
+  const analysisPanel = useMemo(
+    () => <div data-testid="injected-analysis">解析内容</div>,
+    [],
+  );
+  useAsideSet('analysis', analysisPanel);
   return <>{children}</>;
 }
 
@@ -119,7 +123,12 @@ describe('TabletShell · orientation dispatch (PR7 + PR11)', () => {
     renderShell('landscape', true);
     const aside = screen.getByTestId('tablet-aside');
     expect(aside).toBeInTheDocument();
-    expect(aside).toHaveAttribute('aria-label', '解析 / 笔记 / AI');
+    expect(aside).toHaveAttribute('aria-label', '展开 解析 / 笔记 / AI');
+    fireEvent.click(aside);
+    expect(screen.getByTestId('tablet-aside')).toHaveAttribute(
+      'aria-label',
+      '解析 / 笔记 / AI',
+    );
     // analysis tab 默认 active (panels 中第一个非空 key)
     expect(screen.getByTestId('tablet-aside-tab-analysis')).toHaveAttribute(
       'aria-selected',

@@ -1,14 +1,9 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { FbReadingCol } from '../FbReadingCol';
 import type { QuestionDetailV2, MaterialGroup } from '@sikao/api-client/types/api';
 import type { SectionItemsGroup } from '../sectionGroups';
-
-// P4/3 FbReadingCol wire 测试:
-// - 单题 kind 渲 FbCard
-// - material-group kind 渲 FbPassage + 子题 FbCard + anchor strip
-// - 锚跳 button 触发 scrollIntoView
 
 function q(id: number, stem: string): QuestionDetailV2 {
   return {
@@ -48,28 +43,29 @@ const baseHandlers = {
   onAnswer: vi.fn(),
   onToggleMark: vi.fn(),
   onOpenNote: vi.fn(),
-  onExit: vi.fn(),
-  registerQuestionCard: vi.fn(),
+  registerQuestion: vi.fn(),
+  unregisterQuestion: vi.fn(),
+  onCurrentQuestionChange: vi.fn(),
   onTogglePassagesCollapsed: vi.fn(),
-  onForceExpandPassages: vi.fn(),
 };
 
-function renderFbReadingCol(groups: readonly SectionItemsGroup[]) {
+function renderFbReadingCol(
+  groups: readonly SectionItemsGroup[],
+  options: { readonly passagesCollapsed?: boolean } = {},
+) {
   return render(
     <FbReadingCol
       sectionItemsGroups={groups}
       currentVisibleQid={null}
       answers={{}}
       flagged={new Set()}
-      answeredCount={0}
-      totalQuestions={1}
-      passagesCollapsed={false}
+      passagesCollapsed={options.passagesCollapsed ?? false}
       {...baseHandlers}
     />,
   );
 }
 
-describe('FbReadingCol (P4/3 wire)', () => {
+describe('FbReadingCol redesign wire', () => {
   it('renders single FbCard for question kind item', () => {
     const groups: SectionItemsGroup[] = [
       {
@@ -81,10 +77,13 @@ describe('FbReadingCol (P4/3 wire)', () => {
     ];
     renderFbReadingCol(groups);
     expect(screen.getByTestId('fb-question-card-node-1')).toBeInTheDocument();
-    expect(screen.queryByTestId(/fb-passage/)).not.toBeInTheDocument();
+    expect(screen.queryByTestId(/fb-material-analysis/)).not.toBeInTheDocument();
+    expect(baseHandlers.registerQuestion).toHaveBeenCalledWith(
+      expect.objectContaining({ questionId: '1' }),
+    );
   });
 
-  it('renders FbPassage + sub-question FbCards for material-group kind', () => {
+  it('renders one material pane and sub-question cards for material-group kind', () => {
     const subQs = [q(101, '资料分析子题 1'), q(102, '资料分析子题 2')];
     const materialGroup = mg('mg-1', '<p>段一</p><p>段二</p>', subQs);
     const groups: SectionItemsGroup[] = [
@@ -105,15 +104,17 @@ describe('FbReadingCol (P4/3 wire)', () => {
       },
     ];
     renderFbReadingCol(groups);
-    expect(screen.getByTestId('fb-passage')).toBeInTheDocument();
-    expect(screen.getByTestId('fb-material-group-mg-1')).toBeInTheDocument();
-    expect(screen.getByTestId('fb-question-card-node-101')).toBeInTheDocument();
-    expect(screen.getByTestId('fb-question-card-node-102')).toBeInTheDocument();
+    expect(screen.getByTestId('fb-material-analysis-mg-1')).toBeInTheDocument();
+    expect(screen.getByTestId('fb-material-body-mg-1')).toBeInTheDocument();
+    expect(screen.getByTestId('fb-material-question-node-101')).toBeInTheDocument();
+    expect(screen.getByTestId('fb-material-question-node-102')).toBeInTheDocument();
+    expect(screen.getAllByText('段一')).toHaveLength(1);
   });
 
-  it('renders anchor strip after each sub-question with one button per paragraph', () => {
-    const subQs = [q(201, '子题 1')];
-    const materialGroup = mg('mg-2', '<p>段一</p><p>段二</p><p>段三</p>', subQs);
+  it('tab click scrolls the right-side question pane and updates current question', async () => {
+    const user = userEvent.setup();
+    const subQs = [q(201, '子题 1'), q(202, '子题 2')];
+    const materialGroup = mg('mg-2', '<p>段一</p><p>段二</p>', subQs);
     const groups: SectionItemsGroup[] = [
       {
         sectionId: 'sec-A',
@@ -123,22 +124,23 @@ describe('FbReadingCol (P4/3 wire)', () => {
           {
             kind: 'material-group',
             materialGroup,
-            questions: [{ question: subQs[0], displayNo: 1 }],
+            questions: [
+              { question: subQs[0], displayNo: 1 },
+              { question: subQs[1], displayNo: 2 },
+            ],
           },
         ],
       },
     ];
     renderFbReadingCol(groups);
-    const strip = screen.getByTestId('fb-anchor-strip-201');
-    expect(strip).toBeInTheDocument();
-    expect(strip).toHaveAttribute('aria-label', '回跳材料段落');
-    expect(screen.getByTestId('fb-anchor-jump-201-passage-p1')).toBeInTheDocument();
-    expect(screen.getByTestId('fb-anchor-jump-201-passage-p2')).toBeInTheDocument();
-    expect(screen.getByTestId('fb-anchor-jump-201-passage-p3')).toBeInTheDocument();
+
+    await user.click(screen.getByTestId('fb-material-tab-202'));
+
+    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+    expect(baseHandlers.onCurrentQuestionChange).toHaveBeenCalledWith('202');
   });
 
-  it('clicking anchor button activates target passage tab + scrollIntoView', async () => {
-    const user = userEvent.setup();
+  it('collapses the material body while keeping the question pane available', () => {
     const subQs = [q(301, '子题 1')];
     const materialGroup = mg('mg-3', '<p>A</p><p>B</p>', subQs);
     const groups: SectionItemsGroup[] = [
@@ -155,18 +157,44 @@ describe('FbReadingCol (P4/3 wire)', () => {
         ],
       },
     ];
+    renderFbReadingCol(groups, { passagesCollapsed: true });
+
+    expect(screen.queryByTestId('fb-material-body-mg-3')).not.toBeInTheDocument();
+    expect(screen.getByTestId('fb-material-question-node-301')).toBeInTheDocument();
+    expect(screen.getByTestId('fb-material-collapse-mg-3')).toHaveAttribute(
+      'aria-expanded',
+      'false',
+    );
+  });
+
+  it('material collapse button calls the shared passage toggle handler', async () => {
+    const user = userEvent.setup();
+    const subQs = [q(401, '子题 1')];
+    const materialGroup = mg('mg-4', '<p>A</p><p>B</p>', subQs);
+    const groups: SectionItemsGroup[] = [
+      {
+        sectionId: 'sec-A',
+        title: '资料分析',
+        chapterIndex: 1,
+        items: [
+          {
+            kind: 'material-group',
+            materialGroup,
+            questions: [{ question: subQs[0], displayNo: 1 }],
+          },
+        ],
+      },
+    ];
     renderFbReadingCol(groups);
-    // 默认 passage-p1 active
-    expect(screen.getByTestId('fb-passage-tab-passage-p1')).toHaveAttribute('aria-selected', 'true');
-    await user.click(screen.getByTestId('fb-anchor-jump-301-passage-p2'));
-    // active 切到 p2
-    expect(screen.getByTestId('fb-passage-tab-passage-p2')).toHaveAttribute('aria-selected', 'true');
-    expect(Element.prototype.scrollIntoView).toHaveBeenCalled();
+
+    await user.click(screen.getByTestId('fb-material-collapse-mg-4'));
+
+    expect(baseHandlers.onTogglePassagesCollapsed).toHaveBeenCalledTimes(1);
   });
 
   it('mixed section: question + material-group renders both kinds', () => {
-    const subQs = [q(401, '子题')];
-    const materialGroup = mg('mg-4', '<p>段</p>', subQs);
+    const subQs = [q(501, '子题')];
+    const materialGroup = mg('mg-5', '<p>段</p>', subQs);
     const groups: SectionItemsGroup[] = [
       {
         sectionId: 'sec-A',
@@ -184,7 +212,7 @@ describe('FbReadingCol (P4/3 wire)', () => {
     ];
     renderFbReadingCol(groups);
     expect(screen.getByTestId('fb-question-card-node-1')).toBeInTheDocument();
-    expect(screen.getByTestId('fb-passage')).toBeInTheDocument();
-    expect(screen.getByTestId('fb-question-card-node-401')).toBeInTheDocument();
+    expect(screen.getByTestId('fb-material-analysis-mg-5')).toBeInTheDocument();
+    expect(screen.getByTestId('fb-material-question-node-501')).toBeInTheDocument();
   });
 });
