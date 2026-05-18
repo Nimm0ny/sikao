@@ -7,7 +7,7 @@ last-reviewed: 2026-05-13
 
 # Migration Plan
 
-> 依据 `SIKAO_MIGRATION_AGENT_BRIEF.md`（项目根目录）。
+> 迁移 SSOT 已收敛到 `docs/vault/05-migration/`：本文件定义路线，`Migration-Status.md` 记录当前状态，`Legacy-Feature-Inventory.md` 记录旧功能盘点，`Data-Migration.md` 记录数据迁移。
 
 ## 原则
 

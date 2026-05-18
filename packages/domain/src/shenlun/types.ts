@@ -55,6 +55,7 @@ export interface Paper {
 export interface Highlight {
   start: number;
   end: number;
+  kind?: 'underline' | 'highlight';
   _justAdded?: number;
 }
 

@@ -2,7 +2,7 @@
 
 > 让备考从刷题变成思考。
 
-## 仓库结构（按 `SIKAO_MIGRATION_AGENT_BRIEF.md` §2）
+## 仓库结构（按现行架构与迁移文档）
 
 ```
 sikao/

@@ -12,11 +12,13 @@
 
 新会话先读（sikao 路径）：
 
-1. `SIKAO_MIGRATION_AGENT_BRIEF.md`（根目录）— 迁移 SSOT
-2. `docs/vault/00-index/Home.md` — 类 Obsidian 文档仓库入口
-3. `docs/vault/03-tech/Architecture.md` — 系统架构
-4. `docs/vault/05-migration/Migration-Status.md` — 当前迁移状态
+1. `docs/vault/00-index/Home.md` — 类 Obsidian 文档仓库入口
+2. `docs/vault/03-tech/Architecture.md` — 系统架构
+3. `docs/vault/05-migration/Migration-Status.md` — 当前迁移状态
+4. 迁移相关任务再读：`docs/vault/05-migration/Migration-Plan.md` / `Legacy-Feature-Inventory.md` / `Data-Migration.md`
 5. 任务所属领域：`docs/vault/02-domain/<Domain>.md`（Question-Bank / Answer-Session / Xingce / Shenlun / Grading / Study-Record）
+
+旧根目录迁移总 brief 已在 2026-05-19 删除；迁移 SSOT 已拆分收敛到 `docs/vault/05-migration/`。
 
 本文后续章节保留硬约束和历史细节；若与 `docs/vault/00-index/Home.md` 的文档优先级冲突，先按 vault index 判断，再回到对应源文档确认。
 

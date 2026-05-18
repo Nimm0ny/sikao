@@ -5,7 +5,7 @@ import type { MaterialGroup, QuestionDetailV2 } from '@sikao/api-client/types/ap
 import { PracticeDeck } from './PracticeDeck';
 import type { PracticeDeckItem } from './buildPracticeDeckItems';
 
-vi.mock('@/components/QuestionDispatcher', () => ({
+vi.mock('@/components/questions/QuestionDispatcher', () => ({
   default: ({ question }: { readonly question: QuestionDetailV2 }) => (
     <div data-testid={`mock-question-${question.questionId}`}>{question.content.stem}</div>
   ),

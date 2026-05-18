@@ -109,9 +109,10 @@ known-drift:
 Claude Code 开始改代码前，必须先读取并理解以下文件，避免重复造轮子或破坏已有规范：
 
 ```text
-SIKAO_MIGRATION_AGENT_BRIEF.md         ← 迁移 SSOT，当前仓库状态全景
 docs/vault/00-index/Home.md            ← 文档仓库入口
 docs/vault/03-tech/Architecture.md     ← 系统架构与服务边界
+docs/vault/05-migration/Migration-Status.md ← 当前仓库状态全景
+docs/vault/05-migration/Migration-Plan.md   ← 迁移路线
 docs/vault/04-design/Design-System.md  ← 设计规范（token / 圆角 / italic 等硬规则）
 docs/engineering/quick-commands.md     ← 常用命令速查
 CLAUDE.md                              ← agent 行为总规范（硬约束优先）
@@ -336,7 +337,7 @@ OCR 入口可以保留为 stub（现有 `apps/web/src/views/ShenlunSession/OcrPa
 
 ## 4.1 已有能力
 
-根据仓库当前进度（`SIKAO_MIGRATION_AGENT_BRIEF.md` 为准），项目已经具备以下基础：
+根据仓库当前进度（`docs/vault/05-migration/Migration-Status.md` 为准），项目已经具备以下基础：
 
 ```text
 apps/web/src/views/ShenlunSession/ShenlunSession.tsx    ← 设备感知 shell dispatcher

@@ -170,6 +170,16 @@ export const router = createBrowserRouter([
     element: routeElement(<pages.health />),
   },
   {
+    // Figma Make full migration: the essay exam is a destination workspace, not
+    // a normal logged-in app page. Keep auth, but do not wrap it in AppShell.
+    path: '/essay/exam/:paperCode',
+    element: routeElement(
+      <RedirectGuard mode="require-auth">
+        <pages.essayExam />
+      </RedirectGuard>,
+    ),
+  },
+  {
     element: routeElement(
       <RedirectGuard mode="require-auth">
         <AppShell />
@@ -265,8 +275,6 @@ export const router = createBrowserRouter([
       // 必须放在 /essay/exam/:paperCode 之前 — react-router v6 score-based 静态段
       // 通常优先, 但显式排序更稳妥 (避免 results 被误识别成 paperCode).
       { path: '/essay/exam/results', element: routeElement(<pages.essayExamResults />) },
-      // 申论 v2 模拟考场 (整卷模考 — N 题倒计时 / 三栏 / 田字格).
-      { path: '/essay/exam/:paperCode', element: routeElement(<pages.essayExam />) },
       // Phase D 申论专项练习 — 跨卷单题, chip filter by canonical_subtype.
       // 列表 → 选题 → 单题答题 (复用 ExamShell mode='single') → 评分跳
       // /essay/grades/:recordId.

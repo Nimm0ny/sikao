@@ -107,6 +107,7 @@ interface ExamSessionState {
   setMarking: (open: boolean | ((prev: boolean) => boolean)) => void;
   setQuery: (q: string) => void;
   setFontSize: (px: number | ((prev: number) => number)) => void;
+  setGridFontSize: (px: number | ((prev: number) => number)) => void;
   bumpFontSize: (delta: 1 | -1) => void;
   bumpGridFontSize: (delta: 1 | -1) => void;
   setRightOpen: (open: boolean | ((prev: boolean) => boolean)) => void;
@@ -340,6 +341,11 @@ export const useExamSession = create<ExamSessionState>((set, get) => ({
     set((state) => ({
       fontSize: typeof px === 'function' ? px(state.fontSize) : px,
     })),
+  setGridFontSize: (px) =>
+    set((state) => {
+      const next = typeof px === 'function' ? px(state.gridFontSize) : px;
+      return { gridFontSize: Math.max(14, Math.min(22, next)) };
+    }),
   bumpFontSize: (delta) =>
     set((state) => ({
       fontSize: Math.max(13, Math.min(20, state.fontSize + delta)),

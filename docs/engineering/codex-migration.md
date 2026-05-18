@@ -21,7 +21,7 @@ last-reviewed: 2026-05-13
 |---|---|---|
 | 根仓 | `AGENTS.md` | sikao 当前唯一项目级 agent 规则；Codex / Claude Code / Multica-managed 统一从此进入 |
 | 根仓（Claude 兼容镜像） | `CLAUDE.md` | 与 `AGENTS.md` 语义一致（CLAUDE.md §0.1）；修改任一必须同步另一份 |
-| 项目迁移 SSOT | `SIKAO_MIGRATION_AGENT_BRIEF.md` | sikao 仓库根目录，新会话第一份读物 |
+| 项目迁移 SSOT | `docs/vault/05-migration/` | `Migration-Plan.md` 定义路线，`Migration-Status.md` 记录状态，`Legacy-Feature-Inventory.md` 记录旧功能盘点，`Data-Migration.md` 记录数据迁移 |
 | vault 入口 | `docs/vault/00-index/Home.md` | 类 Obsidian 文档仓库索引 |
 
 ## Historical Rules (web_new 时代, 只读参考)
