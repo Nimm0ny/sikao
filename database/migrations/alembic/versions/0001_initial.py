@@ -82,6 +82,11 @@ _COLUMNS_ADDED_IN_LATER = frozenset(
         ("notes", "likes_count"),
         ("notes", "comments_count"),
         ("notes", "question_id"),
+        # 0024 (MVP AI gongkao): study today / diagnosis 扩列.
+        ("study_plan_tasks", "result_payload"),
+        ("practice_session_answers", "elapsed_seconds"),
+        ("practice_session_answers", "wrong_reason_code"),
+        ("practice_session_answers", "wrong_reason_source"),
     }
 )
 _INDEXES_ADDED_IN_LATER = frozenset(
