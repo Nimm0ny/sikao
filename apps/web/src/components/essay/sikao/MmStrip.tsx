@@ -17,6 +17,8 @@ import { MaterialBadge, type MaterialStatus } from '@sikao/ui/icons/composite/Ma
 import type { QuestionStatus } from '@sikao/ui/icons/composite/QuestionBadge';
 import { cn } from '@sikao/shared-utils';
 
+const QUESTION_LABELS = ['一', '二', '三', '四', '五', '六', '七', '八', '九'];
+
 export interface MaterialStripItem {
   readonly id: string;
   readonly status: MaterialStatus;
@@ -116,8 +118,8 @@ function QTab({ index, item, active, onClick }: QTabProps) {
       onClick={onClick}
       disabled={isLocked}
     >
-      <span className="essay-q-tab-label">Q{index}</span>
-      {meta !== null ? <span className="essay-q-tab-meta">{meta}</span> : null}
+      <span className="essay-q-tab-label">{QUESTION_LABELS[index - 1] ?? String(index)}</span>
+      {meta !== null ? <span className="essay-q-tab-dot" aria-hidden="true" /> : null}
       {isDone ? <CheckGlyph /> : null}
     </button>
   );

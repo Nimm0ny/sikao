@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { render, fireEvent, screen, act } from '@testing-library/react';
 import { EssayShellSikao } from '../EssayShellSikao';
 import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
-import { ESSAY_CLIP_MIME, type EssayClipDragPayload } from '@sikao/domain/shenlun/types';
+import type { Highlight } from '@sikao/domain/shenlun/types';
 import { __resetClipIdCounter } from '../lib/clipId';
 import type { Paper } from '@sikao/domain/shenlun/types';
 
@@ -44,14 +44,6 @@ const mockPaper: Paper = {
   ],
 };
 
-const samplePayload: EssayClipDragPayload = {
-  matId: 'm1',
-  start: 0,
-  end: 5,
-  text: '材料一正文',
-  sourceLabel: 'M1·段一',
-};
-
 beforeEach(() => {
   __resetClipIdCounter();
   act(() => {
@@ -61,53 +53,30 @@ beforeEach(() => {
 });
 
 describe('EssayShellSikao integration', () => {
-  it('renders Topbar + EssayGrid + ScratchPad + EditorPanel + MmStrip', () => {
+  it('renders Topbar + EssayGrid + MaterialPanel + AnswerSheetPanel + question strip', () => {
     render(<EssayShellSikao onSubmit={vi.fn()} mode="multi" />);
     expect(screen.getByTestId('essay-topbar')).toBeInTheDocument();
     expect(screen.getByTestId('essay-grid')).toBeInTheDocument();
-    expect(screen.getByTestId('essay-scratch-pad')).toBeInTheDocument();
-    expect(screen.getByTestId('essay-editor-panel')).toBeInTheDocument();
-    // MmStrip on both sides because paper has 2 materials + 2 questions
-    expect(screen.getByTestId('essay-mm-strip-l')).toBeInTheDocument();
+    expect(screen.getByTestId('essay-material-panel')).toBeInTheDocument();
+    expect(screen.getByTestId('essay-answer-panel')).toBeInTheDocument();
     expect(screen.getByTestId('essay-mm-strip-r')).toBeInTheDocument();
   });
 
-  it('full drag flow: material highlight → ScratchPad → EditorPanel cite', () => {
-    // Pre-seed a highlight so MaterialClip exists in the DOM. Real flow goes
-    // through MaterialReader's mark mode; we shortcut here.
+  it('renders legacy highlight snapshots and answer input writes to the active question', () => {
     act(() => {
       useExamSession.setState({
-        highlights: { m1: [{ start: 0, end: 5 }] },
+        highlights: { m1: [{ start: 0, end: 5 }] satisfies Highlight[] },
       });
     });
 
     render(<EssayShellSikao onSubmit={vi.fn()} mode="multi" />);
 
-    // Step 1: drag the MaterialClip onto the ScratchPad
-    const pad = screen.getByTestId('essay-scratch-pad');
-    const store = new Map<string, string>();
-    store.set(ESSAY_CLIP_MIME, JSON.stringify(samplePayload));
-    fireEvent.drop(pad, {
-      dataTransfer: {
-        types: Array.from(store.keys()),
-        getData: (t: string) => store.get(t) ?? '',
-        dropEffect: 'none',
-      },
+    const clip = screen.getByTestId('essay-material-clip-m1-0');
+    expect(clip).toHaveAttribute('data-kind', 'highlight');
+    fireEvent.change(screen.getByTestId('essay-answer-sheet-input'), {
+      target: { value: '第一题答案' },
     });
-    expect(useExamSession.getState().scratchClips).toHaveLength(1);
-
-    // Step 2: drag the same payload into the editor textarea
-    const ta = screen.getByTestId('essay-editor-panel-textarea') as HTMLTextAreaElement;
-    fireEvent.drop(ta, {
-      dataTransfer: {
-        types: Array.from(store.keys()),
-        getData: (t: string) => store.get(t) ?? '',
-        dropEffect: 'none',
-      },
-    });
-    const text = useExamSession.getState().textsByQ[0];
-    expect(text).toContain('《材料一正文》[M1·段一]');
-    expect(useExamSession.getState().citationsByQ[0]).toHaveLength(1);
+    expect(useExamSession.getState().textsByQ[0]).toBe('第一题答案');
   });
 
   it('switch question via MmStrip Q tab', () => {
@@ -118,9 +87,9 @@ describe('EssayShellSikao integration', () => {
     expect(screen.getByText('提出对策')).toBeInTheDocument();
   });
 
-  it('switch material via MmStrip M tab', () => {
+  it('switch material via MaterialPanel tabs', () => {
     render(<EssayShellSikao onSubmit={vi.fn()} mode="multi" />);
-    fireEvent.click(screen.getByLabelText('材料 2'));
+    fireEvent.click(screen.getByTestId('essay-material-tab-m2'));
     expect(useExamSession.getState().matIdx).toBe(1);
     expect(screen.getByText('资料二')).toBeInTheDocument();
   });
@@ -141,34 +110,50 @@ describe('EssayShellSikao integration', () => {
     expect(useExamSession.getState().phase).toBe('running');
   });
 
-  it('focus mode toggle hides ScratchPad and flips aria-label / aria-pressed', () => {
+  it('topbar renders prototype controls and opens draft modal', () => {
+    render(<EssayShellSikao onSubmit={vi.fn()} mode="multi" />);
+    expect(screen.getByTestId('essay-topbar-exit')).toBeInTheDocument();
+    expect(screen.getByTestId('essay-topbar-timer')).toHaveTextContent('00:30:00');
+    expect(screen.getByTestId('essay-topbar-font-size')).toBeInTheDocument();
+    expect(screen.getByTestId('essay-topbar-draft')).toBeInTheDocument();
+    expect(screen.getByTestId('essay-topbar-mark')).toBeInTheDocument();
+    expect(screen.getByTestId('essay-topbar-help')).toBeInTheDocument();
+    expect(screen.getByTestId('essay-topbar-fullscreen')).toBeInTheDocument();
+
+    fireEvent.click(screen.getByTestId('essay-topbar-draft'));
+    expect(screen.getByTestId('essay-draft-paper-modal')).toBeInTheDocument();
+  });
+
+  it('topbar uses real paper metadata instead of prototype fallback labels', () => {
     render(<EssayShellSikao onSubmit={vi.fn()} mode="multi" />);
 
-    // Default: ScratchPad rendered, focus button labelled "专注大作文",
-    // aria-pressed=false, shell carries data-focus-mode="off".
-    expect(screen.getByTestId('essay-scratch-pad')).toBeInTheDocument();
-    const btn = screen.getByTestId('essay-topbar-focus');
-    expect(btn).toHaveAttribute('aria-label', '专注大作文');
+    expect(screen.getByText('测试套卷')).toBeInTheDocument();
+    expect(screen.queryByText('2026')).not.toBeInTheDocument();
+    expect(screen.queryByText('国考')).not.toBeInTheDocument();
+    expect(screen.queryByText('副省')).not.toBeInTheDocument();
+  });
+
+  it('topbar font-size control cycles the answer grid size', () => {
+    render(<EssayShellSikao onSubmit={vi.fn()} mode="multi" />);
+    expect(useExamSession.getState().gridFontSize).toBe(18);
+    fireEvent.click(screen.getByTestId('essay-topbar-font-size'));
+    expect(useExamSession.getState().gridFontSize).toBe(20);
+  });
+
+  it('topbar submit is disabled outside running and paused phases', () => {
+    act(() => useExamSession.setState({ phase: 'submitted' }));
+    render(<EssayShellSikao onSubmit={vi.fn()} mode="multi" />);
+    expect(screen.getByTestId('essay-topbar-submit')).toBeDisabled();
+  });
+
+  it('topbar mark toggles the active question marker', () => {
+    render(<EssayShellSikao onSubmit={vi.fn()} mode="multi" />);
+
+    const btn = screen.getByTestId('essay-topbar-mark');
     expect(btn).toHaveAttribute('aria-pressed', 'false');
-    expect(screen.getByTestId('essay-shell-sikao')).toHaveAttribute(
-      'data-focus-mode',
-      'off',
-    );
-
-    // Click → ScratchPad gone, label flips to "退出专注模式", pressed=true.
     fireEvent.click(btn);
-    expect(screen.queryByTestId('essay-scratch-pad')).not.toBeInTheDocument();
-    expect(btn).toHaveAttribute('aria-label', '退出专注模式');
     expect(btn).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByTestId('essay-shell-sikao')).toHaveAttribute(
-      'data-focus-mode',
-      'on',
-    );
-
-    // Click again → restored.
     fireEvent.click(btn);
-    expect(screen.getByTestId('essay-scratch-pad')).toBeInTheDocument();
-    expect(btn).toHaveAttribute('aria-label', '专注大作文');
     expect(btn).toHaveAttribute('aria-pressed', 'false');
   });
 

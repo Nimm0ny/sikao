@@ -8,6 +8,7 @@
 
 import './sikao-essay.css';
 import type { ReactNode } from 'react';
+import { SplitPane } from './SplitPane';
 
 export interface EssayGridProps {
   readonly source: ReactNode;
@@ -17,12 +18,5 @@ export interface EssayGridProps {
 }
 
 export function EssayGrid({ source, editor, mobileMode = 'editor' }: EssayGridProps) {
-  return (
-    <div className="essay-grid" data-testid="essay-grid" data-mobile-mode={mobileMode}>
-      <div className="essay-source-col">{source}</div>
-      <div className="essay-editor-col min-h-0 min-w-0 flex flex-col">
-        {editor}
-      </div>
-    </div>
-  );
+  return <SplitPane left={source} right={editor} mobileMode={mobileMode} />;
 }

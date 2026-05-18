@@ -1,8 +1,9 @@
 import { describe, expect, it, vi } from 'vitest';
-import { render, fireEvent, screen } from '@testing-library/react';
+import { act, render, fireEvent, screen } from '@testing-library/react';
 import { MaterialPanel } from '../MaterialPanel';
 import { ESSAY_CLIP_MIME } from '@sikao/domain/shenlun/types';
-import type { Material } from '@sikao/domain/shenlun/types';
+import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
+import type { Material, Paper } from '@sikao/domain/shenlun/types';
 
 const material: Material = {
   id: 'm1',
@@ -10,6 +11,31 @@ const material: Material = {
   subtitle: '关于工艺振兴',
   // Three paragraphs separated by \n.
   body: '第一段开头。\n第二段开头。\n第三段开头。',
+};
+
+const paper: Paper = {
+  id: 'p1',
+  code: 'p1-code',
+  name: '测试套卷',
+  questions: [
+    {
+      no: '第一题',
+      kind: '概括',
+      title: '概括问题',
+      body: '请概括 X。',
+      minWords: 100,
+      maxWords: 200,
+      durationSec: 600,
+      requirements: ['条理清晰'],
+      refMaterials: ['m1'],
+      backendId: 1001,
+      fullScore: 10,
+    },
+  ],
+  materials: [
+    material,
+    { id: 'm2', title: '资料二', subtitle: '补充材料', body: '补充材料正文。' },
+  ],
 };
 
 describe('MaterialPanel', () => {
@@ -33,6 +59,7 @@ describe('MaterialPanel', () => {
     // start=8 is in 段二 (after the first \n at idx 6).
     const clip = screen.getByTestId('essay-material-clip-m1-8');
     expect(clip.getAttribute('data-source-label')).toBe('M2·段二');
+    expect(clip).toHaveAttribute('data-kind', 'highlight');
   });
 
   it('multiple non-overlapping highlights produce multiple clips', () => {
@@ -86,5 +113,48 @@ describe('MaterialPanel', () => {
     const payload = JSON.parse(store.get(ESSAY_CLIP_MIME) ?? '{}');
     expect(payload.matId).toBe('m1');
     expect(payload.sourceLabel).toBe('M1·段一');
+  });
+
+  it('renders material tabs and switches the active material', () => {
+    act(() => useExamSession.getState().hydrate(paper));
+    render(<MaterialPanel material={material} matIndex={0} highlights={[]} />);
+
+    fireEvent.click(screen.getByTestId('essay-material-tab-m2'));
+    expect(useExamSession.getState().matIdx).toBe(1);
+  });
+
+  it('writes selected text as highlight or underline annotations', () => {
+    act(() => useExamSession.getState().hydrate(paper));
+    render(<MaterialPanel material={material} matIndex={0} highlights={[]} />);
+    const body = screen.getByTestId('essay-material-panel-body');
+    const textNode = body.querySelector('[data-material-text]')?.firstChild;
+    if (!textNode) {
+      throw new Error('material text node missing');
+    }
+
+    const range = document.createRange();
+    range.setStart(textNode, 0);
+    range.setEnd(textNode, 3);
+    const selection = window.getSelection();
+    if (!selection) {
+      throw new Error('selection API missing');
+    }
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    fireEvent.click(screen.getByTestId('essay-material-highlight'));
+    expect(useExamSession.getState().highlights.m1).toEqual([
+      { start: 0, end: 3, kind: 'highlight' },
+    ]);
+
+    fireEvent.click(screen.getByTestId('essay-material-clear'));
+    expect(useExamSession.getState().highlights.m1).toEqual([]);
+
+    selection.removeAllRanges();
+    selection.addRange(range);
+    fireEvent.click(screen.getByTestId('essay-material-underline'));
+    expect(useExamSession.getState().highlights.m1).toEqual([
+      { start: 0, end: 3, kind: 'underline' },
+    ]);
   });
 });

@@ -24,6 +24,7 @@ export interface MaterialClipProps {
   readonly end: number;
   readonly text: string;
   readonly sourceLabel: string; // pre-computed by parent (e.g. "M2·段三")
+  readonly kind?: 'underline' | 'highlight';
   readonly children?: ReactNode;
 }
 
@@ -33,6 +34,7 @@ export function MaterialClip({
   end,
   text,
   sourceLabel,
+  kind = 'highlight',
   children,
 }: MaterialClipProps) {
   const handleDragStart = (e: React.DragEvent<HTMLSpanElement>) => {
@@ -63,6 +65,7 @@ export function MaterialClip({
       onDragStart={handleDragStart}
       data-testid={`essay-material-clip-${matId}-${start}`}
       data-source-label={sourceLabel}
+      data-kind={kind}
     >
       <span
         aria-hidden="true"

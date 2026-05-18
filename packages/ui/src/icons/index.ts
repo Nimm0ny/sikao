@@ -43,6 +43,8 @@ export { FormatBoldIcon } from './FormatBoldIcon';
 export { FormatCodeIcon } from './FormatCodeIcon';
 export { FormatItalicIcon } from './FormatItalicIcon';
 export { FormatListIcon } from './FormatListIcon';
+export { FormatUnderlineIcon } from './FormatUnderlineIcon';
+export { FormatHighlightIcon } from './FormatHighlightIcon';
 export { LinkIcon } from './LinkIcon';
 export { ClockIcon } from './ClockIcon';
 export { HelpIcon } from './HelpIcon';
@@ -91,6 +93,7 @@ export { ToolFilterIcon } from './ToolFilterIcon';
 export { ToolSortIcon } from './ToolSortIcon';
 export { ToolDownloadIcon } from './ToolDownloadIcon';
 export { ToolEyeIcon } from './ToolEyeIcon';
+export { ToolFullscreenIcon } from './ToolFullscreenIcon';
 
 // ── Action (用户动作) ──────────────────────────────────────────────────────
 export { ActionStarIcon } from './ActionStarIcon';

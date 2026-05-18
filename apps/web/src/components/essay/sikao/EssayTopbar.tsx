@@ -1,146 +1,287 @@
-// EssayTopbar — sticky top: paper title + total word count + IconBtn 暂停 /
-// 设置 + 主 CTA 提交. Spec 04-essay.md (header inferred from artboard 04).
-//
-// Reads paper / textsByQ / phase from store. Submit + Settings / Pause
-// callbacks bubble out via props (EssayShellSikao supplies the handlers).
-
+import { useState } from 'react';
 import { IconBtn } from '@sikao/ui/ui/IconBtn';
 import { Button } from '@sikao/ui/ui/Button';
+import { Modal } from '@sikao/ui/ui/Modal';
 import { Tooltip } from '@sikao/ui/ui/Tooltip';
-import { NavSubmitIcon } from '@sikao/ui/icons/NavSubmitIcon';
-import { PauseIcon } from '@sikao/ui/icons/PauseIcon';
-import { PlayIcon } from '@sikao/ui/icons/PlayIcon';
-import { SettingsIcon } from '@sikao/ui/icons/SettingsIcon';
-import { PanelLeftCloseIcon } from '@sikao/ui/icons/PanelLeftCloseIcon';
-import { PanelLeftOpenIcon } from '@sikao/ui/icons/PanelLeftOpenIcon';
+import {
+  ActionMarkIcon,
+  ClockIcon,
+  FontSizePlusIcon,
+  HelpIcon,
+  NavBackIcon,
+  NavSubmitIcon,
+  PanelLeftCloseIcon,
+  PanelLeftOpenIcon,
+  PauseIcon,
+  PlayIcon,
+  ToolFullscreenIcon,
+  ToolScratchIcon,
+} from '@sikao/ui/icons';
 import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
 import { bodyChars } from '@sikao/answer-engine/word-limit/bodyChars';
+import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy/essay-sikao';
 
 interface Props {
   readonly onSubmit: () => void;
   readonly onTogglePause: () => void;
-  readonly onSettings: () => void;
-  // 04-essay.md L73: 大作文模式可隐藏左栏 ScratchPad ('专注大作文'按钮).
-  // Shell 持有 SSOT, Topbar 只负责触发 toggle.
-  readonly focusMode?: boolean;
-  readonly onToggleFocusMode?: () => void;
-  // Wave 9 Phase 2a (2026-05-12): mobile (≤768) 单栏切换. md+ 该 IconBtn 走
-  // md:hidden 视觉降级 (双栏视图下不需要 toggle).
+  readonly onOpenDraft: () => void;
+  readonly marked: boolean;
+  readonly onToggleMark: () => void;
+  readonly onToggleFullscreen: () => void;
   readonly mobileMode?: 'editor' | 'material';
   readonly onToggleMobileMode?: () => void;
+}
+
+const GRID_FONT_SIZES = [16, 18, 20, 22] as const;
+
+function formatExamTime(seconds: number): string {
+  const safeSeconds = Math.max(0, Math.floor(seconds));
+  const hours = Math.floor(safeSeconds / 3600);
+  const minutes = Math.floor((safeSeconds % 3600) / 60);
+  const rest = safeSeconds % 60;
+  return [hours, minutes, rest]
+    .map((part) => String(part).padStart(2, '0'))
+    .join(':');
+}
+
+function examMetaItems(code: string, name: string): readonly string[] {
+  const haystack = `${name} ${code}`;
+  const year = haystack.match(/20\d{2}/)?.[0];
+  const category = haystack.match(/国考|省考|联考|选调|事业单位/)?.[0];
+  const level = haystack.match(/副省|市地|地市|行政执法|县乡/)?.[0];
+  const items = [year, category, level].filter((item): item is string => item !== undefined);
+  return items.length >= 2 ? items : [name];
 }
 
 export function EssayTopbar({
   onSubmit,
   onTogglePause,
-  onSettings,
-  focusMode = false,
-  onToggleFocusMode,
+  onOpenDraft,
+  marked,
+  onToggleMark,
+  onToggleFullscreen,
   mobileMode = 'editor',
   onToggleMobileMode,
 }: Props) {
   const paper = useExamSession((s) => s.paper);
   const phase = useExamSession((s) => s.phase);
   const textsByQ = useExamSession((s) => s.textsByQ);
+  const elapsedByQ = useExamSession((s) => s.elapsedByQ);
+  const gridFontSize = useExamSession((s) => s.gridFontSize);
+  const setGridFontSize = useExamSession((s) => s.setGridFontSize);
+  const [exitOpen, setExitOpen] = useState(false);
+  const [helpOpen, setHelpOpen] = useState(false);
 
   if (!paper) return null;
 
-  const totalChars = textsByQ.reduce((sum, t) => sum + bodyChars(t), 0);
+  const totalChars = textsByQ.reduce((sum, text) => sum + bodyChars(text), 0);
+  const totalDuration = paper.questions.reduce((sum, item) => sum + item.durationSec, 0);
+  const totalElapsed = elapsedByQ.reduce((sum, seconds) => sum + seconds, 0);
+  const remaining = Math.max(0, totalDuration - totalElapsed);
   const isPaused = phase === 'paused';
   const submitting = phase === 'submitting';
+  const submitDisabled = phase !== 'running' && phase !== 'paused';
+  const metaItems = examMetaItems(paper.code, paper.name);
+
+  const cycleGridFontSize = () => {
+    const index = GRID_FONT_SIZES.findIndex((size) => size === gridFontSize);
+    const next = GRID_FONT_SIZES[(index + 1) % GRID_FONT_SIZES.length];
+    setGridFontSize(next);
+  };
 
   return (
-    <header
-      className="bg-surface border-b border-line px-3 md:px-5 py-2 md:py-3 flex items-center gap-2 md:gap-3 shrink-0"
-      data-testid="essay-topbar"
-    >
-      <div className="flex flex-col min-w-0">
-        <span className="text-tiny font-mono text-ink-4 hidden md:inline">
-          {paper.code}
-        </span>
-        <h2
-          className="font-serif text-ink truncate"
-          style={{ fontSize: 17, lineHeight: 1.3 }} /* hardcode-allow: 17 between body 15 and h-card 22 */
-        >
-          {paper.name}
-        </h2>
-      </div>
-      <div className="flex-1" />
-      <div
-        className="font-mono text-sm tabular-nums text-ink-3"
-        data-testid="essay-topbar-total"
+    <>
+      <header
+        className="essay-proto-topbar"
+        data-testid="essay-topbar"
       >
-        共 {totalChars} 字
-      </div>
-      {/* Wave 9 Phase 2a (2026-05-12): mobile-only material/editor toggle.
-          md:hidden 让 tablet+ 双栏视图下消失 (双栏自动同时显, toggle 无意义). */}
-      {onToggleMobileMode ? (
-        <div className="md:hidden">
-          <Tooltip label={mobileMode === 'editor' ? '查看材料' : '回到答题'}>
+        <div className="essay-proto-topbar__left">
+          <Tooltip label={ESSAY_SIKAO_COPY.topbarExitExam} side="bottom">
             <IconBtn
-              aria-label={mobileMode === 'editor' ? '查看材料' : '回到答题'}
-              aria-pressed={mobileMode === 'material'}
-              variant={mobileMode === 'material' ? 'on' : 'default'}
-              onClick={onToggleMobileMode}
-              data-testid="essay-topbar-mobile-mode"
+              aria-label={ESSAY_SIKAO_COPY.topbarExitExam}
+              className="essay-proto-iconbtn"
+              onClick={() => setExitOpen(true)}
+              data-testid="essay-topbar-exit"
             >
-              {mobileMode === 'material' ? (
-                <PanelLeftCloseIcon size={14} />
-              ) : (
-                <PanelLeftOpenIcon size={14} />
-              )}
+              <NavBackIcon size={15} />
             </IconBtn>
           </Tooltip>
+          <div
+            className="essay-proto-timer"
+            aria-label={ESSAY_SIKAO_COPY.topbarTimerLabel}
+            data-testid="essay-topbar-timer"
+          >
+            <ClockIcon size={14} />
+            <span>{formatExamTime(remaining)}</span>
+          </div>
         </div>
-      ) : null}
-      {onToggleFocusMode ? (
-        <div className="hidden md:block">
-          <Tooltip label={focusMode ? '退出专注模式' : '专注大作文'}>
-            <IconBtn
-              aria-label={focusMode ? '退出专注模式' : '专注大作文'}
-              aria-pressed={focusMode}
-              variant={focusMode ? 'on' : 'default'}
-              onClick={onToggleFocusMode}
-              data-testid="essay-topbar-focus"
+
+        <div className="essay-proto-topbar__center">
+          {metaItems.map((item, index) => (
+            <span key={`${item}-${index}`} className="essay-proto-meta-item">
+              {index > 0 ? <span className="essay-proto-separator" aria-hidden="true" /> : null}
+              <span>{item}</span>
+            </span>
+          ))}
+        </div>
+
+        <div className="essay-proto-topbar__right">
+          <span className="essay-proto-total" aria-label={ESSAY_SIKAO_COPY.topbarTotalChars}>
+            {totalChars}
+          </span>
+          {onToggleMobileMode ? (
+            <div className="md:hidden">
+            <Tooltip
+              label={
+                mobileMode === 'editor'
+                  ? ESSAY_SIKAO_COPY.topbarViewMaterials
+                  : ESSAY_SIKAO_COPY.topbarReturnAnswer
+              }
+              side="bottom"
             >
-              {focusMode ? (
-                <PanelLeftOpenIcon size={14} />
-              ) : (
-                <PanelLeftCloseIcon size={14} />
-              )}
-            </IconBtn>
-          </Tooltip>
+              <IconBtn
+                aria-label={
+                  mobileMode === 'editor'
+                    ? ESSAY_SIKAO_COPY.topbarViewMaterials
+                    : ESSAY_SIKAO_COPY.topbarReturnAnswer
+                }
+                aria-pressed={mobileMode === 'material'}
+                className="essay-proto-iconbtn"
+                variant={mobileMode === 'material' ? 'on' : 'default'}
+                onClick={onToggleMobileMode}
+                data-testid="essay-topbar-mobile-mode"
+              >
+                {mobileMode === 'material' ? (
+                  <PanelLeftCloseIcon size={14} />
+                ) : (
+                  <PanelLeftOpenIcon size={14} />
+                )}
+              </IconBtn>
+            </Tooltip>
+            </div>
+          ) : null}
+        <Tooltip label={ESSAY_SIKAO_COPY.topbarFontSize} side="bottom">
+          <IconBtn
+            aria-label={ESSAY_SIKAO_COPY.topbarFontSize}
+            className="essay-proto-iconbtn"
+            onClick={cycleGridFontSize}
+            data-testid="essay-topbar-font-size"
+          >
+            <FontSizePlusIcon size={15} />
+          </IconBtn>
+        </Tooltip>
+        <Tooltip label={ESSAY_SIKAO_COPY.topbarDraftPaper} side="bottom">
+          <IconBtn
+            aria-label={ESSAY_SIKAO_COPY.topbarDraftPaper}
+            className="essay-proto-iconbtn"
+            onClick={onOpenDraft}
+            data-testid="essay-topbar-draft"
+          >
+            <ToolScratchIcon size={15} />
+          </IconBtn>
+        </Tooltip>
+        <Tooltip label={ESSAY_SIKAO_COPY.topbarMarkQuestion} side="bottom">
+          <IconBtn
+            aria-label={ESSAY_SIKAO_COPY.topbarMarkQuestion}
+            aria-pressed={marked}
+            className="essay-proto-iconbtn"
+            variant={marked ? 'on' : 'default'}
+            onClick={onToggleMark}
+            data-testid="essay-topbar-mark"
+          >
+            <ActionMarkIcon size={15} />
+          </IconBtn>
+        </Tooltip>
+        <Tooltip label={ESSAY_SIKAO_COPY.topbarHelp} side="bottom">
+          <IconBtn
+            aria-label={ESSAY_SIKAO_COPY.topbarHelp}
+            className="essay-proto-iconbtn"
+            onClick={() => setHelpOpen(true)}
+            data-testid="essay-topbar-help"
+          >
+            <HelpIcon size={15} />
+          </IconBtn>
+        </Tooltip>
+        <Tooltip label={ESSAY_SIKAO_COPY.topbarFullscreen} side="bottom">
+          <IconBtn
+            aria-label={ESSAY_SIKAO_COPY.topbarFullscreen}
+            className="essay-proto-iconbtn"
+            onClick={onToggleFullscreen}
+            data-testid="essay-topbar-fullscreen"
+          >
+            <ToolFullscreenIcon size={15} />
+          </IconBtn>
+        </Tooltip>
+        <Tooltip
+          label={
+            isPaused ? ESSAY_SIKAO_COPY.topbarContinueExam : ESSAY_SIKAO_COPY.topbarPauseExam
+          }
+          side="bottom"
+        >
+          <IconBtn
+            aria-label={
+              isPaused ? ESSAY_SIKAO_COPY.topbarContinueExam : ESSAY_SIKAO_COPY.topbarPauseExam
+            }
+            className="essay-proto-iconbtn"
+            onClick={onTogglePause}
+            disabled={phase === 'prestart' || phase === 'submitting' || phase === 'submitted'}
+            data-testid="essay-topbar-pause"
+          >
+            {isPaused ? <PlayIcon size={15} /> : <PauseIcon size={15} />}
+          </IconBtn>
+        </Tooltip>
+        <IconBtn
+          aria-label={ESSAY_SIKAO_COPY.topbarSubmitEssay}
+          className="essay-proto-submit"
+          onClick={onSubmit}
+          disabled={submitDisabled}
+          data-testid="essay-topbar-submit"
+        >
+          <NavSubmitIcon size={16} />
+          <span className="sr-only">
+            {submitting ? ESSAY_SIKAO_COPY.topbarSubmitting : ESSAY_SIKAO_COPY.topbarSubmitShort}
+          </span>
+        </IconBtn>
         </div>
-      ) : null}
-      <Tooltip label={isPaused ? '继续作答' : '暂停作答'}>
-        <IconBtn
-          aria-label={isPaused ? '继续作答' : '暂停作答'}
-          onClick={onTogglePause}
-          data-testid="essay-topbar-pause"
-        >
-          {isPaused ? <PlayIcon size={14} /> : <PauseIcon size={14} />}
-        </IconBtn>
-      </Tooltip>
-      <Tooltip label="设置">
-        <IconBtn
-          aria-label="设置"
-          onClick={onSettings}
-          data-testid="essay-topbar-settings"
-        >
-          <SettingsIcon size={14} />
-        </IconBtn>
-      </Tooltip>
-      <Button
-        variant="primary"
-        size="sm"
-        leftIcon={<NavSubmitIcon size={16} />}
-        onClick={onSubmit}
-        disabled={submitting}
-        aria-label="提交申论作答"
-        data-testid="essay-topbar-submit"
-      >
-        {submitting ? '提交中…' : '提 交'}
-      </Button>
-    </header>
+      </header>
+
+      <Modal
+        open={exitOpen}
+        onClose={() => setExitOpen(false)}
+        title={ESSAY_SIKAO_COPY.topbarExitTitle}
+        description={ESSAY_SIKAO_COPY.topbarExitDescription}
+        ariaLabel={ESSAY_SIKAO_COPY.topbarExitTitle}
+        footer={
+          <>
+            <Button
+              variant="secondary"
+              onClick={() => setExitOpen(false)}
+              data-testid="essay-topbar-exit-cancel"
+            >
+              {ESSAY_SIKAO_COPY.topbarContinueExam}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => window.history.back()}
+              data-testid="essay-topbar-exit-confirm"
+            >
+              {ESSAY_SIKAO_COPY.topbarConfirmExit}
+            </Button>
+          </>
+        }
+      />
+      <Modal
+        open={helpOpen}
+        onClose={() => setHelpOpen(false)}
+        title={ESSAY_SIKAO_COPY.helpTitle}
+        description={ESSAY_SIKAO_COPY.helpDescription}
+        ariaLabel={ESSAY_SIKAO_COPY.helpTitle}
+        footer={
+          <Button variant="secondary" onClick={() => setHelpOpen(false)}>
+            {ESSAY_SIKAO_COPY.helpClose}
+          </Button>
+        }
+      />
+    </>
   );
 }

@@ -9,7 +9,7 @@
 // submitting / submitted) — no new transitions added. Shortcuts kept thin
 // (no ⌘\ / ⌘/ panel collapse — spec is single-shape).
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
 import { bodyChars } from '@sikao/answer-engine/word-limit/bodyChars';
 import { hasReachedMinimum } from '@sikao/answer-engine/word-limit/wordLimits';
@@ -19,9 +19,9 @@ import { SubmitDialog } from '@sikao/editor/modals/SubmitDialog';
 import { EssayGrid } from './EssayGrid';
 import { EssayTopbar } from './EssayTopbar';
 import { MaterialPanel } from './MaterialPanel';
-import { ScratchPad } from './ScratchPad';
-import { EditorPanel } from './EditorPanel';
-import { MmStrip, type MaterialStripItem, type QuestionStripItem } from './MmStrip';
+import { AnswerSheetPanel } from './AnswerSheetPanel';
+import { DraftPaperModal } from './DraftPaperModal';
+import { MmStrip, type QuestionStripItem } from './MmStrip';
 
 const SAVE_DEBOUNCE_MS = 1500;
 
@@ -39,7 +39,6 @@ export function EssayShellSikao({ onAutosave, onSubmit, mode = 'multi' }: Props)
   const currentQ = useExamSession((s) => s.currentQ);
   const setCurrentQ = useExamSession((s) => s.setCurrentQ);
   const matIdx = useExamSession((s) => s.matIdx);
-  const setMatIdx = useExamSession((s) => s.setMatIdx);
   const textsByQ = useExamSession((s) => s.textsByQ);
   const elapsedByQ = useExamSession((s) => s.elapsedByQ);
   const highlights = useExamSession((s) => s.highlights);
@@ -51,12 +50,24 @@ export function EssayShellSikao({ onAutosave, onSubmit, mode = 'multi' }: Props)
   const markSaved = useExamSession((s) => s.markSaved);
 
   const [submitDialog, setSubmitDialog] = useState(false);
-  // Focus mode (04-essay.md L73): 隐藏左栏 ScratchPad, MaterialPanel 占满左栏
-  // 高度. Shell 持有 SSOT, EssayTopbar 仅触发 toggle.
-  const [focusMode, setFocusMode] = useState(false);
+  const [draftOpen, setDraftOpen] = useState(false);
+  const [markedQuestions, setMarkedQuestions] = useState<ReadonlySet<number>>(
+    () => new Set(),
+  );
   // Wave 9 Phase 2a (2026-05-12): mobile (≤768) 单栏切换 — 'editor' 沉浸答题
   // 默认态, 'material' 拉出材料浮层. tablet+ 双栏总同时显, 此 state no-op.
   const [mobileMode, setMobileMode] = useState<'editor' | 'material'>('editor');
+
+  useEffect(() => {
+    const previousBodyOverflow = document.body.style.overflow;
+    const previousRootOverflow = document.documentElement.style.overflow;
+    document.body.style.overflow = 'hidden';
+    document.documentElement.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overflow = previousRootOverflow;
+    };
+  }, []);
 
   // 1Hz tick — reuses existing tick action (still gated by phase=running).
   useEffect(() => {
@@ -87,28 +98,6 @@ export function EssayShellSikao({ onAutosave, onSubmit, mode = 'multi' }: Props)
     onAutosave,
     markSaved,
   ]);
-
-  const onJumpToClip = useCallback(
-    (matId: string) => {
-      if (!paper) return;
-      const idx = paper.materials.findIndex((m) => m.id === matId);
-      if (idx >= 0) setMatIdx(idx);
-    },
-    [paper, setMatIdx],
-  );
-
-  // MmStrip status derivation (04b).
-  const materialItems = useMemo<MaterialStripItem[]>(() => {
-    if (!paper) return [];
-    return paper.materials.map((m) => {
-      const marks = highlights[m.id] ?? [];
-      // 'marked' wins over 'read' when there's at least one highlight.
-      // Real "已读 / 未读" tracking would need read-events on MaterialPanel
-      // hover; MVP just defaults to 'pending' until the user marks.
-      const status = marks.length > 0 ? 'marked' : 'pending';
-      return { id: m.id, status, markedCount: marks.length };
-    });
-  }, [paper, highlights]);
 
   const questionItems = useMemo<QuestionStripItem[]>(() => {
     if (!paper) return [];
@@ -141,22 +130,11 @@ export function EssayShellSikao({ onAutosave, onSubmit, mode = 'multi' }: Props)
   const showMmStrip = mode === 'multi' && (paper.materials.length > 1 || paper.questions.length > 1);
 
   const sourceCol = (
-    <>
-      {showMmStrip ? (
-        <MmStrip
-          side="l"
-          materials={materialItems}
-          activeIdx={matIdx}
-          onSelect={setMatIdx}
-        />
-      ) : null}
-      <MaterialPanel
-        material={currentMaterial}
-        matIndex={matIdx}
-        highlights={highlights[currentMaterial.id] ?? []}
-      />
-      {focusMode ? null : <ScratchPad />}
-    </>
+    <MaterialPanel
+      material={currentMaterial}
+      matIndex={matIdx}
+      highlights={highlights[currentMaterial.id] ?? []}
+    />
   );
 
   const editorCol = (
@@ -169,34 +147,48 @@ export function EssayShellSikao({ onAutosave, onSubmit, mode = 'multi' }: Props)
           onSelect={setCurrentQ}
         />
       ) : null}
-      <EditorPanel onJumpToClip={onJumpToClip} />
+      <AnswerSheetPanel />
     </>
   );
 
+  const toggleMark = () => {
+    setMarkedQuestions((prev) => {
+      const next = new Set(prev);
+      if (next.has(currentQ)) next.delete(currentQ);
+      else next.add(currentQ);
+      return next;
+    });
+  };
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenEnabled) return;
+    if (document.fullscreenElement) {
+      void document.exitFullscreen();
+      return;
+    }
+    void document.documentElement.requestFullscreen();
+  };
+
   return (
     <div
-      className="w-full h-full bg-paper flex flex-col overflow-hidden font-sans"
+      className="essay-prototype-shell w-full h-full flex flex-col overflow-hidden font-sans"
       data-testid="essay-shell-sikao"
       data-mode={mode}
-      data-focus-mode={focusMode ? 'on' : 'off'}
       data-mobile-mode={mobileMode}
     >
       <EssayTopbar
         onSubmit={() => setSubmitDialog(true)}
         onTogglePause={togglePause}
-        onSettings={() => {
-          // Settings panel TBD post-MVP; spec mentions Tweaks (data-reading,
-          // data-density). Wiring lives in EssayShellSikao consumer view.
-        }}
-        focusMode={focusMode}
-        onToggleFocusMode={() => setFocusMode((v) => !v)}
+        onOpenDraft={() => setDraftOpen(true)}
+        marked={markedQuestions.has(currentQ)}
+        onToggleMark={toggleMark}
+        onToggleFullscreen={toggleFullscreen}
         mobileMode={mobileMode}
         onToggleMobileMode={() =>
           setMobileMode((m) => (m === 'editor' ? 'material' : 'editor'))
         }
       />
-      {/* Wave 9 Phase 2a (2026-05-12): mobile p-3 / tablet p-5 / desktop p-5 间距. */}
-      <div className="flex-1 min-h-0 p-3 md:p-5 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <EssayGrid source={sourceCol} editor={editorCol} mobileMode={mobileMode} />
       </div>
       {phase === 'prestart' && (
@@ -229,6 +221,7 @@ export function EssayShellSikao({ onAutosave, onSubmit, mode = 'multi' }: Props)
           }}
         />
       )}
+      <DraftPaperModal open={draftOpen} onClose={() => setDraftOpen(false)} />
     </div>
   );
 }

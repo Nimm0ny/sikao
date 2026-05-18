@@ -71,9 +71,9 @@ describe('MmStrip', () => {
     expect(svg).not.toBeNull();
     // text content should NOT include the unicode ✓ char (U+2713)
     expect(tab.textContent ?? '').not.toMatch(/✓/);
-    // Q1 label + 198/200 meta both rendered
-    expect(tab.textContent).toMatch(/Q1/);
-    expect(tab.textContent).toMatch(/198\/200/);
+    // Figma Make migration keeps visible tabs compact: Chinese numeral + status dot.
+    expect(tab.textContent).toBe('一');
+    expect(tab.querySelector('.essay-q-tab-dot')).not.toBeNull();
   });
 
   it('Q-tab active state has text-accent class + accent underline', () => {
@@ -129,13 +129,14 @@ describe('MmStrip', () => {
     expect(tab.className).not.toMatch(/text-ink-4/);
   });
 
-  it('Q-tab meta shows "M 字" when required=0 (no word limit)', () => {
+  it('Q-tab renders a status dot when there is progress without visible meta text', () => {
     const items: QuestionStripItem[] = [
       { id: 'q1', status: 'writing', currentChars: 142, requiredChars: 0 },
     ];
     render(<MmStrip side="r" questions={items} activeIdx={0} onSelect={vi.fn()} />);
     const tab = screen.getByLabelText('第 1 题');
-    expect(tab.textContent).toMatch(/142 字/);
+    expect(tab.textContent).toBe('一');
+    expect(tab.querySelector('.essay-q-tab-dot')).not.toBeNull();
   });
 
   // ── a11y: role="tablist" + role="tab" + aria-selected (spec 04b L37-47) ──

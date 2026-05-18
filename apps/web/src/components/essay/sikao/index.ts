@@ -3,6 +3,8 @@
 
 export { EssayGrid } from './EssayGrid';
 export type { EssayGridProps } from './EssayGrid';
+export { SplitPane } from './SplitPane';
+export type { SplitPaneProps } from './SplitPane';
 
 export { EssayTopbar } from './EssayTopbar';
 export { MaterialPanel } from './MaterialPanel';
@@ -17,6 +19,8 @@ export type { ScratchNoteProps } from './ScratchNote';
 export { CiteBar } from './CiteBar';
 export type { CiteBarProps } from './CiteBar';
 export { EditorPanel } from './EditorPanel';
+export { AnswerSheetPanel } from './AnswerSheetPanel';
+export { DraftPaperModal } from './DraftPaperModal';
 export { MmStrip } from './MmStrip';
 export type { MaterialStripItem, QuestionStripItem } from './MmStrip';
 export { DropMarker } from './DropMarker';
