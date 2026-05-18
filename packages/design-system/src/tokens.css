@@ -1,17 +1,17 @@
 /*
- * Design tokens — Sikao Frontend Style Guide v1 (2026-05-12 落地).
+ * Design tokens — Sikao Frontend Style Guide v1 (2026-05-19 蓝白主色修订).
  *
  * **SSOT** (CLAUDE.md §4 硬约束): 本文件是 sikao 设计 token 的单一权威源.
  * 运行时由 apps/web/src/styles/tokens.css shim 通过 @import 注入到 React app.
  *
  * 规范本体: docs/vault/04-design/Frontend Style Guide.html (2026-05-12 交付).
  *
- * v1 核心改动 (lhr 2026-05-12 拍板, 完全按规范走不许创新):
- *   - accent 蓝 #3f7ef1 → #2A56C8 (deep editorial blue)
+ * v1 核心改动 (lhr 2026-05-19 批准蓝白主色, 完全按规范走不许创新):
+ *   - primary brand/action 改为 blue-white: accent blue owns CTA / active / focus
  *   - type scale 全站压缩 ~45% (display 88→44 / h1 56→32 / h2 36→24 / h3 22→18 / body 15→14)
  *   - button radius 10 → 4 (--r-tiny, alias 经 --r-btn 走过)
- *   - dark accent 琥珀 #D9A055 → #C68A3E (同色相微调)
- *   - paper-1 #FAF7F0 → #FAF7EF / ink-1 #1A1815 → #1A1714 (1 单位 hex diff)
+ *   - paper / ink → neutral paper / cool gray ink
+ *   - dark mode 改为深蓝黑夜间模式
  *   - --r-pill 9999 → 999 (数学等价)
  *
  * Alias 兼容层 (本文件末尾): 把旧 token 名 (--brand / --paper-deep / --ink-muted / --line /
@@ -19,9 +19,9 @@
  * 防止现有代码 import token 时出现未定义变量 → 渲染破图. PR2 grep-replace 后会清理.
  *
  * Themes:
- *   :root              纸读 default (warm paper + editorial blue accent)
- *   [data-theme="pure"]   素白 (蓝色 accent — 旧 ink-first fallback)
- *   [data-theme="dark"]   夜读 (暗 paper + 暖金 accent, 取代 night)
+ *   :root              default (white/blue primary + gray reading ladder)
+ *   [data-theme="pure"]   素白 alias (same white/blue palette)
+ *   [data-theme="dark"]   深蓝黑夜间模式 (blue action accent, 取代 night)
  *   [data-theme="night"]  alias 到 dark (兼容旧 toggle)
  *
  * Density / reading-size:
@@ -30,49 +30,52 @@
  */
 
 :root {
-  /* ── paper (surface ladder, warm ivory) ───────────────────────────── */
-  --paper-1: #FAF7EF;
-  --paper-2: #F4F0E6;
-  --paper-3: #ECE6D7;
+  /* ── paper (surface ladder, neutral white) ────────────────────────── */
+  --paper-1: #FFFFFF;
+  --paper-2: #F7F9FC;
+  --paper-3: #EEF2F7;
 
   /* ── ink (text ladder) ────────────────────────────────────────────── */
-  --ink-1: #1A1714;
-  --ink-2: #3A352D;
-  --ink-3: #6B6358;
-  --ink-4: #948A7A;
+  --ink-1: #111827;
+  --ink-2: #374151;
+  --ink-3: #6B7280;
+  --ink-4: #9CA3AF;
 
   /* ── line (border ladder) ─────────────────────────────────────────── */
-  --line-1: #E2DBC7;
-  --line-2: #D9D1BE;
-  --line-3: #BDB29A;
+  --line-1: #E5E7EB;
+  --line-2: #D1D5DB;
+  --line-3: #CBD5E1;
 
-  /* ── accent (single editorial blue; CTA + focus only) ─────────────── */
-  --accent-1:  #2A56C8;
-  --accent-2:  #245fd6;
-  --accent-50: #eaf2ff;
+  /* ── accent (primary brand/action blue) ───────────────────────────── */
+  --accent-1:  #2563EB;
+  --accent-2:  #1D4ED8;
+  --accent-50: #EFF6FF;
 
   /* ── semantic (functional only · never decoration) ────────────────── */
-  --ok:   #1F7A4D;
-  --warn: #9E5D14;
-  --err:  #A22A2A;
+  --ok:      #15803D;
+  --ok-50:   #F0FDF4;
+  --warn:    #D97706;
+  --warn-50: #FFFBEB;
+  --err:     #DC2626;
+  --err-50:  #FEF2F2;
 
   /* exam-accent — 答题"当前题/做题状态"信号色, 跟 --err (错误语义) 解耦.
      来源: design/design_handoff_xingce_exam/TOKENS.md §1 建议. lhr 2026-05-11 批准. */
   --exam-accent:     #B42318;
-  --exam-accent-50:  #F5E6E2;
+  --exam-accent-50:  #FEF2F2;
 
-  /* data scale — heatmap / density viz 6 档色阶 (浅纸 → 深海军 accent).
+  /* data scale — heatmap / density viz 6 档色阶 (浅蓝灰 → 深行动蓝).
      来源: design/SIKAO/handoff/modules/xingce-wrongbook/xingce-wrongbook.html
      行 465-470 + README §2 "热图蓝色色阶". lhr 2026-05-12 批准
      (docs/plan/sikao-wave5-roadmap-2026-05-12.md:93).
-     调性: SIKAO ink-first paper-tint, data-0 取 paper 同族暖底, data-5 落到深海军
-     accent. 中段 data-1..data-4 蓝色饱和度渐进, 视觉等距而非 hex 等距. */
-  --data-0: #EEEAE0;
-  --data-1: #D6E2EC;
-  --data-2: #A8C2D4;
-  --data-3: #6E94AC;
-  --data-4: #3B5F7A;
-  --data-5: #1E3445;
+     2026-05-19 蓝白主色修订: data-0 跟 paper-3 同族冷灰, data-5 落到
+     accent-2. 中段 data-1..data-4 蓝色饱和度渐进. */
+  --data-0: #F1F5F9;
+  --data-1: #DBEAFE;
+  --data-2: #BFDBFE;
+  --data-3: #93C5FD;
+  --data-4: #3B82F6;
+  --data-5: #1D4ED8;
 
   /* ── spacing (8px base · also 4 / 12 / 16 / 24 / 32 / 48 / 64 / 96) ─ */
   --sp-1: 4px;
@@ -94,8 +97,8 @@
   --r-pill:    999px;
 
   /* ── shadow (only on elevated cards · no decoration shadow) ───────── */
-  --shadow-card: 0 1px 0 rgba(20,18,14,.04), 0 6px 18px -10px rgba(20,18,14,.18);
-  --shadow-pop:  0 12px 32px -16px rgba(20,18,14,.32);
+  --shadow-card: 0 1px 0 rgba(17,24,39,.04), 0 8px 24px -14px rgba(17,24,39,.18);
+  --shadow-pop:  0 16px 40px -18px rgba(17,24,39,.28);
 
   /* ── type scale ───────────────────────────────────────────────────── */
   --t-display: 44px;
@@ -122,9 +125,9 @@
    * ok/warn/err 的 background tint, 走 token 不 inline hex.
    * 跟 ok / warn / err 文字色配对 (e.g. EmptyState OK-banner 用
    * bg-ok-bg + text-ok). dark mode 在 [data-theme='dark'] 区段重写. */
-  --ok-bg:   #E8EFE2;
-  --warn-bg: #F4ECDC;
-  --bad-bg:  #F5E6E2;
+  --ok-bg:   var(--ok-50);
+  --warn-bg: var(--warn-50);
+  --bad-bg:  var(--err-50);
 
   /* sidebar always-dark 面板专属 (frontend AppShell 仍是 dark sidebar) */
   --sidebar:          #020617;
@@ -186,61 +189,64 @@
   outline-offset: 2px;
 }
 
-/* THEME · pure (素白 — 蓝色 accent, 旧 ink-first fallback) */
+/* THEME · pure (素白 — same white/blue palette) */
 [data-theme='pure'] {
   --paper-1: #FFFFFF;
-  --paper-2: #F7F7F8;
-  --paper-3: #EFEFF1;
-  --line-1:  #E5E5E8;
-  --line-2:  #E5E5E8;
-  --line-3:  #CFCFD3;
-  --ink-1:   #0A0A0B;
-  --ink-2:   #2D2D31;
-  --ink-3:   #5C5C63;
-  --ink-4:   #8A8A92;
-  --accent-1:  #1F4FD8;
-  --accent-2:  #1839A0;
-  --accent-50: #E7EDFD;
+  --paper-2: #F7F9FC;
+  --paper-3: #EEF2F7;
+  --line-1:  #E5E7EB;
+  --line-2:  #D1D5DB;
+  --line-3:  #CBD5E1;
+  --ink-1:   #111827;
+  --ink-2:   #374151;
+  --ink-3:   #6B7280;
+  --ink-4:   #9CA3AF;
+  --accent-1:  #2563EB;
+  --accent-2:  #1D4ED8;
+  --accent-50: #EFF6FF;
   --font-serif: 'Source Serif 4', Georgia, serif;
 }
 
-/* THEME · dark (夜读 paper, 取代旧 night, Frontend Style Guide v1) */
+/* THEME · dark (深蓝黑夜间模式, 取代旧 night, Frontend Style Guide v1) */
 [data-theme='dark'], :root[data-theme='dark'] {
-  --paper-1: #15130F;
-  --paper-2: #1F1B16;
-  --paper-3: #28231C;
-  --ink-1:   #E8E2D2;
-  --ink-2:   #C9C0AC;
-  --ink-3:   #9B917D;
-  --ink-4:   #6B6253;
-  --line-1:  #2D2820;
-  --line-2:  #3A3328;
-  --line-3:  #5A4F3D;
-  --accent-1:  #C68A3E;
-  --accent-2:  #B07F36;
-  --accent-50: #2A1F12;
+  --paper-1: #0F172A;
+  --paper-2: #111827;
+  --paper-3: #1E293B;
+  --ink-1:   #F8FAFC;
+  --ink-2:   #E2E8F0;
+  --ink-3:   #CBD5E1;
+  --ink-4:   #94A3B8;
+  --line-1:  #1E293B;
+  --line-2:  #334155;
+  --line-3:  #475569;
+  --accent-1:  #60A5FA;
+  --accent-2:  #93C5FD;
+  --accent-50: #172554;
 
   /* semantic 反相微调 (dark 上 ok/warn/err 提亮) */
-  --ok:   #9DB37C;
-  --warn: #D9A055;
-  --err:  #D88A8A;
+  --ok:      #86EFAC;
+  --ok-50:   #052E16;
+  --warn:    #FBBF24;
+  --warn-50: #451A03;
+  --err:     #F87171;
+  --err-50:  #450A0A;
 
-  /* data scale 反相: 暗 paper-3 → 暖金 accent (调性跟 light 同, 反方向) */
-  --data-0: #2D2823;
-  --data-1: #4A3F2E;
-  --data-2: #6E5A3A;
-  --data-3: #957744;
-  --data-4: #B88B4D;
-  --data-5: #D9A055;
+  /* data scale 反相: 深蓝灰 → 亮行动蓝 */
+  --data-0: #1E293B;
+  --data-1: #1E3A8A;
+  --data-2: #1D4ED8;
+  --data-3: #2563EB;
+  --data-4: #60A5FA;
+  --data-5: #93C5FD;
 
   /* shadow alpha 在暗底要更深 */
   --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 0 rgb(0 0 0 / 0.4);
   --shadow-pop:  0 10px 30px -10px rgb(0 0 0 / 0.6);
 
   /* semantic surface tints (dark 真值跟 light tone 不同, light bg-* 提亮反相) */
-  --ok-bg:   #2A2E1F;
-  --warn-bg: #3A2E1C;
-  --bad-bg:  #3A2E1C;
+  --ok-bg:   var(--ok-50);
+  --warn-bg: var(--warn-50);
+  --bad-bg:  var(--err-50);
 }
 
 /*
@@ -249,33 +255,36 @@
  * 历史 toggle 用 [data-theme='night'] 切夜读; v1 后统一 dark, night 保留 alias.
  */
 [data-theme='night'] {
-  --paper-1: #15130F;
-  --paper-2: #1F1B16;
-  --paper-3: #28231C;
-  --ink-1:   #E8E2D2;
-  --ink-2:   #C9C0AC;
-  --ink-3:   #9B917D;
-  --ink-4:   #6B6253;
-  --line-1:  #2D2820;
-  --line-2:  #3A3328;
-  --line-3:  #5A4F3D;
-  --accent-1:  #C68A3E;
-  --accent-2:  #B07F36;
-  --accent-50: #2A1F12;
-  --ok:   #9DB37C;
-  --warn: #D9A055;
-  --err:  #D88A8A;
-  --data-0: #2D2823;
-  --data-1: #4A3F2E;
-  --data-2: #6E5A3A;
-  --data-3: #957744;
-  --data-4: #B88B4D;
-  --data-5: #D9A055;
+  --paper-1: #0F172A;
+  --paper-2: #111827;
+  --paper-3: #1E293B;
+  --ink-1:   #F8FAFC;
+  --ink-2:   #E2E8F0;
+  --ink-3:   #CBD5E1;
+  --ink-4:   #94A3B8;
+  --line-1:  #1E293B;
+  --line-2:  #334155;
+  --line-3:  #475569;
+  --accent-1:  #60A5FA;
+  --accent-2:  #93C5FD;
+  --accent-50: #172554;
+  --ok:      #86EFAC;
+  --ok-50:   #052E16;
+  --warn:    #FBBF24;
+  --warn-50: #451A03;
+  --err:     #F87171;
+  --err-50:  #450A0A;
+  --data-0: #1E293B;
+  --data-1: #1E3A8A;
+  --data-2: #1D4ED8;
+  --data-3: #2563EB;
+  --data-4: #60A5FA;
+  --data-5: #93C5FD;
   --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 0 rgb(0 0 0 / 0.4);
   --shadow-pop:  0 10px 30px -10px rgb(0 0 0 / 0.6);
-  --ok-bg:   #2A2E1F;
-  --warn-bg: #3A2E1C;
-  --bad-bg:  #3A2E1C;
+  --ok-bg:   var(--ok-50);
+  --warn-bg: var(--warn-50);
+  --bad-bg:  var(--err-50);
 }
 
 /* DENSITY 切换 */

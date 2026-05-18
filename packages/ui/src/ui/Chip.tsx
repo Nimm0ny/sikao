@@ -9,8 +9,8 @@ import { cn } from '@sikao/shared-utils';
 //     padding: 5px 13px; font: 400 12px/1 'Source Serif 4';
 //     color: var(--ink-2); background: var(--paper-1); cursor: pointer;
 //   }
-//   .chip-btn:hover { border-color: var(--ink-1); color: var(--ink-1); }
-//   .chip-btn.is-on { background: var(--ink-1); color: var(--paper-1); border-color: var(--ink-1); }
+//   .chip-btn:hover { border-color: var(--accent-1); color: var(--accent-1); }
+//   .chip-btn.is-on { background: var(--accent-1); color: var(--paper-1); border-color: var(--accent-1); }
 //
 // 注: chip 走 serif 跟"类目编辑"语义对齐 (规范注释强调). 跟 Pill (italic 只读 tag) 解耦,
 // 跟 Badge (status badge) 解耦, 跟 Button (primary action) 解耦.
@@ -42,11 +42,11 @@ const BASE =
 
 const UNSELECTED =
   'border-line-3 bg-paper-1 text-ink-2 ' +
-  'hover:border-ink-1 hover:text-ink-1';
+  'hover:border-accent hover:text-accent';
 
 const SELECTED =
-  'border-ink-1 bg-ink-1 text-paper-1 ' +
-  'hover:bg-ink-2 hover:border-ink-2';
+  'border-accent bg-accent text-paper-1 ' +
+  'hover:bg-accent-2 hover:border-accent-2';
 
 export function Chip({
   children,

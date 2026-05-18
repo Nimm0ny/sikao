@@ -24,7 +24,7 @@ export interface CheckboxProps {
 }
 
 // `accent-[var(--accent-1)]` 走 Tailwind arbitrary value 绑 token, 命中 accent-color
-// CSS property. 走 token = 跟随 dark theme 自动切换 (深色态琥珀 #C68A3E).
+// CSS property. 走 token = 跟随 dark theme 自动切换到亮行动蓝.
 const BASE =
   'inline-flex items-center gap-2 py-1 text-small text-ink-2 ' +
   'cursor-pointer select-none ' +

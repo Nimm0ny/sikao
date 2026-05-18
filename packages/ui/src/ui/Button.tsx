@@ -2,18 +2,19 @@ import type { ButtonHTMLAttributes, ReactNode } from 'react';
 import { cn } from '@sikao/shared-utils';
 
 // Phase 5.1 rebrand: expanded variants per element/preview/buttons.html.
-// 设计稿四档：primary(ink) / secondary(outline) / accent(blue, 仅关键 CTA) / quiet(text link)。
+// 2026-05-19 blue-white revision: primary/action uses accent blue; ink is reading/support.
+// 设计稿四档：primary(blue) / secondary(outline) / accent(gray emphasis) / quiet(text link)。
 // 本文件保留旧变体名（ink / ghost）作向后兼容 —— views 不需改动；
 // 新代码请优先用 primary / secondary / accent / quiet。
 //
 // Dumb by contract (frontend/CLAUDE.md §2.2): 无 store / fetch；onClick 由 caller 处理。
 
 export type ButtonVariant =
-  | 'primary'    // 主按钮：ink 黑底 + 白字。Phase 5.0 后 --brand = ink 黑。
+  | 'primary'    // 主按钮：accent 蓝底 + 白字。
   | 'ink'        // Alias of `primary`（视觉等价，保留避免 views 大改）。
   | 'ghost'      // 旧 outline：白底 + line 边 + muted 字。柔和风。
   | 'secondary'  // 新 outline：白底 + ink 边 + ink 字，hover 反色。对比更强。
-  | 'accent'     // 新蓝色：bg-accent + 白字。**仅用于单一最重要 CTA**（如"交卷"）。
+  | 'accent'     // 黑灰次级强调；答题/批改提交闭环直接用 `primary`。
   | 'danger'     // 危险操作：danger 红底 + 白字。**仅用于不可撤回的危险操作**。
   | 'quiet';     // 新 link 样：无 box，text link + hover underline。
 
@@ -61,18 +62,15 @@ const SIZE_QUIET: Record<ButtonSize, string> = {
 };
 
 const VARIANT: Record<ButtonVariant, string> = {
-  // Phase 5.0 后 bg-ink-1 = ink 黑，primary 自动从蓝变黑。
-  primary: 'bg-ink-1 text-white border-transparent hover:bg-ink-1',
+  primary: 'bg-accent text-white border-transparent hover:bg-accent-2',
   // `ink` 是 `primary` 的历史别名（phase 4 前旧 views 用），视觉等价。
-  ink: 'bg-ink-1 text-white border-transparent hover:bg-ink-1',
+  ink: 'bg-accent text-white border-transparent hover:bg-accent-2',
   // 旧 ghost：柔和 outline。views 层保留引用。
   ghost: 'bg-surface text-ink-3 border-line hover:bg-surface-alt hover:border-line-3',
   // secondary：element spec 的强 outline 次级按钮。
   // "查看我的错题" 这种不是主操作但也要显眼的用它。
   secondary: 'bg-surface text-ink border-ink hover:bg-ink hover:text-white',
-  // accent：element spec —— reserved for the single most-important moment。
-  // 页面级全局至多出现 1 次（交卷 / 支付确认 / 不可撤回的提交）。
-  accent: 'bg-accent text-white border-transparent hover:brightness-95',
+  accent: 'bg-ink-2 text-white border-transparent hover:bg-ink-1',
   // danger：危险操作（如答题卡底部"交卷"按钮）。Figma node 11:3 Drawer Footer。
   danger: 'bg-err text-white border-transparent hover:brightness-95',
   // quiet：text link 样。caller 可 rightIcon={<span className="font-serif italic">→</span>}
@@ -89,9 +87,9 @@ function Spinner(): ReactNode {
   );
 }
 
-// active 态: ink 反白 (跟 IconBtn.is-on 同套调性). 跟 variant 解耦, 通过 data-active
+// active 态: accent blue 反白 (跟 IconBtn.is-on 同套调性). 跟 variant 解耦, 通过 data-active
 // hook 让任何 variant + active=true 都有视觉反馈. 不覆盖 disabled 优先级.
-const ACTIVE_CLASS = 'bg-ink-1 text-paper-1 border-ink-1 hover:bg-ink-2 hover:border-ink-2';
+const ACTIVE_CLASS = 'bg-accent text-paper-1 border-accent hover:bg-accent-2 hover:border-accent-2';
 
 export function Button({
   variant = 'primary',

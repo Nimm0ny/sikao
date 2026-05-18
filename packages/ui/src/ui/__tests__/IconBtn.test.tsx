@@ -22,25 +22,24 @@ describe('IconBtn', () => {
     expect(btn).toHaveClass('w-10', 'h-10');
   });
 
-  it('variant="default" applies hover paper-2 / active paper-3 classes', () => {
+  it('variant="default" applies hover accent / active paper-3 classes', () => {
     render(<IconBtn aria-label="标记">x</IconBtn>);
     const btn = screen.getByRole('button', { name: '标记' });
-    // hover bg-surface-alt = paper-2 / active bg-paper-3 = paper-3
-    expect(btn).toHaveClass('hover:bg-surface-alt');
+    expect(btn).toHaveClass('hover:bg-accent-50');
     expect(btn).toHaveClass('active:bg-paper-3');
   });
 
-  it('variant="on" shows selected state (paper-2 + ink stroke)', () => {
+  it('variant="on" shows selected state (accent-50 + accent stroke)', () => {
     render(<IconBtn aria-label="已收藏" variant="on">x</IconBtn>);
     const btn = screen.getByRole('button', { name: '已收藏' });
-    expect(btn).toHaveClass('bg-surface-alt');
-    expect(btn).toHaveClass('text-ink');
+    expect(btn).toHaveClass('bg-accent-50');
+    expect(btn).toHaveClass('text-accent');
   });
 
-  it('variant="primary" maps to ink bg + paper text', () => {
+  it('variant="primary" maps to blue action + paper text', () => {
     render(<IconBtn aria-label="提交" variant="primary">x</IconBtn>);
     const btn = screen.getByRole('button', { name: '提交' });
-    expect(btn).toHaveClass('bg-ink-1');
+    expect(btn).toHaveClass('bg-accent');
     expect(btn).toHaveClass('text-white');
   });
 

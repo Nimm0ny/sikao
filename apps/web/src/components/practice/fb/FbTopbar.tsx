@@ -212,7 +212,7 @@ function FbTopbarRight({
       </Tooltip>
       <Button
         type="button"
-        variant="accent"
+        variant="primary"
         size="sm"
         leftIcon={<NavSubmitIcon size={16} />}
         onClick={onSubmit}

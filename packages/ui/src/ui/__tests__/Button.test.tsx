@@ -4,10 +4,10 @@ import userEvent from '@testing-library/user-event';
 import { Button } from '../Button';
 
 describe('Button', () => {
-  it('default variant=primary maps to bg-ink-1 + text-white (ink-first)', () => {
+  it('default variant=primary maps to blue action + text-white', () => {
     render(<Button>提交</Button>);
     const btn = screen.getByRole('button', { name: '提交' });
-    expect(btn).toHaveClass('bg-ink-1', 'text-white');
+    expect(btn).toHaveClass('bg-accent', 'text-white');
     expect(btn).toHaveClass('rounded-tiny');
   });
 
@@ -17,10 +17,10 @@ describe('Button', () => {
     expect(btn).toHaveClass('border-ink', 'bg-surface', 'text-ink');
   });
 
-  it('variant="accent" reserved for single primary CTA', () => {
-    render(<Button variant="accent">交卷</Button>);
-    const btn = screen.getByRole('button', { name: '交卷' });
-    expect(btn).toHaveClass('bg-accent', 'text-white');
+  it('variant="accent" maps to gray emphasis', () => {
+    render(<Button variant="accent">重点提醒</Button>);
+    const btn = screen.getByRole('button', { name: '重点提醒' });
+    expect(btn).toHaveClass('bg-ink-2', 'text-white');
   });
 
   it('variant="ghost" softer outline', () => {
@@ -39,7 +39,7 @@ describe('Button', () => {
     render(<Button variant="quiet">取消</Button>);
     const btn = screen.getByRole('button', { name: '取消' });
     expect(btn).toHaveClass('text-ink-3');
-    expect(btn).not.toHaveClass('bg-ink-1');
+    expect(btn).not.toHaveClass('bg-accent');
   });
 
   it('size="sm" maps to px-3 py-2 (32px target)', () => {
@@ -95,12 +95,12 @@ describe('Button', () => {
     expect(screen.getByRole('button')).toHaveClass('w-full');
   });
 
-  it('active=true sets aria-pressed + data-active + ink reverse classes', () => {
+  it('active=true sets aria-pressed + data-active + accent reverse classes', () => {
     render(<Button active>x</Button>);
     const btn = screen.getByRole('button');
     expect(btn).toHaveAttribute('aria-pressed', 'true');
     expect(btn).toHaveAttribute('data-active', 'true');
-    expect(btn).toHaveClass('bg-ink-1', 'text-paper-1', 'border-ink-1');
+    expect(btn).toHaveClass('bg-accent', 'text-paper-1', 'border-accent');
   });
 
   it('active default (false) omits data-active + aria-pressed', () => {

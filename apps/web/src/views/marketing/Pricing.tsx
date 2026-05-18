@@ -124,8 +124,8 @@ export function MarketingPricing() {
       </div>
 
       {/* Beta banner */}
-      <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto] gap-6 items-center px-7 py-6 bg-ink text-white rounded-card-lg mb-8">
-        <span className="pv-beta-badge inline-flex px-4 py-2 bg-accent text-white text-sm font-semibold rounded-pill whitespace-nowrap">
+      <div className="grid grid-cols-1 md:grid-cols-[auto_1fr_auto] gap-6 items-center px-7 py-6 bg-accent text-white rounded-card-lg mb-8">
+        <span className="pv-beta-badge inline-flex px-4 py-2 bg-white/15 text-white text-sm font-semibold rounded-pill whitespace-nowrap">
           Beta · 邀请制
         </span>
         <span className="text-md leading-snug text-white/85">
@@ -147,7 +147,7 @@ export function MarketingPricing() {
         {PLANS.map((plan) => {
           const featured = plan.featured ?? false;
           const cardCls = featured
-            ? 'relative bg-ink text-white border border-ink shadow-pop'
+            ? 'relative bg-accent text-white border border-accent shadow-pop'
             : 'relative bg-surface text-ink border border-line';
           return (
             <div
@@ -155,7 +155,7 @@ export function MarketingPricing() {
               className={`${cardCls} rounded-card-lg p-8 flex flex-col gap-3 will-change-transform transition-[transform,box-shadow,border-color] duration-base ease-motion hover:-translate-y-1 hover:shadow-pop hover:border-line-3`}
             >
               {featured && (
-                <span className="absolute -top-3 right-5 bg-accent text-white text-sm font-semibold px-3 py-2 rounded-tiny">
+                <span className="absolute -top-3 right-5 bg-ink-2 text-white text-sm font-semibold px-3 py-2 rounded-tiny">
                   推荐
                 </span>
               )}
@@ -184,7 +184,7 @@ export function MarketingPricing() {
                   <li key={f}>
                     <span
                       className={
-                        featured ? 'mr-2 font-bold text-accent' : 'mr-2 font-bold text-ink-1'
+                        featured ? 'mr-2 font-bold text-white' : 'mr-2 font-bold text-accent'
                       }
                     >
                       ✓

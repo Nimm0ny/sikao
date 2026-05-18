@@ -3,8 +3,9 @@
 // Tailwind utility classes below consume those vars via `var(--*)`, so
 // re-theming means editing tokens.css (or overriding the vars at runtime).
 //
-// Frontend Style Guide v1 (2026-05-12, lhr 拍板, 完全按规范走不许创新):
-//   - paper.1/2/3, ink.1/2/3/4, line.1/2/3, accent.1/2/50, ok/warn/err 新命名
+// Frontend Style Guide v1 (2026-05-19, lhr 批准蓝白主色, 完全按规范走不许创新):
+//   - paper.1/2/3, ink.1/2/3/4, line.1/2/3, accent.1/2/50, ok/warn/err/50 新命名
+//   - accent owns primary actions / active states / focus; ink stays for reading text
 //   - borderRadius: 1 (2px), tiny (4px), 2 (6px), card (10px), card-lg (14px), pill (999px)
 //   - fontSize: display/h1/h2/h3/body/small/meta/tiny 走 var(--t-*) (规范 8 档)
 //                + xs/sm/base/md/lg/xl/2xl..5xl 走 var(--fs-*) (legacy px 阶梯)
@@ -17,12 +18,13 @@
 //   - 删除 colors.{brand, success, danger, muted, placeholder, paper.deep,
 //          ink.muted, line.strong, surface} (legacy 已 grep-replace 到新命名)
 //
-// 规范本体: docs/design/Frontend Style Guide.html
-// Plan:    docs/plan/frontend-style-guide-v1-migration.md PR2.
+// 规范本体: docs/vault/04-design/Frontend Style Guide.html
+// Plan:    docs/plan/frontend-style-guide-v1-migration.md.
 export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
+    "../../packages/ui/src/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
@@ -62,14 +64,17 @@ export default {
         },
         ok: {
           DEFAULT: 'var(--ok)',
+          50: 'var(--ok-50)',
           bg: 'var(--ok-bg)',
         },
         warn: {
           DEFAULT: 'var(--warn)',
+          50: 'var(--warn-50)',
           bg: 'var(--warn-bg)',
         },
         err: {
           DEFAULT: 'var(--err)',
+          50: 'var(--err-50)',
         },
         // ── semantic surface tints (跟 err 配对的 background) ─────────
         bad: {

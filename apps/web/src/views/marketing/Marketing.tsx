@@ -17,7 +17,7 @@ import { MarketingFooter } from './Footer';
 
 export default function Marketing() {
   return (
-    <div className="bg-surface text-ink min-h-screen">
+    <div data-theme="pure" className="bg-paper-1 text-ink min-h-screen">
       <style>{`
         /* .pv-btn — marketing CTA hover/active 流畅化：
            原型 element/ui_kits/marketing/index.html .btn 的 will-change + active 80ms 行为。

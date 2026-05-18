@@ -44,6 +44,14 @@ describe('Marketing landing V1', () => {
     expect(screen.getByTestId('marketing-cta-signup')).toHaveAttribute('href', '/register/email');
   });
 
+  it('forces the light marketing palette even when global theme is dark', () => {
+    document.documentElement.setAttribute('data-theme', 'dark');
+
+    const { container } = renderWithProviders(<Marketing />, { initialEntries: ['/'] });
+    expect(container.firstElementChild).toHaveAttribute('data-theme', 'pure');
+    expect(container.firstElementChild).toHaveClass('bg-paper-1');
+  });
+
   it('keeps user-facing copy in product language', () => {
     renderWithProviders(<Marketing />, { initialEntries: ['/'] });
 

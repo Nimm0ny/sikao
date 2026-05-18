@@ -9,7 +9,7 @@ import { useMemo } from 'react';
 //
 // Visual 决定 (subagent reviewer P2 反馈): rounded-tiny (10px) + h-8 + text-xs
 // font-mono 统一. EssayPapers / EssaySpecialty 之前 inline rounded-card (12px)
-// 在 32px button 上 37.5% 占比偏肉, 不符合 ink-first 工具感 — atom 收口顺手
+// 在 32px button 上 37.5% 占比偏肉, 不符合紧凑工具感 — atom 收口顺手
 // 统一为 rounded-tiny (跟 Button atom 同 token), 三处一致.
 //
 // API:

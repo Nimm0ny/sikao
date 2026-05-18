@@ -74,7 +74,7 @@ Multica 负责记录：
 - 核心产品：**思考**（SIKAO） —— 公考备考工具。
   - 标语：**让备考从刷题变成思考**
   - 调性：备考同伴、克制的陪伴。「图书馆隔壁桌的同学」 —— 安静、靠谱、不打鸡血。
-  - 视觉：ink-first（黑色为主），蓝是 accent 点缀。设计规范见 `design/` + `docs/vault/04-design/Design-System.md`
+  - 视觉：白 + 蓝为主，黑灰做点缀。蓝承担主行动 / 当前状态 / focus / link，黑灰承担正文与结构。设计规范见 `design/` + `docs/vault/04-design/Design-System.md`
 - 核心项目是 **`sikao`** 单仓 monorepo（npm workspaces，前端 `apps/web` + `packages/*` + 后端 `services/api` 同库）；架构详见 `docs/vault/03-tech/Architecture.md`
 - 仓库：<https://github.com/Nimm0ny/sikao>
 - 目标前端栈：React 19 + TypeScript + Vite 8（npm workspaces，8 包：ui / design-system / api-client / domain / answer-engine / editor / shared-utils / config）
@@ -371,16 +371,16 @@ if (!response.ok) {
 
 **改 token 只改 `packages/design-system/src/tokens.css`；apps/web/src/styles/tokens.css 应当 `@import` 该单源，禁止平铺复制。任何漂移都是 bug。**
 
-Brand 是 ink（`--ink-1: #1A1714`），accent 是深编辑蓝（`--accent-1: #2A56C8`），仅
-focus / 链接 / 单一关键 CTA 使用。完整 token 表见 `docs/vault/04-design/Design-System.md`（lhr 2026-05-12 交付），中文工程化补充见 `docs/vault/04-design/Design-System.md`。
+Brand 是白 + 蓝（`--paper-1: #FFFFFF` / `--accent-1: #2563EB`），黑灰 ink 只承担正文、题干、边框和弱状态。
+蓝色用于主 CTA / 当前选中 / active / focus / link；禁止把正文整片刷蓝。完整 token 表见 `docs/vault/04-design/Design-System.md`（lhr 2026-05-19 蓝白主色修订），中文工程化补充见 `docs/vault/04-design/Design-System.md`。
 
 **核心 token 命名（PR1 全量替换到 Frontend Style Guide v1）**：
 
-- paper（surface, 暖象牙）：`--paper-1` (#FAF7EF) / `--paper-2` (#F4F0E6) / `--paper-3` (#ECE6D7)
-- ink（text, 暖墨）：`--ink-1` (#1A1714) / `--ink-2` (#3A352D) / `--ink-3` (#6B6358) / `--ink-4` (#948A7A)
-- line（border）：`--line-1` (#E2DBC7) / `--line-2` (#D9D1BE) / `--line-3` (#BDB29A)
-- accent（唯一蓝）：`--accent-1` (#2A56C8) / `--accent-2` (#245fd6) / `--accent-50` (#eaf2ff)
-- semantic（仅功能）：`--ok` (#1F7A4D) / `--warn` (#9E5D14) / `--err` (#A22A2A)
+- paper（surface, 白 / 浅冷灰）：`--paper-1` (#FFFFFF) / `--paper-2` (#F7F9FC) / `--paper-3` (#EEF2F7)
+- ink（text, 黑灰阅读层）：`--ink-1` (#111827) / `--ink-2` (#374151) / `--ink-3` (#6B7280) / `--ink-4` (#9CA3AF)
+- line（border）：`--line-1` (#E5E7EB) / `--line-2` (#D1D5DB) / `--line-3` (#CBD5E1)
+- accent（主行动蓝）：`--accent-1` (#2563EB) / `--accent-2` (#1D4ED8) / `--accent-50` (#EFF6FF)
+- semantic（仅功能）：`--ok` (#15803D) / `--ok-50` (#F0FDF4) / `--warn` (#D97706) / `--warn-50` (#FFFBEB) / `--err` (#DC2626) / `--err-50` (#FEF2F2)
 - spacing 9 档：`--sp-1..9` = 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96
 - shadow 2 档：`--shadow-card`（一级 elevated 卡）/ `--shadow-pop`（popover / toast / modal）
 
@@ -471,7 +471,7 @@ PR1-PR5 落地节奏见 `docs/plan/frontend-style-guide-v1-migration.md`；alias
 1. **同一 view 内 ≥2 处卡片类元素必须用同一 radius family**（全 `rounded-card` 或全 `rounded-card-lg`，**不允许直角和圆角混用**）
 2. **禁止** `rounded-[Npx]` 任意值（已在 `lint:hardcode` 巡检）
 3. **禁止** 隐性直角（div + border 没 radius）—— 必须用 Card primitive 或显式 `rounded-card`
-4. ink-first 调性：偏小圆角（4-14px = tiny/card/card-lg），不允许超大圆角（>14px，除 `rounded-pill` 全圆），不允许纯直角（除非设计稿明确点名 ink-first 工具感的"机械网格"场景, 走 `rounded-1`）
+4. blue-white app 调性：偏小圆角（4-14px = tiny/card/card-lg），不允许超大圆角（>14px，除 `rounded-pill` 全圆），不允许纯直角（除非设计稿明确点名工具感的"机械网格"场景, 走 `rounded-1`）
 
 **audit 自动化**：`npm run lint:radius-token`（CI 0 命中）。**反模式列表 + 例外白名单（dot pattern）+ Escape hatch `// radius-allow:`** → `docs/vault/04-design/Design-System.md` §圆角组件 SSOT 反模式与例外。
 

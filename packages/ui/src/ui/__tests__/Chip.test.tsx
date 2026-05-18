@@ -21,12 +21,12 @@ describe('Chip', () => {
     expect(btn).toHaveAttribute('aria-pressed', 'false');
   });
 
-  it('selected=true flips to ink reverse (spec is-on)', () => {
+  it('selected=true flips to blue action reverse (spec is-on)', () => {
     render(<Chip selected>x</Chip>);
     const btn = screen.getByRole('button');
-    expect(btn.className).toContain('bg-ink-1');
+    expect(btn.className).toContain('bg-accent');
     expect(btn.className).toContain('text-paper-1');
-    expect(btn.className).toContain('border-ink-1');
+    expect(btn.className).toContain('border-accent');
     expect(btn).toHaveAttribute('aria-pressed', 'true');
     expect(btn).toHaveAttribute('data-selected', 'true');
   });

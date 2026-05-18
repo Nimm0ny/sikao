@@ -9,7 +9,7 @@ export function MarketingNav() {
     <div
       className="sticky top-0 z-50 border-b border-line"
       style={{
-        background: 'rgba(255, 255, 255, 0.78)',
+        background: 'color-mix(in srgb, var(--paper-1) 78%, transparent)',
         backdropFilter: 'saturate(180%) blur(12px)',
         WebkitBackdropFilter: 'saturate(180%) blur(12px)',
       }}
@@ -51,7 +51,7 @@ export function MarketingNav() {
         <Link
           to="/register/email"
           data-testid="marketing-cta-signup"
-          className="pv-btn px-4 py-3 sm:px-5 rounded-tiny bg-ink text-white text-sm sm:text-md font-semibold whitespace-nowrap hover:bg-ink-1 hover:scale-[1.03] active:scale-[0.98] transition-[background-color,transform] duration-base ease-motion"
+          className="pv-btn px-4 py-3 sm:px-5 rounded-tiny bg-accent text-white text-sm sm:text-md font-semibold whitespace-nowrap hover:bg-accent-2 hover:scale-[1.03] active:scale-[0.98] transition-[background-color,transform] duration-base ease-motion"
         >
           免费试用
         </Link>

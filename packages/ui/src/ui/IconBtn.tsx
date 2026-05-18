@@ -6,8 +6,8 @@ import { cn } from '@sikao/shared-utils';
 // 设计 SSOT: `design/SIKAO/handoff/design/components.md` (.icon-btn anchor) +
 // `design/SIKAO/extracted/component-className-map.md` (#IconBtn). Variants:
 //   - default: 描边 rule + ink-3 icon, hover bg paper-2 / active bg paper-3
-//   - on:      已选中态 (例: 收藏 / 标记). bg paper-2 + ink stroke
-//   - primary: 主操作色 (ink bg + paper text). 一屏最多 1 处, 通常用 Button 替代
+//   - on:      已选中态 (例: 收藏 / 标记). accent-50 bg + accent stroke
+//   - primary: 主操作色 (accent bg + paper text). 一屏最多 1 处, 通常用 Button 替代
 //
 // **aria-label is required** (TS 强约束). 任何"图标按钮无文字"必须有可读 label,
 // 否则 a11y 不通过. 这跟 SVG-only 行测/申论按钮的硬约束一致 (CLAUDE.md §4 §11
@@ -43,15 +43,15 @@ const SIZE: Record<IconBtnSize, string> = {
 // Variant 走 token. paper-2 / paper-3 通过 surface-alt + paper-deep alias 流向
 // SIKAO paper 内核 (tokens.css 兼容层 §99-117).
 const VARIANT: Record<IconBtnVariant, string> = {
-  // 描边 rule + ink-3 icon (淡笔触感). hover 升 paper-2 + ink, active 沉 paper-3.
+  // 描边 rule + ink-3 icon (淡笔触感). hover 升 accent blue, active 沉 paper-3.
   default:
     'bg-transparent border border-line text-ink-3 ' +
-    'hover:bg-surface-alt hover:text-ink hover:border-line-3 ' +
+    'hover:bg-accent-50 hover:text-accent hover:border-accent ' +
     'active:bg-paper-3',
-  // 已选中态: paper-2 底 + ink stroke (e.g. 收藏后的星星 / 标记后的旗子)
-  on: 'bg-surface-alt border border-line-3 text-ink',
-  // 主操作: ink bg + paper text. 一屏最多 1 处 — 多了改用 Button primary.
-  primary: 'bg-ink-1 text-white border border-transparent hover:bg-ink-1',
+  // 已选中态: accent-50 底 + accent stroke (e.g. 收藏后的星星 / 标记后的旗子)
+  on: 'bg-accent-50 border border-accent text-accent',
+  // 主操作: accent bg + paper text. 一屏最多 1 处 — 多了改用 Button primary.
+  primary: 'bg-accent text-white border border-transparent hover:bg-accent-2',
 };
 
 const BASE =

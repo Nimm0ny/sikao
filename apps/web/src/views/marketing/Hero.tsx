@@ -27,8 +27,8 @@ export function MarketingHero() {
         }
       `}</style>
 
-      <span className="inline-flex items-center gap-3 bg-paper-2 text-ink-1 border border-paper-3 px-5 py-2 rounded-pill text-base font-semibold">
-        <i aria-hidden="true" className="w-2 h-2 rounded-pill bg-ink-1" />
+      <span className="inline-flex items-center gap-3 bg-accent-50 text-accent border border-accent/20 px-5 py-2 rounded-pill text-base font-semibold">
+        <i aria-hidden="true" className="w-2 h-2 rounded-pill bg-accent" />
         2026 国考大纲已对齐 · 申论批改建议
       </span>
 
@@ -52,7 +52,7 @@ export function MarketingHero() {
         <Link
           to="/register/email"
           data-testid="marketing-cta-start"
-          className="pv-btn inline-flex items-center justify-center gap-2 px-9 py-5 rounded-tiny bg-ink text-white text-lg font-semibold hover:bg-ink-1 hover:scale-[1.03] active:scale-[0.98] transition-[background-color,transform] duration-base ease-motion"
+          className="pv-btn inline-flex items-center justify-center gap-2 px-9 py-5 rounded-tiny bg-accent text-white text-lg font-semibold hover:bg-accent-2 hover:scale-[1.03] active:scale-[0.98] transition-[background-color,transform] duration-base ease-motion"
         >
           开始免费练习
         </Link>
@@ -65,13 +65,13 @@ export function MarketingHero() {
       </div>
 
       <div className="mt-6 flex items-center gap-5 text-sm text-ink-3 flex-wrap">
-        <span className="before:content-['✓'] before:text-ink-1 before:font-bold before:mr-2">
+        <span className="before:content-['✓'] before:text-accent before:font-bold before:mr-2">
           受邀者首月免费
         </span>
-        <span className="before:content-['✓'] before:text-ink-1 before:font-bold before:mr-2">
+        <span className="before:content-['✓'] before:text-accent before:font-bold before:mr-2">
           2013–2025 全量真题
         </span>
-        <span className="before:content-['✓'] before:text-ink-1 before:font-bold before:mr-2">
+        <span className="before:content-['✓'] before:text-accent before:font-bold before:mr-2">
           申论批改建议
         </span>
       </div>

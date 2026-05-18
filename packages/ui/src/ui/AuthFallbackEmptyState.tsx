@@ -12,7 +12,7 @@ import { AUTH_COPY } from '@/lib/ui-copy';
 // 有几帧时序窗口, 或 query 报 401 但 user UI state 还没清).
 //
 // 这里统一走 "请先登录" + "登录" CTA, 跟现有 EmptyState (tone='muted')
-// 调性一致 (ink-first / 不打鸡血). 不 auto-redirect — 必须用户 click 触发,
+// 调性一致 (蓝白主色 / 不打鸡血). 不 auto-redirect — 必须用户 click 触发,
 // 避免 silent navigate 让用户失去上下文.
 //
 // 跳转走 location.state.from (跟 RedirectGuard / Login.tsx 既有约定一致),

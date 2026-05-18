@@ -219,7 +219,7 @@ export function MarketingPreview() {
                 className={[
                   'px-4 py-3 text-sm font-semibold whitespace-nowrap',
                   '-mb-px border-b-2 transition-colors duration-fast ease-motion',
-                  on ? 'text-ink border-ink' : 'text-ink-3 border-transparent hover:text-ink',
+                  on ? 'text-accent border-accent' : 'text-ink-3 border-transparent hover:text-accent',
                 ].join(' ')}
               >
                 {pane.tabLabel}
@@ -270,7 +270,7 @@ export function MarketingPreview() {
             {/* User msg */}
             <div className="bg-paper-2 border border-paper-3 rounded-card p-5 text-md leading-relaxed">
               <div className="flex items-center gap-3 mb-4 text-md font-bold text-ink-1">
-                <span className="w-2 h-2 rounded-pill bg-ink-1 flex-shrink-0" />
+                <span className="w-2 h-2 rounded-pill bg-ink-3 flex-shrink-0" />
                 你
               </div>
               {active.userMsg}

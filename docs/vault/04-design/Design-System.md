@@ -2,7 +2,7 @@
 type: product
 status: draft
 owner: lhr
-last-reviewed: 2026-05-13
+last-reviewed: 2026-05-19
 ---
 
 # Design System
@@ -11,7 +11,7 @@ last-reviewed: 2026-05-13
 
 ## 完整规范
 
-- **HTML 规范（权威）**：[Frontend Style Guide.html](./Frontend%20Style%20Guide.html) — 2026-05-12 交付，从 new_web/docs/design/ 拷贝至本目录
+- **HTML 规范（权威）**：[Frontend Style Guide.html](./Frontend%20Style%20Guide.html) — 2026-05-19 蓝白主色修订，按《新前端规范落地计划》落地
 - **中文工程化补充**：本文档 + [[Web-Layout]] / [[Mobile-Layout]] / [[Tablet-Layout]]
 - **设计原型参考**：`design/`（仓库根，14MB，从 new_web/design/ 镜像；详见 `design/README.md`）
 
@@ -21,11 +21,13 @@ last-reviewed: 2026-05-13
 
 ## Token 类别
 
-- **paper**：`--paper-1` (#FAF7EF) / `--paper-2` (#F4F0E6) / `--paper-3` (#ECE6D7)
-- **ink**：`--ink-1` (#1A1714) / `--ink-2` (#3A352D) / `--ink-3` (#6B6358) / `--ink-4` (#948A7A)
-- **line**：`--line-1` (#E2DBC7) / `--line-2` (#D9D1BE) / `--line-3` (#BDB29A)
-- **accent**：`--accent-1` (#2A56C8) / `--accent-2` (#245fd6) / `--accent-50` (#eaf2ff)
-- **semantic**：`--ok` (#1F7A4D) / `--warn` (#9E5D14) / `--err` (#A22A2A)
+- **主色规则**：白 + 蓝为主，黑灰做点缀。蓝色承担主 CTA / 当前选中 / active / focus / link；黑灰承担正文、题干、边框和弱状态。禁止把正文整片刷蓝。
+- **paper**：`--paper-1` (#FFFFFF) / `--paper-2` (#F7F9FC) / `--paper-3` (#EEF2F7)
+- **ink**：`--ink-1` (#111827) / `--ink-2` (#374151) / `--ink-3` (#6B7280) / `--ink-4` (#9CA3AF)
+- **line**：`--line-1` (#E5E7EB) / `--line-2` (#D1D5DB) / `--line-3` (#CBD5E1)
+- **accent**：`--accent-1` (#2563EB) / `--accent-2` (#1D4ED8) / `--accent-50` (#EFF6FF)
+- **semantic**：`--ok` (#15803D) / `--ok-50` (#F0FDF4) / `--warn` (#D97706) / `--warn-50` (#FFFBEB) / `--err` (#DC2626) / `--err-50` (#FEF2F2)
+- **dark**：深蓝黑夜间模式，非反相；`--paper-1` (#0F172A) / `--paper-2` (#111827) / `--paper-3` (#1E293B) / `--accent-1` (#60A5FA)
 - **spacing 9 档**：4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96
 - **shadow 2 档**：`--shadow-card` / `--shadow-pop`
 - **radius 7 档**：`--r-1` (2) / `--r-tiny` (4) / `--r-2` (6) / `--r-card` (10) / `--r-card-lg` (14) / `--r-pill` (999)

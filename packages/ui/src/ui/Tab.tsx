@@ -39,7 +39,7 @@ const PILL_BASE =
   'relative px-3 py-2 rounded-tiny text-sm font-medium cursor-pointer ' +
   'transition-colors disabled:opacity-40 disabled:cursor-not-allowed ' +
   'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-50';
-const PILL_INACTIVE = 'text-ink-3 hover:text-ink hover:bg-surface-alt';
+const PILL_INACTIVE = 'text-ink-3 hover:text-accent hover:bg-accent-50';
 const PILL_ACTIVE_TEXT = 'text-white';
 
 // —— underline 变体（element spec）——
@@ -47,8 +47,8 @@ const UNDER_BASE =
   'relative px-0 py-4 text-md cursor-pointer transition-colors ' +
   'disabled:opacity-40 disabled:cursor-not-allowed ' +
   'focus-visible:outline-none focus-visible:underline underline-offset-8';
-const UNDER_INACTIVE = 'text-ink-3 hover:text-ink font-medium';
-const UNDER_ACTIVE = 'text-ink font-semibold';
+const UNDER_INACTIVE = 'text-ink-3 hover:text-accent font-medium';
+const UNDER_ACTIVE = 'text-accent font-semibold';
 
 export function Tabs<T extends string = string>({
   items,
@@ -86,7 +86,7 @@ export function Tabs<T extends string = string>({
                 <span
                   className={cn(
                     'ml-2 font-serif italic',
-                    selected ? 'text-ink' : 'text-ink-4',
+                    selected ? 'text-accent' : 'text-ink-4',
                   )}
                 >
                   {item.count}
@@ -95,7 +95,7 @@ export function Tabs<T extends string = string>({
               {selected ? (
                 <motion.span
                   layoutId={layoutId}
-                  className="absolute left-0 right-0 -bottom-[1px] h-0.5 bg-ink" // hardcode-allow: motion underline overlay 到 border-b 1px 上
+                  className="absolute left-0 right-0 -bottom-[1px] h-0.5 bg-accent" // hardcode-allow: motion underline overlay 到 border-b 1px 上
                   transition={MOTION_SPRING_SOFT}
                   aria-hidden="true"
                 />
@@ -130,7 +130,7 @@ export function Tabs<T extends string = string>({
             {selected ? (
               <motion.span
                 layoutId={layoutId}
-                className="absolute inset-0 rounded-tiny bg-ink"
+                className="absolute inset-0 rounded-tiny bg-accent"
                 transition={MOTION_SPRING_SOFT}
                 aria-hidden="true"
               />

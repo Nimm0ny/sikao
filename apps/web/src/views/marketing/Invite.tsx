@@ -29,7 +29,7 @@ export function MarketingInvite() {
           <Link
             to="/register/email"
             data-testid="marketing-invite-cta-apply"
-            className="pv-btn inline-flex items-center justify-center gap-2 px-9 py-5 rounded-tiny bg-ink text-white text-lg font-semibold hover:bg-ink-1 hover:scale-[1.03] active:scale-[0.98] transition-[background-color,transform] duration-base ease-motion text-center"
+            className="pv-btn inline-flex items-center justify-center gap-2 px-9 py-5 rounded-tiny bg-accent text-white text-lg font-semibold hover:bg-accent-2 hover:scale-[1.03] active:scale-[0.98] transition-[background-color,transform] duration-base ease-motion text-center"
           >
             申请加入 beta
           </Link>

@@ -10,27 +10,30 @@
 <style>
 /* ═══════════════════ TOKENS · single source of truth ═══════════════════ */
 :root {
-  /* paper (surface ladder, warm ivory) */
-  --paper-1: #FAF7EF;
-  --paper-2: #F4F0E6;
-  --paper-3: #ECE6D7;
+  /* paper (surface ladder, screenshot neutral) */
+  --paper-1: #FFFFFF;
+  --paper-2: #F7F9FC;
+  --paper-3: #EEF2F7;
   /* ink (text ladder) */
-  --ink-1:   #1A1714;
-  --ink-2:   #3A352D;
-  --ink-3:   #6B6358;
-  --ink-4:   #948A7A;
+  --ink-1:   #111827;
+  --ink-2:   #374151;
+  --ink-3:   #6B7280;
+  --ink-4:   #9CA3AF;
   /* line (border ladder) */
-  --line-1:  #E2DBC7;
-  --line-2:  #D9D1BE;
-  --line-3:  #BDB29A;
-  /* accent (single editorial blue; CTA + focus only) */
-  --accent-1: #2A56C8;
-  --accent-2: #245fd6;
-  --accent-50:#eaf2ff;
+  --line-1:  #E5E7EB;
+  --line-2:  #D1D5DB;
+  --line-3:  #CBD5E1;
+  /* accent (primary brand/action blue) */
+  --accent-1: #2563EB;
+  --accent-2: #1D4ED8;
+  --accent-50:#EFF6FF;
   /* semantic (functional only · never decoration) */
-  --ok:   #1F7A4D;
-  --warn: #9E5D14;
-  --err:  #A22A2A;
+  --ok:      #15803D;
+  --ok-50:   #F0FDF4;
+  --warn:    #D97706;
+  --warn-50: #FFFBEB;
+  --err:     #DC2626;
+  --err-50:  #FEF2F2;
   /* spacing (8px base · also 4 / 12 / 16 / 24 / 32 / 48 / 64 / 96) */
   --sp-1: 4px;  --sp-2: 8px;  --sp-3: 12px; --sp-4: 16px;
   --sp-5: 24px; --sp-6: 32px; --sp-7: 48px; --sp-8: 64px; --sp-9: 96px;
@@ -40,8 +43,8 @@
   --r-card-lg:14px;
   --r-pill:   999px;
   /* shadow (only on elevated cards · no decoration shadow) */
-  --shadow-card:    0 1px 0 rgba(20,18,14,.04), 0 6px 18px -10px rgba(20,18,14,.18);
-  --shadow-pop:     0 12px 32px -16px rgba(20,18,14,.32);
+  --shadow-card:    0 1px 0 rgba(17,24,39,.04), 0 8px 24px -14px rgba(17,24,39,.18);
+  --shadow-pop:     0 16px 40px -18px rgba(17,24,39,.28);
   /* type scale */
   --t-display: 44px;
   --t-h1:      32px;
@@ -62,7 +65,7 @@
 * { box-sizing: border-box; }
 html, body {
   margin: 0;
-  background: #E8E1CF;
+  background: #F3F5F9;
   color: var(--ink-1);
   font: 400 14px/1.55 'Inter', -apple-system, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -231,8 +234,8 @@ table.spec-table td code { font-size: 11px; }
   padding: 2px 6px; border-radius: 3px;
   letter-spacing: .04em;
 }
-.do-dont .do  h5 .tag { background: rgba(31,122,77,.12); color: var(--ok); }
-.do-dont .no  h5 .tag { background: rgba(162,42,42,.10); color: var(--err); }
+.do-dont .do  h5 .tag { background: var(--ok-50); color: var(--ok); }
+.do-dont .no  h5 .tag { background: var(--err-50); color: var(--err); }
 .do-dont .col ul { margin: 0; padding-left: 18px; font-size: 13px; color: var(--ink-2); }
 .do-dont .col li { margin-bottom: 5px; }
 .do-dont .col li i { color: var(--ink-3); }
@@ -264,17 +267,18 @@ table.spec-table td code { font-size: 11px; }
 
 /* dark surface preview */
 .dark-card {
-  background: #15130F;
-  color: #E8E2D2;
+  background: #0F172A;
+  color: #F8FAFC;
   border-radius: var(--r-card);
   padding: 22px;
-  border: 1px solid #3A3328;
+  border: 1px solid #334155;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04);
 }
 .dark-card h5 {
   font-family: 'Source Serif 4'; font-weight: 600;
   margin: 0 0 6px; font-size: 18px;
 }
-.dark-card p { font-family: 'Source Serif 4'; color: #9B917D; margin: 0 0 14px; font-size: 13px; }
+.dark-card p { font-family: 'Source Serif 4'; color: #CBD5E1; margin: 0 0 14px; font-size: 13px; }
 
 /* ═══════════════════ §3 TYPE ═══════════════════ */
 .type-row {
@@ -351,13 +355,14 @@ table.spec-table td code { font-size: 11px; }
   cursor: pointer;
   transition: background .12s ease;
 }
-.btn.primary { background: var(--ink-1); color: var(--paper-1); }
-.btn.primary:hover { background: var(--ink-2); }
+.btn.primary { border-color: var(--accent-1); background: var(--accent-1); color: var(--paper-1); }
+.btn.primary:hover { border-color: var(--accent-2); background: var(--accent-2); }
 .btn.ghost { border-color: var(--line-3); color: var(--ink-2); }
 .btn.ghost:hover { border-color: var(--ink-2); color: var(--ink-1); }
 .btn.danger { border-color: var(--err); color: var(--err); }
 .btn.danger:hover { background: var(--err); color: var(--paper-1); }
-.btn.accent { border-color: var(--accent-1); color: var(--paper-1); background: var(--accent-1); }
+.btn.accent { border-color: var(--ink-2); color: var(--paper-1); background: var(--ink-2); }
+.btn.accent:hover { border-color: var(--ink-1); background: var(--ink-1); }
 .btn:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
 .btn:disabled, .btn[aria-disabled="true"] { opacity: .4; cursor: not-allowed; }
 .btn.lg { padding: 12px 22px; font-size: 14px; }
@@ -369,8 +374,8 @@ table.spec-table td code { font-size: 11px; }
   border: 1px solid var(--line-2); border-radius: var(--r-tiny);
   background: var(--paper-1); color: var(--ink-2); cursor: pointer;
 }
-.icon-btn:hover { border-color: var(--ink-1); color: var(--ink-1); }
-.icon-btn.is-on { border-color: var(--ink-1); color: var(--ink-1); background: var(--paper-3); }
+.icon-btn:hover { border-color: var(--accent-1); color: var(--accent-1); }
+.icon-btn.is-on { border-color: var(--accent-1); color: var(--accent-1); background: var(--accent-50); }
 .icon-btn:focus-visible { outline: 2px solid var(--accent-2); outline-offset: 2px; }
 .icon-btn svg { width: 18px; height: 18px; }
 
@@ -420,8 +425,8 @@ table.spec-table td code { font-size: 11px; }
   padding: 5px 13px; font: 400 12px/1 'Source Serif 4';
   color: var(--ink-2); background: var(--paper-1); cursor: pointer;
 }
-.chip-btn:hover { border-color: var(--ink-1); color: var(--ink-1); }
-.chip-btn.is-on { background: var(--ink-1); color: var(--paper-1); border-color: var(--ink-1); }
+.chip-btn:hover { border-color: var(--accent-1); color: var(--accent-1); }
+.chip-btn.is-on { background: var(--accent-1); color: var(--paper-1); border-color: var(--accent-1); }
 
 /* ═══════════════════ CARD ═══════════════════ */
 .card {
@@ -518,8 +523,8 @@ table.spec-table td code { font-size: 11px; }
   border-bottom: 2px solid transparent;
   margin-bottom: -1px;
 }
-.tab.is-on { color: var(--ink-1); border-bottom-color: var(--ink-1); font-weight: 600; }
-.tab:hover { color: var(--ink-1); }
+.tab.is-on { color: var(--accent-1); border-bottom-color: var(--accent-1); font-weight: 600; }
+.tab:hover { color: var(--accent-1); }
 
 /* ═══════════════════ BREADCRUMB / PAGE HEAD ═══════════════════ */
 .breadcrumb {
@@ -545,7 +550,7 @@ table.spec-table td code { font-size: 11px; }
 
 /* ═══════════════════ DRAWER / MODAL preview ═══════════════════ */
 .modal-preview {
-  background: rgba(20,18,14,.18);
+  background: rgba(17,24,39,.18);
   padding: 32px;
   border-radius: var(--r-card);
   display: flex; justify-content: center;
@@ -588,7 +593,7 @@ table.spec-table td code { font-size: 11px; }
 .dont-card .tag {
   font-family: 'JetBrains Mono'; font-size: 10px;
   padding: 2px 6px; border-radius: 3px;
-  background: rgba(162,42,42,.10); color: var(--err);
+  background: rgba(239,68,68,.10); color: var(--err);
   letter-spacing: .04em;
 }
 .dont-card h6 {
@@ -621,7 +626,7 @@ table.spec-table td code { font-size: 11px; }
     <div class="cover-meta">
       <div><b>调性</b><i>图书馆隔壁桌</i></div>
       <div><b>主字体</b>Source Serif 4 + Inter</div>
-      <div><b>主色</b>羊皮纸 / 墨</div>
+      <div><b>主色</b>浅灰白 / 深墨 / 蓝</div>
       <div><b>口令</b>克制 · 编辑 · 不打鸡血</div>
     </div>
   </header>
@@ -683,57 +688,63 @@ table.spec-table td code { font-size: 11px; }
       <div class="num">ii</div>
       <div>
         <h2>Color</h2>
-        <div class="h2-sub">羊皮纸为底、墨为字、单一编辑蓝做强调 — 暗模式不是反相而是夜光羊皮纸</div>
+        <div class="h2-sub">浅灰白为底、深墨为字、单一行动蓝做强调 — 暗模式不是反相而是夜间蓝灰</div>
       </div>
-      <div class="head-meta">tokens.css · oklch 不允许散用</div>
+      <div class="head-meta">tokens.css · screenshot palette · 不允许散用</div>
     </div>
 
-    <h3 class="subsec">Paper · 表面层</h3>
+    <h3 class="subsec">Paper · 表面层（截图浅灰白）</h3>
     <div class="swatch-grid">
-      <div class="sw"><div class="chip" style="background:#FAF7EF;color:#6B6358">paper-1</div><div class="meta"><b>--paper-1</b>#FAF7EF<i>页背景 / 卡内</i></div></div>
-      <div class="sw"><div class="chip" style="background:#F4F0E6;color:#6B6358">paper-2</div><div class="meta"><b>--paper-2</b>#F4F0E6<i>section 衬底</i></div></div>
-      <div class="sw"><div class="chip" style="background:#ECE6D7;color:#6B6358">paper-3</div><div class="meta"><b>--paper-3</b>#ECE6D7<i>嵌套 / code 块</i></div></div>
+      <div class="sw"><div class="chip" style="background:#FFFFFF;color:#6B7280">paper-1</div><div class="meta"><b>--paper-1</b>#FFFFFF<i>卡内 / 面板</i></div></div>
+      <div class="sw"><div class="chip" style="background:#F7F9FC;color:#6B7280">paper-2</div><div class="meta"><b>--paper-2</b>#F7F9FC<i>页面 / section 衬底</i></div></div>
+      <div class="sw"><div class="chip" style="background:#EEF2F7;color:#6B7280">paper-3</div><div class="meta"><b>--paper-3</b>#EEF2F7<i>嵌套 / code 块</i></div></div>
     </div>
 
     <h3 class="subsec">Ink · 文字层</h3>
     <div class="swatch-grid">
-      <div class="sw"><div class="chip" style="background:#1A1714;color:#FAF7EF">ink-1</div><div class="meta"><b>--ink-1</b>#1A1714<i>正文 / 标题</i></div></div>
-      <div class="sw"><div class="chip" style="background:#3A352D;color:#FAF7EF">ink-2</div><div class="meta"><b>--ink-2</b>#3A352D<i>次要正文</i></div></div>
-      <div class="sw"><div class="chip" style="background:#6B6358;color:#FAF7EF">ink-3</div><div class="meta"><b>--ink-3</b>#6B6358<i>辅助 / italic</i></div></div>
-      <div class="sw"><div class="chip" style="background:#948A7A;color:#FAF7EF">ink-4</div><div class="meta"><b>--ink-4</b>#948A7A<i>placeholder / disabled</i></div></div>
+      <div class="sw"><div class="chip" style="background:#111827;color:#FFFFFF">ink-1</div><div class="meta"><b>--ink-1</b>#111827<i>正文 / 标题</i></div></div>
+      <div class="sw"><div class="chip" style="background:#374151;color:#FFFFFF">ink-2</div><div class="meta"><b>--ink-2</b>#374151<i>次要正文</i></div></div>
+      <div class="sw"><div class="chip" style="background:#6B7280;color:#FFFFFF">ink-3</div><div class="meta"><b>--ink-3</b>#6B7280<i>辅助 / italic</i></div></div>
+      <div class="sw"><div class="chip" style="background:#9CA3AF;color:#FFFFFF">ink-4</div><div class="meta"><b>--ink-4</b>#9CA3AF<i>placeholder / disabled</i></div></div>
     </div>
 
     <h3 class="subsec">Line · 描边层</h3>
     <div class="swatch-grid">
-      <div class="sw"><div class="chip" style="background:#E2DBC7;color:#6B6358">line-1</div><div class="meta"><b>--line-1</b>#E2DBC7<i>分隔虚线 / 表内</i></div></div>
-      <div class="sw"><div class="chip" style="background:#D9D1BE;color:#6B6358">line-2</div><div class="meta"><b>--line-2</b>#D9D1BE<i>卡边框 / input</i></div></div>
-      <div class="sw"><div class="chip" style="background:#BDB29A;color:#3A352D">line-3</div><div class="meta"><b>--line-3</b>#BDB29A<i>section 重边</i></div></div>
+      <div class="sw"><div class="chip" style="background:#E5E7EB;color:#6B7280">line-1</div><div class="meta"><b>--line-1</b>#E5E7EB<i>分隔虚线 / 表内</i></div></div>
+      <div class="sw"><div class="chip" style="background:#D1D5DB;color:#6B7280">line-2</div><div class="meta"><b>--line-2</b>#D1D5DB<i>卡边框 / input</i></div></div>
+      <div class="sw"><div class="chip" style="background:#CBD5E1;color:#374151">line-3</div><div class="meta"><b>--line-3</b>#CBD5E1<i>section 重边</i></div></div>
     </div>
 
-    <h3 class="subsec">Accent · 唯一一抹蓝</h3>
-    <p class="note"><span class="orn"></span>只用在「主 CTA」「focus ring」「文本链接」。装饰位禁用。多于 1 处大面积蓝就是过量。</p>
+    <h3 class="subsec">Accent · 主行动蓝</h3>
+    <p class="note"><span class="orn"></span>用于「主 CTA」「focus ring」「文本链接」「当前选中态」。正文和结构层仍走黑灰，装饰位禁用。</p>
     <div class="swatch-grid">
-      <div class="sw"><div class="chip" style="background:#2A56C8;color:#FAF7EF">accent-1</div><div class="meta"><b>--accent-1</b>#2A56C8<i>主按钮 / 链接</i></div></div>
-      <div class="sw"><div class="chip" style="background:#245fd6;color:#FAF7EF">accent-2</div><div class="meta"><b>--accent-2</b>#245fd6<i>focus ring</i></div></div>
-      <div class="sw"><div class="chip" style="background:#eaf2ff;color:#2A56C8">accent-50</div><div class="meta"><b>--accent-50</b>#eaf2ff<i>提示衬底</i></div></div>
+      <div class="sw"><div class="chip" style="background:#2563EB;color:#FFFFFF">accent-1</div><div class="meta"><b>--accent-1</b>#2563EB<i>主按钮 / 链接</i></div></div>
+      <div class="sw"><div class="chip" style="background:#1D4ED8;color:#FFFFFF">accent-2</div><div class="meta"><b>--accent-2</b>#1D4ED8<i>focus ring / hover</i></div></div>
+      <div class="sw"><div class="chip" style="background:#EFF6FF;color:#2563EB">accent-50</div><div class="meta"><b>--accent-50</b>#EFF6FF<i>提示衬底 / 浅蓝标签</i></div></div>
     </div>
 
-    <h3 class="subsec">Semantic · 功能色（仅用于功能）</h3>
+    <h3 class="subsec">Semantic · 功能色（更新版：6 色，仅用于功能）</h3>
+    <p class="note"><span class="orn"></span>功能色只表达系统状态，不参与装饰。大面积提示用 50 色衬底 + 主色文字；按钮、toast、错误线条才用实色。</p>
     <div class="row-3">
-      <div class="sw"><div class="chip" style="background:#1F7A4D;color:#FAF7EF">ok</div><div class="meta"><b>--ok</b>#1F7A4D<i>正确 / 成功 toast</i></div></div>
-      <div class="sw"><div class="chip" style="background:#9E5D14;color:#FAF7EF">warn</div><div class="meta"><b>--warn</b>#9E5D14<i>限频 / 待定</i></div></div>
-      <div class="sw"><div class="chip" style="background:#A22A2A;color:#FAF7EF">err</div><div class="meta"><b>--err</b>#A22A2A<i>错误 / 错题标记</i></div></div>
+      <div class="sw"><div class="chip" style="background:#15803D;color:#FFFFFF">ok</div><div class="meta"><b>--ok</b>#15803D<i>正确 / 已保存 / 完成</i></div></div>
+      <div class="sw"><div class="chip" style="background:#D97706;color:#FFFFFF">warn</div><div class="meta"><b>--warn</b>#D97706<i>待处理 / 限频 / 注意</i></div></div>
+      <div class="sw"><div class="chip" style="background:#DC2626;color:#FFFFFF">err</div><div class="meta"><b>--err</b>#DC2626<i>错误 / 失败 / 错题</i></div></div>
+    </div>
+    <div class="swatch-grid" style="margin-top:14px;">
+      <div class="sw"><div class="chip" style="background:#F0FDF4;color:#15803D">ok-50</div><div class="meta"><b>--ok-50</b>#F0FDF4<i>成功浅底</i></div></div>
+      <div class="sw"><div class="chip" style="background:#FFFBEB;color:#D97706">warn-50</div><div class="meta"><b>--warn-50</b>#FFFBEB<i>提醒浅底</i></div></div>
+      <div class="sw"><div class="chip" style="background:#FEF2F2;color:#DC2626">err-50</div><div class="meta"><b>--err-50</b>#FEF2F2<i>错误浅底</i></div></div>
     </div>
 
-    <h3 class="subsec">Dark · 夜光羊皮纸（非反相）</h3>
+    <h3 class="subsec">Dark · 深蓝黑夜间模式（更新版，非反相）</h3>
     <div class="row-2">
       <div>
         <div class="dark-card">
           <h5>把第 5 章错题再看一遍。</h5>
           <p><span class="orn"></span>状态：进行中 · 已练 18 题 / 共 30</p>
           <div style="display:flex; gap:8px;">
-            <button class="btn primary" style="background:#E8E2D2;color:#15130F;border-color:#E8E2D2">开始</button>
-            <button class="btn ghost" style="border-color:#3A3328;color:#9B917D;background:transparent">稍后</button>
+            <button class="btn primary" style="background:#60A5FA;color:#0F172A;border-color:#60A5FA">开始</button>
+            <button class="btn ghost" style="border-color:#334155;color:#CBD5E1;background:transparent">稍后</button>
           </div>
         </div>
       </div>
@@ -741,17 +752,18 @@ table.spec-table td code { font-size: 11px; }
         <table class="spec-table">
           <thead><tr><th>token</th><th>light</th><th>dark</th></tr></thead>
           <tbody>
-            <tr><td><code>--paper-1</code></td><td><code>#FAF7EF</code></td><td><code>#15130F</code></td></tr>
-            <tr><td><code>--paper-2</code></td><td><code>#F4F0E6</code></td><td><code>#1F1B16</code></td></tr>
-            <tr><td><code>--ink-1</code></td><td><code>#1A1714</code></td><td><code>#E8E2D2</code></td></tr>
-            <tr><td><code>--ink-3</code></td><td><code>#6B6358</code></td><td><code>#9B917D</code></td></tr>
-            <tr><td><code>--accent-1</code></td><td><code>#2A56C8</code></td><td><code>#C68A3E</code></td></tr>
-            <tr><td><code>--line-2</code></td><td><code>#D9D1BE</code></td><td><code>#3A3328</code></td></tr>
+            <tr><td><code>--paper-1</code></td><td><code>#FFFFFF</code></td><td><code>#0F172A</code></td></tr>
+            <tr><td><code>--paper-2</code></td><td><code>#F7F9FC</code></td><td><code>#111827</code></td></tr>
+            <tr><td><code>--paper-3</code></td><td><code>#EEF2F7</code></td><td><code>#1E293B</code></td></tr>
+            <tr><td><code>--ink-1</code></td><td><code>#111827</code></td><td><code>#F8FAFC</code></td></tr>
+            <tr><td><code>--ink-3</code></td><td><code>#6B7280</code></td><td><code>#CBD5E1</code></td></tr>
+            <tr><td><code>--accent-1</code></td><td><code>#2563EB</code></td><td><code>#60A5FA</code></td></tr>
+            <tr><td><code>--line-2</code></td><td><code>#D1D5DB</code></td><td><code>#334155</code></td></tr>
           </tbody>
         </table>
       </div>
     </div>
-    <p class="note"><span class="orn"></span>暗色 ink 是羊皮纸黄 <code class="mono">#E8E2D2</code>，蓝换琥珀 <code class="mono">#C68A3E</code>。<b>禁止</b>用 <code class="mono">#000</code>/<code class="mono">#fff</code>。</p>
+    <p class="note"><span class="orn"></span>夜间模式采用深蓝黑底，保留截图里的冷静蓝灰感；不是把浅色直接反相。暗色里大面积背景用 <code class="mono">#0F172A</code>，卡片层级用 <code class="mono">#111827</code>/<code class="mono">#1E293B</code>，行动蓝提升为 <code class="mono">#60A5FA</code>。</p>
   </section>
 
   <!-- ═══════════════════ §3 TYPE ═══════════════════ -->
@@ -818,7 +830,7 @@ table.spec-table td code { font-size: 11px; }
         <div class="specs"><b>tiny</b>serif italic · 11 · ink-4 · tracking</div>
       </div>
       <div class="type-row last">
-        <span class="mono" style="font-size:12px;">--ink-1: #1A1714;</span>
+        <span class="mono" style="font-size:12px;">--ink-1: #111827;</span>
         <div class="specs"><b>code</b>JBMono · 12 · paper-2 chip</div>
       </div>
     </div>
@@ -904,12 +916,12 @@ table.spec-table td code { font-size: 11px; }
     <div class="row-2">
       <div class="block" style="box-shadow:var(--shadow-card)">
         <h4 class="label">shadow-card</h4>
-        <code class="mono" style="font-size:11px;">0 1px 0 rgba(20,18,14,.04),<br/>0 6px 18px -10px rgba(20,18,14,.18)</code>
+        <code class="mono" style="font-size:11px;">0 1px 0 rgba(17,24,39,.04),<br/>0 6px 18px -10px rgba(17,24,39,.18)</code>
         <p class="note">用于一级 elevated 卡（home stat / 抽屉 / modal）</p>
       </div>
       <div class="block" style="box-shadow:var(--shadow-pop)">
         <h4 class="label">shadow-pop</h4>
-        <code class="mono" style="font-size:11px;">0 12px 32px -16px rgba(20,18,14,.32)</code>
+        <code class="mono" style="font-size:11px;">0 12px 32px -16px rgba(17,24,39,.28)</code>
         <p class="note">用于 popover / dropdown / toast / modal</p>
       </div>
     </div>
@@ -945,11 +957,11 @@ table.spec-table td code { font-size: 11px; }
         <button class="btn primary">开始答题</button>
         <button class="btn">稍后</button>
         <button class="btn ghost">取消</button>
-        <button class="btn accent">确认提交</button>
+        <button class="btn accent">重点提醒</button>
         <button class="btn danger">删除错题</button>
         <button class="btn" disabled>已完成</button>
       </div>
-      <p class="note" style="margin-top:14px;"><span class="orn"></span>主 CTA：<b>primary</b>（ink-1 实底）— 全 view 只能有 1 个。<b>accent</b>（蓝实底）专留给「答题/批改提交」这条做题闭环。<b>danger</b> 只用于真删除/解绑。</p>
+      <p class="note" style="margin-top:14px;"><span class="orn"></span>主 CTA：<b>primary</b>（accent-1 蓝实底）— 全 view 只能有 1 个。<b>accent</b> 退为黑灰次级强调；答题/批改提交闭环直接用 primary。<b>danger</b> 只用于真删除/解绑。</p>
     </div>
 
     <h3 class="subsec">Icon Button · 答题路径强制 SVG-only</h3>
@@ -1183,7 +1195,7 @@ table.spec-table td code { font-size: 11px; }
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 14px;">
           <span class="serif italic" style="color:var(--ink-3); font-size:12px;">第 23 题 · 类比推理</span>
           <div style="display:inline-flex; gap:6px; padding:4px; background:var(--paper-3); border-radius:var(--r-tiny); border:1px solid var(--line-2);">
-            <button class="icon-btn is-on" style="width:30px;height:30px;border:none;background:var(--ink-1);color:var(--paper-1);" aria-label="划线模式">
+            <button class="icon-btn is-on" style="width:30px;height:30px;border:none;background:var(--accent-1);color:var(--paper-1);" aria-label="划线模式">
               <svg viewBox="0 0 24 24" style="width:16px;height:16px;"><path d="M4 20h16"/><path d="M6 16l8-10 4 4-8 10H6v-4z"/></svg>
             </button>
             <button class="icon-btn" style="width:30px;height:30px;border:none;background:transparent;color:var(--ink-3);" aria-label="荧光笔">
@@ -1208,7 +1220,7 @@ table.spec-table td code { font-size: 11px; }
           D. <u style="text-decoration: underline 1.5px var(--ink-1); text-underline-offset: 3px;">电视机</u> : 信号
         </p>
       </div>
-      <p class="note" style="margin-top:14px;"><span class="orn"></span>三态 toolbar 浮在题卡右上 · paper-3 衬底 · 当前激活态 = ink-1 实底反白。划线用 1.5px underline + 3px offset；荧光笔用半透明黄 <code class="mono">rgba(255,224,102,.5)</code> 色块。</p>
+      <p class="note" style="margin-top:14px;"><span class="orn"></span>三态 toolbar 浮在题卡右上 · paper-3 衬底 · 当前激活态 = accent-1 实底反白。划线用 1.5px underline + 3px offset；荧光笔用半透明黄 <code class="mono">rgba(255,224,102,.5)</code> 色块。</p>
     </div>
 
     <h4 class="label" style="margin-top:24px;">规则 · 写组件前看</h4>
@@ -1327,7 +1339,7 @@ table.spec-table td code { font-size: 11px; }
         <h5>没有符合筛选的错题</h5>
         <p>换个筛选试试。</p>
       </div>
-      <div class="empty-state" style="border-color:var(--err);background:rgba(162,42,42,.04);">
+      <div class="empty-state" style="border-color:var(--err);background:var(--err-50);">
         <div class="icon-mark" style="color:var(--err);">!</div>
         <h5 style="color:var(--err);">数据加载失败</h5>
         <p>稍后重试。</p>
@@ -1435,7 +1447,7 @@ table.spec-table td code { font-size: 11px; }
       <thead><tr><th>方案</th><th>投入</th><th>风险</th><th>何时选</th></tr></thead>
       <tbody>
         <tr><td><b style="font-family:'Source Serif 4'">A · 走原型</b></td><td>2d</td><td>低</td><td>需求清晰 · 模板成熟</td></tr>
-        <tr style="background:rgba(31,122,77,.05);border-left:3px solid var(--ok);"><td><b style="font-family:'Source Serif 4'">B · 走探索 ✔ 推荐</b></td><td>4d</td><td>中</td><td>方向不定 · 需要多个 anchor</td></tr>
+        <tr style="background:var(--ok-50);border-left:3px solid var(--ok);"><td><b style="font-family:'Source Serif 4'">B · 走探索 ✔ 推荐</b></td><td>4d</td><td>中</td><td>方向不定 · 需要多个 anchor</td></tr>
         <tr><td><b style="font-family:'Source Serif 4'">C · 推迟</b></td><td>0d</td><td>—</td><td>价值低 · 数据未来</td></tr>
       </tbody>
     </table>
@@ -1478,7 +1490,7 @@ table.spec-table td code { font-size: 11px; }
   outline: 2px solid <span class="kw">var</span>(--accent-2);
   outline-offset: 2px;
 }
-<span class="com">// 暗模式下走 var(--accent-2) = #B07F36 琥珀</span></pre>
+<span class="com">// 暗模式下走 var(--accent-2) = #93C5FD 亮蓝</span></pre>
     </div>
 
     <h3 class="subsec">必备 aria · 4 条</h3>
@@ -1528,7 +1540,7 @@ table.spec-table td code { font-size: 11px; }
       <div class="dont-card">
         <span class="tag">DON'T 01</span>
         <h6>渐变背景做"科技感"</h6>
-        <p><span class="orn"></span>SIKAO 是纸 + 墨。不存在「紫→蓝渐变 hero」。强调用 ink-1 实底就够。</p>
+        <p><span class="orn"></span>SIKAO 是白 + 蓝 + 黑灰。不存在「紫→蓝渐变 hero」。主行动用 accent-1 实底，正文仍走 ink。</p>
       </div>
       <div class="dont-card">
         <span class="tag">DON'T 02</span>
@@ -1592,19 +1604,21 @@ table.spec-table td code { font-size: 11px; }
     <div class="row-2">
       <div class="block">
         <h4 class="label">Color tokens · light</h4>
-        <pre class="code">--paper-1: #FAF7EF;
---paper-2: #F4F0E6;
---paper-3: #ECE6D7;
---ink-1:   #1A1714;
---ink-2:   #3A352D;
---ink-3:   #6B6358;
---ink-4:   #948A7A;
---line-1:  #E2DBC7;
---line-2:  #D9D1BE;
---line-3:  #BDB29A;
---accent-1:#2A56C8;
---accent-2:#245fd6;
---ok: #1F7A4D; --warn: #9E5D14; --err: #A22A2A;</pre>
+        <pre class="code">--paper-1: #FFFFFF;
+--paper-2: #F7F9FC;
+--paper-3: #EEF2F7;
+--ink-1:   #111827;
+--ink-2:   #374151;
+--ink-3:   #6B7280;
+--ink-4:   #9CA3AF;
+--line-1:  #E5E7EB;
+--line-2:  #D1D5DB;
+--line-3:  #CBD5E1;
+--accent-1:#2563EB;
+--accent-2:#1D4ED8;
+--ok: #15803D; --ok-50: #F0FDF4;
+--warn: #D97706; --warn-50: #FFFBEB;
+--err: #DC2626; --err-50: #FEF2F2;</pre>
       </div>
       <div class="block">
         <h4 class="label">Spacing · Radius · Shadow</h4>
