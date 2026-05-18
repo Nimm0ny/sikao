@@ -41,3 +41,4 @@ database/seeds/mvp-demo/generated/
 .claude/
 tmp/
 .multica/
+.playwright-cli/
