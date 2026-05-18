@@ -32,6 +32,7 @@ import {
   MvpButton,
   MvpCard,
   MvpChip,
+  MvpIconButton,
   MvpPage,
   MvpProgressRing,
 } from '@/components/mvp';
@@ -104,40 +105,66 @@ export default function Dashboard() {
     <MvpPage
       title="Dashboard"
       hideHeading
-      action={
-        <MvpButton
-          variant="secondary"
-          icon={<CalendarDays className="h-4 w-4" aria-hidden="true" />}
-          onClick={() => navigate('/calendar')}
-        >
-          考试日历
-        </MvpButton>
-      }
       testId="dashboard-view"
     >
-      <div className="grid gap-5 lg:grid-cols-[280px_minmax(0,1fr)_280px]">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
         <div className="space-y-5">
-          <ExamCountdownCard exams={exams} loading={examsQ.isLoading} error={examsQ.isError} />
-          <WeakTrendCard weakModules={weakModules} loading={weakQ.isLoading} error={weakQ.isError} />
-          <AiHintCard weakModules={weakModules} />
+          <MainTaskCard
+            plan={plan}
+            tasks={tasks}
+            completedCount={completedCount}
+            loading={planQ.isLoading}
+            error={planQ.isError}
+            isStarting={startingTaskId !== null}
+            isPatching={patchTask.isPending}
+            onStart={handleTaskClick}
+            onSkip={handleSkipTask}
+            onRetry={() => void planQ.refetch()}
+            onOpenPractice={() => navigate('/practice/center')}
+          />
+
+          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4" aria-label="下一步行动">
+            <MvpActionCard
+              icon={<RefreshCcw className="h-5 w-5" aria-hidden="true" />}
+              title="加入错题重做"
+              description="把本周高频错题重新打一遍，先处理最影响提分的模块。"
+              actionLabel="去错题本"
+              onAction={() => navigate('/wrong-book')}
+              testId="dashboard-action-wrong-book"
+            />
+            <MvpActionCard
+              icon={<FileText className="h-5 w-5" aria-hidden="true" />}
+              title="生成复盘笔记"
+              description="把练习结果沉淀成可复用笔记，后续复盘不用重新翻卷。"
+              actionLabel="打开笔记"
+              onAction={() => navigate('/notes')}
+              testId="dashboard-action-notes"
+            />
+            <MvpActionCard
+              icon={<ClipboardList className="h-5 w-5" aria-hidden="true" />}
+              title="下一步计划"
+              description="查看本周安排和完成情况，把任务量压回可执行范围。"
+              actionLabel="查看计划"
+              onAction={() => navigate('/plan')}
+              testId="dashboard-action-plan"
+            />
+            <MvpActionCard
+              icon={<BookOpen className="h-5 w-5" aria-hidden="true" />}
+              title="申论训练"
+              description="进入申论套卷或专项，完成写作后查看评分与建议。"
+              actionLabel="进入申论"
+              onAction={() => navigate('/practice/center?subject=essay')}
+              testId="dashboard-action-essay"
+            />
+          </section>
+
+          <section className="grid gap-5 lg:grid-cols-2" aria-label="学习洞察">
+            <WeakTrendCard weakModules={weakModules} loading={weakQ.isLoading} error={weakQ.isError} />
+            <AiHintCard weakModules={weakModules} />
+          </section>
         </div>
 
-        <MainTaskCard
-          plan={plan}
-          tasks={tasks}
-          completedCount={completedCount}
-          progress={progress}
-          loading={planQ.isLoading}
-          error={planQ.isError}
-          isStarting={startingTaskId !== null}
-          isPatching={patchTask.isPending}
-          onStart={handleTaskClick}
-          onSkip={handleSkipTask}
-          onRetry={() => void planQ.refetch()}
-          onOpenPractice={() => navigate('/practice/center')}
-        />
-
-        <div className="space-y-5">
+        <aside className="space-y-5 xl:sticky xl:top-24 xl:self-start" aria-label="今日概览">
           <TodayPlanMini
             tasks={tasks}
             loading={planQ.isLoading}
@@ -152,43 +179,14 @@ export default function Dashboard() {
             onOpenPractice={() => navigate('/practice/center')}
           />
           <StudyProgressCard progress={progress} tasksTotal={tasks.length} completedCount={completedCount} />
-        </div>
+          <ExamCountdownCard
+            exams={exams}
+            loading={examsQ.isLoading}
+            error={examsQ.isError}
+            onOpenCalendar={() => navigate('/calendar')}
+          />
+        </aside>
       </div>
-
-      <section className="mt-5 grid gap-5 md:grid-cols-2 xl:grid-cols-4" aria-label="下一步行动">
-        <MvpActionCard
-          icon={<RefreshCcw className="h-5 w-5" aria-hidden="true" />}
-          title="加入错题重做"
-          description="把本周高频错题重新打一遍，先处理最影响提分的模块。"
-          actionLabel="去错题本"
-          onAction={() => navigate('/wrong-book')}
-          testId="dashboard-action-wrong-book"
-        />
-        <MvpActionCard
-          icon={<FileText className="h-5 w-5" aria-hidden="true" />}
-          title="生成复盘笔记"
-          description="把练习结果沉淀成可复用笔记，后续复盘不用重新翻卷。"
-          actionLabel="打开笔记"
-          onAction={() => navigate('/notes')}
-          testId="dashboard-action-notes"
-        />
-        <MvpActionCard
-          icon={<ClipboardList className="h-5 w-5" aria-hidden="true" />}
-          title="下一步计划"
-          description="查看本周安排和完成情况，把任务量压回可执行范围。"
-          actionLabel="查看计划"
-          onAction={() => navigate('/plan')}
-          testId="dashboard-action-plan"
-        />
-        <MvpActionCard
-          icon={<BookOpen className="h-5 w-5" aria-hidden="true" />}
-          title="申论训练"
-          description="进入申论套卷或专项，完成写作后查看评分与建议。"
-          actionLabel="进入申论"
-          onAction={() => navigate('/practice/center?subject=essay')}
-          testId="dashboard-action-essay"
-        />
-      </section>
     </MvpPage>
   );
 }
@@ -230,17 +228,26 @@ function ExamCountdownCard({
   exams,
   loading,
   error,
+  onOpenCalendar,
 }: {
   readonly exams: readonly UserExamRead[];
   readonly loading: boolean;
   readonly error: boolean;
+  readonly onOpenCalendar: () => void;
 }) {
   const nextExam = exams[0] ?? null;
   return (
     <MvpCard className="p-5" testId="dashboard-exam-card">
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-base font-semibold text-[#111827]">考试倒计时</h2>
-        <CalendarDays className="h-5 w-5 text-[#4B5563]" aria-hidden="true" />
+        <MvpIconButton
+          label="考试日历"
+          className="h-9 w-9"
+          onClick={onOpenCalendar}
+          data-testid="dashboard-exam-calendar"
+        >
+          <CalendarDays className="h-4 w-4" aria-hidden="true" />
+        </MvpIconButton>
       </div>
       <CardStatus loading={loading} error={error} empty={nextExam === null ? '还没有设置目标考试，建档后可在计划里补充。' : undefined}>
         {nextExam ? (
@@ -313,7 +320,6 @@ function MainTaskCard({
   plan,
   tasks,
   completedCount,
-  progress,
   loading,
   error,
   isStarting,
@@ -326,7 +332,6 @@ function MainTaskCard({
   readonly plan: StudyPlanResponse | null;
   readonly tasks: readonly StudyTaskResponse[];
   readonly completedCount: number;
-  readonly progress: number;
   readonly loading: boolean;
   readonly error: boolean;
   readonly isStarting: boolean;
@@ -338,13 +343,13 @@ function MainTaskCard({
 }) {
   const mainTask = tasks.find((task) => task.status === 'pending') ?? null;
   return (
-    <MvpCard className="flex min-h-[520px] flex-col p-6 md:p-8" testId="dashboard-main-task">
+    <MvpCard className="flex min-h-96 flex-col p-6 md:p-8" testId="dashboard-main-task">
       <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
         <MvpChip tone="blue">今日主任务</MvpChip>
         {plan ? <MvpChip>{completedCount} / {tasks.length} 已完成</MvpChip> : null}
       </div>
       <CardStatus loading={loading} error={error} empty={tasks.length === 0 ? '今日计划为空。可以先进入练习中心选择专项或套卷。' : undefined}>
-        <div className="flex flex-1 flex-col">
+        <div className="flex flex-1 flex-col justify-center">
           <div className="mb-6 grid place-items-center">
             <div className="grid h-24 w-24 place-items-center rounded-full bg-[#EFF6FF] text-[#2563EB]">
               <Target className="h-12 w-12" aria-hidden="true" />
@@ -385,9 +390,6 @@ function MainTaskCard({
               </MvpButton>
             </>
           )}
-          <div className="mt-auto pt-8">
-            <MvpProgressRing value={progress} label="学习进度" />
-          </div>
         </div>
       </CardStatus>
       {error ? (

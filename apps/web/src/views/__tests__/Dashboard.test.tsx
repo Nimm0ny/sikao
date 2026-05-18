@@ -1,5 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { screen, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import Dashboard from '../Dashboard';
 
@@ -14,6 +15,10 @@ vi.mock('react-router-dom', async () => {
 });
 
 describe('Dashboard MVP', () => {
+  beforeEach(() => {
+    navigateMock.mockClear();
+  });
+
   it('renders the main task card and surrounding dashboard cards', async () => {
     renderWithProviders(<Dashboard />, { initialEntries: ['/dashboard'] });
 
@@ -23,8 +28,26 @@ describe('Dashboard MVP', () => {
     expect(screen.getByTestId('dashboard-weak-card')).toBeInTheDocument();
     expect(screen.getByTestId('dashboard-plan-mini')).toBeInTheDocument();
     expect(screen.getByTestId('dashboard-recent-session')).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('dashboard-main-task')).queryByRole('img', { name: /学习进度/ }),
+    ).not.toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('dashboard-progress-card')).getByRole('img', { name: /今日完成/ }),
+    ).toBeInTheDocument();
+    expect(
+      within(screen.getByTestId('dashboard-exam-card')).getByRole('button', { name: '考试日历' }),
+    ).toBeInTheDocument();
 
     expect(await screen.findByTestId('dashboard-main-start')).toHaveTextContent('继续主任务');
+  });
+
+  it('opens the calendar from the countdown card', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<Dashboard />, { initialEntries: ['/dashboard'] });
+
+    await user.click(screen.getByTestId('dashboard-exam-calendar'));
+
+    expect(navigateMock).toHaveBeenCalledWith('/calendar');
   });
 
   it('renders today plan tasks from the existing study-plan API', async () => {

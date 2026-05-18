@@ -37,6 +37,7 @@ describe('AppShell MVP layout', () => {
     expect(screen.getByTestId('mvp-nav-wrong-book')).toHaveAttribute('href', '/wrong-book');
     expect(screen.getByTestId('mvp-nav-notes')).toHaveAttribute('href', '/notes');
     expect(screen.getByTestId('mvp-nav-plan')).toHaveAttribute('href', '/plan');
+    expect(screen.queryByRole('link', { name: '考试日历' })).not.toBeInTheDocument();
     expect(screen.getByTestId('page-practice')).toBeInTheDocument();
   });
 });

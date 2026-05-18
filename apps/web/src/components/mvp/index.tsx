@@ -3,7 +3,6 @@ import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
   BarChart3,
   BookOpen,
-  CalendarDays,
   ClipboardList,
   Home,
   NotebookPen,
@@ -297,16 +296,6 @@ export function MvpShell() {
               );
             })}
           </nav>
-          <div className="hidden items-center gap-2 lg:flex">
-            <NavLink
-              to="/calendar"
-              aria-label="考试日历"
-              title="考试日历"
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#D7DFEC] bg-white text-[#4B5563] transition-colors hover:bg-[#EFF6FF] hover:text-[#2563EB] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2"
-            >
-              <CalendarDays className="h-4 w-4" aria-hidden="true" />
-            </NavLink>
-          </div>
         </div>
       </header>
       <main>
