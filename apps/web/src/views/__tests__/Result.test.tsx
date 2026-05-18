@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { screen, waitFor, within } from '@testing-library/react';
+import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
@@ -72,8 +72,26 @@ const successFixture = {
     },
   ],
   answers: [
-    { id: 1, questionId: 1, selectedAnswerKeys: ['A'], correctAnswerKeys: ['A'], isCorrect: true, answeredAt: '2026-04-28T10:01:00Z', wrongReasonCode: null, wrongReasonSource: null },
-    { id: 2, questionId: 2, selectedAnswerKeys: ['B'], correctAnswerKeys: ['C'], isCorrect: false, answeredAt: '2026-04-28T10:02:00Z', wrongReasonCode: null, wrongReasonSource: null },
+    {
+      id: 1,
+      questionId: 1,
+      selectedAnswerKeys: ['A'],
+      correctAnswerKeys: ['A'],
+      isCorrect: true,
+      answeredAt: '2026-04-28T10:01:00Z',
+      wrongReasonCode: null,
+      wrongReasonSource: null,
+    },
+    {
+      id: 2,
+      questionId: 2,
+      selectedAnswerKeys: ['B'],
+      correctAnswerKeys: ['C'],
+      isCorrect: false,
+      answeredAt: '2026-04-28T10:02:00Z',
+      wrongReasonCode: 'calculation_error',
+      wrongReasonSource: 'ai',
+    },
   ],
   questions: [
     {
@@ -115,7 +133,7 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-describe('Result success rendering', () => {
+describe('Result compact MVP rendering', () => {
   beforeEach(() => {
     navigateSpy.mockClear();
     server.use(
@@ -125,99 +143,49 @@ describe('Result success rendering', () => {
     );
   });
 
-  it('renders ScoreHero with paper name and big score', async () => {
+  it('renders one-page score summary and key counts', async () => {
     renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
+
     await waitFor(() => {
-      expect(screen.getByTestId('result-header')).toBeInTheDocument();
+      expect(screen.getByTestId('result-view')).toBeInTheDocument();
     });
+    expect(screen.getByTestId('result-score-card')).toBeInTheDocument();
     expect(screen.getByText('2026 国考行测')).toBeInTheDocument();
-    expect(screen.getByText('答题报告')).toBeInTheDocument();
-    expect(screen.getByTestId('hero-score-value')).toBeInTheDocument();
+    expect(screen.getByTestId('result-score-value')).toHaveTextContent('85');
+    expect(screen.getByText('正确')).toBeInTheDocument();
+    expect(screen.getByText('错误')).toBeInTheDocument();
   });
 
-  it('renders ScoreHero meta with submitted time and duration', async () => {
+  it('renders compact review, weak rows, and action cards', async () => {
     renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
-    await waitFor(() => {
-      expect(screen.getByTestId('result-header')).toBeInTheDocument();
-    });
-    const header = screen.getByTestId('result-header');
-    expect(within(header).getByText(/提交于/)).toBeInTheDocument();
-    expect(within(header).getByTestId('hero-meta-duration')).toBeInTheDocument();
+
+    expect(await screen.findByTestId('result-wrong-card')).toBeInTheDocument();
+    expect(screen.getByTestId('wrong-review-2')).toBeInTheDocument();
+    expect(screen.getByTestId('result-weak-card')).toBeInTheDocument();
+    expect(screen.getByTestId('result-notes-action')).toBeInTheDocument();
+    expect(screen.getByTestId('result-plan-action')).toBeInTheDocument();
+    expect(screen.getByTestId('result-ai-action')).toBeInTheDocument();
   });
 
-  it('renders ScoreModuleCard with score and counts', async () => {
-    renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
-    await waitFor(() => {
-      expect(screen.getByTestId('score-module-card')).toBeInTheDocument();
-    });
-    expect(screen.getByText('成绩概况')).toBeInTheDocument();
-    const correct = screen.getByTestId('score-tile-success');
-    expect(within(correct).getByText('85')).toBeInTheDocument();
-  });
-
-  it('renders AiSuggestionCard in left column', async () => {
-    renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
-    await waitFor(() => {
-      expect(screen.getByTestId('ai-suggestion-card')).toBeInTheDocument();
-    });
-  });
-
-  it('renders AnswerComparisonGrid', async () => {
-    renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
-    await waitFor(() => {
-      expect(screen.getByTestId('answer-comparison-grid')).toBeInTheDocument();
-    });
-  });
-
-  it('classifies matrix cells from result answers when userAnswers is empty', async () => {
-    renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
-    const first = await screen.findByTestId('compare-cell-1');
-    const second = await screen.findByTestId('compare-cell-2');
-    expect(first).toHaveAttribute('data-state', 'correct');
-    expect(second).toHaveAttribute('data-state', 'wrong');
-  });
-
-  it('renders ResultActions with back-home and retry buttons', async () => {
-    renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
-    await waitFor(() => {
-      expect(screen.getByTestId('result-actions')).toBeInTheDocument();
-    });
-    expect(screen.getByTestId('result-back-home')).toBeInTheDocument();
-    expect(screen.getByTestId('result-retry')).toBeInTheDocument();
-  });
-
-  it('renders export PDF button stub', async () => {
-    renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
-    await waitFor(() => {
-      expect(screen.getByTestId('result-export-pdf')).toBeInTheDocument();
-    });
-  });
-
-  it('uses the Figma matrix-review layout order', async () => {
-    renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
-    const grid = await screen.findByTestId('result-matrix-review-grid');
-    expect(grid).toHaveClass('md:grid-cols-[minmax(0,744px)_minmax(320px,432px)]');
-    expect(screen.getByTestId('result-score-region')).toBeInTheDocument();
-    expect(screen.getByTestId('result-ai-region')).toBeInTheDocument();
-    expect(screen.getByTestId('result-matrix-region')).toBeInTheDocument();
-    expect(screen.getByTestId('result-wrong-region')).toBeInTheDocument();
-  });
-
-  it('shows continue review action in the header', async () => {
-    renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
-    const btn = await screen.findByTestId('result-continue-review');
-    expect(btn).toHaveTextContent('逐题回顾');
-  });
-
-  it('back-home button navigates to /app', async () => {
+  it('back-home action navigates to dashboard', async () => {
     const user = userEvent.setup();
     renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
+
     const btn = await screen.findByTestId('result-back-home');
     await user.click(btn);
-    expect(navigateSpy).toHaveBeenCalledWith('/app');
+    expect(navigateSpy).toHaveBeenCalledWith('/dashboard');
   });
 
-  it('shows wrong-reason diagnosis and saves manual override', async () => {
+  it('wrong-book action keeps the paperCode filter', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
+
+    const btn = await screen.findByTestId('result-view-wrong');
+    await user.click(btn);
+    expect(navigateSpy).toHaveBeenCalledWith('/wrong-book?paperCode=TEST-001');
+  });
+
+  it('saves manual wrong-reason override', async () => {
     const user = userEvent.setup();
     let patchedBody: { wrongReasonCode: string; source: string } | null = null;
     server.use(
@@ -256,7 +224,7 @@ describe('Result error fallback', () => {
     navigateSpy.mockClear();
   });
 
-  it('isError → tone="error" EmptyState with retry + back-home actions', async () => {
+  it('renders retry and home actions on result load failure', async () => {
     server.use(
       http.get('/api/v2/practice/sessions/:id/result', () =>
         HttpResponse.json({ detail: 'not_found' }, { status: 404 }),
@@ -270,10 +238,9 @@ describe('Result error fallback', () => {
     });
     expect(screen.getByTestId('result-error-home')).toBeInTheDocument();
     expect(screen.getByRole('alert')).toHaveAttribute('data-tone', 'error');
-    expect(screen.getByRole('alert')).toHaveTextContent('报告加载失败');
   });
 
-  it('result-error-home button click navigates to /app', async () => {
+  it('error home action navigates to dashboard', async () => {
     server.use(
       http.get('/api/v2/practice/sessions/:id/result', () =>
         HttpResponse.json({ detail: 'not_found' }, { status: 404 }),
@@ -284,10 +251,10 @@ describe('Result error fallback', () => {
 
     const backBtn = await screen.findByTestId('result-error-home');
     await user.click(backBtn);
-    expect(navigateSpy).toHaveBeenCalledWith('/app');
+    expect(navigateSpy).toHaveBeenCalledWith('/dashboard');
   });
 
-  it('clicking retry refetches and recovers to success render', async () => {
+  it('retry refetch recovers to compact success view', async () => {
     let callCount = 0;
     server.use(
       http.get('/api/v2/practice/sessions/:id/result', () => {
@@ -305,7 +272,7 @@ describe('Result error fallback', () => {
     await user.click(retry);
 
     await waitFor(() => {
-      expect(screen.getByTestId('result-header')).toBeInTheDocument();
+      expect(screen.getByTestId('result-view')).toBeInTheDocument();
     });
     expect(callCount).toBe(2);
   });
@@ -316,10 +283,11 @@ describe('Result empty data', () => {
     navigateSpy.mockClear();
   });
 
-  it('zero wrong-count: matrix renders only correct cells, no wrong-review article', async () => {
+  it('zero wrong-count renders no-wrong state', async () => {
     const allCorrectFixture = {
       ...successFixture,
       score: 100,
+      totalQuestions: 2,
       correctCount: 2,
       incorrectCount: 0,
       unansweredCount: 0,
@@ -333,6 +301,7 @@ describe('Result empty data', () => {
       },
       answers: [
         {
+          id: 1,
           questionId: 1,
           selectedAnswerKeys: ['A'],
           correctAnswerKeys: ['A'],
@@ -340,6 +309,7 @@ describe('Result empty data', () => {
           answeredAt: '2026-04-28T10:01:00Z',
         },
         {
+          id: 2,
           questionId: 2,
           selectedAnswerKeys: ['C'],
           correctAnswerKeys: ['C'],
@@ -356,10 +326,7 @@ describe('Result empty data', () => {
 
     renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
 
-    const first = await screen.findByTestId('compare-cell-1');
-    expect(first).toHaveAttribute('data-state', 'correct');
-    expect(screen.getByTestId('compare-cell-2')).toHaveAttribute('data-state', 'correct');
-    // No wrong-review-N articles when nothing was wrong.
+    expect(await screen.findByTestId('result-no-wrong')).toBeInTheDocument();
     expect(screen.queryByTestId('wrong-review-1')).not.toBeInTheDocument();
     expect(screen.queryByTestId('wrong-review-2')).not.toBeInTheDocument();
   });

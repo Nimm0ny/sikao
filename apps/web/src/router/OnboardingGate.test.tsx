@@ -6,11 +6,11 @@ import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { server } from '@sikao/test-utils/server';
 import { OnboardingGate } from './OnboardingGate';
 
-function renderGate(initialEntries: readonly string[] = ['/study/today']) {
+function renderGate(initialEntries: readonly string[] = ['/dashboard']) {
   return renderWithProviders(
     <Routes>
       <Route
-        path="/study/today"
+        path="/dashboard"
         element={
           <OnboardingGate>
             <div data-testid="protected-page">protected</div>
@@ -83,13 +83,13 @@ describe('OnboardingGate', () => {
             </OnboardingGate>
           }
         />
-        <Route path="/study/today" element={<div data-testid="today-page">today</div>} />
+        <Route path="/dashboard" element={<div data-testid="dashboard-page">dashboard</div>} />
       </Routes>,
       { initialEntries: ['/study/onboarding'] },
     );
 
     await waitFor(() => {
-      expect(screen.getByTestId('today-page')).toBeInTheDocument();
+      expect(screen.getByTestId('dashboard-page')).toBeInTheDocument();
     });
     expect(screen.queryByTestId('onboarding-page')).not.toBeInTheDocument();
   });

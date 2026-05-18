@@ -178,7 +178,7 @@ export const router = createBrowserRouter([
     children: [
       // PR-2 MVP (2026-05-14): /app canonical 到今日提分任务首页.
       // /dashboard 仍保留为学情数据页, 老书签 / 外链自动跳转, 0 页面 404.
-      { path: '/app', element: <Navigate to="/study/today" replace /> },
+      { path: '/app', element: <Navigate to="/dashboard" replace /> },
       // PR16 (2026-05-13, lhr 用户价值 supreme): 行测/申论 4 入口合并为
       // /practice/center 单一 hub. 顶层 view 行测/申论 tab + 2 大入口 (分类/套卷),
       // sub-route 复用现有 Papers/CategoryTree/EssayPapers/EssaySpecialty 4 view
@@ -298,7 +298,7 @@ export const router = createBrowserRouter([
       // MVP AI 公考提分闭环 (PR-1/2/6): 用户引导 + 今日任务 + 进度看板
       { path: '/study/onboarding', element: routeElement(<pages.studyOnboarding />) },
       { path: '/study/diagnosis-result', element: routeElement(<pages.diagnosisResult />) },
-      { path: '/study/today', element: routeElement(<pages.studyToday />) },
+      { path: '/study/today', element: <Navigate to="/dashboard" replace /> },
       { path: '/progress', element: routeElement(<pages.progress />) },
       // SIKAO Wave 4 Phase 2D (2026-05-12): /notes 主页 + /notes/:noteId 编辑器.
       // /notes/new 走同一 NoteEditor 组件 (内部 isNew = (noteId === 'new')). 集成

@@ -1,9 +1,5 @@
-import { useDevice } from '@sikao/shared-utils/hooks/useDevice';
 import { OnboardingGate } from '@/router/OnboardingGate';
-import { AsideOutletProvider } from './AsideOutlet';
-import { DesktopShell } from './shells/DesktopShell';
-import { MobileShell } from './shells/MobileShell';
-import { TabletShell } from './shells/TabletShell';
+import { MvpShell } from '@/components/mvp';
 
 /**
  * AppShell — device-aware dispatcher (PR7, 2026-05-13).
@@ -32,17 +28,8 @@ import { TabletShell } from './shells/TabletShell';
  */
 export function AppShell() {
   return (
-    <AsideOutletProvider>
-      <OnboardingGate>
-        <AppShellDispatcher />
-      </OnboardingGate>
-    </AsideOutletProvider>
+    <OnboardingGate>
+      <MvpShell />
+    </OnboardingGate>
   );
-}
-
-function AppShellDispatcher() {
-  const device = useDevice();
-  if (device === 'mobile') return <MobileShell />;
-  if (device === 'tablet') return <TabletShell />;
-  return <DesktopShell />;
 }

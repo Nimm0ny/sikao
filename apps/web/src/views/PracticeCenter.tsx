@@ -1,56 +1,72 @@
-/**
- * PracticeCenter — /practice/center 行测+申论统一入口 (PR16, 2026-05-13).
- *
- * 来源 SSOT:
- *   - docs/plan/practice-center-mobile-tablet-redesign.md §1 + §4 PR16
- *   - docs/design/Mobile and Tablet Pack New.html M9 · 练习目录 + M10 · 试卷库
- *   - docs/design/Frontend Style Guide.html (PR1-5 token / primitive SSOT)
- *
- * 用户价值 (lhr 2026-05-12 supreme):
- *   把行测/申论原 4 个独立入口 (/papers + /xingce/specialty + /essay/papers +
- *   /essay/specialty) 合并为单一 hub. 顶部 tab 选科目, 2 大 card 选练习模式
- *   (分类专攻 / 套卷模考). 旧 URL 全部 redirect 到新 canonical sub-path,
- *   老书签 / 外链 0 404.
- *
- * 子路由 (router/index.tsx 配对):
- *   /practice/center/xingce/categories  → CategoryTree    (行测专项)
- *   /practice/center/xingce/papers      → Papers          (行测套卷)
- *   /practice/center/essay/categories   → EssaySpecialty  (申论专项)
- *   /practice/center/essay/papers       → EssayPapers     (申论套卷)
- *
- * 设计铁线 (lhr 拍板, 不许前端元素创新):
- *   - 0 token / radius / typography / 新 primitive
- *   - 复用 PageHeader / Card (variant=default hoverable) / 现有 SVG icon
- *   - subject tab 复用 Tabs primitive (variant='underline') — M9/M10 顶 tab 同 pattern
- *   - 大 card 复用 Card primitive 默认 padding=lg, 进入有 hover:shadow-pop
- *
- * URL state:
- *   - ?subject=xingce | essay (无值 → 默认 xingce)
- *   - 切 tab → 更新 query, 不动 path (本 view stay on /practice/center)
- *   - 点 card → navigate 到 /practice/center/{subject}/{categories|papers}
- *
- * 不做的事:
- *   - 不复刻 M9 章节树 / M10 地区列表 (那是子路由 view 的职责, 这里只是 hub)
- *   - 不渲染 device dispatch (Card grid mobile 1 列 / tablet+ 2 列, Tailwind 一行搞定)
- *   - 不挂 hover prefetch (子 view 已 lazy split, route-level 现成)
- */
-import { useCallback, useMemo } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { PageHeader, Card, Tabs, type TabItem } from '@sikao/ui/ui';
-import { PRACTICE_CENTER_COPY } from '@/lib/ui-copy';
+import {
+  BookMarked,
+  ChevronRight,
+  Filter,
+  FileText,
+  History,
+  Layers,
+  Loader2,
+  Star,
+  Target,
+} from 'lucide-react';
+import {
+  useContinueLastSession,
+  useWeakModules,
+  type PracticeSessionSummary,
+  type WeakModule,
+} from '@sikao/domain/dashboard/useHomeData';
+import {
+  MvpButton,
+  MvpCard,
+  MvpChip,
+  MvpFilterPanel,
+  MvpPage,
+} from '@/components/mvp';
 
 type Subject = 'xingce' | 'essay';
+type FilterKey = 'all' | 'easy' | 'normal' | 'hard';
 
-const SUBJECT_TABS: readonly TabItem<Subject>[] = [
+const subjectTabs: ReadonlyArray<{ value: Subject; label: string }> = [
+  { value: 'xingce', label: '行测' },
+  { value: 'essay', label: '申论' },
+];
+
+const filters: ReadonlyArray<{
+  key: 'difficulty' | 'type' | 'source';
+  label: string;
+  options: ReadonlyArray<{ value: FilterKey; label: string }>;
+}> = [
   {
-    value: 'xingce',
-    label: PRACTICE_CENTER_COPY.subjects.xingce,
-    testId: 'practice-center-tab-xingce',
+    key: 'difficulty',
+    label: '难度',
+    options: [
+      { value: 'all', label: '全部' },
+      { value: 'easy', label: '基础' },
+      { value: 'normal', label: '提高' },
+      { value: 'hard', label: '冲刺' },
+    ],
   },
   {
-    value: 'essay',
-    label: PRACTICE_CENTER_COPY.subjects.essay,
-    testId: 'practice-center-tab-essay',
+    key: 'type',
+    label: '题型',
+    options: [
+      { value: 'all', label: '全部' },
+      { value: 'easy', label: '专项' },
+      { value: 'normal', label: '套卷' },
+      { value: 'hard', label: '错题' },
+    ],
+  },
+  {
+    key: 'source',
+    label: '来源',
+    options: [
+      { value: 'all', label: '全部' },
+      { value: 'easy', label: '真题' },
+      { value: 'normal', label: '智能推荐' },
+      { value: 'hard', label: '收藏' },
+    ],
   },
 ];
 
@@ -61,150 +77,313 @@ function parseSubject(raw: string | null): Subject {
 export default function PracticeCenter() {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const subject = useMemo(
-    () => parseSubject(searchParams.get('subject')),
-    [searchParams],
-  );
+  const subject = useMemo(() => parseSubject(searchParams.get('subject')), [searchParams]);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [selectedFilters, setSelectedFilters] = useState<Record<string, FilterKey>>({
+    difficulty: 'all',
+    type: 'all',
+    source: 'all',
+  });
+  const lastSessionQ = useContinueLastSession();
+  const weakQ = useWeakModules({ limit: 3 });
 
-  const handleSubjectChange = useCallback(
-    (next: Subject): void => {
-      // 不动 path, 只更 query — Tabs 切换是本 view 内 state, 不该 reload children.
-      const params: Record<string, string> = {};
-      if (next !== 'xingce') params.subject = next;
+  const changeSubject = useCallback(
+    (next: Subject) => {
+      const params = new URLSearchParams(searchParams);
+      if (next === 'xingce') params.delete('subject');
+      else params.set('subject', next);
       setSearchParams(params, { replace: true });
     },
-    [setSearchParams],
+    [searchParams, setSearchParams],
   );
 
-  const handleEnterCategories = useCallback((): void => {
-    navigate(`/practice/center/${subject}/categories`);
-  }, [navigate, subject]);
+  const applyFilter = (key: string, value: FilterKey) => {
+    setSelectedFilters((current) => ({ ...current, [key]: value }));
+  };
 
-  const handleEnterPapers = useCallback((): void => {
-    navigate(`/practice/center/${subject}/papers`);
-  }, [navigate, subject]);
+  const activeFilterCount = Object.values(selectedFilters).filter((value) => value !== 'all').length;
 
   return (
-    <div
-      className="p-4 md:p-8 max-w-6xl mx-auto space-y-6"
-      data-testid="practice-center-view"
+    <MvpPage
+      title="练习中心"
+      hideHeading
+      action={
+        <div className="relative">
+          <MvpButton
+            variant="secondary"
+            icon={<Filter className="h-4 w-4" aria-hidden="true" />}
+            onClick={() => setFilterOpen((open) => !open)}
+            aria-expanded={filterOpen}
+            data-testid="practice-filter-toggle"
+          >
+            筛选{activeFilterCount > 0 ? ` ${activeFilterCount}` : ''}
+          </MvpButton>
+          <MvpFilterPanel open={filterOpen}>
+            <div className="space-y-4" data-testid="practice-filter-panel">
+              {filters.map((filter) => (
+                <label key={filter.key} className="grid gap-2 text-sm font-semibold text-[#111827]">
+                  <span>{filter.label}</span>
+                  <select
+                    value={selectedFilters[filter.key] ?? 'all'}
+                    onChange={(event) => applyFilter(filter.key, event.target.value as FilterKey)}
+                    className="h-10 rounded-lg border border-[#D7DFEC] bg-white px-3 text-sm font-medium text-[#111827] focus:outline-none focus:ring-2 focus:ring-[#2563EB]"
+                  >
+                    {filter.options.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ))}
+              <MvpButton className="w-full" onClick={() => setFilterOpen(false)}>
+                应用
+              </MvpButton>
+            </div>
+          </MvpFilterPanel>
+        </div>
+      }
+      testId="practice-center-view"
     >
-      <PageHeader
-        eyebrow={PRACTICE_CENTER_COPY.pageEyebrow}
-        title={PRACTICE_CENTER_COPY.pageTitle}
-        subtitle={PRACTICE_CENTER_COPY.pageSubtitle}
-      />
-
-      <Tabs
-        items={SUBJECT_TABS}
-        value={subject}
-        onChange={handleSubjectChange}
-        variant="underline"
-        ariaLabel={PRACTICE_CENTER_COPY.subjectsAriaLabel}
-      />
-
-      <div
-        className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5"
-        data-testid="practice-center-entries"
-      >
-        <EntryCard
-          label={PRACTICE_CENTER_COPY.entries.categories.title}
-          description={PRACTICE_CENTER_COPY.entries.categories.description}
-          onSelect={handleEnterCategories}
-          testId="practice-center-entry-categories"
-          icon={<EntryCategoriesIcon />}
-        />
-        <EntryCard
-          label={PRACTICE_CENTER_COPY.entries.papers.title}
-          description={PRACTICE_CENTER_COPY.entries.papers.description}
-          onSelect={handleEnterPapers}
-          testId="practice-center-entry-papers"
-          icon={<EntryPapersIcon />}
-        />
+      <div className="mb-5 inline-flex rounded-lg border border-[#D7DFEC] bg-white p-1" role="tablist" aria-label="练习科目">
+        {subjectTabs.map((tab) => {
+          const active = tab.value === subject;
+          return (
+            <button
+              key={tab.value}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              className={[
+                'min-h-10 rounded-md px-5 text-sm font-semibold transition-colors',
+                active ? 'bg-[#2563EB] text-white' : 'text-[#4B5563] hover:bg-[#EFF6FF] hover:text-[#2563EB]',
+              ].join(' ')}
+              onClick={() => changeSubject(tab.value)}
+              data-testid={`practice-center-tab-${tab.value}`}
+            >
+              {tab.label}
+            </button>
+          );
+        })}
       </div>
-    </div>
+
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_320px]">
+        <div className="space-y-5">
+          <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-3" aria-label="练习入口">
+            <PracticeEntryCard
+              icon={<Target className="h-5 w-5" aria-hidden="true" />}
+              title="推荐练习"
+              label={subject === 'xingce' ? '资料分析 · 综合提高' : '概括归纳 · 结构训练'}
+              description={subject === 'xingce' ? '按当前薄弱模块推荐一组短练。' : '从申论高频题型开始写一题。'}
+              chip="推荐"
+              onClick={() => navigate(subject === 'xingce' ? '/practice/center/xingce/categories' : '/practice/center/essay/categories')}
+              testId="practice-entry-recommended"
+            />
+            <PracticeEntryCard
+              icon={<Layers className="h-5 w-5" aria-hidden="true" />}
+              title="专项练习"
+              label={subject === 'xingce' ? '言语 / 判断 / 数量 / 资料 / 常识' : '概括 / 对策 / 公文 / 作文'}
+              description="按知识点和题型拆开练，适合补弱。"
+              onClick={() => navigate(`/practice/center/${subject}/categories`)}
+              testId="practice-entry-categories"
+            />
+            <PracticeEntryCard
+              icon={<FileText className="h-5 w-5" aria-hidden="true" />}
+              title="套卷模考"
+              label={subject === 'xingce' ? '全真模拟 · 行测套卷' : '申论套卷 · 限时作答'}
+              description="按整卷节奏完成，交卷后看结果页。"
+              onClick={() => navigate(`/practice/center/${subject}/papers`)}
+              testId="practice-entry-papers"
+            />
+          </section>
+
+          <section className="grid gap-5 md:grid-cols-2" aria-label="练习辅助">
+            <RecentPracticeCard
+              loading={lastSessionQ.isLoading}
+              error={lastSessionQ.isError}
+              session={lastSessionQ.data ?? null}
+              onResume={(session) => navigate(`/practice/sessions/${session.id}`)}
+              onOpenPapers={() => navigate(`/practice/center/${subject}/papers`)}
+            />
+            <FavoritesCard />
+          </section>
+        </div>
+
+        <aside className="space-y-5">
+          <WeakRecommendationCard
+            loading={weakQ.isLoading}
+            error={weakQ.isError}
+            modules={weakQ.data?.modules ?? []}
+            onPractice={(module) => navigate(`/practice/center/${subject}/categories#${encodeURIComponent(module.subject)}`)}
+          />
+          <ReasonCard subject={subject} />
+        </aside>
+      </div>
+    </MvpPage>
   );
 }
 
-interface EntryCardProps {
+function PracticeEntryCard({
+  icon,
+  title,
+  label,
+  description,
+  chip,
+  onClick,
+  testId,
+}: {
+  readonly icon: React.ReactNode;
+  readonly title: string;
   readonly label: string;
   readonly description: string;
-  readonly onSelect: () => void;
+  readonly chip?: string;
+  readonly onClick: () => void;
   readonly testId: string;
-  readonly icon: React.ReactNode;
-}
-
-function EntryCard({ label, description, onSelect, testId, icon }: EntryCardProps) {
+}) {
   return (
-    <Card
-      as="article"
-      padding="lg"
-      hoverable
-      role="button"
-      tabIndex={0}
-      onClick={onSelect}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          onSelect();
-        }
-      }}
-      aria-label={label}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={`${title}：${label}`}
+      className="group text-left"
       data-testid={testId}
-      className="cursor-pointer min-h-[180px] flex flex-col gap-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-50"
     >
-      <div className="flex items-center gap-3">
-        <span
-          aria-hidden="true"
-          className="w-10 h-10 rounded-card bg-paper-2 text-ink-1 flex items-center justify-center"
-        >
-          {icon}
+      <MvpCard className="flex h-full min-h-52 flex-col p-5 transition-transform group-hover:-translate-y-0.5">
+        <div className="mb-5 flex items-start justify-between gap-3">
+          <span className="grid h-11 w-11 place-items-center rounded-lg bg-[#EFF6FF] text-[#2563EB]">{icon}</span>
+          {chip ? <MvpChip tone="amber">{chip}</MvpChip> : <ChevronRight className="h-5 w-5 text-[#9CA3AF]" aria-hidden="true" />}
+        </div>
+        <h2 className="text-base font-semibold text-[#111827]">{title}</h2>
+        <p className="mt-3 text-sm font-semibold text-[#111827]">{label}</p>
+        <p className="mt-2 text-sm leading-6 text-[#4B5563]">{description}</p>
+        <span className="mt-auto inline-flex items-center gap-1 pt-5 text-sm font-semibold text-[#2563EB]">
+          开始练习
+          <ChevronRight className="h-4 w-4" aria-hidden="true" />
         </span>
-        <h2 className="font-serif text-h-card font-semibold text-ink">{label}</h2>
+      </MvpCard>
+    </button>
+  );
+}
+
+function RecentPracticeCard({
+  loading,
+  error,
+  session,
+  onResume,
+  onOpenPapers,
+}: {
+  readonly loading: boolean;
+  readonly error: boolean;
+  readonly session: PracticeSessionSummary | null;
+  readonly onResume: (session: PracticeSessionSummary) => void;
+  readonly onOpenPapers: () => void;
+}) {
+  return (
+    <MvpCard className="p-5" testId="practice-recent-card">
+      <div className="mb-4 flex items-center gap-2">
+        <History className="h-5 w-5 text-[#2563EB]" aria-hidden="true" />
+        <h2 className="text-base font-semibold text-[#111827]">最近练习</h2>
       </div>
-      <p className="text-sm leading-relaxed text-ink-3">{description}</p>
-    </Card>
+      {loading ? (
+        <p className="flex items-center gap-2 text-sm text-[#4B5563]">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          正在加载最近练习
+        </p>
+      ) : error ? (
+        <p className="text-sm text-[#B91C1C]">最近练习接口加载失败。</p>
+      ) : session ? (
+        <div className="space-y-4">
+          <div>
+            <p className="font-semibold text-[#111827]">{session.paperTitle}</p>
+            <p className="mt-1 text-sm text-[#4B5563]">{session.answeredCount} / {session.total} 题</p>
+          </div>
+          <MvpButton variant="secondary" onClick={() => onResume(session)}>
+            继续练习
+          </MvpButton>
+        </div>
+      ) : (
+        <div>
+          <p className="text-sm leading-6 text-[#4B5563]">暂无最近练习记录。</p>
+          <MvpButton variant="secondary" className="mt-4" onClick={onOpenPapers}>
+            选择套卷
+          </MvpButton>
+        </div>
+      )}
+    </MvpCard>
   );
 }
 
-// 内联 SVG, 1.6px stroke currentColor, 跟现有 components/icons SSOT 同 spec.
-// 不引入 lucide / heroicons (CLAUDE.md §4 答题闭环 SVG-only 铁线).
-function EntryCategoriesIcon() {
+function FavoritesCard() {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M4 5h6v6H4z" />
-      <path d="M14 5h6v6h-6z" />
-      <path d="M4 13h6v6H4z" />
-      <path d="M14 13h6v6h-6z" />
-    </svg>
+    <MvpCard className="p-5" testId="practice-favorites-card">
+      <div className="mb-4 flex items-center gap-2">
+        <Star className="h-5 w-5 text-[#2563EB]" aria-hidden="true" />
+        <h2 className="text-base font-semibold text-[#111827]">收藏</h2>
+      </div>
+      <p className="text-sm leading-6 text-[#4B5563]">
+        收藏列表当前没有独立 API，本页不展示伪数据。进入题目页收藏后，可在接口补齐后接入。
+      </p>
+    </MvpCard>
   );
 }
 
-function EntryPapersIcon() {
+function WeakRecommendationCard({
+  loading,
+  error,
+  modules,
+  onPractice,
+}: {
+  readonly loading: boolean;
+  readonly error: boolean;
+  readonly modules: readonly WeakModule[];
+  readonly onPractice: (module: WeakModule) => void;
+}) {
   return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    >
-      <path d="M5 4h14v16H5z" />
-      <path d="M9 8h6" />
-      <path d="M9 12h6" />
-      <path d="M9 16h4" />
-    </svg>
+    <MvpCard className="p-5" testId="practice-weak-card">
+      <div className="mb-4 flex items-center gap-2">
+        <BookMarked className="h-5 w-5 text-[#2563EB]" aria-hidden="true" />
+        <h2 className="text-base font-semibold text-[#111827]">薄弱推荐</h2>
+      </div>
+      {loading ? (
+        <p className="flex items-center gap-2 text-sm text-[#4B5563]">
+          <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+          正在加载薄弱模块
+        </p>
+      ) : error ? (
+        <p className="text-sm text-[#B91C1C]">薄弱模块接口加载失败。</p>
+      ) : modules.length === 0 ? (
+        <p className="text-sm leading-6 text-[#4B5563]">暂无薄弱模块数据，先完成一次练习。</p>
+      ) : (
+        <div className="space-y-3">
+          {modules.map((module) => (
+            <button
+              key={module.subject}
+              type="button"
+              onClick={() => onPractice(module)}
+              className="flex w-full items-center justify-between rounded-lg border border-[#E1E6F0] bg-[#F7F8FB] p-3 text-left transition-colors hover:border-[#BFDBFE] hover:bg-[#EFF6FF]"
+            >
+              <span>
+                <span className="block text-sm font-semibold text-[#111827]">{module.subject}</span>
+                <span className="mt-1 block text-xs text-[#4B5563]">{module.suggestedAction}</span>
+              </span>
+              <MvpChip tone={module.score >= 70 ? 'amber' : 'blue'}>{Math.round(module.score)}</MvpChip>
+            </button>
+          ))}
+        </div>
+      )}
+    </MvpCard>
+  );
+}
+
+function ReasonCard({ subject }: { readonly subject: Subject }) {
+  return (
+    <MvpCard className="p-5" testId="practice-reason-card">
+      <h2 className="text-base font-semibold text-[#111827]">推荐理由</h2>
+      <p className="mt-3 text-sm leading-6 text-[#4B5563]">
+        {subject === 'xingce'
+          ? '优先根据错题率和完成率推荐行测模块；如果没有统计数据，则显示明确空态。'
+          : '申论当前以专项和套卷入口为主，评分结果页继续复用现有接口。'}
+      </p>
+    </MvpCard>
   );
 }

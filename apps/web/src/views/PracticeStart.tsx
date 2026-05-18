@@ -1,31 +1,20 @@
 import { useCallback, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { AlertCircle, FileQuestion, RefreshCw } from 'lucide-react';
+import {
+  AlertCircle,
+  ArrowLeft,
+  CheckCircle2,
+  FileQuestion,
+  Play,
+  RefreshCw,
+} from 'lucide-react';
 import { api } from '@sikao/api-client/request';
 import { usePracticeStore } from '@sikao/domain/answer-session/usePracticeStore';
-import { logger } from '@sikao/shared-utils';
-import { toast } from '@sikao/shared-utils';
+import { logger, toast } from '@sikao/shared-utils';
 import { ERROR_COPY } from '@/lib/ui-copy';
 import type { PaperRevisionSummary, PracticeSessionStartV2 } from '@sikao/api-client/types/api';
-import {
-  Breadcrumb,
-  Button,
-  Card,
-  EmptyState,
-  MetaPair,
-  Skeleton,
-  StatCallout,
-} from '@sikao/ui/ui';
-
-// Phase 5.3b rewrite — 从老 indigo 冷淡风格迁到 element ink editorial。
-// 参考 element/preview/cards.html（editorial card） + badges.html（MetaPair）。
-// 功能不变：拉套卷 revision summary → 启动 session → 跳答题页。
-//
-// 2026-04-28 P1 review fix Phase 3.1: 主函数从 151 行拆到 ≤50 行 (CLAUDE.md
-// §4 / frontend/CLAUDE.md §3.5). 子分支提取到 LoadError / NotFound / Ready
-// 三个 dumb sub-frame, JSX 完全保留, 仅是搬位置 — 不算"新加 UI 元素"
-// (UI polish plan §1 表 "重构现有组件拆函数" 行).
+import { MvpButton, MvpCard, MvpChip, MvpPage } from '@/components/mvp';
 
 export default function PracticeStart() {
   const { paperCode } = useParams<{ paperCode: string }>();
@@ -49,7 +38,6 @@ export default function PracticeStart() {
       initSession(sessionData);
       navigate(`/practice/sessions/${sessionData.sessionId}`);
     } catch (err) {
-      // 转译错误 + re-throw 符合 frontend/CLAUDE.md §3.1 fail-fast（silent catch 禁）。
       logger.error('practice.start.failed', { paperCode, err: String(err) });
       toast.error('无法开始练习', '请稍后重试，或检查网络');
       throw err;
@@ -58,43 +46,40 @@ export default function PracticeStart() {
     }
   }, [paperCode, initSession, navigate]);
 
-  const onBackHome = useCallback(() => navigate('/app'), [navigate]);
-  const onRetry = useCallback(() => { void refetch(); }, [refetch]);
+  const onBack = useCallback(() => navigate('/practice/center'), [navigate]);
+  const onRetry = useCallback(() => {
+    void refetch();
+  }, [refetch]);
 
   if (isLoading) return <PracticeStartSkeleton />;
-  if (isError) return <PracticeStartLoadError onRetry={onRetry} onBack={onBackHome} />;
-  if (paper === undefined) return <PracticeStartNotFound onBack={onBackHome} />;
+  if (isError) return <PracticeStartLoadError onRetry={onRetry} onBack={onBack} />;
+  if (paper === undefined) return <PracticeStartNotFound onBack={onBack} />;
 
   return (
     <PracticeStartReady
       paper={paper}
       isStarting={isStarting}
       onStart={handleStart}
-      onBack={onBackHome}
+      onBack={onBack}
     />
   );
 }
 
-function PageFrame({ children }: { readonly children: React.ReactNode }) {
-  return <div className="p-4 md:p-8 max-w-3xl mx-auto">{children}</div>;
-}
-
 function PracticeStartSkeleton() {
   return (
-    <PageFrame>
-      <Skeleton className="mb-6" widthClass="w-64" heightClass="h-4" />
-      <Card padding="lg">
-        <Skeleton widthClass="w-24" heightClass="h-3" />
-        <Skeleton className="mt-3" widthClass="w-72" heightClass="h-9" />
-        <Skeleton className="mt-4" widthClass="w-full" heightClass="h-4" />
-        <Skeleton className="mt-2" widthClass="w-3/4" heightClass="h-4" />
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Skeleton widthClass="w-full" heightClass="h-28" />
-          <Skeleton widthClass="w-full" heightClass="h-28" />
-        </div>
-        <Skeleton className="mt-8 ml-auto" widthClass="w-40" heightClass="h-11" />
-      </Card>
-    </PageFrame>
+    <MvpPage title="开始练习" hideHeading testId="practice-start-loading">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <MvpCard className="p-6">
+          <div className="h-4 w-24 animate-pulse rounded bg-[#E5EAF3]" />
+          <div className="mt-5 h-12 w-2/3 animate-pulse rounded bg-[#E5EAF3]" />
+          <div className="mt-8 h-28 animate-pulse rounded-lg bg-[#F1F4F9]" />
+        </MvpCard>
+        <MvpCard className="p-6">
+          <div className="h-4 w-20 animate-pulse rounded bg-[#E5EAF3]" />
+          <div className="mt-5 h-24 animate-pulse rounded-lg bg-[#F1F4F9]" />
+        </MvpCard>
+      </div>
+    </MvpPage>
   );
 }
 
@@ -105,42 +90,53 @@ interface LoadErrorProps {
 
 function PracticeStartLoadError({ onRetry, onBack }: LoadErrorProps) {
   return (
-    <PageFrame>
-      <EmptyState
-        tone="error"
-        icon={<AlertCircle className="w-8 h-8" aria-hidden="true" />}
-        title={ERROR_COPY.paperLoad.title}
-        description={ERROR_COPY.paperLoad.description}
-        action={
-          <div className="flex gap-3">
-            <Button variant="secondary" onClick={onRetry} data-testid="start-retry">
-              <RefreshCw className="w-4 h-4 mr-2" aria-hidden="true" />
-              重试
-            </Button>
-            <Button variant="quiet" onClick={onBack} data-testid="start-back-home">
-              返回题库
-            </Button>
+    <MvpPage title="试卷加载失败" hideHeading testId="practice-start-error">
+      <MvpCard className="mx-auto max-w-xl p-6" testId="practice-start-error-card">
+        <div className="flex items-start gap-4" role="alert" data-tone="error">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[#FEF2F2] text-[#DC2626]">
+            <AlertCircle className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div className="min-w-0">
+            <h2 className="text-lg font-bold text-[#111827]">{ERROR_COPY.paperLoad.title}</h2>
+            <p className="mt-1 text-sm text-[#4B5563]">{ERROR_COPY.paperLoad.description}</p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <MvpButton
+                variant="primary"
+                icon={<RefreshCw className="h-4 w-4" aria-hidden="true" />}
+                onClick={onRetry}
+                data-testid="start-retry"
+              >
+                重试
+              </MvpButton>
+              <MvpButton variant="secondary" onClick={onBack} data-testid="start-back-home">
+                返回练习
+              </MvpButton>
+            </div>
           </div>
-        }
-      />
-    </PageFrame>
+        </div>
+      </MvpCard>
+    </MvpPage>
   );
 }
 
 function PracticeStartNotFound({ onBack }: { readonly onBack: () => void }) {
   return (
-    <PageFrame>
-      <EmptyState
-        icon={<FileQuestion className="w-8 h-8" aria-hidden="true" />}
-        title={ERROR_COPY.paperNotFound.title}
-        description={ERROR_COPY.paperNotFound.description}
-        action={
-          <Button variant="secondary" onClick={onBack} data-testid="start-back-home">
-            返回题库
-          </Button>
-        }
-      />
-    </PageFrame>
+    <MvpPage title="试卷不存在" hideHeading testId="practice-start-empty">
+      <MvpCard className="mx-auto max-w-xl p-6">
+        <div className="flex items-start gap-4">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[#EFF6FF] text-[#2563EB]">
+            <FileQuestion className="h-5 w-5" aria-hidden="true" />
+          </span>
+          <div>
+            <h2 className="text-lg font-bold text-[#111827]">{ERROR_COPY.paperNotFound.title}</h2>
+            <p className="mt-1 text-sm text-[#4B5563]">{ERROR_COPY.paperNotFound.description}</p>
+            <MvpButton variant="secondary" className="mt-5" onClick={onBack} data-testid="start-back-home">
+              返回练习
+            </MvpButton>
+          </div>
+        </div>
+      </MvpCard>
+    </MvpPage>
   );
 }
 
@@ -152,68 +148,98 @@ interface ReadyProps {
 }
 
 function PracticeStartReady({ paper, isStarting, onStart, onBack }: ReadyProps) {
+  const paperTitle = pickPaperTitle(paper);
   return (
-    <PageFrame>
-      <Breadcrumb
-        className="mb-6"
-        items={[
-          { label: '题库', href: '/' },
-          { label: paper.paperCode, href: `/` },
-          { label: '开始练习' },
-        ]}
-      />
-      <Card padding="lg">
-        <span className="block text-tiny font-semibold tracking-[0.02em] text-ink-3">{/* hardcode-allow: eyebrow micro-adjust */}
-          准备开始
-        </span>
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-ink">
-          {paper.paperCode} <span className="text-ink-3">· </span>
-          <span className="font-serif font-medium">练习</span>
-        </h1>
-        <p className="mt-3 text-sm text-ink-3 leading-relaxed">
-          正式开始后，系统会创建会话并按套卷原顺序出题；中途可返回暂存，交卷后看完整解析。
-        </p>
+    <MvpPage title="开始练习" hideHeading testId="practice-start-view">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
+        <MvpCard className="p-6 md:p-8" testId="practice-start-main">
+          <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2">
+                <MvpChip tone="blue">{paper.paperCode}</MvpChip>
+                <MvpChip tone={paper.status === 'published' ? 'green' : 'amber'}>{paper.status}</MvpChip>
+              </div>
+              <h1 className="mt-5 text-3xl font-bold tracking-normal text-[#111827] md:text-4xl">
+                {paperTitle}
+              </h1>
+            </div>
+            <button
+              type="button"
+              onClick={onBack}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#D7DFEC] bg-white text-[#4B5563] hover:bg-[#EFF6FF] hover:text-[#2563EB]"
+              aria-label="返回练习中心"
+              title="返回练习中心"
+              data-testid="start-back-home"
+            >
+              <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+            </button>
+          </div>
 
-        <div className="mt-6 flex flex-wrap gap-3">
-          <MetaPair label="试卷">{paper.paperCode}</MetaPair>
-          <MetaPair label="状态">
-            <span className="inline-flex items-center gap-2">
-              <span aria-hidden="true" className="w-1.5 h-1.5 rounded-pill bg-ok" />
-              {paper.status}
+          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+            <Metric label="题目" value={paper.questionCount} />
+            <Metric label="修订" value={paper.revisionId} />
+            <Metric label="模式" value="套卷" />
+          </div>
+
+          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:items-center">
+            <MvpButton
+              variant="primary"
+              className="w-full sm:w-auto"
+              icon={<Play className="h-4 w-4" aria-hidden="true" />}
+              disabled={isStarting}
+              onClick={onStart}
+              data-testid="start-exam-btn"
+            >
+              {isStarting ? '创建中' : '开始答题'}
+            </MvpButton>
+            <MvpButton variant="secondary" className="w-full sm:w-auto" onClick={onBack}>
+              返回练习
+            </MvpButton>
+          </div>
+        </MvpCard>
+
+        <MvpCard className="p-6" testId="practice-start-side">
+          <div className="flex items-center gap-3">
+            <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#EFF6FF] text-[#2563EB]">
+              <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
             </span>
-          </MetaPair>
-          <MetaPair label="修订">{paper.revisionId}</MetaPair>
-        </div>
-
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <StatCallout
-            label="总题数"
-            value={paper.questionCount}
-            description="按套卷原顺序出题，可随时返回修改。"
-          />
-          <StatCallout
-            label="建议用时"
-            value="—"
-            description="未启用倒计时，自己把握节奏即可。"
-          />
-        </div>
-
-        <div className="mt-8 flex items-center justify-end gap-3">
-          <Button variant="quiet" onClick={onBack}>
-            <span className="font-serif italic">←</span>
-            <span>返回题库</span>
-          </Button>
-          <Button
-            variant="primary"
-            size="md"
-            isLoading={isStarting}
-            onClick={onStart}
-            data-testid="start-exam-btn"
-          >
-            {isStarting ? '创建会话中…' : '开始答题'}
-          </Button>
-        </div>
-      </Card>
-    </PageFrame>
+            <div>
+              <h2 className="text-base font-bold text-[#111827]">准备就绪</h2>
+              <p className="text-sm text-[#4B5563]">答完后查看结果</p>
+            </div>
+          </div>
+          <div className="mt-6 space-y-3">
+            <SideRow label="试卷" value={paper.paperCode} />
+            <SideRow label="题量" value={`${paper.questionCount}`} />
+            <SideRow label="状态" value={paper.status} />
+          </div>
+        </MvpCard>
+      </div>
+    </MvpPage>
   );
+}
+
+function Metric({ label, value }: { readonly label: string; readonly value: string | number }) {
+  return (
+    <div className="rounded-lg border border-[#E1E6F0] bg-[#F7F8FB] p-4">
+      <p className="text-xs font-semibold text-[#4B5563]">{label}</p>
+      <p className="mt-2 text-2xl font-bold text-[#111827]">{value}</p>
+    </div>
+  );
+}
+
+function SideRow({ label, value }: { readonly label: string; readonly value: string }) {
+  return (
+    <div className="flex items-center justify-between gap-4 border-t border-[#E1E6F0] pt-3 text-sm">
+      <span className="text-[#4B5563]">{label}</span>
+      <span className="font-semibold text-[#111827]">{value}</span>
+    </div>
+  );
+}
+
+function pickPaperTitle(paper: PaperRevisionSummary): string {
+  const maybeNamedPaper = paper as PaperRevisionSummary & { readonly paperName?: unknown };
+  return typeof maybeNamedPaper.paperName === 'string' && maybeNamedPaper.paperName.length > 0
+    ? maybeNamedPaper.paperName
+    : paper.paperCode;
 }
