@@ -7,6 +7,7 @@ import { FbTF } from './FbTF';
 import { isTrueFalseQuestion } from './lib/isTrueFalseQuestion';
 import { renderStemWithMarks } from './lib/renderStemWithMarks';
 import { useHighlightStore, type Mark } from '@sikao/domain/xingce/useHighlightStore';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 import type { QuestionDetailV2 } from '@sikao/api-client/types/api';
 // Wave 9 Phase 2a (2026-05-12): mobile media-query override (≤768) lives in
 // fb-highlight.css. Import here so FbCard's .fb-card-responsive class is
@@ -76,7 +77,12 @@ export function FbCard({
   const articleRef = useRef<HTMLElement | null>(null);
   const [pulsing, setPulsing] = useArmedPulse(armed);
   const options = question.content.options ?? [];
-  const dimClass = !isCurrent && isAnswered ? 'opacity-85' : 'opacity-100';
+  const dimClass = !isCurrent && isAnswered ? 'opacity-90' : 'opacity-100';
+  const questionType = question.questionKind === 'multiple_choice'
+    ? PRACTICE_COPY.fbQuestionTypeMultiple
+    : question.questionKind === 'true_false'
+      ? PRACTICE_COPY.fbQuestionTypeTrueFalse
+      : PRACTICE_COPY.fbQuestionTypeSingle;
   // Wave 9 Phase 2a (2026-05-12): desktop default 72px / 24px / 24px 0 padding
   // (spec design_handoff_xingce_exam §3.1 字符级). mobile (≤768) override via
   // .fb-card-responsive class + sikao-essay-adjacent CSS rule — 让 jsdom
@@ -92,47 +98,34 @@ export function FbCard({
       data-armed={pulsing || undefined}
       data-testid={`fb-card-${qid}`}
       className={cn(
-        'fb-card fb-card-responsive relative grid border-b border-line transition-opacity duration-base ease-motion',
-        isCurrent && 'border-l-2 border-l-exam-accent',
+        'fb-card fb-card-responsive relative grid min-h-[334px] gap-4',
+        'rounded-card-lg border border-line bg-paper shadow-card',
+        'px-5 py-6 transition-[border-color,opacity,box-shadow] duration-base ease-motion',
+        'md:grid-cols-[32px_minmax(0,1fr)_auto]',
+        'grid-cols-[28px_minmax(0,1fr)]',
+        isCurrent && 'border-exam-accent shadow-pop',
         pulsing && 'is-armed',
         dimClass,
       )}
       onAnimationEnd={() => setPulsing(false)}
-      style={{
-        gridTemplateColumns: '72px 1fr',
-        gap: '24px',
-        padding: '24px 0',
-        ...(isCurrent
-          ? { background: 'linear-gradient(to right, var(--paper-2), transparent 100px)' }
-          : {}),
-      }}
       aria-current={isCurrent ? 'true' : undefined}
     >
-      <div className="flex flex-col items-center">
+      <div className="pt-1">
         <span
           className={cn(
-            'font-serif tabular-nums pb-2 mb-2 border-b border-line w-full text-center fb-card-num',
-            isCurrent ? 'text-exam-accent' : 'text-ink',
+            'font-serif text-h3 font-semibold tabular-nums leading-none',
+            isCurrent ? 'text-exam-accent' : 'text-ink-1',
           )}
-          style={{ fontSize: '30px', lineHeight: 1 }}
           aria-label={`第 ${questionDisplayNo} 题`}
         >
-          {questionDisplayNo}
+          {questionDisplayNo}.
         </span>
-        <FbActions
-          questionId={qid}
-          isFavorited={isFavorited}
-          isMarked={isMarked}
-          hasNote={hasNote}
-          onToggleFavorite={onToggleFavorite}
-          onToggleMark={onToggleMark}
-          onOpenNote={onOpenNote}
-          onHighlightArm={onHighlightArm}
-          captureSourceQuote={extractStemPlainText(question.content.stem ?? '')}
-        />
       </div>
       <div className="min-w-0">
-        <header className="flex items-center justify-between gap-4 mb-4 min-w-0">
+        <header className="mb-4 flex min-w-0 items-center gap-3">
+          <Badge tone="brand" variant="chip">
+            {questionType}
+          </Badge>
           <div className="flex items-center gap-3 min-w-0">
             <span className="text-tiny tracking-eyebrow uppercase text-ink-3 truncate">
               {sectionTitle}
@@ -148,13 +141,13 @@ export function FbCard({
             ) : null}
           </div>
         </header>
-        <p
-          className="font-serif leading-relaxed text-ink mb-5"
+        <div
+          className="font-serif text-body font-semibold leading-relaxed text-ink mb-5"
           style={{ fontSize: 'var(--read-fs)', lineHeight: 'var(--read-lh)' }}
           data-testid={`fb-stem-${qid}`}
         >
           {stemNodes}
-        </p>
+        </div>
         {isTrueFalseQuestion(question) ? (
           <FbTF
             questionId={qid}
@@ -170,6 +163,20 @@ export function FbCard({
             onChange={onAnswer}
           />
         )}
+      </div>
+      <div className="col-span-full flex justify-start md:col-span-1 md:justify-end">
+        <FbActions
+          questionId={qid}
+          isFavorited={isFavorited}
+          isMarked={isMarked}
+          hasNote={hasNote}
+          onToggleFavorite={onToggleFavorite}
+          onToggleMark={onToggleMark}
+          onOpenNote={onOpenNote}
+          onHighlightArm={onHighlightArm}
+          captureSourceQuote={extractStemPlainText(question.content.stem ?? '')}
+          orientation="horizontal"
+        />
       </div>
     </article>
   );

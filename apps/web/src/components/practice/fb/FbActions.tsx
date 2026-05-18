@@ -2,6 +2,7 @@ import { IconBtn, Tooltip } from '@sikao/ui/ui';
 import { NoteIcon, StarFilledIcon, StarIcon } from '@sikao/ui/icons';
 import { NoteCaptureLauncher } from '@/components/notes';
 import { FbMarkIcon } from './icons/FbMarkIcon';
+import { cn } from '@sikao/shared-utils';
 
 // SIKAO Phase 3 (2026-05-09): 单题操作条 (收藏 / 标记 / 笔记 / 划线).
 //
@@ -39,6 +40,7 @@ export interface FbActionsProps {
    * sourceQuote pre-fill, 让用户保存笔记时自动带上原文上下文.
    */
   readonly captureSourceQuote?: string;
+  readonly orientation?: 'vertical' | 'horizontal';
 }
 
 export function FbActions({
@@ -51,6 +53,7 @@ export function FbActions({
   onOpenNote,
   onHighlightArm,
   captureSourceQuote,
+  orientation = 'vertical',
 }: FbActionsProps) {
   const highlightEnabled = onHighlightArm !== undefined;
   // Wave 6E: questionId 是 string → 转 number 给 NoteAttachTarget. 行测
@@ -61,10 +64,13 @@ export function FbActions({
     : null;
   return (
     <div
-      className="flex flex-col items-center gap-1"
+      className={cn(
+        'flex items-center gap-2',
+        orientation === 'vertical' ? 'flex-col' : 'flex-row',
+      )}
       role="toolbar"
       aria-label="题目操作"
-      aria-orientation="vertical"
+      aria-orientation={orientation}
       data-testid="fb-actions"
     >
       <Tooltip label={isFavorited ? '取消收藏' : '收藏'}>

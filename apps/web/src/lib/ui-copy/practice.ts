@@ -23,12 +23,27 @@ export const PRACTICE_COPY = {
   fbActionsAddNote:       '添加到笔记本',
   // fb/FbBottomDock
   fbBottomDockOpenCard:   '打开答题卡',
+  // fb/FbFloatingAnswerDrawer
+  fbAnswerDrawerAriaLabel: '答题卡抽屉',
+  fbAnswerDrawerTitle:    '答题卡',
+  fbAnswerDrawerCollapse: '收起答题卡',
+  fbAnswerDrawerExpand:   '展开答题卡',
+  fbAnswerDrawerQuestionNav: '题号导航',
   // fb/FbDrawer
   fbDrawerClose:          '关闭答题卡',
   // fb/FbReadingCol
   fbJumpToParagraph:      '回跳材料段落',
   fbReadingMode:          '行测真题练习',
   fbReadingModeFull:      '行政职业能力测验',
+  fbMaterialLabel:        '材料',
+  fbMaterialCollapse:     '折叠材料',
+  fbMaterialExpand:       '展开材料',
+  fbMaterialImageAlt:     '材料图',
+  fbMaterialTabList:      '题组题号',
+  fbMaterialDone:         '题组已显示完毕',
+  fbQuestionTypeSingle:   '单选题',
+  fbQuestionTypeMultiple: '多选题',
+  fbQuestionTypeTrueFalse: '判断题',
   // fb/FbScratchCol
   fbScratchHint:          '可拖入题干文字或数字',
   fbScratchAdd:           '写一条便签',
@@ -42,6 +57,12 @@ export const PRACTICE_COPY = {
   fbTfAriaLabel:          '题判断选项',
   // fb/FbTopbar
   fbTopbarAriaLabel:      '答题工具栏',
+  fbTopbarBack:           '返回题库',
+  fbTopbarPause:          '暂停',
+  fbTopbarResume:         '继续',
+  fbTopbarSettings:       '阅读设置',
+  fbTopbarSubmit:         '交卷',
+  fbTopbarTimer:          '答题计时',
   // fb/SelectionToolbar
   selectionAriaLabel:     '划线工具条',
   selectionClear:         '清除选区划线',

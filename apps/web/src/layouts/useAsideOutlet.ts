@@ -44,11 +44,12 @@ export function useAsideOutlet(): AsidePanels | null {
  */
 export function useAsideSet(key: AsideKey, node: ReactNode | null): void {
   const ctx = useContext(AsideOutletContext);
+  const setPanel = ctx?.setPanel;
   useEffect(() => {
-    if (ctx === null) return undefined;
-    ctx.setPanel(key, node);
+    if (setPanel === undefined) return undefined;
+    setPanel(key, node);
     return () => {
-      ctx.setPanel(key, null);
+      setPanel(key, null);
     };
-  }, [ctx, key, node]);
+  }, [setPanel, key, node]);
 }

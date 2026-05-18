@@ -40,8 +40,14 @@ export type { FbDockBodyProps } from './FbDockBody';
 export { FbBottomDock } from './FbBottomDock';
 export type { FbBottomDockProps } from './FbBottomDock';
 
+export { FbFloatingAnswerDrawer } from './FbFloatingAnswerDrawer';
+export type { FbFloatingAnswerDrawerProps } from './FbFloatingAnswerDrawer';
+
 export { FbLayout } from './FbLayout';
 export type { FbLayoutProps } from './FbLayout';
+
+export { FbMaterialAnalysisGroup } from './FbMaterialAnalysisGroup';
+export type { FbMaterialAnalysisGroupProps } from './FbMaterialAnalysisGroup';
 
 export { FbMobileScratchSheet } from './FbMobileScratchSheet';
 export type { FbMobileScratchSheetProps } from './FbMobileScratchSheet';
@@ -79,6 +85,9 @@ export type {
 
 export { useFbKeyboard } from './useFbKeyboard';
 export type { UseFbKeyboardArgs } from './useFbKeyboard';
+
+export { useQuestionRegistry } from './useQuestionRegistry';
+export type { QuestionRegistry, QuestionRegistryEntry } from './useQuestionRegistry';
 
 export { useFbMobileSwipe } from './useFbMobileSwipe';
 export type { FbMobileSwipeHandlers, UseFbMobileSwipeArgs } from './useFbMobileSwipe';

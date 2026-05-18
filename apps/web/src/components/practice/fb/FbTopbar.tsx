@@ -1,6 +1,14 @@
 import { cn } from '@sikao/shared-utils';
-import { IconBtn, Tooltip } from '@sikao/ui/ui';
-import { PauseIcon, PlayIcon, SettingsIcon } from '@sikao/ui/icons';
+import { Button, IconBtn, Tooltip } from '@sikao/ui/ui';
+import {
+  ClockIcon,
+  NavBackIcon,
+  NavSubmitIcon,
+  PauseIcon,
+  PlayIcon,
+  ToolSettingsIcon,
+} from '@sikao/ui/icons';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // SIKAO Phase 3 (2026-05-09) → Wave 4 Phase 2A (2026-05-12) 改造:
 // 行测顶部条 — sticky top, 极简 56px 高.
@@ -27,8 +35,11 @@ export interface FbTopbarProps {
   readonly timerDisplay: string;
   readonly isPaused: boolean;
   readonly progressLabel: string;
+  readonly onExit: () => void;
   readonly onTogglePause: () => void;
   readonly onOpenSettings: () => void;
+  readonly onSubmit: () => void;
+  readonly isSubmitting?: boolean;
   /**
    * settings popover 当前是否打开. 用于 settings IconBtn 的 aria-expanded
    * (a11y: 屏幕阅读器需要知道 toggle button 的当前 state). 默认 false.
@@ -42,31 +53,39 @@ export function FbTopbar({
   timerDisplay,
   isPaused,
   progressLabel,
+  onExit,
   onTogglePause,
   onOpenSettings,
+  onSubmit,
+  isSubmitting = false,
   settingsOpen = false,
 }: FbTopbarProps) {
   return (
     <header
       className={cn(
-        'fb-top sticky top-0 z-30 grid items-center gap-2 md:gap-4',
-        // Wave 9 Phase 2a (2026-05-12): mobile h-12 紧凑高度, tablet+ h-14
-        // (mobile-style-guide §4.2 间距更紧).
-        'grid-cols-[auto_1fr_auto] h-12 md:h-14 px-3 md:px-6',
-        'bg-surface border-b border-line',
+        'fb-top sticky top-0 z-30 grid items-center gap-3',
+        'grid-cols-1 md:grid-cols-[minmax(0,280px)_minmax(0,1fr)_minmax(0,280px)]',
+        'min-h-14 px-4 py-3 md:px-6 md:py-0',
+        'bg-paper/95 border-b border-line shadow-card backdrop-blur',
       )}
       data-testid="fb-topbar"
     >
-      <FbTopbarLeft paperName={paperName} partLabel={partLabel} />
-      <FbTopbarCenter
+      <FbTopbarLeft
         timerDisplay={timerDisplay}
         isPaused={isPaused}
+        onExit={onExit}
+        onTogglePause={onTogglePause}
+      />
+      <FbTopbarCenter
+        paperName={paperName}
+        partLabel={partLabel}
         progressLabel={progressLabel}
       />
       <FbTopbarRight
-        onTogglePause={onTogglePause}
         onOpenSettings={onOpenSettings}
+        onSubmit={onSubmit}
         isPaused={isPaused}
+        isSubmitting={isSubmitting}
         settingsOpen={settingsOpen}
       />
     </header>
@@ -74,104 +93,135 @@ export function FbTopbar({
 }
 
 interface FbTopbarLeftProps {
-  readonly paperName: string;
-  readonly partLabel?: string;
+  readonly timerDisplay: string;
+  readonly isPaused: boolean;
+  readonly onExit: () => void;
+  readonly onTogglePause: () => void;
 }
 
-function FbTopbarLeft({ paperName, partLabel }: FbTopbarLeftProps) {
+function FbTopbarLeft({
+  timerDisplay,
+  isPaused,
+  onExit,
+  onTogglePause,
+}: FbTopbarLeftProps) {
+  const pauseLabel = isPaused ? PRACTICE_COPY.fbTopbarResume : PRACTICE_COPY.fbTopbarPause;
   return (
-    <div className="flex items-center gap-3 min-w-0">
-      <span
-        className="font-serif text-base font-medium text-ink truncate hidden md:inline"
+    <div className="flex min-w-0 items-center justify-between gap-4 md:justify-start">
+      <Tooltip label={PRACTICE_COPY.fbTopbarBack} side="right">
+        <IconBtn
+          size="sm"
+          aria-label={PRACTICE_COPY.fbTopbarBack}
+          onClick={onExit}
+          data-testid="fb-topbar-back"
+        >
+          <NavBackIcon size={16} />
+        </IconBtn>
+      </Tooltip>
+      <div
+        className="flex items-center gap-2 text-ink-2"
+        aria-label={PRACTICE_COPY.fbTopbarTimer}
       >
-        {paperName}
-      </span>
-      {partLabel !== undefined && partLabel !== '' ? (
+        <ClockIcon size={18} />
         <span
           className={cn(
-            'hidden md:inline pl-3 ml-2 border-l border-line',
-            'font-mono text-tiny tracking-wider uppercase text-ink-3 truncate',
+            'font-mono text-body tabular-nums tracking-loose',
+            isPaused ? 'text-ink-3' : 'text-ink',
           )}
+          role="timer"
+          aria-label={isPaused ? PRACTICE_COPY.sessionHeaderPaused : timerDisplay}
+          data-paused={isPaused || undefined}
+          data-testid="fb-topbar-timer"
         >
-          {partLabel}
+          {timerDisplay}
         </span>
-      ) : null}
+        <Tooltip label={pauseLabel}>
+          <IconBtn
+            size="sm"
+            aria-label={pauseLabel}
+            aria-pressed={isPaused}
+            onClick={onTogglePause}
+            className="rounded-pill"
+            data-testid="fb-topbar-pause"
+          >
+            {isPaused ? <PlayIcon size={14} /> : <PauseIcon size={14} />}
+          </IconBtn>
+        </Tooltip>
+      </div>
     </div>
   );
 }
 
 interface FbTopbarCenterProps {
-  readonly timerDisplay: string;
-  readonly isPaused: boolean;
+  readonly paperName: string;
+  readonly partLabel?: string;
   readonly progressLabel: string;
 }
 
-function FbTopbarCenter({ timerDisplay, isPaused, progressLabel }: FbTopbarCenterProps) {
+function FbTopbarCenter({ paperName, partLabel, progressLabel }: FbTopbarCenterProps) {
   return (
-    <div className="flex items-center justify-center gap-6">
+    <div className="min-w-0 text-center">
       <span
-        role="timer"
-        aria-label={isPaused ? '已暂停' : `已用 ${timerDisplay}`}
-        className={cn(
-          'font-mono text-base tabular-nums tracking-loose',
-          isPaused
-            ? 'text-ink-3 border-b border-dashed border-line-3'
-            : 'text-ink',
-        )}
-        data-paused={isPaused || undefined}
-        data-testid="fb-topbar-timer"
+        className="block truncate font-serif text-h3 font-semibold text-ink"
+        data-testid="fb-topbar-title"
       >
-        {timerDisplay}
+        {paperName}
       </span>
-      <span
-        className="hidden md:inline font-mono text-sm tabular-nums tracking-loose text-ink-3"
-        data-testid="fb-topbar-progress"
-      >
-        {progressLabel}
-      </span>
+      <div className="mt-1 flex items-center justify-center gap-2 font-mono text-tiny tracking-loose text-ink-3">
+        {partLabel !== undefined && partLabel !== '' ? <span>{partLabel}</span> : null}
+        <span className="tabular-nums" data-testid="fb-topbar-progress">
+          {progressLabel}
+        </span>
+      </div>
     </div>
   );
 }
 
 interface FbTopbarRightProps {
-  readonly onTogglePause: () => void;
   readonly onOpenSettings: () => void;
+  readonly onSubmit: () => void;
   readonly isPaused: boolean;
+  readonly isSubmitting: boolean;
   readonly settingsOpen: boolean;
 }
 
 function FbTopbarRight({
-  onTogglePause,
   onOpenSettings,
-  isPaused,
+  onSubmit,
+  isSubmitting,
   settingsOpen,
 }: FbTopbarRightProps) {
   return (
-    <div className="flex items-center gap-2" role="toolbar" aria-label="答题工具栏">
-      <Tooltip label={isPaused ? '继续 · 空格' : '暂停 · 空格'}>
+    <div
+      className="flex items-center justify-between gap-3 md:justify-end"
+      role="toolbar"
+      aria-label={PRACTICE_COPY.fbTopbarAriaLabel}
+    >
+      <Tooltip label={PRACTICE_COPY.fbTopbarSettings}>
         <IconBtn
           size="sm"
-          aria-label={isPaused ? '继续' : '暂停'}
-          aria-pressed={isPaused}
-          onClick={onTogglePause}
-          data-testid="fb-topbar-pause"
-        >
-          {isPaused ? <PlayIcon size={16} /> : <PauseIcon size={16} />}
-        </IconBtn>
-      </Tooltip>
-      <Tooltip label="设置">
-        <IconBtn
-          size="sm"
-          aria-label="阅读设置"
+          aria-label={PRACTICE_COPY.fbTopbarSettings}
           aria-expanded={settingsOpen}
           aria-haspopup="dialog"
           aria-controls="fb-settings-popover"
           onClick={onOpenSettings}
           data-testid="fb-topbar-settings"
         >
-          <SettingsIcon size={16} />
+          <ToolSettingsIcon size={16} />
         </IconBtn>
       </Tooltip>
+      <Button
+        type="button"
+        variant="accent"
+        size="sm"
+        leftIcon={<NavSubmitIcon size={16} />}
+        onClick={onSubmit}
+        isLoading={isSubmitting}
+        aria-label={PRACTICE_COPY.fbTopbarSubmit}
+        data-testid="fb-topbar-submit"
+      >
+        {PRACTICE_COPY.fbTopbarSubmit}
+      </Button>
     </div>
   );
 }

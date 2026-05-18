@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { AlertCircleIcon } from '@sikao/ui/icons';
@@ -6,10 +6,7 @@ import { Button, EmptyState } from '@sikao/ui/ui';
 import { useAsideSet } from '@/layouts/useAsideOutlet';
 import { ExitConfirmModal, SessionLoading } from '@/components/practice';
 import {
-  FbBottomDock,
-  FbDockBody,
-  FbDrawer,
-  FbDrawerSubmitFooter,
+  FbFloatingAnswerDrawer,
   FbMobileScratchSheet,
   FbLayout,
   FbReadingCol,
@@ -24,6 +21,7 @@ import {
   useFbKeyboard,
   useFbMobileSwipe,
   useFbUiState,
+  useQuestionRegistry,
 } from '@/components/practice/fb';
 import { SelectionToolbar } from '@/components/practice/fb/SelectionToolbar';
 import { useSelectionToolbar } from '@/components/practice/fb/lib/useSelectionToolbar';
@@ -194,6 +192,7 @@ function PracticeSessionBody({
     [sessionData.sections],
   );
   const ui = useFbUiState();
+  const setNoteQuestionId = ui.setNoteQuestionId;
   const elapsed = useElapsedSeconds(ui.isPaused);
   const timerSeconds = defaultExamSeconds(totalQuestions);
   const remaining = Math.max(0, timerSeconds - elapsed);
@@ -214,17 +213,12 @@ function PracticeSessionBody({
   const updateAnswer = usePracticeStore((s) => s.updateAnswer);
   const setFlags = usePracticeStore((s) => s.setFlags);
   const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
-  const markedCount = flagged.size;
-  const questionCardNodes = useRef<Map<string, HTMLElement>>(new Map());
-  // P6 单 state passagesCollapsed (全部 toggle, SPEC §10 明文 "折叠资料分析材料"
-  // 是单一动作). 取代 P4 中每个 FbPassage 内部独立 collapsed state + 各自
-  // window keydown listener (P 键 broadcast bug fix).
+  const questionRegistry = useQuestionRegistry();
   const [passagesCollapsed, setPassagesCollapsed] = useState(false);
   const togglePassagesCollapsed = useCallback(
     () => setPassagesCollapsed((c) => !c),
     [],
   );
-  const forceExpandPassages = useCallback(() => setPassagesCollapsed(false), []);
 
   // P5b/3: 划线浮工具条 + armed mode integration.
   // 父级管 armed qid (用作 FbCard armed prop 触 1.2s pulse) + toolbar rect.
@@ -246,32 +240,21 @@ function PracticeSessionBody({
   const currentVisibleLabel = `Q${currentVisible.displayNo} ${currentVisible.sectionTitle}`;
   const currentVisibleQuestionId = String(currentVisible.question.questionId);
 
-  const registerQuestionCard = useCallback(
-    (questionId: string, node: HTMLElement | null) => {
-      if (node === null) {
-        questionCardNodes.current.delete(questionId);
-        return;
-      }
-      questionCardNodes.current.set(questionId, node);
-    },
-    [],
-  );
-  const getQuestionCardNode = useCallback((questionId: string) => {
-    return questionCardNodes.current.get(questionId);
-  }, []);
-
+  useEffect(() => {
+    if (currentVisibleQid !== null) return;
+    setCurrentVisibleQid(currentVisibleQuestionId);
+  }, [currentVisibleQid, currentVisibleQuestionId, setCurrentVisibleQid]);
   useFbCurrentVisibleObserver({
     flatQuestions,
     isPaused: ui.isPaused,
     currentQid: currentVisibleQid,
-    getQuestionCardNode,
+    getQuestionCardNode: questionRegistry.getQuestionNode,
     onChange: setCurrentVisibleQid,
   });
 
   // P6 keyboard dispatcher (统一接管 1-4 / T / F / Space / A / P / Cmd+Z).
   // Esc 各 modal 自管 (master 决策降级方案). P6 在 PracticeSession route 内
   // mount, 不全局 wire (App.tsx 不接).
-  // handleOpenDrawer 同时给 keyboard A 键 + FbBottomDock 答题卡按钮共用.
   const handleOpenDrawer = useCallback(() => ui.setDockOpen(true), [ui]);
   const undoHighlight = useCallback(() => {
     useHighlightStore.getState().undo();
@@ -366,19 +349,12 @@ function PracticeSessionBody({
   );
   const handleSelectQuestion = useCallback(
     (questionId: string) => {
-      const questionCard = questionCardNodes.current.get(questionId);
-      if (questionCard === undefined) {
-        throw new Error(`Question card ${questionId} is not mounted.`);
-      }
       setCurrentVisibleQid(questionId);
-      questionCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      questionRegistry.scrollToQuestion(questionId);
       ui.setDockOpen(false);
     },
-    [setCurrentVisibleQid, ui],
+    [questionRegistry, setCurrentVisibleQid, ui],
   );
-  // Wave 4 Phase 2A: FbBottomDock prev/next 跳题. 复用 handleSelectQuestion
-  // scrollIntoView 模式. currentVisible.displayNo 1-based; flatQuestions 0-based.
-  // 边界态走 FbBottomDock disabled 拦截; 此 callback 是 safety net.
   const handlePrev = useCallback(() => {
     const target = flatQuestions[currentVisible.displayNo - 2];
     if (target !== undefined) handleSelectQuestion(String(target.question.questionId));
@@ -405,7 +381,6 @@ function PracticeSessionBody({
   });
 
   // Wave 9 Phase 2a (2026-05-12): mobile swipe 左右翻题 (mobile-style-guide §5.6).
-  // Hook 内部 matchMedia gate mobile-only, tablet+ no-op (有 FbBottomDock).
   const swipeHandlers = useFbMobileSwipe({ onPrev: handlePrev, onNext: handleNext });
 
   // PR15 §A (2026-05-13): 注入"解析 / 笔记 / AI"3 panel 到 AsideOutlet, 让平板
@@ -434,7 +409,7 @@ function PracticeSessionBody({
         </p>
         <Button
           variant="primary"
-          onClick={() => ui.setNoteQuestionId(currentVisibleQuestionId)}
+          onClick={() => setNoteQuestionId(currentVisibleQuestionId)}
           data-testid="practice-aside-notes-open"
         >
           打开本题笔记
@@ -448,7 +423,7 @@ function PracticeSessionBody({
       currentVisible.displayNo,
       currentVisible.sectionTitle,
       currentVisibleQuestionId,
-      ui,
+      setNoteQuestionId,
     ],
   );
   const askPanel = useMemo(
@@ -484,8 +459,11 @@ function PracticeSessionBody({
           timerDisplay={timerDisplay}
           isPaused={ui.isPaused}
           progressLabel={`${answeredCount} / ${totalQuestions}`}
+          onExit={() => ui.setExitOpen(true)}
           onTogglePause={() => ui.setIsPaused(!ui.isPaused)}
           onOpenSettings={() => ui.setSettingsOpen(!ui.settingsOpen)}
+          onSubmit={handleSubmit}
+          isSubmitting={ui.isSubmitting}
           settingsOpen={ui.settingsOpen}
         />
         <FbSettingsPopover
@@ -496,34 +474,32 @@ function PracticeSessionBody({
       <div data-testid="fb-session-main">
         <FbLayout
           readingCol={
-          <FbReadingCol
-            sectionItemsGroups={sectionItemsGroups}
-            currentVisibleQid={currentVisibleQid}
-            answers={answers}
-            flagged={flagged}
-            onAnswer={handleAnswer}
-            onToggleMark={handleToggleMark}
-            onOpenNote={(qid) => ui.setNoteQuestionId(qid)}
-            onExit={() => ui.setExitOpen(true)}
-            answeredCount={answeredCount}
-            totalQuestions={totalQuestions}
-            registerQuestionCard={registerQuestionCard}
-            passagesCollapsed={passagesCollapsed}
-            onTogglePassagesCollapsed={togglePassagesCollapsed}
-            onForceExpandPassages={forceExpandPassages}
-            onHighlightArm={selectionToolbar.arm}
-            armedQid={selectionToolbar.armedQid}
-          />
+            <FbReadingCol
+              sectionItemsGroups={sectionItemsGroups}
+              currentVisibleQid={currentVisibleQid}
+              answers={answers}
+              flagged={flagged}
+              onAnswer={handleAnswer}
+              onToggleMark={handleToggleMark}
+              onOpenNote={(qid) => ui.setNoteQuestionId(qid)}
+              registerQuestion={questionRegistry.registerQuestion}
+              unregisterQuestion={questionRegistry.unregisterQuestion}
+              onCurrentQuestionChange={setCurrentVisibleQid}
+              passagesCollapsed={passagesCollapsed}
+              onTogglePassagesCollapsed={togglePassagesCollapsed}
+              onHighlightArm={selectionToolbar.arm}
+              armedQid={selectionToolbar.armedQid}
+            />
           }
           scratchCol={
-          <FbScratchCol
-            clips={scratchClips}
-            answeredCount={answeredCount}
-            currentQuestionLabel={currentVisibleLabel}
-            currentQuestionId={currentVisibleQuestionId}
-            onAddClip={addScratchClip}
-            onRemoveClip={removeScratchClip}
-          />
+            <FbScratchCol
+              clips={scratchClips}
+              answeredCount={answeredCount}
+              currentQuestionLabel={currentVisibleLabel}
+              currentQuestionId={currentVisibleQuestionId}
+              onAddClip={addScratchClip}
+              onRemoveClip={removeScratchClip}
+            />
           }
         />
       </div>
@@ -532,36 +508,16 @@ function PracticeSessionBody({
         clipCount={scratchClips.length}
         onClick={() => ui.setMobileScratchOpen(true)}
       />
-      <FbDrawer
-        open={ui.dockOpen}
-        onClose={() => ui.setDockOpen(false)}
-        title="答题卡"
-        footer={
-          <FbDrawerSubmitFooter
-            unansweredCount={Math.max(0, totalQuestions - answeredCount)}
-            markedCount={markedCount}
-            onSubmit={handleSubmit}
-            isSubmitting={ui.isSubmitting}
-          />
-        }
-      >
-        <FbDockBody
-          sectionGroups={sectionGroups}
-          answers={answers}
-          flagged={flagged}
-          currentVisibleQid={currentVisibleQid}
-          onSelectQuestion={handleSelectQuestion}
-        />
-      </FbDrawer>
-      {/* Wave 4 Phase 2A: sticky bottom nav (prev/题号/next/答题卡/提交) */}
-      <FbBottomDock
-        currentIndex={currentVisible.displayNo}
+      <FbFloatingAnswerDrawer
+        sectionGroups={sectionGroups}
+        answers={answers}
+        flagged={flagged}
+        currentVisibleQid={currentVisibleQid}
+        answeredCount={answeredCount}
         totalQuestions={totalQuestions}
-        onPrev={handlePrev}
-        onNext={handleNext}
-        onOpenDrawer={handleOpenDrawer}
-        onSubmit={handleSubmit}
-        isSubmitting={ui.isSubmitting}
+        onSelectQuestion={handleSelectQuestion}
+        expanded={ui.dockOpen}
+        onExpandedChange={ui.setDockOpen}
       />
       <FbMobileScratchSheet
         open={ui.mobileScratchOpen}
