@@ -434,7 +434,7 @@ describe('PracticeSession (SIKAO Fb core)', () => {
     renderWithProviders(<PracticeSession />, {
       initialEntries: ['/practice/sessions/42'],
     });
-    const submit = await screen.findByTestId('practice-bottom-dock-submit');
+    const submit = await screen.findByTestId('fb-topbar-submit');
     await user.click(submit);
     await waitFor(() => {
       expect(patchBody).toEqual({ status: 'completed' });
