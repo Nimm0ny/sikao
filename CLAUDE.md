@@ -166,7 +166,11 @@ Multica 负责记录：
 3. **拍板必走双轮讨论**：重大决策（重设计 / brand 改动 / 架构选择 / 跨服务契约）必须 spawn ≥2 个 subagent 评估，且 master+subagent 至少 2 轮讨论后 master 才拍板。subagent 仅评估/排序/推荐，**不决定**。
 4. **>400 行改动必 master review**：单 subagent 净增 >400 行（含新文件 + 修改）时，提交前 master 必须读 diff 决定是否接受 / 让另起 review subagent。
 5. **前端视觉改动必引「前端规范审查官 agent」**：每个涉及前端视觉的 phase 实施完，必须 spawn 一个专门 prompt 的 subagent 走前端规范全审（CLAUDE.md §4 design tokens 三处 SSOT / italic 政策 / 圆角 SSOT / lint:hardcode / lint:radius-token / lint:italic / lint:radius / typecheck / view 纵向预算）。这个审查官跟 fixer 必须是不同 subagent，避免自审。
-6. **每次视觉改造 chrome MCP ≥2 次验收**：fixer 完成后通过 `mcp__Claude_in_Chrome__*` 走 ≥2 轮 user-simulation 验收（默认状态 + 边缘状态如 empty/error/dark mode 等），抓 DOM 断言 + 截图，不接受口嗨"应该好了"。Chrome 扩展未连接时优先要求用户连接，不沉默降级到肉眼判断。
+6. **每次视觉改造 Browser MCP ≥2 次验收**：fixer 完成后必须按当前 agent 的 browser MCP 能力走 ≥2 轮 user-simulation 验收（默认状态 + 边缘状态如 empty/error/dark mode 等），抓 DOM 断言 + 截图，不接受口嗨"应该好了"。
+   - Claude Code：使用 Claude in Chrome MCP（`mcp__Claude_in_Chrome__*`）。
+   - Codex：默认使用 Chrome DevTools MCP（如果当前工具暴露）。
+   - 其他 agent：使用 Tool Capability Preflight 探测到的 browser MCP。
+   - 无 browser MCP 时必须 fail-fast 报告；只有 lhr 明确允许时才可降级为 Playwright / browser smoke，Evidence Block 必须写明 `Browser MCP: not available; fallback authorized by lhr`。
 7. **Subagent 提议违反硬约束的，master 必须亲自确认（2026-05-08 night lhr 授权写死）**：当任何 subagent（评估 / 审查官 / fixer / 反方 round / 验收官）提议或反馈"修改 brand 不变量 / hardcode logo / 端口约束 / radius SSOT / italic 政策 / Fail-Fast 例外 / 其他 CLAUDE.md 或 docs/vault/04-design/Design-System.md 硬规则"时，master 必须：
    - (a) **显式列出**该 subagent 的具体建议 + 它违反的具体硬约束条款（CLAUDE.md / style-guide 章节号）
    - (b) **lhr 显式确认**（聊天里"批准"二字）才能采纳；不接受 silent accept / 只看 commit message 不读建议 / 把"reviewer subagent catch 的内容"当作自动通过
@@ -212,7 +216,9 @@ Multica 负责记录：
 - 当前 agent 类型：Claude Code / Codex / Multica-managed / other
 - 是否在 Multica workspace 内
 - 是否支持 subagent spawn
-- 是否支持 MCP / Chrome MCP
+- 是否支持 MCP
+- 是否支持 browser MCP
+- 当前可用 browser MCP 类型：Claude in Chrome MCP / Chrome DevTools MCP / none
 - 是否允许 shell
 - 是否能访问 git / gh / multica CLI
 - 是否能跑本地 dev server
@@ -222,8 +228,9 @@ Multica 负责记录：
 
 特别说明：
 
-- Claude Code 可以使用 MCP 时，按 MCP 流程验收。
-- Codex / 其他 agent 不得假装有 MCP 能力。
+- Claude Code 可以使用 Claude in Chrome MCP 时，按 Claude in Chrome MCP 流程验收。
+- Codex 不得假装有 Claude in Chrome MCP；Codex 有 Chrome DevTools MCP 时，视觉验收默认走 Chrome DevTools MCP。
+- 其他 agent 不得假装有未暴露的 MCP 能力，按 Tool Capability Preflight 结果执行。
 - 如果当前工具不支持 subagent，涉及高风险任务必须停止并请求 lhr 安排独立 review。
 - 普通任务在 subagent 不可用时可以自检，但最终 Evidence Block 必须明确标注：`Independent subagent review: not available`。
 
