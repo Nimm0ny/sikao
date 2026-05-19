@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Badge, Button, Card } from '@sikao/ui/ui';
 import { useAuthStore } from '@sikao/domain/auth/useAuthStore';
-import { AUTH_COPY } from '@/lib/ui-copy';
+import { AUTH_COPY, PROFILE_COPY } from '@/lib/ui-copy';
 
 export function EmailPanel() {
   const user = useAuthStore((s) => s.user);
@@ -14,11 +14,11 @@ export function EmailPanel() {
 
   return (
     <Card padding="md" data-testid="profile-email-card">
-      <h2 className="font-bold text-ink mb-3">邮箱</h2>
+      <h2 className="font-bold text-ink mb-3">{PROFILE_COPY.emailPanelTitle}</h2>
       <div className="flex flex-col gap-3">
         <div className="flex items-center gap-3">
           <span className="text-sm text-ink truncate flex-1" data-testid="profile-email-display">
-            {hasEmail ? user.email : '尚未绑定邮箱'}
+            {hasEmail ? user.email : PROFILE_COPY.emailPanelEmpty}
           </span>
           {hasEmail ? (
             <Badge
@@ -36,7 +36,7 @@ export function EmailPanel() {
           onClick={() => navigate('/bind-email')}
           data-testid="profile-email-bind-link"
         >
-          {hasEmail ? '更换邮箱' : '绑定邮箱'}
+          {hasEmail ? PROFILE_COPY.emailPanelChangeAction : PROFILE_COPY.emailPanelBindAction}
         </Button>
       </div>
     </Card>

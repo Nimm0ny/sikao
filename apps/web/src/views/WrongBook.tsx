@@ -8,7 +8,7 @@ import {
   WrongBookSkeleton,
   WrongQuestionList,
 } from '@/components/wrong-book';
-import { AuthFallbackEmptyState, PageHeader } from '@sikao/ui/ui';
+import { AuthFallbackEmptyState, EmptyState, PageHeader } from '@sikao/ui/ui';
 import { QueryBoundary } from '@/components/data';
 import { WrongBookHero } from '@/components/wrong-book/WrongBookHero';
 import { WrongBookHeatmap } from '@/components/wrong-book/WrongBookHeatmap';
@@ -20,14 +20,14 @@ import {
 import {
   useWrongBookSummary,
   useGraduationCandidates,
+  type WrongBookSummary,
 } from '@sikao/api-client/queries/wrongBookQueries';
 import { usePracticeStore } from '@sikao/domain/answer-session/usePracticeStore';
 import { isAuthError } from '@sikao/shared-utils';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
-import { ERROR_COPY } from '@/lib/ui-copy';
+import { ERROR_COPY, WRONG_BOOK_COPY } from '@/lib/ui-copy';
 import {
-  fetchWrongQuestions,
   retryWrongBatch,
   wrongBookKeys,
   type WrongQuestionFilters,
@@ -37,6 +37,8 @@ import type {
   MasteryLevel,
   PaperSummaryV2,
   PracticeSessionStartV2,
+  WrongQuestionDetailV2,
+  WrongQuestionListResponseV2,
 } from '@sikao/api-client/types/api';
 
 // SIKAO Wave 4 Phase 2D · 错题本主页重写 (接 W1 bdfe4f2 7 endpoint).
@@ -143,6 +145,70 @@ function buildSearch(
   return out;
 }
 
+function buildWrongQuestionQueryParams(
+  filters: WrongQuestionFilters,
+): Record<string, string | number> {
+  const params: Record<string, string | number> = {};
+  if (filters.masteryLevel !== undefined) {
+    params.mastery_level = filters.masteryLevel;
+  }
+  if (filters.subject !== undefined) {
+    params.subject = filters.subject;
+  }
+  if (filters.subtype !== undefined) {
+    params.subtype = filters.subtype;
+  }
+  if (filters.paperCode !== undefined) {
+    params.paperCode = filters.paperCode;
+  }
+  if (filters.page !== undefined) {
+    params.page = filters.page;
+  }
+  if (filters.pageSize !== undefined) {
+    params.page_size = filters.pageSize;
+  }
+  return params;
+}
+
+function hasActiveWrongBookFilters(
+  filters: WrongQuestionFilters,
+  viewFilter: ViewFilterKey,
+): boolean {
+  return (
+    viewFilter !== 'all' ||
+    filters.subject !== undefined ||
+    filters.subtype !== undefined ||
+    filters.paperCode !== undefined ||
+    filters.masteryLevel !== undefined
+  );
+}
+
+function hasInconsistentWrongQuestionList(
+  total: number,
+  items: readonly WrongQuestionDetailV2[],
+): boolean {
+  return (
+    (total === 0 && items.length > 0) ||
+    (total > 0 && items.length === 0) ||
+    items.length > total
+  );
+}
+
+function hasInconsistentWrongBookSummary(
+  summary: WrongBookSummary | undefined,
+  total: number,
+  hasActiveFilters: boolean,
+): boolean {
+  if (summary === undefined) {
+    return false;
+  }
+  const summaryTotal = summary.inPractice + summary.graduatedCount;
+  if (total > summaryTotal) {
+    return true;
+  }
+  return hasActiveFilters === false && total !== summaryTotal;
+}
+
 /**
  * WrongBook — device-aware dispatch shell (PR9, 2026-05-13).
  *
@@ -166,9 +232,13 @@ function WrongBookDesktop() {
   const [viewFilter, setViewFilterState] = useState<ViewFilterKey>(
     () => initial.view,
   );
+  const [batchSelected, setBatchSelected] = useState<ReadonlySet<number>>(
+    () => new Set(),
+  );
 
   const setFilters = useCallback(
     (next: WrongQuestionFilters) => {
+      setBatchSelected(new Set());
       setFiltersState(next);
       setSearchParams(buildSearch(next, viewFilter), { replace: true });
     },
@@ -177,6 +247,7 @@ function WrongBookDesktop() {
 
   const setViewFilter = useCallback(
     (next: ViewFilterKey) => {
+      setBatchSelected(new Set());
       setViewFilterState(next);
       const nextFilters: WrongQuestionFilters = {
         ...filters,
@@ -205,7 +276,10 @@ function WrongBookDesktop() {
 
   const listQuery = useQuery({
     queryKey: wrongBookKeys.list(filters),
-    queryFn: () => fetchWrongQuestions(filters),
+    queryFn: () =>
+      api.get<WrongQuestionListResponseV2>('/practice/wrong-questions', {
+        params: buildWrongQuestionQueryParams(filters),
+      }),
   });
 
   // P4 audit P1-16: chip 显 paperName 而非 paperCode.
@@ -220,10 +294,6 @@ function WrongBookDesktop() {
     return map;
   }, [papersList]);
 
-  // 批量复习 state + mutation (跨 paper 已支持).
-  const [batchSelected, setBatchSelected] = useState<ReadonlySet<number>>(
-    () => new Set(),
-  );
   const onToggleBatch = useCallback((qid: number) => {
     setBatchSelected((prev) => {
       const next = new Set(prev);
@@ -231,7 +301,31 @@ function WrongBookDesktop() {
       else next.add(qid);
       return next;
     });
-  }, []);
+  }, [setBatchSelected]);
+  const visibleItems = useMemo(
+    () => listQuery.data?.items ?? [],
+    [listQuery.data],
+  );
+  const batchSelectedItems = useMemo(
+    () => visibleItems.filter((item) => batchSelected.has(item.questionId)),
+    [batchSelected, visibleItems],
+  );
+  const batchPaperCodes = useMemo(() => {
+    const next = new Set<string>();
+    for (const item of batchSelectedItems) {
+      if (item.paperCode == null || item.paperCode.length === 0) {
+        return null;
+      }
+      next.add(item.paperCode);
+    }
+    return next;
+  }, [batchSelectedItems]);
+  const batchRequiresSinglePaper =
+    batchPaperCodes === null || batchPaperCodes.size > 1;
+  const visibleBatchSelected = useMemo(
+    () => new Set(batchSelectedItems.map((item) => item.questionId)),
+    [batchSelectedItems],
+  );
 
   const batchMutation = useMutation({
     mutationFn: (questionIds: readonly number[]) => retryWrongBatch(questionIds),
@@ -317,6 +411,29 @@ function WrongBookDesktop() {
     >
       {(data) => {
         const { page, pageSize, total, items } = data;
+        const hasActiveFilters = hasActiveWrongBookFilters(filters, viewFilter);
+        const isInconsistentState =
+          hasInconsistentWrongQuestionList(total, items) ||
+          hasInconsistentWrongBookSummary(
+            summaryQuery.data,
+            total,
+            hasActiveFilters,
+          );
+
+        if (isInconsistentState) {
+          return (
+            <div
+              className="px-4 md:px-14 py-6 md:py-8"
+              data-testid="wrong-book-inconsistent-state"
+            >
+              <EmptyState
+                tone="error"
+                title={ERROR_COPY.wrongBook.title}
+                description={ERROR_COPY.wrongBook.description}
+              />
+            </div>
+          );
+        }
         const resolvedSelected =
           items.find((it) => it.questionId === selectedId) ?? items[0];
 
@@ -422,14 +539,20 @@ function WrongBookDesktop() {
               page={page}
               pageSize={pageSize}
               onPageChange={(next) => setFilters({ ...filters, page: next })}
-              batchSelected={batchSelected}
+              batchSelected={visibleBatchSelected}
               onToggleBatch={onToggleBatch}
               onBatchRetry={() => {
-                batchMutation.mutate(Array.from(batchSelected));
+                batchMutation.mutate(Array.from(visibleBatchSelected));
               }}
-              batchRetryDisabled={batchMutation.isPending}
+              batchRetryDisabled={
+                batchMutation.isPending || batchRequiresSinglePaper
+              }
               batchRetryDisabledReason={
-                batchMutation.isPending ? '处理中...' : undefined
+                batchMutation.isPending
+                  ? '处理中...'
+                  : batchRequiresSinglePaper
+                    ? WRONG_BOOK_COPY.listBatchSamePaperOnly
+                    : undefined
               }
               onAsk={onAsk}
             />

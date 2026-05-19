@@ -43,9 +43,9 @@ const TARGET_PREFIXES = [
   'components/icons/composite/',
   'components/result/',
   'features/essay-exam/',
-  'views/PracticeSession',
-  'views/Essay',
-  'views/Result',
+  'views/practicesession',
+  'views/essay',
+  'views/result',
 ];
 
 const ALLOW_RE = /(?:\/\/|\/\*|\{\/\*)\s*svg-only-allow:/;
@@ -74,7 +74,7 @@ function listFiles(dir) {
 }
 
 function inTargetPath(file) {
-  const rel = relative(ROOT, file).replace(/\\/g, '/');
+  const rel = relative(ROOT, file).replace(/\\/g, '/').toLowerCase();
   return TARGET_PREFIXES.some((p) => rel.startsWith(p));
 }
 
@@ -284,6 +284,12 @@ function bodyHasCjkExpression(body, cjkFunctions, cjkVariables) {
 }
 
 function runInternalAssertions() {
+  if (!inTargetPath(join(ROOT, 'views', 'result', 'ResultMobile.tsx'))) {
+    throw new Error(
+      'lint-practice-svg-only internal assertion failed: views/result/ResultMobile.tsx was not included in target paths',
+    );
+  }
+
   const nestedSpanBody = `
     <PanelLeftOpenIcon className="w-4 h-4" />
     <span>
@@ -474,7 +480,7 @@ for (const file of files) {
 
 if (lucideWarnings.length > 0) {
   console.error(
-    `\n✗ ${lucideWarnings.length} lucide-react import(s) in practice/essay paths:\n`,
+    `\n✗ ${lucideWarnings.length} lucide-react import(s) in practice/result/essay paths:\n`,
   );
   for (const w of lucideWarnings) {
     console.error(`  ${w.file}:${w.line}  lucide-react-import`);
@@ -491,7 +497,7 @@ if (lucideWarnings.length > 0) {
 
 if (violations.length > 0) {
   console.error(
-    `\n✗ ${violations.length} practice/essay svg-only violation(s) found in ${files.length} files:\n`,
+    `\n✗ ${violations.length} practice/result/essay svg-only violation(s) found in ${files.length} files:\n`,
   );
   for (const v of violations) {
     console.error(`  ${v.file}:${v.line}  <${v.tag}> ${v.reason}`);

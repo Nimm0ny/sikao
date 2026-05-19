@@ -43,6 +43,7 @@ import { useWrongQuestionItem } from '@sikao/domain/wrong-book/useWrongQuestionI
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
 import { cn } from '@sikao/shared-utils';
+import { WRONG_BOOK_COPY } from '@/lib/ui-copy';
 
 const AVG_TIME_MS = 35 * 1000; // 均时 35s (元素稿 spec 默认)
 
@@ -361,14 +362,25 @@ export default function WrongQuestionRedoView() {
             </Tooltip>
             <span className="flex-1" />
             {submitResult !== null ? (
-              <Button
-                variant="primary"
-                onClick={() => navigate('/wrong-book')}
-                data-testid="wrong-redo-done"
-              >
-                <NavSubmitIcon size={18} />
-                <span className="ml-2">完成</span>
-              </Button>
+              <>
+                <Button
+                  variant="secondary"
+                  onClick={() => navigate('/wrong-book')}
+                  data-testid="wrong-redo-done"
+                >
+                  返回错题本
+                </Button>
+                <Button
+                  variant="primary"
+                  onClick={() => navigate('/wrong-book/smart-review')}
+                  data-testid="wrong-redo-continue-review"
+                >
+                  <NavSubmitIcon size={18} />
+                  <span className="ml-2">
+                    {WRONG_BOOK_COPY.redoContinueSmartReview}
+                  </span>
+                </Button>
+              </>
             ) : (
               <Button
                 variant="primary"

@@ -1,12 +1,7 @@
-import { Button, Tooltip } from '@sikao/ui/ui';
-
-// Bottom action bar for the result page. Mirrors docs/ui-demo/ui-preview.html
-// §497-500: 返回首页 (ink, primary CTA) + 再练一遍 (ghost). Kept dumb — the
-// smart container wires the navigation callbacks (no Link / useNavigate
-// inside this component, per CLAUDE.md §2.2).
-//
-// P0-1: 看本套错题 button 跳 /wrong-book?paperCode=XXX. paperCode 缺时
-// (retry session / cross-paper) disable + 提示 reason.
+import { RefreshIcon, SubjectHomeIcon, ToolEyeIcon } from '@sikao/ui/icons';
+import { Button } from '@sikao/ui/ui';
+import { RESULT_COPY } from '@/lib/ui-copy';
+import { ResultIconAction } from './ResultIconAction';
 
 export interface ResultActionsProps {
   readonly onBackHome: () => void;
@@ -24,45 +19,44 @@ export function ResultActions({
   viewWrongDisabled = false,
 }: ResultActionsProps) {
   return (
-    <div className="flex flex-wrap gap-3" data-testid="result-actions">
+    <div className="flex flex-wrap items-center gap-3" data-testid="result-actions">
       <Button
         variant="primary"
-        className="flex-1 min-w-[140px]"
+        className="min-w-[160px]"
+        leftIcon={<SubjectHomeIcon className="h-4 w-4" />}
         onClick={onBackHome}
         data-testid="result-back-home"
       >
-        返回首页
+        {RESULT_COPY.status.home}
       </Button>
-      {/* secondary variant: ink 边 + ink 字，比 ghost 更强，element spec。 */}
-      <Button
-        variant="secondary"
-        className="flex-1 min-w-[140px]"
-        onClick={onRetry}
-        disabled={retryDisabled}
-        data-testid="result-retry"
-      >
-        再练一遍
-      </Button>
-      {onViewWrong !== undefined ? (
-        <Tooltip
-          label={
-            viewWrongDisabled
-              ? '本场没有试卷编号，无法定位本套错题'
-              : '看本套错题'
-          }
+      <div className="flex items-center gap-2 rounded-card border border-line bg-paper px-3 py-2">
+        <span className="text-small font-semibold text-ink">{RESULT_COPY.next.retry}</span>
+        <ResultIconAction
+          label={RESULT_COPY.next.retry}
+          onClick={onRetry}
+          disabled={retryDisabled}
+          testId="result-retry"
         >
-          <Button
-            variant="quiet"
-            className="flex-1 min-w-[140px]"
+          <RefreshIcon className="h-4 w-4" />
+        </ResultIconAction>
+      </div>
+      {onViewWrong !== undefined ? (
+        <div className="flex items-center gap-2 rounded-card border border-line bg-paper px-3 py-2">
+          <span className="text-small font-semibold text-ink">{RESULT_COPY.actionsViewWrong}</span>
+          <ResultIconAction
+            label={RESULT_COPY.actionsViewWrong}
+            tooltipLabel={
+              viewWrongDisabled
+                ? `${RESULT_COPY.actionsNoPaperWarn1}，${RESULT_COPY.actionsNoPaperWarn2}`
+                : RESULT_COPY.actionsViewWrong
+            }
             onClick={onViewWrong}
             disabled={viewWrongDisabled}
-            data-testid="result-view-wrong"
-            aria-label="看本套错题"
+            testId="result-view-wrong"
           >
-            看本套错题
-            <span className="font-serif italic ml-1" aria-hidden="true">→</span>
-          </Button>
-        </Tooltip>
+            <ToolEyeIcon className="h-4 w-4" />
+          </ResultIconAction>
+        </div>
       ) : null}
     </div>
   );

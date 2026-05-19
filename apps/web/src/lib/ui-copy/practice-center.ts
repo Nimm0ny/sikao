@@ -88,7 +88,7 @@ export const PRACTICE_CENTER_COPY = {
       papers: '直接看套卷',
       review: '先去复盘',
       essay: '去申论专项',
-      start: '去练习中心',
+      start: '先做专项',
     },
     secondary: {
       categories: '查看专项入口',

@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { Button } from '@sikao/ui/ui';
 import type { AuthUserSummary } from '@sikao/domain/auth/useAuthStore';
+import { PROFILE_COPY } from '@/lib/ui-copy';
 
 // ProfileBasicInfo · SIKAO redesign Wave 1 · view 08 hifi "基本资料" 区.
 //
@@ -65,13 +66,13 @@ export function ProfileBasicInfo({
   return (
     <section data-testid="profile-basic-info-section">
       <span className="block text-tiny font-mono tracking-eyebrow text-ink-3 uppercase">
-        ACCOUNT
+        {PROFILE_COPY.basicInfoEyebrow}
       </span>
       <h3 className="mt-2 font-serif text-h-card font-medium text-ink pb-3 border-b border-line">
-        基本资料
+        {PROFILE_COPY.basicInfoTitle}
       </h3>
 
-      <KvRow label="姓名" testId="profile-kv-name">
+      <KvRow label={PROFILE_COPY.basicInfoNameLabel} testId="profile-kv-name">
         <span className="inline-flex items-center gap-3">
           <span>{user.displayName ?? '—'}</span>
           {onEditName !== undefined ? (
@@ -81,18 +82,18 @@ export function ProfileBasicInfo({
               onClick={onEditName}
               data-testid="profile-edit-name-btn"
             >
-              编辑
+              {PROFILE_COPY.basicInfoEditAction}
             </Button>
           ) : null}
         </span>
       </KvRow>
-      <KvRow label="手机" testId="profile-kv-phone">
+      <KvRow label={PROFILE_COPY.basicInfoPhoneLabel} testId="profile-kv-phone">
         <span className="font-mono tabular-nums">{maskPhone(user.phone)}</span>
       </KvRow>
-      <KvRow label="邮箱" testId="profile-kv-email">
+      <KvRow label={PROFILE_COPY.basicInfoEmailLabel} testId="profile-kv-email">
         <span>{user.email ?? '—'}</span>
       </KvRow>
-      <KvRow label="目标考试" testId="profile-kv-exam-target">
+      <KvRow label={PROFILE_COPY.basicInfoTargetLabel} testId="profile-kv-exam-target">
         <span className="inline-flex items-center gap-3">
           <span>{examTarget ?? '—'}</span>
           {onChangeExamTarget !== undefined ? (
@@ -102,12 +103,12 @@ export function ProfileBasicInfo({
               onClick={onChangeExamTarget}
               data-testid="profile-change-exam-btn"
             >
-              更换
+              {PROFILE_COPY.basicInfoChangeAction}
             </Button>
           ) : null}
         </span>
       </KvRow>
-      <KvRow label="报考地区" testId="profile-kv-region">
+      <KvRow label={PROFILE_COPY.basicInfoRegionLabel} testId="profile-kv-region">
         <span>{examRegion ?? '—'}</span>
       </KvRow>
     </section>

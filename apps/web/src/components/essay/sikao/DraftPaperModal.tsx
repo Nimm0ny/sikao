@@ -147,10 +147,12 @@ export function DraftPaperModal({ open, onClose }: DraftPaperModalProps) {
                 {ESSAY_SIKAO_COPY.draftDrawMode}
               </button>
             </div>
+            {/* svg-only-allow: modal draft clear keeps visible label inside dialog header */}
             <button
               type="button"
               onClick={clear}
               className="h-8 px-2.5 rounded-tiny border border-line text-ink-2 hover:border-ink-1 flex items-center gap-1 text-meta"
+              aria-label={ESSAY_SIKAO_COPY.draftClear}
               data-testid="essay-draft-paper-clear"
             >
               <TrashIcon size={14} />

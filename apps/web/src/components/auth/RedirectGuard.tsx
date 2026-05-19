@@ -1,6 +1,7 @@
 import { type ReactNode } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthStore } from '@sikao/domain/auth/useAuthStore';
+import { buildReturnTarget } from './redirectTarget';
 
 // Phase 5.6b — 路由级 auth guard wrapper。两种 mode：
 //
@@ -33,7 +34,13 @@ export function RedirectGuard({ mode, children, redirectTo }: RedirectGuardProps
   if (mode === 'require-auth' && !isAuthed) {
     const target = redirectTo ?? '/login';
     // 记录来源，登录页可读取并在登录后回跳。
-    return <Navigate to={target} replace state={{ from: location.pathname }} />;
+    return (
+      <Navigate
+        to={target}
+        replace
+        state={{ from: buildReturnTarget(location.pathname, location.search) }}
+      />
+    );
   }
   if (mode === 'redirect-if-authed' && isAuthed) {
     return <Navigate to={redirectTo ?? '/app'} replace />;

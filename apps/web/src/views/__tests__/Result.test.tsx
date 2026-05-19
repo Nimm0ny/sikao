@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { act, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
@@ -21,7 +21,7 @@ const successFixture = {
     sessionId: 42,
     mode: 'free',
     paperCode: 'TEST-001',
-    paperName: '2026 国考行测',
+    paperName: 'Mock Paper',
     startedAt: '2026-04-28T10:00:00Z',
     completedAt: '2026-04-28T11:30:00Z',
     totalQuestions: 100,
@@ -33,7 +33,7 @@ const successFixture = {
   sectionSummaries: [
     {
       sectionId: 's1',
-      title: '言语理解',
+      title: 'Verbal',
       instructionText: '',
       questionCount: 25,
       answeredQuestions: 25,
@@ -44,7 +44,7 @@ const successFixture = {
   ],
   subjectSummaries: [
     {
-      subject: '言语理解',
+      subject: 'Verbal',
       questionCount: 25,
       answeredQuestions: 25,
       correctCount: 22,
@@ -52,7 +52,7 @@ const successFixture = {
       accuracyRate: 88,
     },
     {
-      subject: '数量关系',
+      subject: 'Quant',
       questionCount: 15,
       answeredQuestions: 15,
       correctCount: 8,
@@ -62,8 +62,8 @@ const successFixture = {
   ],
   subtypeSummaries: [
     {
-      subject: '言语理解',
-      subtype: '片段阅读',
+      subject: 'Verbal',
+      subtype: 'Reading',
       questionCount: 12,
       answeredQuestions: 12,
       correctCount: 10,
@@ -96,32 +96,154 @@ const successFixture = {
   questions: [
     {
       questionId: 1,
-      subject: '言语理解',
-      canonicalSubtype: '片段阅读',
+      subject: 'Verbal',
+      canonicalSubtype: 'Reading',
       paperRevisionId: '1',
       sectionId: 's1',
       blockId: 'b1',
       questionNo: 1,
       questionKind: 'single_choice',
       rendererKey: 'single_choice',
-      content: { stem: '题目 1' },
+      content: { stem: 'Question 1' },
     },
     {
       questionId: 2,
-      subject: '数量关系',
-      canonicalSubtype: '数学运算',
+      subject: 'Quant',
+      canonicalSubtype: 'Math',
       paperRevisionId: '1',
       sectionId: 's1',
       blockId: 'b1',
       questionNo: 2,
       questionKind: 'single_choice',
       rendererKey: 'single_choice',
-      content: { stem: '题目 2' },
+      content: { stem: 'Question 2' },
     },
   ],
 };
 
 const navigateSpy = vi.fn();
+
+function setViewport(width: number): void {
+  act(() => {
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
+    window.dispatchEvent(new Event('resize'));
+  });
+}
+
+function buildWrongHeavyFixture() {
+  const questions = Array.from({ length: 4 }, (_, index) => ({
+    questionId: index + 1,
+    subject: index < 2 ? 'Quant' : 'Logic',
+    canonicalSubtype: index < 2 ? 'Math' : 'Inference',
+    paperRevisionId: '1',
+    sectionId: 's1',
+    blockId: `b${index + 1}`,
+    questionNo: index + 1,
+    questionKind: 'single_choice',
+    rendererKey: 'single_choice',
+    content: { stem: `Question ${index + 1}` },
+  }));
+
+  const answers = [
+    {
+      id: 1,
+      questionId: 1,
+      selectedAnswerKeys: ['A'],
+      correctAnswerKeys: ['B'],
+      isCorrect: false,
+      answeredAt: '2026-04-28T10:01:00Z',
+      wrongReasonCode: 'calculation_error',
+      wrongReasonSource: 'ai',
+    },
+    {
+      id: 2,
+      questionId: 2,
+      selectedAnswerKeys: ['A'],
+      correctAnswerKeys: ['C'],
+      isCorrect: false,
+      answeredAt: '2026-04-28T10:02:00Z',
+      wrongReasonCode: 'calculation_error',
+      wrongReasonSource: 'ai',
+    },
+    {
+      id: 3,
+      questionId: 3,
+      selectedAnswerKeys: ['D'],
+      correctAnswerKeys: ['A'],
+      isCorrect: false,
+      answeredAt: '2026-04-28T10:03:00Z',
+      wrongReasonCode: 'logic_error',
+      wrongReasonSource: 'ai',
+    },
+    {
+      id: 4,
+      questionId: 4,
+      selectedAnswerKeys: ['B'],
+      correctAnswerKeys: ['B'],
+      isCorrect: true,
+      answeredAt: '2026-04-28T10:04:00Z',
+      wrongReasonCode: null,
+      wrongReasonSource: null,
+    },
+  ];
+
+  return {
+    ...successFixture,
+    score: 25,
+    totalQuestions: 4,
+    correctCount: 1,
+    incorrectCount: 3,
+    unansweredCount: 0,
+    session: {
+      ...successFixture.session,
+      totalQuestions: 4,
+      answeredQuestions: 4,
+      correctCount: 1,
+      wrongCount: 3,
+      accuracyRate: 25,
+    },
+    answers,
+    questions,
+  };
+}
+
+function buildAllCorrectFixture() {
+  return {
+    ...successFixture,
+    score: 100,
+    totalQuestions: 2,
+    correctCount: 2,
+    incorrectCount: 0,
+    unansweredCount: 0,
+    session: {
+      ...successFixture.session,
+      totalQuestions: 2,
+      answeredQuestions: 2,
+      correctCount: 2,
+      wrongCount: 0,
+      accuracyRate: 100,
+    },
+    answers: [
+      {
+        id: 1,
+        questionId: 1,
+        selectedAnswerKeys: ['A'],
+        correctAnswerKeys: ['A'],
+        isCorrect: true,
+        answeredAt: '2026-04-28T10:01:00Z',
+      },
+      {
+        id: 2,
+        questionId: 2,
+        selectedAnswerKeys: ['C'],
+        correctAnswerKeys: ['C'],
+        isCorrect: true,
+        answeredAt: '2026-04-28T10:02:00Z',
+      },
+    ],
+  };
+}
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>(
     'react-router-dom',
@@ -131,6 +253,10 @@ vi.mock('react-router-dom', async () => {
     useNavigate: () => navigateSpy,
     useParams: () => ({ sessionId: '42' }),
   };
+});
+
+afterEach(() => {
+  setViewport(1024);
 });
 
 describe('Result compact MVP rendering', () => {
@@ -150,10 +276,9 @@ describe('Result compact MVP rendering', () => {
       expect(screen.getByTestId('result-view')).toBeInTheDocument();
     });
     expect(screen.getByTestId('result-score-card')).toBeInTheDocument();
-    expect(screen.getByText('2026 国考行测')).toBeInTheDocument();
+    expect(screen.getByText('Mock Paper')).toBeInTheDocument();
     expect(screen.getByTestId('result-score-value')).toHaveTextContent('85');
-    expect(screen.getByText('正确')).toBeInTheDocument();
-    expect(screen.getByText('错误')).toBeInTheDocument();
+    expect(screen.getByTestId('result-next-card')).toBeInTheDocument();
   });
 
   it('renders compact review, weak rows, and action cards', async () => {
@@ -183,6 +308,21 @@ describe('Result compact MVP rendering', () => {
     const btn = await screen.findByTestId('result-view-wrong');
     await user.click(btn);
     expect(navigateSpy).toHaveBeenCalledWith('/wrong-book?paperCode=TEST-001');
+  });
+
+  it('desktop all-correct primary CTA retries the paper', async () => {
+    server.use(
+      http.get('/api/v2/practice/sessions/:id/result', () =>
+        HttpResponse.json(buildAllCorrectFixture()),
+      ),
+    );
+    const user = userEvent.setup();
+
+    renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
+
+    const btn = await screen.findByTestId('result-next-practice');
+    await user.click(btn);
+    expect(navigateSpy).toHaveBeenLastCalledWith('/practice/TEST-001/start');
   });
 
   it('saves manual wrong-reason override', async () => {
@@ -217,6 +357,29 @@ describe('Result compact MVP rendering', () => {
       });
     });
   });
+
+  it('renders the mobile wrong-heavy branch with svg-only support actions', async () => {
+    setViewport(390);
+    server.use(
+      http.get('/api/v2/practice/sessions/:id/result', () =>
+        HttpResponse.json(buildWrongHeavyFixture()),
+      ),
+    );
+    const user = userEvent.setup();
+
+    renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
+
+    expect(await screen.findByTestId('result-mobile-view')).toBeInTheDocument();
+    expect(screen.getByTestId('result-mobile-wrong-list')).toBeInTheDocument();
+    expect(screen.getByTestId('result-mobile-primary-action')).toBeInTheDocument();
+    expect(screen.getByTestId('result-mobile-notes-action')).toHaveAttribute('aria-label');
+
+    await user.click(screen.getByTestId('result-mobile-primary-action'));
+    expect(navigateSpy).toHaveBeenLastCalledWith('/wrong-book?paperCode=TEST-001');
+
+    await user.click(screen.getByTestId('result-mobile-notes-action'));
+    expect(navigateSpy).toHaveBeenLastCalledWith('/notes');
+  });
 });
 
 describe('Result error fallback', () => {
@@ -247,6 +410,7 @@ describe('Result error fallback', () => {
       ),
     );
     const user = userEvent.setup();
+
     renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
 
     const backBtn = await screen.findByTestId('result-error-home');
@@ -266,6 +430,7 @@ describe('Result error fallback', () => {
       }),
     );
     const user = userEvent.setup();
+
     renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
 
     const retry = await screen.findByTestId('result-retry');
@@ -284,43 +449,9 @@ describe('Result empty data', () => {
   });
 
   it('zero wrong-count renders no-wrong state', async () => {
-    const allCorrectFixture = {
-      ...successFixture,
-      score: 100,
-      totalQuestions: 2,
-      correctCount: 2,
-      incorrectCount: 0,
-      unansweredCount: 0,
-      session: {
-        ...successFixture.session,
-        totalQuestions: 2,
-        answeredQuestions: 2,
-        correctCount: 2,
-        wrongCount: 0,
-        accuracyRate: 100,
-      },
-      answers: [
-        {
-          id: 1,
-          questionId: 1,
-          selectedAnswerKeys: ['A'],
-          correctAnswerKeys: ['A'],
-          isCorrect: true,
-          answeredAt: '2026-04-28T10:01:00Z',
-        },
-        {
-          id: 2,
-          questionId: 2,
-          selectedAnswerKeys: ['C'],
-          correctAnswerKeys: ['C'],
-          isCorrect: true,
-          answeredAt: '2026-04-28T10:02:00Z',
-        },
-      ],
-    };
     server.use(
       http.get('/api/v2/practice/sessions/:id/result', () =>
-        HttpResponse.json(allCorrectFixture),
+        HttpResponse.json(buildAllCorrectFixture()),
       ),
     );
 

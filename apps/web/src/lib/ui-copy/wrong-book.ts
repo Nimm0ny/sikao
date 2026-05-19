@@ -42,6 +42,7 @@ export const WRONG_BOOK_COPY = {
   // WrongQuestionList
   listEmptyHint1:         '完成练习后',
   listEmptyHint2:         '做错的题会出现在这里',
+  listBatchSamePaperOnly: '批量重做只能选择同一套卷的错题',
   // views/WrongQuestionDetailView
   detailRetryFailedTitle: '无法启动重做',
   detailRetryFailedDesc:  '请稍后重试或检查网络',
@@ -65,6 +66,8 @@ export const WRONG_BOOK_COPY = {
   detailSimilarCta:       '查看同知识点错题',
   detailKnowledgeTitle:   '这个知识点',
   detailSeverityLabel:    '本题严重度',
+  detailGoToSmartReview:  '进入智能复盘',
+  detailGoToDangerList:   '查看险题列表',
   // views/WrongQuestionRedoView
   redoPeekedToast:        '已偷看一次',
   redoPeekedHint:         '将扣除一次毕业机会',
@@ -90,6 +93,7 @@ export const WRONG_BOOK_COPY = {
   redoLockedPart1:        '提示已锁定',
   redoLockedPart2:        '想看上次答案',
   redoLockedPart3:        '扣毕业机会',
+  redoContinueSmartReview: '继续智能复盘',
   // views/SmartReviewView (page)
   smartLoadFailedTitle:   '智能复盘数据加载失败',
   smartLoadFailedDesc:    '请稍后重试',
@@ -106,4 +110,5 @@ export const WRONG_BOOK_COPY = {
   smartNextTip:           '下一题建议',
   smartEmptyTipsTitle:    '等错题进来后',
   smartEmptyTipsDesc:     '这里会显示具体建议',
+  smartBackToBook:        '返回错题本',
 } as const;

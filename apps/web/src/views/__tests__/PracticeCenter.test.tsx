@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
@@ -7,7 +7,21 @@ import { server } from '@sikao/test-utils/server';
 import { PRACTICE_CENTER_COPY } from '@/lib/ui-copy';
 import PracticeCenter from '../PracticeCenter';
 
+const navigateMock = vi.fn();
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => navigateMock,
+  };
+});
+
 describe('PracticeCenter', () => {
+  beforeEach(() => {
+    navigateMock.mockClear();
+  });
+
   it('renders one primary next action and subject state with default data', async () => {
     server.use(
       http.get('/api/v2/practice/last-session', () =>
@@ -56,7 +70,8 @@ describe('PracticeCenter', () => {
     );
   });
 
-  it('renders auth fallback when practice center queries return 401', async () => {
+  it('renders auth fallback and preserves from-state when practice center queries return 401', async () => {
+    const user = userEvent.setup();
     server.use(
       http.get('/api/v2/practice/last-session', () =>
         HttpResponse.json({ detail: 'unauthorized' }, { status: 401 }),
@@ -67,13 +82,17 @@ describe('PracticeCenter', () => {
     );
 
     renderWithProviders(<PracticeCenter />, {
-      initialEntries: ['/practice/center'],
+      initialEntries: ['/practice/center?subject=essay'],
     });
 
     expect(await screen.findByTestId('practice-center-auth-fallback')).toHaveTextContent(
       PRACTICE_CENTER_COPY.auth.title,
     );
-    expect(screen.getByTestId('practice-center-auth-login')).toBeInTheDocument();
+    await user.click(screen.getByTestId('practice-center-auth-login'));
+
+    expect(navigateMock).toHaveBeenCalledWith('/login', {
+      state: { from: '/practice/center?subject=essay' },
+    });
   });
 
   it('updates filter summary and hero action when mode filter changes', async () => {

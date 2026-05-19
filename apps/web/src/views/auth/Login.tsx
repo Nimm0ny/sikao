@@ -7,13 +7,11 @@ import { api } from '@sikao/api-client/request';
 import { useAuthStore, type AuthUserSummary } from '@sikao/domain/auth/useAuthStore';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
-import { ERROR_COPY } from '@/lib/ui-copy';
+import { AUTH_COPY, ERROR_COPY } from '@/lib/ui-copy';
 import { useNationalExamCountdown } from '@sikao/api-client/queries/examEventsQueries';
+import { resolvePostLoginTarget } from '@/components/auth/redirectTarget';
 
-interface FormError {
-  readonly title: string;
-  readonly description?: string;
-}
+type FormError = (typeof ERROR_COPY)[keyof typeof ERROR_COPY];
 
 function classifyLoginError(err: unknown): FormError {
   const msg = String(err);
@@ -29,10 +27,6 @@ interface LoginResponseV2 {
   readonly user: AuthUserSummary;
 }
 
-interface LocationState {
-  readonly from?: string;
-}
-
 // SIKAO Redesign Wave 1 · 01 Login (2026-05-11).
 // 视觉: hifi 二段式 (左 ink art + 右 paper form) — AuthSplitLayout 包.
 // 表单输入改 hifi .inp 风 (border-bottom only) + serif h2 欢迎回来.
@@ -46,7 +40,7 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<FormError | null>(null);
 
-  const from = (location.state as LocationState | null)?.from ?? '/app';
+  const from = resolvePostLoginTarget(location.state);
 
   // Wave 1 Round 2: sub 文案带"距 N 国考还有 N 天" 实时计算. days<0
   // (考期已过) 切回"继续你的备考节奏。" 兜底.
@@ -56,8 +50,8 @@ export default function Login() {
   const { examLabel, daysUntil } = useNationalExamCountdown();
   const subCopy =
     daysUntil >= 0
-      ? `距 ${examLabel}还有 ${daysUntil} 天。`
-      : '继续你的备考节奏。';
+      ? AUTH_COPY.login.countdownSubtitle(examLabel, daysUntil)
+      : AUTH_COPY.login.subtitleFallback;
 
   // P2 落地: animationend 后剥离 .auth-anim-up class, 让 :hover transform 不被
   // animation-fill-mode:both 卡死的 transform 阻挡 (CSS animation cascade 优先级
@@ -79,7 +73,7 @@ export default function Login() {
     e.preventDefault();
     setFormError(null);
     if (identifier.trim() === '' || password === '') {
-      toast.warn('输入账号和密码');
+      toast.warn(AUTH_COPY.login.missingFieldsWarn);
       return;
     }
     setIsSubmitting(true);
@@ -107,11 +101,13 @@ export default function Login() {
     <AuthSplitLayout testId="login-view">
       <div ref={viewRef} className="w-full max-w-[400px] mx-auto">
         <div className="auth-anim-up d-1 font-mono text-tiny tracking-eyebrow uppercase text-ink-3 mb-3">
-          SIGN IN
+          {AUTH_COPY.login.eyebrow}
         </div>
         {/* Wave 9 Phase 1 responsive: mobile (≤768) text-h-section 28px 防 375px
             viewport 上 42px 撑爆; md+ tablet/desktop text-h-mkt 42px 还原 hifi. */}
-        <h1 className="auth-anim-up d-2 font-serif text-h-section md:text-h-mkt font-medium text-ink mb-2">欢迎回来。</h1>
+        <h1 className="auth-anim-up d-2 font-serif text-h-section md:text-h-mkt font-medium text-ink mb-2">
+          {AUTH_COPY.login.title}
+        </h1>
         <p className="auth-anim-up d-2 text-sm text-ink-3 mb-8" data-testid="login-sub">
           {subCopy}
         </p>
@@ -120,7 +116,7 @@ export default function Login() {
           <div className="auth-anim-up d-3">
             <FieldStack
               id="login-identifier"
-              label="手机 / 邮箱 / 账号"
+              label={AUTH_COPY.login.identifierLabel}
               type="text"
               autoComplete="username"
               placeholder="email@example.com"
@@ -132,10 +128,10 @@ export default function Login() {
           <div className="auth-anim-up d-4">
             <FieldStack
               id="login-password"
-              label="密码"
+              label={AUTH_COPY.login.passwordLabel}
               type="password"
               autoComplete="current-password"
-              placeholder="输入密码"
+              placeholder={AUTH_COPY.login.passwordPlaceholder}
               value={password}
               onChange={setPassword}
               testId="login-password"
@@ -166,17 +162,17 @@ export default function Login() {
             data-testid="login-submit"
             className="auth-anim-up d-5 pv-btn w-full mt-2 py-3 px-6 bg-ink text-paper text-base font-medium rounded-tiny hover:bg-ink-1 hover:scale-[1.03] hover:-translate-y-[3px] hover:shadow-pop active:scale-[0.98] active:translate-y-0 disabled:opacity-40 disabled:cursor-not-allowed transition-[background-color,transform,box-shadow] duration-base ease-motion"
           >
-            {isSubmitting ? '登录中…' : '登录'}
+            {isSubmitting ? AUTH_COPY.login.submitting : AUTH_COPY.login.submit}
           </button>
 
           <div className="auth-anim-up d-5 flex justify-between text-xs text-ink-3 mt-1">
             <span>
-              还没账号？
+              {AUTH_COPY.login.registerPrompt}
               <Link
                 to="/register/phone"
                 className="ml-1 text-accent hover:underline underline-offset-2"
               >
-                用手机号注册
+                {AUTH_COPY.login.registerWithPhone}
               </Link>
             </span>
             <Link
@@ -184,7 +180,7 @@ export default function Login() {
               data-testid="login-forgot-link"
               className="text-accent hover:underline underline-offset-2"
             >
-              忘记密码？
+              {AUTH_COPY.login.forgotPassword}
             </Link>
           </div>
         </form>
@@ -198,13 +194,13 @@ export default function Login() {
             to="/register/email"
             className="pv-btn flex-1 inline-flex items-center justify-center px-4 py-3 border border-ink text-ink text-sm rounded-tiny hover:bg-paper-3 hover:scale-[1.03] hover:-translate-y-[3px] hover:shadow-card active:scale-[0.98] active:translate-y-0 transition-[background-color,transform,box-shadow] duration-base ease-motion"
           >
-            用邮箱注册
+            {AUTH_COPY.login.registerWithEmail}
           </Link>
           <Link
             to="/register/phone"
             className="pv-btn flex-1 inline-flex items-center justify-center px-4 py-3 border border-ink text-ink text-sm rounded-tiny hover:bg-paper-3 hover:scale-[1.03] hover:-translate-y-[3px] hover:shadow-card active:scale-[0.98] active:translate-y-0 transition-[background-color,transform,box-shadow] duration-base ease-motion"
           >
-            用手机号注册
+            {AUTH_COPY.login.registerWithPhone}
           </Link>
         </div>
       </div>

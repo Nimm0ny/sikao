@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { PROFILE_COPY } from '@/lib/ui-copy';
 
 // ProfilePreferences · SIKAO redesign Wave 1 · view 08 hifi "偏好" 区.
 //
@@ -74,27 +75,31 @@ export function ProfilePreferences({
   return (
     <section className="mt-12" data-testid="profile-preferences-section">
       <h3 className="font-serif text-h-card font-medium text-ink pb-3 border-b border-line">
-        偏好
+        {PROFILE_COPY.preferencesTitle}
       </h3>
 
-      <KvRow label="主题" testId="profile-kv-theme">
+      <KvRow label={PROFILE_COPY.preferencesThemeLabel} testId="profile-kv-theme">
         <span className="flex items-center gap-2 flex-wrap">
-          <Chip active={themeKey === 'quiet'}>静读</Chip>
-          <Chip active={themeKey === 'pure'}>素白</Chip>
-          <Chip active={themeKey === 'night'}>夜读</Chip>
+          <Chip active={themeKey === 'quiet'}>{PROFILE_COPY.preferencesThemeQuiet}</Chip>
+          <Chip active={themeKey === 'pure'}>{PROFILE_COPY.preferencesThemePure}</Chip>
+          <Chip active={themeKey === 'night'}>{PROFILE_COPY.preferencesThemeNight}</Chip>
           <span className="font-mono text-xs text-ink-3 ml-2">
-            在 Tweaks 中切换
+            {PROFILE_COPY.preferencesThemeHint}
           </span>
         </span>
       </KvRow>
-      <KvRow label="每日提醒" testId="profile-kv-reminder">
-        <span>{dailyReminder ?? '未设置'}</span>
+      <KvRow label={PROFILE_COPY.preferencesReminderLabel} testId="profile-kv-reminder">
+        <span>{dailyReminder ?? PROFILE_COPY.preferencesReminderEmpty}</span>
       </KvRow>
-      <KvRow label="字号" testId="profile-kv-font">
+      <KvRow label={PROFILE_COPY.preferencesFontLabel} testId="profile-kv-font">
         <span>{fontSizeLabel}</span>
       </KvRow>
-      <KvRow label="键盘快捷键" testId="profile-kv-shortcuts">
-        <span>{shortcutsOn ? '已开启 · ⌘K · ⌘/' : '已关闭'}</span>
+      <KvRow label={PROFILE_COPY.preferencesShortcutsLabel} testId="profile-kv-shortcuts">
+        <span>
+          {shortcutsOn
+            ? PROFILE_COPY.preferencesShortcutsEnabled
+            : PROFILE_COPY.preferencesShortcutsDisabled}
+        </span>
       </KvRow>
     </section>
   );

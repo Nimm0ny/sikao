@@ -32,6 +32,7 @@ import {
   useSubmitWithBluff,
 } from '@sikao/api-client/queries/wrongBookQueries';
 import { cn } from '@sikao/shared-utils';
+import { WRONG_BOOK_COPY } from '@/lib/ui-copy';
 
 // 日历: 21 天 grid (3 周 × 7 天). 每天用 0-4 浓度. demo 数据 (生产侧 BE 出
 // /smart-review/calendar 替换). 当前阶段只 visual; data 一致地来自 today 的 streakDays.
@@ -158,6 +159,16 @@ export default function SmartReviewView() {
           <p className="text-sm leading-relaxed text-ink-3 max-w-xl mt-3">
             基于遗忘曲线、错题反复次数、险题标签和考前距离,每天给你恰好的题量。
           </p>
+          <div className="mt-4">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => navigate('/wrong-book')}
+              data-testid="smart-review-back"
+            >
+              {WRONG_BOOK_COPY.smartBackToBook}
+            </Button>
+          </div>
         </header>
         {/* SIKAO Wave 9 Phase 2b: hero strip 3 档 responsive.
             mobile ≤768: 2-col grid (4 cell 占 2 行 2×2), gap-px + bg-line 分隔.

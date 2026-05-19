@@ -2,7 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { ChevronRightIcon, LockIcon, MailIcon, PhoneIcon } from '@sikao/ui/icons';
 import { Badge, Card } from '@sikao/ui/ui';
 import { useAuthStore, type AuthUserSummary } from '@sikao/domain/auth/useAuthStore';
-import { AUTH_COPY } from '@/lib/ui-copy';
+import { AUTH_COPY, PROFILE_COPY } from '@/lib/ui-copy';
 
 // AccountSecuritySection · Identity v2 wire 补漏 (Profile v2 §B2, 2026-05-08).
 //
@@ -58,8 +58,8 @@ function EmailRow({ user, onClick }: EmailPhoneRowProps) {
   return (
     <NavRow
       icon={<MailIcon className="w-5 h-5 text-ink-3 shrink-0" />}
-      title={hasEmail ? (user.email ?? '') : '邮箱'}
-      subtitle={hasEmail ? '已绑定' : '尚未绑定'}
+      title={hasEmail ? (user.email ?? '') : PROFILE_COPY.securityEmailFallback}
+      subtitle={hasEmail ? PROFILE_COPY.securityBoundSubtitle : PROFILE_COPY.securityUnboundSubtitle}
       badge={
         hasEmail ? (
           <Badge
@@ -74,7 +74,7 @@ function EmailRow({ user, onClick }: EmailPhoneRowProps) {
             {verified ? AUTH_COPY.verify.verifiedChip : AUTH_COPY.verify.pendingChip}
           </Badge>
         ) : (
-          <span className="text-xs text-ink-3">绑定邮箱</span>
+          <span className="text-xs text-ink-3">{PROFILE_COPY.securityBindEmailCta}</span>
         )
       }
       onClick={onClick}
@@ -89,8 +89,8 @@ function PhoneRow({ user, onClick }: EmailPhoneRowProps) {
   return (
     <NavRow
       icon={<PhoneIcon className="w-5 h-5 text-ink-3 shrink-0" />}
-      title={hasPhone ? (user.phone ?? '') : '手机号'}
-      subtitle={hasPhone ? '已绑定' : '尚未绑定'}
+      title={hasPhone ? (user.phone ?? '') : PROFILE_COPY.securityPhoneFallback}
+      subtitle={hasPhone ? PROFILE_COPY.securityBoundSubtitle : PROFILE_COPY.securityUnboundSubtitle}
       badge={
         hasPhone ? (
           <Badge
@@ -105,7 +105,7 @@ function PhoneRow({ user, onClick }: EmailPhoneRowProps) {
             {verified ? AUTH_COPY.verify.verifiedChip : AUTH_COPY.verify.pendingChip}
           </Badge>
         ) : (
-          <span className="text-xs text-ink-3">绑定手机</span>
+          <span className="text-xs text-ink-3">{PROFILE_COPY.securityBindPhoneCta}</span>
         )
       }
       onClick={onClick}
@@ -130,8 +130,8 @@ function PasswordRow() {
       <div className="flex items-center gap-3">
         <LockIcon className="w-5 h-5 text-ink-3 shrink-0" />
         <div>
-          <p className="font-medium text-ink">修改密码</p>
-          <p className="text-xs text-ink-3">改密功能即将上线</p>
+          <p className="font-medium text-ink">{PROFILE_COPY.securityPasswordTitle}</p>
+          <p className="text-xs text-ink-3">{PROFILE_COPY.securityPasswordSubtitle}</p>
         </div>
       </div>
     </button>
@@ -145,7 +145,7 @@ export function AccountSecuritySection() {
 
   return (
     <Card padding="md" data-testid="profile-security-section">
-      <h2 className="font-bold text-ink mb-3">账户安全</h2>
+      <h2 className="font-bold text-ink mb-3">{PROFILE_COPY.securityTitle}</h2>
       <div className="divide-y divide-line">
         <EmailRow user={user} onClick={() => navigate('/bind-email')} />
         <PhoneRow user={user} onClick={() => navigate('/bind-phone')} />

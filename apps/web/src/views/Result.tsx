@@ -1,31 +1,37 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useDevice } from '@sikao/shared-utils/hooks/useDevice';
 import {
-  AlertCircle,
-  BookOpenCheck,
-  Bot,
-  ChevronRight,
-  ClipboardList,
-  NotebookPen,
-  RefreshCw,
-  RotateCcw,
-} from 'lucide-react';
+  ActionNoteEditIcon,
+  CpuIcon,
+  RefreshIcon,
+  SubjectHomeIcon,
+  SubjectPlanIcon,
+  ToolAiIcon,
+  ToolEyeIcon,
+} from '@sikao/ui/icons';
 import { api } from '@sikao/api-client/request';
 import { logger, toast } from '@sikao/shared-utils';
 import type { PracticeSessionResultV2 } from '@sikao/api-client/types/api';
 import { ChatPanel } from '@/components/llm/ChatPanel';
 import {
+  buildResultOverview,
+  buildWeakRows,
   buildWrongItems,
-  calcDurationSeconds,
+  formatDurationMinutes,
   pickTitle,
+  plainTextStem,
 } from '@/components/result/_resultHelpers';
 import {
+  getWrongReasonLabel,
   WRONG_REASON_OPTIONS,
   type WrongReasonCode,
 } from '@/components/result/wrongReason';
-import { ERROR_COPY } from '@/lib/ui-copy';
-import { MvpActionCard, MvpButton, MvpCard, MvpChip, MvpPage, MvpProgressRing } from '@/components/mvp';
+import { RESULT_COPY } from '@/lib/ui-copy';
+import { MvpButton, MvpCard, MvpChip, MvpPage, MvpProgressRing } from '@/components/mvp';
+import { ResultIconAction, ResultSupportCard } from '@/components/result';
+import { ResultErrorState, ResultLoadingState, ResultMobile } from './result/ResultMobile';
 
 interface UseResultActionsArgs {
   readonly sessionData: PracticeSessionResultV2 | undefined;
@@ -43,7 +49,6 @@ function useResultActions({ sessionData, navigate }: UseResultActionsArgs) {
     if (paperCode === null) return;
     navigate(`/wrong-book?paperCode=${encodeURIComponent(paperCode)}`);
   }, [paperCode, navigate]);
-
   return {
     onBackHome,
     onRetry,
@@ -54,19 +59,28 @@ function useResultActions({ sessionData, navigate }: UseResultActionsArgs) {
 }
 
 export default function Result() {
+  const device = useDevice();
+  if (device === 'mobile') return <ResultMobile />;
+  return <ResultDesktop />;
+}
+
+function ResultDesktop() {
   const { sessionId } = useParams<{ sessionId: string }>();
   const navigate = useNavigate();
   const query = useQuery<PracticeSessionResultV2>({
     queryKey: ['practiceResult', sessionId],
-    queryFn: () => api.get<PracticeSessionResultV2>(`/practice/sessions/${sessionId ?? ''}/result`),
+    queryFn: () =>
+      api.get<PracticeSessionResultV2>(
+        `/practice/sessions/${sessionId ?? ''}/result`,
+      ),
     enabled: sessionId !== undefined,
   });
   const actions = useResultActions({ sessionData: query.data, navigate });
 
-  if (query.isLoading) return <ResultSkeleton />;
+  if (query.isLoading) return <ResultLoadingState />;
   if (query.isError || query.data === undefined) {
     return (
-      <ResultError
+      <ResultErrorState
         onRetry={() => {
           void query.refetch();
         }}
@@ -84,65 +98,6 @@ export default function Result() {
       retryDisabled={actions.retryDisabled}
       viewWrongDisabled={actions.viewWrongDisabled}
     />
-  );
-}
-
-function ResultSkeleton() {
-  return (
-    <MvpPage title="练习结果" hideHeading testId="result-loading">
-      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
-        <MvpCard className="p-6">
-          <div className="h-4 w-28 animate-pulse rounded bg-[#E5EAF3]" />
-          <div className="mt-5 h-20 w-40 animate-pulse rounded bg-[#E5EAF3]" />
-          <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            <div className="h-24 animate-pulse rounded-lg bg-[#F1F4F9]" />
-            <div className="h-24 animate-pulse rounded-lg bg-[#F1F4F9]" />
-            <div className="h-24 animate-pulse rounded-lg bg-[#F1F4F9]" />
-          </div>
-        </MvpCard>
-        <MvpCard className="p-6">
-          <div className="h-4 w-24 animate-pulse rounded bg-[#E5EAF3]" />
-          <div className="mt-5 h-40 animate-pulse rounded-lg bg-[#F1F4F9]" />
-        </MvpCard>
-      </div>
-    </MvpPage>
-  );
-}
-
-function ResultError({
-  onRetry,
-  onBackHome,
-}: {
-  readonly onRetry: () => void;
-  readonly onBackHome: () => void;
-}) {
-  return (
-    <MvpPage title="结果加载失败" hideHeading testId="result-error-view">
-      <MvpCard className="mx-auto max-w-xl p-6" testId="result-error-card">
-        <div className="flex items-start gap-4" role="alert" data-tone="error">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[#FEF2F2] text-[#DC2626]">
-            <AlertCircle className="h-5 w-5" aria-hidden="true" />
-          </span>
-          <div>
-            <h2 className="text-lg font-bold text-[#111827]">{ERROR_COPY.result.title}</h2>
-            <p className="mt-1 text-sm text-[#4B5563]">{ERROR_COPY.result.description}</p>
-            <div className="mt-5 flex flex-wrap gap-3">
-              <MvpButton
-                variant="primary"
-                icon={<RefreshCw className="h-4 w-4" aria-hidden="true" />}
-                onClick={onRetry}
-                data-testid="result-retry"
-              >
-                重试
-              </MvpButton>
-              <MvpButton variant="secondary" onClick={onBackHome} data-testid="result-error-home">
-                回首页
-              </MvpButton>
-            </div>
-          </div>
-        </div>
-      </MvpCard>
-    </MvpPage>
   );
 }
 
@@ -169,15 +124,20 @@ function ResultBody({
   const [savingAnswerId, setSavingAnswerId] = useState<number | null>(null);
   const syncedWrongReasonIdsRef = useRef<Set<number>>(new Set());
   const resultSessionId = result.sessionId ?? result.session?.sessionId ?? null;
+  const overview = useMemo(() => buildResultOverview(result), [result]);
   const wrongItems = useMemo(() => buildWrongItems(result), [result]);
   const weakRows = useMemo(() => buildWeakRows(result), [result]);
   const title = pickTitle(result);
-  const totalQuestionCount = result.totalQuestions || result.correctCount + result.incorrectCount + result.unansweredCount;
-  const accuracy = totalQuestionCount > 0 ? Math.round((result.correctCount / totalQuestionCount) * 100) : 0;
-  const durationSeconds =
-    result.session !== undefined
-      ? calcDurationSeconds(result.session.startedAt, result.session.completedAt)
-      : undefined;
+  const nextStep =
+    overview.outcome === 'all_correct'
+      ? { title: RESULT_COPY.next.allCorrectTitle, description: RESULT_COPY.next.allCorrectDescription }
+      : overview.outcome === 'wrong_heavy'
+        ? { title: RESULT_COPY.next.wrongHeavyTitle, description: RESULT_COPY.next.wrongHeavyDescription }
+        : { title: RESULT_COPY.next.wrongReviewTitle, description: RESULT_COPY.next.wrongReviewDescription };
+  const nextSummary =
+    wrongItems.length > 0
+      ? RESULT_COPY.next.pendingWrong(wrongItems.length)
+      : RESULT_COPY.next.noWrong;
 
   const mergeWrongReasonIntoCache = useCallback(
     (answerId: number, wrongReasonCode: WrongReasonCode, source: 'ai' | 'user') => {
@@ -251,70 +211,108 @@ function ResultBody({
   );
 
   return (
-    <MvpPage title="练习结果" hideHeading testId="result-view">
+    <MvpPage title={RESULT_COPY.status.loadingTitle} hideHeading testId="result-view">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <MvpCard className="p-6 md:p-8" testId="result-score-card">
           <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
             <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <MvpChip tone="blue">结果</MvpChip>
+                <MvpChip tone="blue">{RESULT_COPY.header.badge}</MvpChip>
                 {result.session?.paperCode ? <MvpChip>{result.session.paperCode}</MvpChip> : null}
               </div>
-              <h1 className="mt-4 truncate text-2xl font-bold tracking-normal text-[#111827] md:text-3xl" title={title}>
+              <h1 className="mt-4 truncate text-h1 font-bold text-ink" title={title}>
                 {title}
               </h1>
             </div>
-            <MvpProgressRing value={accuracy} label="正确率" />
+            <MvpProgressRing value={overview.accuracyPct} label={RESULT_COPY.hero.accuracyLabel} />
           </div>
 
           <div className="mt-8 flex items-end gap-3">
-            <span className="text-6xl font-bold leading-none text-[#111827]" data-testid="result-score-value">
+            <span className="text-display font-bold leading-none text-ink" data-testid="result-score-value">
               {result.score}
             </span>
-            <span className="pb-2 text-sm font-semibold text-[#4B5563]">分</span>
-            {durationSeconds !== undefined ? (
-              <MvpChip>{formatDuration(durationSeconds)}</MvpChip>
+            <span className="pb-2 text-small font-semibold text-ink-3">{RESULT_COPY.hero.scoreUnit}</span>
+            {overview.durationSeconds !== undefined ? (
+              <MvpChip>{formatDurationMinutes(overview.durationSeconds)}</MvpChip>
             ) : null}
           </div>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-4">
-            <ResultMetric label="正确" value={result.correctCount} tone="green" />
-            <ResultMetric label="错误" value={result.incorrectCount} tone="red" />
-            <ResultMetric label="未答" value={result.unansweredCount} tone="amber" />
-            <ResultMetric label="总题" value={totalQuestionCount} tone="blue" />
+            <ResultMetric label={RESULT_COPY.metrics.correct} value={result.correctCount} tone="green" />
+            <ResultMetric label={RESULT_COPY.metrics.wrong} value={result.incorrectCount} tone="red" />
+            <ResultMetric label={RESULT_COPY.metrics.unanswered} value={result.unansweredCount} tone="amber" />
+            <ResultMetric label={RESULT_COPY.metrics.total} value={overview.totalQuestionCount} tone="blue" />
           </div>
         </MvpCard>
 
         <MvpCard className="p-6" testId="result-next-card">
-          <div className="flex items-center justify-between gap-4">
+          <p className="text-tiny font-semibold uppercase tracking-eyebrow text-ink-3">
+            {RESULT_COPY.next.eyebrow}
+          </p>
+          <h2 className="mt-3 text-h3 font-bold text-ink">{nextStep.title}</h2>
+          <p className="mt-2 text-small leading-6 text-ink-3">{nextStep.description}</p>
+          <div className="mt-4 flex items-center justify-between gap-4 rounded-card border border-line bg-paper-2 p-4">
             <div>
-              <h2 className="text-base font-bold text-[#111827]">下一步</h2>
-              <p className="text-sm text-[#4B5563]">{wrongItems.length > 0 ? `${wrongItems.length} 道待复盘` : '本次无错题'}</p>
+              <p className="text-small font-semibold text-ink">{RESULT_COPY.next.title}</p>
+              <p className="mt-1 text-small text-ink-3">{nextSummary}</p>
             </div>
-            <MvpButton variant="primary" onClick={onViewWrong} disabled={viewWrongDisabled} data-testid="result-view-wrong">
-              错题本
+            <MvpButton
+              variant="primary"
+              icon={
+                overview.outcome === 'all_correct' ? (
+                  <RefreshIcon className="h-4 w-4" />
+                ) : (
+                  <ToolEyeIcon className="h-4 w-4" />
+                )
+              }
+              onClick={overview.outcome === 'all_correct' ? onRetry : onViewWrong}
+              disabled={overview.outcome === 'all_correct' ? retryDisabled : viewWrongDisabled}
+              data-testid={overview.outcome === 'all_correct' ? 'result-next-practice' : 'result-view-wrong'}
+            >
+              {overview.outcome === 'all_correct'
+                ? RESULT_COPY.next.primaryRetry
+                : RESULT_COPY.next.primaryWrong}
             </MvpButton>
           </div>
           <div className="mt-5 grid gap-2">
-            <CompactAction
-              label="再做一次"
-              icon={<RotateCcw className="h-4 w-4" aria-hidden="true" />}
-              disabled={retryDisabled}
-              onClick={onRetry}
-              testId="result-retry"
-            />
-            <CompactAction
-              label="学习计划"
-              icon={<ClipboardList className="h-4 w-4" aria-hidden="true" />}
-              onClick={() => navigate('/plan')}
-              testId="result-go-plan"
-            />
-            <CompactAction
-              label="回首页"
-              icon={<BookOpenCheck className="h-4 w-4" aria-hidden="true" />}
-              onClick={onBackHome}
-              testId="result-back-home"
-            />
+            {[
+              {
+                label: RESULT_COPY.next.retry,
+                icon: <RefreshIcon className="h-4 w-4" />,
+                onClick: onRetry,
+                disabled: retryDisabled,
+                testId: 'result-retry',
+              },
+              {
+                label: RESULT_COPY.next.plan,
+                icon: <SubjectPlanIcon className="h-4 w-4" />,
+                onClick: () => navigate('/plan'),
+                disabled: false,
+                testId: 'result-go-plan',
+              },
+              {
+                label: RESULT_COPY.next.home,
+                icon: <SubjectHomeIcon className="h-4 w-4" />,
+                onClick: onBackHome,
+                disabled: false,
+                testId: 'result-back-home',
+              },
+            ].map((action) => (
+              <div
+                key={action.testId}
+                className="flex items-center justify-between gap-3 rounded-card border border-line bg-paper px-3 py-2.5"
+              >
+                <span className="text-small font-semibold text-ink">{action.label}</span>
+                <ResultIconAction
+                  label={action.label}
+                  onClick={action.onClick}
+                  disabled={action.disabled}
+                  testId={action.testId}
+                >
+                  {action.icon}
+                </ResultIconAction>
+              </div>
+            ))}
           </div>
         </MvpCard>
       </div>
@@ -322,15 +320,17 @@ function ResultBody({
       <div className="mt-4 grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
         <MvpCard className="p-6" testId="result-wrong-card">
           <div className="flex items-center justify-between gap-4">
-            <h2 className="text-base font-bold text-[#111827]">复盘</h2>
+            <h2 className="text-h3 font-bold text-ink">{RESULT_COPY.review.title}</h2>
             <MvpChip tone={wrongItems.length > 0 ? 'amber' : 'green'}>
-              {wrongItems.length > 0 ? `${wrongItems.length} 错` : '清零'}
+              {wrongItems.length > 0
+                ? RESULT_COPY.review.wrongChip(wrongItems.length)
+                : RESULT_COPY.review.clear}
             </MvpChip>
           </div>
-          <div className="mt-4 divide-y divide-[#E1E6F0]">
+          <div className="mt-4 divide-y divide-line">
             {wrongItems.length === 0 ? (
-              <div className="rounded-lg bg-[#F7F8FB] p-4 text-sm font-semibold text-[#4B5563]" data-testid="result-no-wrong">
-                没有错题
+              <div className="rounded-card bg-paper-2 p-4 text-small font-semibold text-ink-3" data-testid="result-no-wrong">
+                {RESULT_COPY.review.empty}
               </div>
             ) : (
               wrongItems.slice(0, 5).map((item) => (
@@ -346,21 +346,23 @@ function ResultBody({
         </MvpCard>
 
         <MvpCard className="p-6" testId="result-weak-card">
-          <h2 className="text-base font-bold text-[#111827]">薄弱项</h2>
+          <h2 className="text-h3 font-bold text-ink">{RESULT_COPY.weak.title}</h2>
           <div className="mt-4 space-y-3">
             {weakRows.length === 0 ? (
-              <div className="rounded-lg bg-[#F7F8FB] p-4 text-sm font-semibold text-[#4B5563]">暂无分类数据</div>
+              <div className="rounded-card bg-paper-2 p-4 text-small font-semibold text-ink-3">
+                {RESULT_COPY.weak.empty}
+              </div>
             ) : (
               weakRows.map((row) => (
-                <div key={`${row.label}-${row.accuracy}`} className="rounded-lg border border-[#E1E6F0] bg-[#F7F8FB] p-3">
-                  <div className="flex items-center justify-between gap-3 text-sm">
-                    <span className="min-w-0 truncate font-semibold text-[#111827]" title={row.label}>
+                <div key={`${row.label}-${row.accuracy}`} className="rounded-card border border-line bg-paper-2 p-3">
+                  <div className="flex items-center justify-between gap-3 text-small">
+                    <span className="min-w-0 truncate font-semibold text-ink" title={row.label}>
                       {row.label}
                     </span>
-                    <span className="shrink-0 font-bold text-[#2563EB]">{Math.round(row.accuracy)}%</span>
+                    <span className="shrink-0 font-bold text-accent">{Math.round(row.accuracy)}%</span>
                   </div>
-                  <div className="mt-2 h-2 overflow-hidden rounded-full bg-[#E5EAF3]">
-                    <div className="h-full rounded-full bg-[#2563EB]" style={{ width: `${Math.max(0, Math.min(100, row.accuracy))}%` }} />
+                  <div className="mt-2 h-2 overflow-hidden rounded-pill bg-paper-3">
+                    <div className="h-full rounded-pill bg-accent" style={{ width: `${Math.max(0, Math.min(100, row.accuracy))}%` }} />
                   </div>
                 </div>
               ))
@@ -370,28 +372,35 @@ function ResultBody({
       </div>
 
       <div className="mt-4 grid gap-4 md:grid-cols-3">
-        <MvpActionCard
-          icon={<NotebookPen className="h-5 w-5" aria-hidden="true" />}
-          title="沉淀"
-          description="保存本次复盘入口"
-          actionLabel="去笔记"
+        <ResultSupportCard
+          icon={<ActionNoteEditIcon className="h-5 w-5" />}
+          title={RESULT_COPY.actions.notesTitle}
+          description={RESULT_COPY.actions.notesDescription}
+          actionLabel={RESULT_COPY.actions.notesLabel}
+          actionIcon={<ActionNoteEditIcon className="h-4 w-4" />}
           onAction={() => navigate('/notes')}
+          actionTestId="result-notes-action-btn"
           testId="result-notes-action"
         />
-        <MvpActionCard
-          icon={<ClipboardList className="h-5 w-5" aria-hidden="true" />}
-          title="计划"
-          description="把薄弱项放入计划"
-          actionLabel="调整计划"
+        <ResultSupportCard
+          icon={<SubjectPlanIcon className="h-5 w-5" />}
+          title={RESULT_COPY.actions.planTitle}
+          description={RESULT_COPY.actions.planDescription}
+          actionLabel={RESULT_COPY.actions.planLabel}
+          actionIcon={<SubjectPlanIcon className="h-4 w-4" />}
           onAction={() => navigate('/plan')}
+          actionTestId="result-plan-action-btn"
           testId="result-plan-action"
         />
-        <MvpActionCard
-          icon={<Bot className="h-5 w-5" aria-hidden="true" />}
-          title="AI 问答"
-          description="围绕本次结果提问"
-          actionLabel="打开"
+        <ResultSupportCard
+          icon={<CpuIcon className="h-5 w-5" />}
+          title={RESULT_COPY.actions.aiTitle}
+          description={RESULT_COPY.actions.aiDescription}
+          actionLabel={RESULT_COPY.actions.aiLabel}
+          actionAriaLabel={RESULT_COPY.actions.aiTitle}
+          actionIcon={<ToolAiIcon className="h-4 w-4" />}
           onAction={() => setChatOpen(true)}
+          actionTestId="result-ai-action-btn"
           testId="result-ai-action"
         />
       </div>
@@ -417,47 +426,17 @@ function ResultMetric({
 }) {
   const color =
     tone === 'green'
-      ? 'text-[#15803D]'
+      ? 'text-ok'
       : tone === 'red'
-        ? 'text-[#DC2626]'
+        ? 'text-err'
         : tone === 'amber'
-          ? 'text-[#B45309]'
-          : 'text-[#2563EB]';
+          ? 'text-warn'
+          : 'text-accent';
   return (
-    <div className="rounded-lg border border-[#E1E6F0] bg-[#F7F8FB] p-4">
-      <p className="text-xs font-semibold text-[#4B5563]">{label}</p>
-      <p className={`mt-2 text-2xl font-bold ${color}`}>{value}</p>
+    <div className="rounded-card border border-line bg-paper-2 p-4">
+      <p className="text-meta font-semibold text-ink-3">{label}</p>
+      <p className={`mt-2 text-h2 font-bold ${color}`}>{value}</p>
     </div>
-  );
-}
-
-function CompactAction({
-  label,
-  icon,
-  onClick,
-  disabled = false,
-  testId,
-}: {
-  readonly label: string;
-  readonly icon: React.ReactNode;
-  readonly onClick: () => void;
-  readonly disabled?: boolean;
-  readonly testId: string;
-}) {
-  return (
-    <button
-      type="button"
-      className="flex min-h-11 items-center justify-between gap-3 rounded-lg border border-[#E1E6F0] bg-white px-3 text-sm font-semibold text-[#111827] hover:bg-[#EFF6FF] disabled:cursor-not-allowed disabled:opacity-50"
-      onClick={onClick}
-      disabled={disabled}
-      data-testid={testId}
-    >
-      <span className="flex items-center gap-2">
-        {icon}
-        {label}
-      </span>
-      <ChevronRight className="h-4 w-4 text-[#4B5563]" aria-hidden="true" />
-    </button>
   );
 }
 
@@ -476,14 +455,15 @@ function WrongRow({
     <div className="grid gap-3 py-4 md:grid-cols-[minmax(0,1fr)_180px] md:items-center" data-testid={`wrong-review-${item.questionNo}`}>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <MvpChip>第 {item.questionNo} 题</MvpChip>
+          <MvpChip>{RESULT_COPY.review.questionLabel(item.questionNo)}</MvpChip>
           {item.categoryLabel ? <MvpChip tone="blue">{item.categoryLabel}</MvpChip> : null}
         </div>
-        <p className="mt-2 truncate text-sm font-semibold text-[#111827]" title={plainStem(item.question.content.stem)}>
-          {plainStem(item.question.content.stem)}
+        <p className="mt-2 truncate text-small font-semibold text-ink" title={plainTextStem(item.question.content.stem)}>
+          {plainTextStem(item.question.content.stem)}
         </p>
-        <p className="mt-1 text-xs font-semibold text-[#4B5563]">
-          选 {item.userKeys.join('') || '-'} / 对 {item.correctKeys.join('') || '-'}
+        <p className="mt-1 text-meta font-semibold text-ink-3">
+          {RESULT_COPY.review.selectedPrefix} {item.userKeys.join('') || '-'} / {RESULT_COPY.review.correctPrefix}{' '}
+          {item.correctKeys.join('') || '-'}
         </p>
       </div>
       {answerId !== undefined ? (
@@ -491,50 +471,17 @@ function WrongRow({
           value={value}
           disabled={savingAnswerId === answerId}
           onChange={(event) => onSetWrongReason(answerId, event.target.value as WrongReasonCode)}
-          className="min-h-10 rounded-lg border border-[#D7DFEC] bg-white px-3 text-sm font-semibold text-[#111827] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB]"
-          aria-label={`第 ${item.questionNo} 题错因`}
+          className="min-h-10 rounded-tiny border border-line-3 bg-paper px-3 text-small font-semibold text-ink focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          aria-label={RESULT_COPY.review.reasonAria(item.questionNo)}
           data-testid={`wrong-reason-select-${answerId}`}
         >
           {WRONG_REASON_OPTIONS.map((option) => (
             <option key={option.code} value={option.code}>
-              {reasonLabel(option.code)}
+              {getWrongReasonLabel(option.code)}
             </option>
           ))}
         </select>
       ) : null}
     </div>
   );
-}
-
-function buildWeakRows(result: PracticeSessionResultV2): readonly { label: string; accuracy: number }[] {
-  const source = result.subtypeSummaries?.length ? result.subtypeSummaries : result.subjectSummaries ?? [];
-  return [...source]
-    .map((item) => ({
-      label: 'subtype' in item ? `${item.subject ?? '综合'} · ${item.subtype}` : item.subject ?? '综合',
-      accuracy: item.accuracyRate,
-    }))
-    .sort((a, b) => a.accuracy - b.accuracy)
-    .slice(0, 3);
-}
-
-function formatDuration(seconds: number): string {
-  const minutes = Math.max(1, Math.round(seconds / 60));
-  return `${minutes} 分钟`;
-}
-
-function plainStem(stem: string): string {
-  return stem.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-}
-
-function reasonLabel(code: WrongReasonCode): string {
-  const labels: Record<WrongReasonCode, string> = {
-    calculation_error: '计算错误',
-    concept_gap: '概念不清',
-    careless_mistake: '粗心失误',
-    question_misread: '审题偏差',
-    knowledge_missing: '知识点遗漏',
-    logic_error: '逻辑判断错误',
-    other: '其他',
-  };
-  return labels[code];
 }

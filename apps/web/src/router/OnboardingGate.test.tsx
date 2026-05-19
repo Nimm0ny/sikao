@@ -1,16 +1,23 @@
 import { describe, expect, it } from 'vitest';
-import { Routes, Route } from 'react-router-dom';
+import { Route, Routes, useLocation } from 'react-router-dom';
 import { http, HttpResponse } from 'msw';
 import { screen, waitFor } from '@testing-library/react';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { server } from '@sikao/test-utils/server';
 import { OnboardingGate } from './OnboardingGate';
+import { ROUTE_MAP } from './RouteMap';
 
-function renderGate(initialEntries: readonly string[] = ['/dashboard']) {
+function OnboardingTarget() {
+  const location = useLocation();
+  const state = location.state as { readonly from?: string } | null;
+  return <div data-testid="onboarding-page" data-from={state?.from ?? ''}>onboarding</div>;
+}
+
+function renderGate(initialEntries: readonly string[] = [ROUTE_MAP.dashboard]) {
   return renderWithProviders(
     <Routes>
       <Route
-        path="/dashboard"
+        path={ROUTE_MAP.dashboard}
         element={
           <OnboardingGate>
             <div data-testid="protected-page">protected</div>
@@ -18,8 +25,8 @@ function renderGate(initialEntries: readonly string[] = ['/dashboard']) {
         }
       />
       <Route
-        path="/study/onboarding"
-        element={<div data-testid="onboarding-page">onboarding</div>}
+        path={ROUTE_MAP.studyOnboarding}
+        element={<OnboardingTarget />}
       />
     </Routes>,
     { initialEntries },
@@ -33,7 +40,7 @@ describe('OnboardingGate', () => {
     expect(screen.queryByTestId('onboarding-page')).not.toBeInTheDocument();
   });
 
-  it('redirects to /study/onboarding when the user is not onboarded', async () => {
+  it('redirects to /study/onboarding and preserves the attempted path when the user is not onboarded', async () => {
     server.use(
       http.get('/api/v2/me/onboarding-status', () =>
         HttpResponse.json({
@@ -44,11 +51,12 @@ describe('OnboardingGate', () => {
       ),
     );
 
-    renderGate();
+    renderGate(['/dashboard?source=notes']);
 
     await waitFor(() => {
       expect(screen.getByTestId('onboarding-page')).toBeInTheDocument();
     });
+    expect(screen.getByTestId('onboarding-page')).toHaveAttribute('data-from', '/dashboard?source=notes');
     expect(screen.queryByTestId('protected-page')).not.toBeInTheDocument();
   });
 
@@ -83,9 +91,9 @@ describe('OnboardingGate', () => {
             </OnboardingGate>
           }
         />
-        <Route path="/dashboard" element={<div data-testid="dashboard-page">dashboard</div>} />
+        <Route path={ROUTE_MAP.dashboard} element={<div data-testid="dashboard-page">dashboard</div>} />
       </Routes>,
-      { initialEntries: ['/study/onboarding'] },
+      { initialEntries: [ROUTE_MAP.studyOnboarding] },
     );
 
     await waitFor(() => {

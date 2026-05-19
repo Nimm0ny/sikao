@@ -56,6 +56,7 @@ import {
   FieldText,
   FieldTextarea,
 } from '@/components/notes/NoteEditorFields';
+import { NOTES_COPY } from '@/lib/ui-copy';
 
 export default function NoteEditor(): ReactElement {
   const navigate = useNavigate();
@@ -92,7 +93,7 @@ export default function NoteEditor(): ReactElement {
         className="p-4 md:p-8 max-w-4xl mx-auto"
         data-testid="note-editor-auth-fallback"
       >
-        <AuthFallbackEmptyState description="登录后即可编辑笔记." />
+        <AuthFallbackEmptyState description={NOTES_COPY.editorRequireLogin} />
       </div>
     );
   }
@@ -109,11 +110,11 @@ export default function NoteEditor(): ReactElement {
       >
         <EmptyState
           icon={<NoteIcon className="w-8 h-8" />}
-          title="笔记链接无效"
-          description="ID 解析失败, 可能已被删除或链接有误."
+          title={NOTES_COPY.editorInvalidLinkTitle}
+          description={NOTES_COPY.editorInvalidLinkDesc}
           action={
             <Button variant="secondary" onClick={() => navigate('/notes')}>
-              返回笔记本
+              {NOTES_COPY.editorBackToNotes}
             </Button>
           }
         />
@@ -145,15 +146,15 @@ export default function NoteEditor(): ReactElement {
         <EmptyState
           tone="error"
           icon={<AlertCircleIcon className="w-8 h-8" />}
-          title="笔记加载失败"
-          description="检查网络后重试."
+          title={NOTES_COPY.editorLoadFailedTitle}
+          description={NOTES_COPY.editorLoadFailedDesc}
           action={
             <Button
               variant="secondary"
               onClick={() => void editQuery.refetch()}
               data-testid="note-editor-retry"
             >
-              重试
+              {NOTES_COPY.editorRetry}
             </Button>
           }
         />
@@ -167,12 +168,15 @@ export default function NoteEditor(): ReactElement {
     if (isNew) {
       createMut.mutate(payload, {
         onSuccess: (created) => {
-          toast.info('笔记已创建');
+          toast.info(NOTES_COPY.editorCreatedToast);
           navigate(`/notes/${created.id}`, { replace: true });
         },
         onError: (err) => {
           logger.error('note.create.failed', { err: String(err) });
-          toast.error('创建失败', '检查网络后重试');
+          toast.error(
+            NOTES_COPY.editorCreateFailedTitle,
+            NOTES_COPY.editorRetryHint,
+          );
         },
       });
       return;
@@ -182,11 +186,14 @@ export default function NoteEditor(): ReactElement {
       { noteId: parsedNoteId, payload },
       {
         onSuccess: () => {
-          toast.info('已保存');
+          toast.info(NOTES_COPY.editorSavedToast);
         },
         onError: (err) => {
           logger.error('note.update.failed', { err: String(err) });
-          toast.error('保存失败', '检查网络后重试');
+          toast.error(
+            NOTES_COPY.editorSaveFailedTitle,
+            NOTES_COPY.editorRetryHint,
+          );
         },
       },
     );
@@ -201,9 +208,9 @@ export default function NoteEditor(): ReactElement {
       data-testid="note-editor-view"
     >
       <PageHeader
-        eyebrow="Editor · 思考"
-        title={isNew ? '新建笔记' : '编辑笔记'}
-        subtitle="选择类型 + 来源, 写下要点. 跨领域单池, 复习自动入队列."
+        eyebrow={NOTES_COPY.editorEyebrow}
+        title={isNew ? NOTES_COPY.editorNewTitle : NOTES_COPY.editorEditTitle}
+        subtitle={NOTES_COPY.editorSubtitle}
         actions={
           <div className="flex items-center gap-2">
             <Button
@@ -211,7 +218,7 @@ export default function NoteEditor(): ReactElement {
               onClick={() => navigate('/notes')}
               data-testid="note-editor-cancel"
             >
-              返回
+              {NOTES_COPY.editorBack}
             </Button>
             <Button
               variant="primary"
@@ -220,7 +227,7 @@ export default function NoteEditor(): ReactElement {
               isLoading={isSaving}
               data-testid="note-editor-save"
             >
-              {isNew ? '保存笔记' : '保存修改'}
+              {isNew ? NOTES_COPY.editorSaveNew : NOTES_COPY.editorSaveEdit}
             </Button>
           </div>
         }
@@ -244,14 +251,14 @@ function EditorMetadata({ state, setState }: EditorPartProps): ReactElement {
       className="bg-surface border border-line rounded-card p-4 grid grid-cols-1 md:grid-cols-2 gap-4"
     >
       <FieldText
-        label="标题"
+        label={NOTES_COPY.editorTitleLabel}
         value={state.title}
-        placeholder="给笔记起个名字"
+        placeholder={NOTES_COPY.editorTitlePlaceholder}
         onChange={(v) => setState({ ...state, title: v })}
         testId="note-editor-title"
       />
       <FieldSelect
-        label="类型"
+        label={NOTES_COPY.editorTypeLabel}
         value={state.type}
         onChange={(v) => {
           const t = v as NoteType;
@@ -275,15 +282,15 @@ function EditorMetadata({ state, setState }: EditorPartProps): ReactElement {
           }
         }}
         options={[
-          { value: 'quote', label: '金句' },
-          { value: 'method', label: '方法论' },
-          { value: 'reflect', label: '反思' },
-          { value: 'material', label: '素材' },
+          { value: 'quote', label: NOTES_COPY.editorTypeQuote },
+          { value: 'method', label: NOTES_COPY.editorTypeMethod },
+          { value: 'reflect', label: NOTES_COPY.editorTypeReflect },
+          { value: 'material', label: NOTES_COPY.editorTypeMaterial },
         ]}
         testId="note-editor-type"
       />
       <FieldSelect
-        label="学习域"
+        label={NOTES_COPY.editorSourceDomainLabel}
         value={state.sourceDomain}
         onChange={(v) =>
           setState({
@@ -292,22 +299,22 @@ function EditorMetadata({ state, setState }: EditorPartProps): ReactElement {
           })
         }
         options={[
-          { value: 'essay', label: '申论' },
-          { value: 'xingce', label: '行测' },
+          { value: 'essay', label: NOTES_COPY.editorSourceDomainEssay },
+          { value: 'xingce', label: NOTES_COPY.editorSourceDomainXingce },
         ]}
         testId="note-editor-source-domain"
       />
       <FieldText
-        label="来源"
+        label={NOTES_COPY.editorSourceRefLabel}
         value={state.sourceRef}
-        placeholder="例如: 2023 国考副省 第三题"
+        placeholder={NOTES_COPY.editorSourceRefPlaceholder}
         onChange={(v) => setState({ ...state, sourceRef: v })}
         testId="note-editor-source-ref"
       />
       <FieldText
-        label="标签 (逗号分隔)"
+        label={NOTES_COPY.editorTagsLabel}
         value={state.tagsRaw}
-        placeholder="#治理之细, #政策梳理"
+        placeholder={NOTES_COPY.editorTagsPlaceholder}
         onChange={(v) => setState({ ...state, tagsRaw: v })}
         className="md:col-span-2"
         testId="note-editor-tags"
@@ -324,9 +331,9 @@ function EditorBodyField({ state, setState }: EditorPartProps): ReactElement {
         className="bg-surface border border-line rounded-card p-4 space-y-3"
       >
         <FieldText
-          label="方法标题"
+          label={NOTES_COPY.editorMethodTitleLabel}
           value={state.body.title}
-          placeholder="例: 归纳概括 · 三步法"
+          placeholder={NOTES_COPY.editorMethodTitlePlaceholder}
           onChange={(v) =>
             setState({
               ...state,
@@ -336,9 +343,9 @@ function EditorBodyField({ state, setState }: EditorPartProps): ReactElement {
           testId="note-editor-method-title"
         />
         <FieldTextarea
-          label="步骤 (每行一步, 格式: 序号|说明)"
+          label={NOTES_COPY.editorMethodStepsLabel}
           value={state.body.stepsRaw}
-          placeholder={'1|抓主体\n2|分维度\n3|整合表达'}
+          placeholder={NOTES_COPY.editorMethodStepsPlaceholder}
           onChange={(v) =>
             setState({
               ...state,
@@ -358,9 +365,9 @@ function EditorBodyField({ state, setState }: EditorPartProps): ReactElement {
         className="bg-surface border border-line rounded-card p-4 space-y-3"
       >
         <FieldTextarea
-          label="字段 (每行一条, 格式: 字段名|值)"
+          label={NOTES_COPY.editorMaterialRowsLabel}
           value={state.body.rowsRaw}
-          placeholder={'人物|周一同\n地点|江西省\n核心动作|主导政策梳理工程'}
+          placeholder={NOTES_COPY.editorMaterialRowsPlaceholder}
           onChange={(v) =>
             setState({
               ...state,
@@ -380,12 +387,12 @@ function EditorBodyField({ state, setState }: EditorPartProps): ReactElement {
       className="bg-surface border border-line rounded-card p-4 space-y-3"
     >
       <FieldTextarea
-        label="正文"
+        label={NOTES_COPY.editorBodyLabel}
         value={state.body.text}
         placeholder={
           state.type === 'quote'
-            ? '记下精彩的论述或表达'
-            : '写下你的反思与思考'
+            ? NOTES_COPY.editorQuotePlaceholder
+            : NOTES_COPY.editorReflectPlaceholder
         }
         onChange={(v) =>
           setState({ ...state, body: { kind: 'text', text: v } })
@@ -411,12 +418,17 @@ function EditorFooter({ state }: { readonly state: EditorState }): ReactElement 
       className="flex items-center justify-between font-mono text-tiny tracking-loose uppercase text-ink-4 px-3"
     >
       <span>
-        字数 <span className="font-serif font-semibold tabular-nums">{charCount}</span>
+        {NOTES_COPY.editorFooterCharCount}{' '}
+        <span className="font-serif font-semibold tabular-nums">{charCount}</span>
       </span>
       <span>
         {state.tagsRaw.trim().length > 0
-          ? `引用 ${state.tagsRaw.split(',').filter((t) => t.trim().length > 0).length} 个标签`
-          : '尚无引用'}
+          ? NOTES_COPY.editorFooterTagsCount(
+              state.tagsRaw
+                .split(',')
+                .filter((t) => t.trim().length > 0).length,
+            )
+          : NOTES_COPY.editorFooterNoTags}
       </span>
     </footer>
   );

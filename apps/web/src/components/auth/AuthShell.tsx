@@ -31,9 +31,25 @@ export function AuthShell({
   rightSlot,
 }: AuthShellProps) {
   return (
-    <div className="min-h-screen bg-surface-alt flex items-center justify-center p-4 md:p-6">
+    <div className="relative isolate flex min-h-screen items-center justify-center overflow-hidden bg-paper-2 p-4 md:p-6">
       <div
-        className={`w-full ${maxWidthClass} bg-surface border border-line rounded-card-lg shadow-card px-5 pt-8 pb-7 md:px-8 md:pt-10 md:pb-8`}
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-64 opacity-80"
+        style={{
+          background:
+            'radial-gradient(circle at top left, color-mix(in oklch, var(--accent-1), white 84%), transparent 58%)',
+        }}
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute bottom-[-72px] left-[-72px] h-40 w-40 rounded-pill border border-line opacity-70"
+      />
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute right-8 top-12 h-20 w-20 rounded-pill border border-line opacity-60"
+      />
+      <div
+        className={`relative w-full ${maxWidthClass} rounded-card-lg border border-line bg-paper-1 px-5 pb-7 pt-8 shadow-card md:px-8 md:pb-8 md:pt-10`}
         data-testid={testId}
       >
         {rightSlot !== undefined ? (

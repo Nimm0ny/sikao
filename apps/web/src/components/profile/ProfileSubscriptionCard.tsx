@@ -1,4 +1,5 @@
 import { Button, Card } from '@sikao/ui/ui';
+import { PROFILE_COPY } from '@/lib/ui-copy';
 
 // ProfileSubscriptionCard · SIKAO redesign Wave 1 · view 08 hifi "订阅" 区.
 //
@@ -37,7 +38,7 @@ export function ProfileSubscriptionCard({
   return (
     <section className="mt-12" data-testid="profile-subscription-section">
       <h3 className="font-serif text-h-card font-medium text-ink pb-3 border-b border-line mb-4">
-        订阅
+        {PROFILE_COPY.subscriptionTitle}
       </h3>
       <Card variant="muted" padding="md" data-testid="profile-subscription-card">
         <div className="grid grid-cols-1 sm:grid-cols-[1fr_auto] gap-6 items-center">
@@ -46,7 +47,7 @@ export function ProfileSubscriptionCard({
               {tierLabel} · {billingCycle}
             </span>
             <p className="mt-2 font-serif text-h-card font-medium text-ink">
-              {renewDate !== null ? `续订于 ${renewDate}` : '尚未订阅'}
+              {renewDate !== null ? `续订于 ${renewDate}` : PROFILE_COPY.subscriptionEmptyRenewDate}
             </p>
             <p className="mt-1 text-sm text-ink-3">{perks.join(' · ')}</p>
           </div>
@@ -62,7 +63,7 @@ export function ProfileSubscriptionCard({
                 onClick={onManage}
                 data-testid="profile-subscription-manage-btn"
               >
-                管理订阅
+                {PROFILE_COPY.subscriptionManageAction}
               </Button>
             </div>
           </div>

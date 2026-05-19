@@ -119,6 +119,12 @@ export type { WrongReviewSectionProps, WrongReviewItem } from './WrongReviewSect
 export { ResultActions } from './ResultActions';
 export type { ResultActionsProps } from './ResultActions';
 
+export { ResultIconAction } from './ResultIconAction';
+export type { ResultIconActionProps } from './ResultIconAction';
+
+export { ResultSupportCard } from './ResultSupportCard';
+export type { ResultSupportCardProps } from './ResultSupportCard';
+
 export { ResultPageSkeleton } from './ResultPageSkeleton';
 
 export { TimingTimeline } from './TimingTimeline';

@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from sikao_api.db import schemas
@@ -34,6 +34,16 @@ def _week_bounds(today: date) -> tuple[date, date]:
     return start, start + timedelta(days=6)
 
 
+def _grouped_day(value: object) -> date | None:
+    if isinstance(value, datetime):
+        return value.date()
+    if isinstance(value, date):
+        return value
+    if isinstance(value, str):
+        return date.fromisoformat(value)
+    return None
+
+
 def get_weekly_progress(db: Session, *, user_id: int) -> schemas.WeeklyProgressSummaryV2:
     today = datetime.now(timezone.utc).date()
     week_start, week_end = _week_bounds(today)
@@ -43,7 +53,10 @@ def get_weekly_progress(db: Session, *, user_id: int) -> schemas.WeeklyProgressS
     xingce_rows = db.execute(
         select(
             func.count(PracticeSessionAnswer.id).label("answered"),
-            func.sum(PracticeSessionAnswer.is_correct.cast(int)).label("correct"),
+            func.coalesce(
+                func.sum(case((PracticeSessionAnswer.is_correct.is_(True), 1), else_=0)),
+                0,
+            ).label("correct"),
         ).where(
             PracticeSessionAnswer.session.has(user_id=user_id),
             PracticeSessionAnswer.answered_at >= week_start_dt,
@@ -66,8 +79,9 @@ def get_weekly_progress(db: Session, *, user_id: int) -> schemas.WeeklyProgressS
     task_rows = db.execute(
         select(
             func.count(StudyPlanTask.id).label("total"),
-            func.sum(
-                (StudyPlanTask.status == "completed").cast(int)
+            func.coalesce(
+                func.sum(case((StudyPlanTask.status == "completed", 1), else_=0)),
+                0,
             ).label("completed"),
         ).where(
             StudyPlanTask.plan.has(user_id=user_id),
@@ -102,7 +116,9 @@ def _compute_streak(db: Session, *, user_id: int, today: date) -> int:
         .limit(180)
     ).all()
 
-    active_dates = {r for r in rows if r is not None}
+    active_dates = {
+        grouped_day for raw_day in rows if (grouped_day := _grouped_day(raw_day)) is not None
+    }
     streak = 0
     cursor = today
     while cursor in active_dates:
@@ -125,16 +141,22 @@ def get_accuracy_trend(
         select(
             func.date(PracticeSessionAnswer.answered_at).label("d"),
             func.count(PracticeSessionAnswer.id).label("answered"),
-            func.sum(PracticeSessionAnswer.is_correct.cast(int)).label("correct"),
+            func.coalesce(
+                func.sum(case((PracticeSessionAnswer.is_correct.is_(True), 1), else_=0)),
+                0,
+            ).label("correct"),
         ).where(
             PracticeSessionAnswer.session.has(user_id=user_id),
             PracticeSessionAnswer.answered_at >= start_dt,
         ).group_by(func.date(PracticeSessionAnswer.answered_at))
     ).all()
 
-    by_date: dict[date, tuple[int, int]] = {
-        r.d: (r.answered or 0, r.correct or 0) for r in rows if r.d is not None
-    }
+    by_date: dict[date, tuple[int, int]] = {}
+    for row in rows:
+        grouped_day = _grouped_day(row.d)
+        if grouped_day is None:
+            continue
+        by_date[grouped_day] = (row.answered or 0, row.correct or 0)
 
     points: list[schemas.AccuracyTrendPointV2] = []
     for i in range(days):

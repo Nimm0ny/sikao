@@ -192,6 +192,33 @@ describe('NotesHome · view', () => {
     expect(screen.getByTestId('notes-home-retry')).toBeInTheDocument();
   });
 
+  it('error: notes 404 + stats 200 不得误报 empty state', async () => {
+    server.use(
+      http.get('/api/v2/notebook/notes', () =>
+        HttpResponse.json({ detail: 'not found' }, { status: 404 }),
+      ),
+      http.get('/api/v2/notebook/stats', () =>
+        HttpResponse.json({
+          total: 0,
+          dueCount: 0,
+          byType: {},
+          bySourceDomain: {},
+        }),
+      ),
+      http.get('/api/v2/notebook/reviews/due', () =>
+        HttpResponse.json({ items: [], nextCursor: null }),
+      ),
+      http.get('/api/v2/exam-events', () =>
+        HttpResponse.json({ items: [] }),
+      ),
+    );
+    renderView();
+    await waitFor(() =>
+      expect(screen.getByTestId('notes-home-error')).toBeInTheDocument(),
+    );
+    expect(screen.queryByTestId('notes-home-empty-cta')).not.toBeInTheDocument();
+  });
+
   it('empty: total=0 + 空 notes → 显 empty state', async () => {
     server.use(
       http.get('/api/v2/notebook/notes', () =>
@@ -217,5 +244,105 @@ describe('NotesHome · view', () => {
       expect(screen.getByTestId('notes-home-view')).toBeInTheDocument(),
     );
     expect(screen.getByTestId('notes-home-empty-cta')).toBeInTheDocument();
+  });
+
+  it('notes items 非空但 stats.total=0 时仍显示列表', async () => {
+    server.use(
+      http.get('/api/v2/notebook/notes', () =>
+        HttpResponse.json({
+          items: [
+            {
+              id: 2,
+              type: 'reflect',
+              body: { text: '错位 total 不该吃掉列表' },
+              sourceKind: 'manual',
+              sourceRef: 'src-2',
+              sourceQuote: null,
+              sourceDomain: 'xingce',
+              title: 'note-2',
+              tags: [],
+              attachedTo: null,
+              visibility: 'self',
+              ease: 2.5,
+              reviewCount: 0,
+              reviewedAt: null,
+              nextReviewAt: null,
+              createdAt: '2026-05-12T00:00:00Z',
+              updatedAt: '2026-05-12T00:00:00Z',
+            },
+          ],
+          nextCursor: null,
+        }),
+      ),
+      http.get('/api/v2/notebook/stats', () =>
+        HttpResponse.json({
+          total: 0,
+          dueCount: 0,
+          byType: { reflect: 0 },
+          bySourceDomain: { xingce: 0 },
+        }),
+      ),
+      http.get('/api/v2/notebook/reviews/due', () =>
+        HttpResponse.json({ items: [], nextCursor: null }),
+      ),
+      http.get('/api/v2/exam-events', () =>
+        HttpResponse.json({ items: [] }),
+      ),
+    );
+    renderView();
+    await waitFor(() =>
+      expect(screen.getByTestId('notes-home-view')).toBeInTheDocument(),
+    );
+    expect(screen.getByText('错位 total 不该吃掉列表')).toBeInTheDocument();
+    expect(screen.queryByTestId('notes-home-empty-cta')).not.toBeInTheDocument();
+  });
+
+  it('stats 缺少子字段时不 crash', async () => {
+    server.use(
+      http.get('/api/v2/notebook/notes', () =>
+        HttpResponse.json({
+          items: [
+            {
+              id: 3,
+              type: 'quote',
+              body: { text: '缺 stats 子字段也要正常渲染' },
+              sourceKind: 'manual',
+              sourceRef: 'src-3',
+              sourceQuote: null,
+              sourceDomain: 'essay',
+              title: 'note-3',
+              tags: [],
+              attachedTo: null,
+              visibility: 'self',
+              ease: 2.5,
+              reviewCount: 0,
+              reviewedAt: null,
+              nextReviewAt: null,
+              createdAt: '2026-05-12T00:00:00Z',
+              updatedAt: '2026-05-12T00:00:00Z',
+            },
+          ],
+          nextCursor: null,
+        }),
+      ),
+      http.get('/api/v2/notebook/stats', () =>
+        HttpResponse.json({
+          total: 1,
+          dueCount: 0,
+        }),
+      ),
+      http.get('/api/v2/notebook/reviews/due', () =>
+        HttpResponse.json({ items: [], nextCursor: null }),
+      ),
+      http.get('/api/v2/exam-events', () =>
+        HttpResponse.json({ items: [] }),
+      ),
+    );
+    renderView();
+    await waitFor(() =>
+      expect(screen.getByTestId('notes-home-view')).toBeInTheDocument(),
+    );
+    expect(screen.getByText('缺 stats 子字段也要正常渲染')).toBeInTheDocument();
+    expect(screen.getByTestId('notes-home-toolbar')).toBeInTheDocument();
   });
 });

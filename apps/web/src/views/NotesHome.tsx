@@ -57,6 +57,18 @@ import {
   type TypeTabValue,
 } from '@/components/notes';
 import { AlertCircleIcon, RefreshIcon, NoteIcon } from '@sikao/ui/icons';
+import { NOTES_COPY } from '@/lib/ui-copy';
+
+function readCount(value: unknown): number {
+  return typeof value === 'number' ? value : 0;
+}
+
+function readCountMap(value: unknown): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null) {
+    return {};
+  }
+  return value as Record<string, unknown>;
+}
 
 export default function NotesHome(): ReactElement {
   const navigate = useNavigate();
@@ -110,7 +122,7 @@ export default function NotesHome(): ReactElement {
         className="p-4 md:p-8 max-w-7xl mx-auto"
         data-testid="notes-home-auth-fallback"
       >
-        <AuthFallbackEmptyState description="登录后即可查看你的笔记本." />
+        <AuthFallbackEmptyState description={NOTES_COPY.homeRequireLogin} />
       </div>
     );
   }
@@ -140,8 +152,9 @@ export default function NotesHome(): ReactElement {
     );
   }
 
-  // ── error: notesQuery + statsQuery 都 fail 时 ────────────────────────
-  if (notesQuery.isError && statsQuery.isError) {
+  // The notes list is the primary data source for this page. If it fails,
+  // do not fall through to stats-driven empty state.
+  if (notesQuery.isError) {
     return (
       <div
         className="p-4 md:p-8 max-w-7xl mx-auto"
@@ -150,8 +163,8 @@ export default function NotesHome(): ReactElement {
         <EmptyState
           tone="error"
           icon={<AlertCircleIcon className="w-8 h-8" />}
-          title="笔记本加载失败"
-          description="检查网络后重试."
+          title={NOTES_COPY.homeLoadFailedTitle}
+          description={NOTES_COPY.homeLoadFailedDesc}
           action={
             <Button
               variant="secondary"
@@ -163,7 +176,7 @@ export default function NotesHome(): ReactElement {
               data-testid="notes-home-retry"
             >
               <RefreshIcon className="w-4 h-4 mr-2" />
-              重试
+              {NOTES_COPY.homeRetry}
             </Button>
           }
         />
@@ -185,19 +198,22 @@ export default function NotesHome(): ReactElement {
     }
     return b.createdAt.localeCompare(a.createdAt);
   });
+  const searchTerm = search.trim().toLowerCase();
   // 客户端 search filter (BE 暂未提供 q 参数, P0 简化)
-  const filteredNotes = search.trim().length === 0
+  const filteredNotes = searchTerm === ''
     ? sortedNotes
     : sortedNotes.filter((n) => {
-        const lc = search.trim().toLowerCase();
         return (
-          n.title.toLowerCase().includes(lc) ||
-          n.sourceRef.toLowerCase().includes(lc) ||
-          n.tags.some((t) => t.toLowerCase().includes(lc))
+          n.title.toLowerCase().includes(searchTerm) ||
+          n.sourceRef.toLowerCase().includes(searchTerm) ||
+          n.tags.some((t) => t.toLowerCase().includes(searchTerm))
         );
       });
 
   const stats = statsQuery.data;
+  const statsTotal = Math.max(readCount(stats?.total), allNotes.length);
+  const statsByType = readCountMap(stats?.byType);
+  const statsBySourceDomain = readCountMap(stats?.bySourceDomain);
   // Wave 4 X2 verify P1: defensive — items 非 array (mock empty / 502 partial)
   // → 下游 .map crash. Array.isArray guard.
   const dueNotes = Array.isArray(dueQuery.data?.items) ? dueQuery.data.items : [];
@@ -205,24 +221,24 @@ export default function NotesHome(): ReactElement {
   // counts for TypeTabs (走 stats by_type), 'all' = total.
   const typeCounts: Partial<Record<NoteType | 'all', number>> = stats
     ? {
-        all: stats.total,
-        quote: stats.byType.quote ?? 0,
-        method: stats.byType.method ?? 0,
-        reflect: stats.byType.reflect ?? 0,
-        material: stats.byType.material ?? 0,
+        all: statsTotal,
+        quote: readCount(statsByType.quote),
+        method: readCount(statsByType.method),
+        reflect: readCount(statsByType.reflect),
+        material: readCount(statsByType.material),
       }
-    : { all: 0 };
+    : { all: allNotes.length };
 
   const sourceCounts = stats
     ? {
-        all: stats.total,
-        xingce: stats.bySourceDomain.xingce ?? 0,
-        essay: stats.bySourceDomain.essay ?? 0,
+        all: statsTotal,
+        xingce: readCount(statsBySourceDomain.xingce),
+        essay: readCount(statsBySourceDomain.essay),
       }
-    : { all: 0, xingce: 0, essay: 0 };
+    : { all: allNotes.length, xingce: 0, essay: 0 };
 
   // empty: 后端 total=0 + 任何 filter 下都 0 笔记
-  const isEmpty = stats?.total === 0;
+  const isEmpty = allNotes.length === 0 && statsTotal === 0;
 
   const handleCapture = (input: CaptureInput): void => {
     createMut.mutate(
@@ -230,7 +246,7 @@ export default function NotesHome(): ReactElement {
         type: input.type,
         body: { text: input.text },
         sourceKind: 'manual',
-        sourceRef: '快速捕获',
+        sourceRef: NOTES_COPY.homeQuickCaptureSourceRef,
         sourceDomain: input.sourceDomain,
         title: input.text.slice(0, 40),
         tags: [],
@@ -238,11 +254,17 @@ export default function NotesHome(): ReactElement {
       },
       {
         onSuccess: () => {
-          toast.info('已添加', '可在编辑器内继续完善');
+          toast.info(
+            NOTES_COPY.homeCreateSuccessTitle,
+            NOTES_COPY.homeCreatedHint,
+          );
         },
         onError: (err) => {
           logger.error('notes.capture.failed', { err: String(err) });
-          toast.error('添加失败', '检查网络后重试');
+          toast.error(
+            NOTES_COPY.homeCreateFailedTitle,
+            NOTES_COPY.homeCreateRetry,
+          );
         },
       },
     );
@@ -254,7 +276,10 @@ export default function NotesHome(): ReactElement {
       {
         onError: (err) => {
           logger.error('notes.review.failed', { err: String(err) });
-          toast.error('评分失败', '检查网络后重试');
+          toast.error(
+            NOTES_COPY.homeReviewFailedTitle,
+            NOTES_COPY.homeReviewRetry,
+          );
         },
       },
     );
@@ -266,16 +291,16 @@ export default function NotesHome(): ReactElement {
       data-testid="notes-home-view"
     >
       <PageHeader
-        eyebrow="Notebook · 思考"
-        title="笔记本"
-        subtitle="跨领域单池, 行测 + 申论统一收录. 复习走间隔重复算法, 一日 5 张, 跨域混合."
+        eyebrow={NOTES_COPY.homeEyebrow}
+        title={NOTES_COPY.homeTitle}
+        subtitle={NOTES_COPY.homeSubtitle}
         actions={
           <Button
             variant="secondary"
             onClick={() => navigate('/notes/new')}
             data-testid="notes-home-new-cta"
           >
-            新建笔记
+            {NOTES_COPY.homeNewCta}
           </Button>
         }
       />
@@ -309,23 +334,23 @@ export default function NotesHome(): ReactElement {
           {isEmpty ? (
             <EmptyState
               icon={<NoteIcon className="w-8 h-8" />}
-              title="还没有笔记"
-              description="从顶部捕获条快速添加, 或新建笔记开始整理."
+              title={NOTES_COPY.homeEmpty}
+              description={`${NOTES_COPY.homeEmptyHint1}${NOTES_COPY.homeEmptyHint2}`}
               action={
                 <Button
                   variant="primary"
                   onClick={() => navigate('/notes/new')}
                   data-testid="notes-home-empty-cta"
                 >
-                  新建笔记
+                  {NOTES_COPY.homeNewCta}
                 </Button>
               }
             />
           ) : filteredNotes.length === 0 ? (
             <EmptyState
               icon={<NoteIcon className="w-8 h-8" />}
-              title="没有符合筛选的笔记"
-              description="换个筛选条件试试."
+              title={NOTES_COPY.homeFilteredEmpty}
+              description={NOTES_COPY.homeFilteredEmptyHint}
             />
           ) : (
             <>
@@ -356,7 +381,7 @@ export default function NotesHome(): ReactElement {
               ) : (
                 filteredNotes.length > 0 ? (
                   <p className="mt-5 py-3 text-center font-mono text-tiny tracking-wider uppercase text-ink-4">
-                    已加载全部 · 共 {filteredNotes.length} 条
+                    {NOTES_COPY.homeLoadedAllCount(filteredNotes.length)}
                   </p>
                 ) : null
               )}
@@ -372,7 +397,10 @@ export default function NotesHome(): ReactElement {
             notes={dueNotes}
             onSubmitReview={handleReview}
             onSkip={() => {
-              toast.info('已跳过', '稍后会再次出现');
+              toast.info(
+                NOTES_COPY.homeSkipTitle,
+                NOTES_COPY.homeReviewLater,
+              );
             }}
             isSubmitting={reviewMut.isPending}
             testId="notes-home-review-stack"
@@ -382,7 +410,12 @@ export default function NotesHome(): ReactElement {
             highFreqQuoteCount={typeCounts.quote ?? 0}
             methodCardCount={typeCounts.method ?? 0}
             dailySuggestion={5}
-            onStart={() => toast.info('冲刺池', 'D-30 内自动激活')}
+            onStart={() =>
+              toast.info(
+                NOTES_COPY.homeSprintToastTitle,
+                `D-30 ${NOTES_COPY.homeReviewActive}`,
+              )
+            }
             testId="notes-home-sprint"
           />
         </aside>

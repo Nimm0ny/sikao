@@ -10,6 +10,7 @@ import type {
   StudyPlanResponse,
   StudyPlanHistoryItemV2,
 } from '@sikao/api-client/types/study-plan';
+import { PLAN_COPY } from '@/lib/ui-copy';
 
 // 周显示规则: today + 过去 4 周 + 未来 0 周 (PR0 不预测未来; future 周从 history
 // slim 拉到再渲, 滚到底 fetchNextPage 加载更多). 一次最多渲 5 周连续.
@@ -191,15 +192,15 @@ export function mapTodayPlanToItems(plan: StudyPlanResponse): PlanDayProps['task
 
 export function pickAssistantNarrative(today: StudyPlanResponse | undefined): string {
   if (today == null || today.tasks.length === 0) {
-    return '今天没安排具体任务，给自己一段空白时间，回看一下上周三道错的题吧。';
+    return PLAN_COPY.planNarrativeNoTasks;
   }
   const completed = today.tasks.filter((t) => t.status === 'completed').length;
   const total = today.tasks.length;
   if (completed === 0) {
-    return `今天有 ${total} 个任务在等你。一道题、一段笔记、一次复盘 — 哪个都行，关键是开始。`;
+    return PLAN_COPY.planNarrativeNotStarted(total);
   }
   if (completed < total) {
-    return `今天已完成 ${completed} / ${total} 任务。最后这几个就在你的节奏里，没什么需要赶。`;
+    return PLAN_COPY.planNarrativeInProgress(completed, total);
   }
-  return '今天的计划已全部完成。剩下的时间留给自己 — 看看明天的安排，或者只是合上电脑，去散个步。';
+  return PLAN_COPY.planNarrativeDone;
 }

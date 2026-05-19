@@ -5,6 +5,7 @@ import { http, HttpResponse } from 'msw';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { server } from '@sikao/test-utils/server';
 import { useAuthStore } from '@sikao/domain/auth/useAuthStore';
+import { ERROR_COPY } from '@/lib/ui-copy';
 import Login from '../auth/Login';
 
 // useNavigate spy — patch react-router-dom 的 useNavigate, 让测试可断 navigate
@@ -48,6 +49,25 @@ describe('Login', () => {
     expect(screen.queryByTestId('login-form-error')).not.toBeInTheDocument();
   });
 
+  it('preserves the attempted path query when login receives a protected-route return target', async () => {
+    renderWithProviders(<Login />, {
+      initialEntries: [{ pathname: '/login', state: { from: '/dashboard?source=notes' } }],
+    });
+
+    fireEvent.change(screen.getByTestId('login-identifier'), {
+      target: { value: 'alice' },
+    });
+    fireEvent.change(screen.getByTestId('login-password'), {
+      target: { value: 'secret-pw-1' },
+    });
+    fireEvent.click(screen.getByTestId('login-submit'));
+
+    await waitFor(() => {
+      expect(useAuthStore.getState().user?.username).toBe('alice');
+    });
+    expect(navigateSpy).toHaveBeenCalledWith('/dashboard?source=notes', { replace: true });
+  });
+
   it('401 invalid credentials: form-error strip persists with credential copy', async () => {
     const user = userEvent.setup();
     renderWithProviders(<Login />, { initialEntries: ['/login'] });
@@ -57,7 +77,7 @@ describe('Login', () => {
     await user.click(screen.getByTestId('login-submit'));
 
     const errStrip = await screen.findByTestId('login-form-error');
-    expect(errStrip).toHaveTextContent('账号或密码错误');
+    expect(errStrip).toHaveTextContent(ERROR_COPY.loginCredential.title);
     expect(errStrip).toHaveAttribute('role', 'alert');
     expect(navigateSpy).not.toHaveBeenCalled();
     expect(useAuthStore.getState().user).toBeNull();
@@ -75,7 +95,7 @@ describe('Login', () => {
     await user.click(screen.getByTestId('login-submit'));
 
     const errStrip = await screen.findByTestId('login-form-error');
-    expect(errStrip).toHaveTextContent('登录失败');
+    expect(errStrip).toHaveTextContent(ERROR_COPY.loginNetwork.title);
     expect(navigateSpy).not.toHaveBeenCalled();
   });
 });

@@ -34,6 +34,7 @@ import { usePracticeStore } from '@sikao/domain/answer-session/usePracticeStore'
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
 import { cn } from '@sikao/shared-utils';
+import { WRONG_BOOK_COPY } from '@/lib/ui-copy';
 import type { PracticeSessionStartV2 } from '@sikao/api-client/types/api';
 
 function formatLastWrong(isoStr: string): string {
@@ -137,6 +138,12 @@ export default function WrongQuestionDetailView() {
   }
 
   const isGraduated = item.masteryLevel === 'mastered';
+  const smartReviewHref =
+    item.wrongCount >= 3 ? '/wrong-book?view=danger' : '/wrong-book/smart-review';
+  const smartReviewLabel =
+    item.wrongCount >= 3
+      ? WRONG_BOOK_COPY.detailGoToDangerList
+      : WRONG_BOOK_COPY.detailGoToSmartReview;
 
   return (
     <div
@@ -459,10 +466,10 @@ export default function WrongQuestionDetailView() {
             </div>
             <button
               type="button"
-              onClick={() => navigate('/wrong-book/smart-review')}
+              onClick={() => navigate(smartReviewHref)}
               className="block w-full text-center bg-white text-ink py-3 mt-4 font-mono text-xs uppercase tracking-wider font-medium hover:bg-paper-3 transition-colors duration-fast"
             >
-              险题专项 · 开始 →
+              {smartReviewLabel} →
             </button>
           </Card>
         </aside>

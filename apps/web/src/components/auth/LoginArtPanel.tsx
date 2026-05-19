@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { LogoMark } from '@sikao/ui/brand/LogoMark';
+import { AUTH_ART_COPY } from '@/lib/ui-copy';
 
 /**
  * LoginArtPanel — SIKAO Redesign Wave 1 · 01 Login art panel.
@@ -38,13 +39,13 @@ interface Props {
 export function LoginArtPanel({
   highlight = '思考',
   strike = '刷题',
-  footer = 'A QUIET COMPANION FOR CIVIL SERVICE EXAM · 国考 · 省考 · 选调',
+  footer = AUTH_ART_COPY.footer,
 }: Props) {
   return (
     <aside
       className="login-art-panel relative hidden lg:flex flex-col justify-between overflow-hidden bg-ink text-paper"
       data-testid="login-art-panel"
-      aria-label="思考品牌介绍"
+      aria-label={AUTH_ART_COPY.brandIntro}
       style={{ padding: 'clamp(40px, 4vw, 80px)' }}
     >
       {/* radial accent glow 左下 — 替代 hifi .login-art::after */}

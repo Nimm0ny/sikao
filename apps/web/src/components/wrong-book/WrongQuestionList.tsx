@@ -37,7 +37,7 @@ export function WrongQuestionList({
   batchRetryDisabledReason,
   onAsk,
 }: WrongQuestionListProps) {
-  if (items.length === 0) {
+  if (items.length === 0 && total === 0) {
     return (
       <EmptyState
         title="没有错题"
@@ -70,6 +70,14 @@ export function WrongQuestionList({
           <span className="text-xs text-ink-3">
             已选 <b className="text-ink tabular-nums">{batchSelected.size}</b> 题
           </span>
+          {batchRetryDisabledReason !== undefined ? (
+            <span
+              className="text-xs text-err"
+              data-testid="wrong-batch-retry-hint"
+            >
+              {batchRetryDisabledReason}
+            </span>
+          ) : null}
           <span className="ml-auto" />
           <Button
             variant="primary"

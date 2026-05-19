@@ -55,7 +55,7 @@ import {
   pickAssistantNarrative,
 } from '@/components/plan/_planHelpers';
 import { isAuthError } from '@sikao/shared-utils';
-import { ERROR_COPY } from '@/lib/ui-copy';
+import { ERROR_COPY, PLAN_COPY } from '@/lib/ui-copy';
 import { AlertCircleIcon, RefreshIcon, SubjectPlanIcon } from '@sikao/ui/icons';
 
 // ── view ────────────────────────────────────────────────────────────────────
@@ -123,7 +123,7 @@ export default function Plan(): ReactElement {
         className="p-4 md:p-8 max-w-5xl mx-auto"
         data-testid="plan-view-auth-fallback"
       >
-        <AuthFallbackEmptyState description="登录后即可查看你的学习计划。" />
+        <AuthFallbackEmptyState description={PLAN_COPY.planRequireLogin} />
       </div>
     );
   }
@@ -165,7 +165,7 @@ export default function Plan(): ReactElement {
               data-testid="plan-view-retry"
             >
               <RefreshIcon className="w-4 h-4 mr-2" />
-              重试
+              {PLAN_COPY.planRetry}
             </Button>
           }
         />
@@ -196,15 +196,15 @@ export default function Plan(): ReactElement {
       >
         <EmptyState
           icon={<SubjectPlanIcon className="w-8 h-8" />}
-          title="还没有学习计划"
-          description="去 Dashboard 启动今日推荐, 然后回来看完整周视图."
+          title={PLAN_COPY.planEmptyTitle}
+          description={PLAN_COPY.planEmptyDesc}
           action={
             <Button
               variant="secondary"
               onClick={() => navigate('/dashboard#today-plan')}
               data-testid="plan-view-empty-cta"
             >
-              回 Dashboard
+              {PLAN_COPY.planEmptyCta}
             </Button>
           }
         />
@@ -280,7 +280,7 @@ export default function Plan(): ReactElement {
           className="mt-[var(--sp-5)] py-3 text-center font-mono text-tiny uppercase tracking-wider text-[color:var(--ink-3)]"
           data-testid="plan-view-end"
         >
-          加载完成
+          {PLAN_COPY.planLoadedAll}
         </div>
       )}
 
@@ -289,18 +289,18 @@ export default function Plan(): ReactElement {
         actions={[
           {
             id: 'keep',
-            label: '不用，按原计划',
+            label: PLAN_COPY.planAssistantKeep,
             variant: 'secondary',
             onClick: () => {
-              toast.info('已记录你的偏好。');
+              toast.info(PLAN_COPY.planAssistantKeepToast);
             },
           },
           {
             id: 'adjust',
-            label: '好，调整一下',
+            label: PLAN_COPY.planAssistantAdjust,
             variant: 'primary',
             onClick: () => {
-              toast.info('计划调整功能即将上线。');
+              toast.info(PLAN_COPY.planAssistantAdjustToast);
             },
           },
         ]}

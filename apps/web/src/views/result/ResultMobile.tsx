@@ -1,53 +1,103 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useApplyExamTheme } from '@/styles/useThemeStore';
 import { useQuery } from '@tanstack/react-query';
 import { api } from '@sikao/api-client/request';
-import { Button, EmptyState } from '@sikao/ui/ui';
-import { AlertCircleIcon, RefreshIcon, ToolAiIcon } from '@sikao/ui/icons';
-import { ERROR_COPY, LLM_QA_COPY } from '@/lib/ui-copy';
-import { ResultPageSkeleton } from '@/components/result';
-import { AskDrawer } from '@/components/ask/AskDrawer';
-import {
-  buildWrongItems,
-  calcDurationSeconds,
-  pickTitle,
-} from '@/components/result/_resultHelpers';
 import type { PracticeSessionResultV2 } from '@sikao/api-client/types/api';
+import {
+  ActionNoteEditIcon,
+  AlertCircleIcon,
+  NavBackIcon,
+  RefreshIcon,
+  SubjectHomeIcon,
+  ToolAiIcon,
+  ToolEyeIcon,
+} from '@sikao/ui/icons';
+import { EmptyState } from '@sikao/ui/ui';
+import { AskDrawer } from '@/components/ask/AskDrawer';
+import { MvpButton, MvpCard, MvpPage } from '@/components/mvp';
+import {
+  ResultIconAction,
+  ResultPageSkeleton,
+} from '@/components/result';
+import {
+  buildResultOverview,
+  buildWrongItems,
+  pickTitle,
+  plainTextStem,
+} from '@/components/result/_resultHelpers';
+import { ERROR_COPY, LLM_QA_COPY, RESULT_COPY } from '@/lib/ui-copy';
+import { useApplyExamTheme } from '@/styles/useThemeStore';
 
-/**
- * ResultMobile — M4 · Result 手机版 (PR9 C3, 2026-05-13).
- *
- * SSOT: docs/design/Mobile and Tablet Pack New.html "M4 · Result"
- * + docs/design/handoff/Mobile and Tablet · Handoff.md §5.2.
- *
- * 复用 Result.tsx 同款 useQuery (queryKey=['practiceResult', sessionId]),
- * react-query cache 自动 dedupe; mobile / desktop 切换不会重复请求.
- *
- * M4 layout 关键 (Handoff §5.2):
- *   1. app-head (返回 + 标题 + 分享)
- *   2. result-hero 大数字居中
- *   3. 3 列 mstat (用时 / 已答 / 新错题)
- *   4. 错题速看 list (前 3 题, "全部 N 题 →" 跳 /wrong-book?paperCode=)
- *   5. "继续下一组" / "再来一次" CTA
- *
- * 跟 desktop ResultBody 区别: desktop 走 ResultTabNav + 4 anchor section
- * (overview / questions / timing / actions) 5+ 屏纵向; mobile 走简版聚焦"得分
- * + 速看错题", 完整解析 / 解析 / 用时分布 / 知识点聚焦 推 desktop / 跳详情.
- * 跟 Handoff §5.1 "list 类跳独立 page" 铁线对齐.
- *
- * Italic 政策: CJK 禁 italic. result-hero__big = serif 大数字 (D2c 例外) 不带
- * italic; result-hero__label / __delta 走 font-serif 默认 不带 italic.
- */
+export function ResultLoadingState() {
+  return (
+    <MvpPage title={RESULT_COPY.status.loadingTitle} hideHeading testId="result-loading">
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_340px]">
+        <MvpCard className="p-6">
+          <div className="h-4 w-28 animate-pulse rounded-card bg-paper-3" />
+          <div className="mt-5 h-20 w-40 animate-pulse rounded-card bg-paper-3" />
+          <div className="mt-8 grid gap-3 sm:grid-cols-3">
+            <div className="h-24 animate-pulse rounded-card bg-paper-2" />
+            <div className="h-24 animate-pulse rounded-card bg-paper-2" />
+            <div className="h-24 animate-pulse rounded-card bg-paper-2" />
+          </div>
+        </MvpCard>
+        <MvpCard className="p-6">
+          <div className="h-4 w-24 animate-pulse rounded-card bg-paper-3" />
+          <div className="mt-5 h-40 animate-pulse rounded-card bg-paper-2" />
+        </MvpCard>
+      </div>
+    </MvpPage>
+  );
+}
 
-function pluralizeWrong(count: number): string {
-  if (count === 0) return '全对!';
-  return `${count} 题`;
+export function ResultErrorState({
+  onRetry,
+  onBackHome,
+}: {
+  readonly onRetry: () => void;
+  readonly onBackHome: () => void;
+}) {
+  return (
+    <MvpPage title={ERROR_COPY.result.title} hideHeading testId="result-error-view">
+      <MvpCard className="mx-auto max-w-xl p-6" testId="result-error-card">
+        <div className="flex items-start gap-4" role="alert" data-tone="error">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-card bg-bad-bg text-err">
+            <AlertCircleIcon className="h-5 w-5" />
+          </span>
+          <div>
+            <h2 className="text-h3 font-bold text-ink">{ERROR_COPY.result.title}</h2>
+            <p className="mt-1 text-small text-ink-3">{ERROR_COPY.result.description}</p>
+            <div className="mt-5 flex flex-wrap items-center gap-3">
+              <MvpButton
+                variant="primary"
+                icon={<RefreshIcon className="h-4 w-4" />}
+                onClick={onRetry}
+                data-testid="result-retry"
+              >
+                {RESULT_COPY.status.retry}
+              </MvpButton>
+              <div className="flex items-center gap-2">
+                <ResultIconAction
+                  label={RESULT_COPY.status.home}
+                  onClick={onBackHome}
+                  testId="result-error-home"
+                >
+                  <SubjectHomeIcon className="h-4 w-4" />
+                </ResultIconAction>
+                <span className="text-small font-semibold text-ink-3">{RESULT_COPY.status.home}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </MvpCard>
+    </MvpPage>
+  );
 }
 
 function ResultMobileBody({
   result,
   onBackHome,
+  onCaptureNote,
   onRetry,
   onViewWrong,
   retryDisabled,
@@ -55,250 +105,244 @@ function ResultMobileBody({
 }: {
   readonly result: PracticeSessionResultV2;
   readonly onBackHome: () => void;
+  readonly onCaptureNote: () => void;
   readonly onRetry: () => void;
   readonly onViewWrong: () => void;
   readonly retryDisabled: boolean;
   readonly viewWrongDisabled: boolean;
 }) {
   const title = pickTitle(result);
-  const totalQuestionCount =
-    result.correctCount + result.incorrectCount + result.unansweredCount;
-
-  // 正确率 0-100, 设计稿铁线 round 整数; totalQuestionCount=0 走 fallback 0
-  // 避免除零 (虽然实际不会发生 — 一道题没答仍有题数, ?? null branch 在外).
-  const accuracyPct = useMemo(() => {
-    if (totalQuestionCount === 0) return 0;
-    return Math.round((result.correctCount / totalQuestionCount) * 100);
-  }, [result.correctCount, totalQuestionCount]);
-
-  const durationSeconds = useMemo(() => {
-    if (result.session === undefined) return undefined;
-    return calcDurationSeconds(
-      result.session.startedAt,
-      result.session.completedAt,
-    );
-  }, [result.session]);
-
-  const durationMin = durationSeconds !== undefined
-    ? Math.max(1, Math.round(durationSeconds / 60))
-    : null;
-
-  // M4 错题速看: 前 3 题 quick preview; 全部 N 题 →跳错题本 paperCode 过滤.
+  const overview = useMemo(() => buildResultOverview(result), [result]);
+  const durationMin =
+    overview.durationSeconds !== undefined
+      ? Math.max(1, Math.round(overview.durationSeconds / 60))
+      : null;
   const wrongItems = useMemo(() => buildWrongItems(result), [result]);
   const previewWrong = wrongItems.slice(0, 3);
-
-  // PR10 AskDrawer state — 错题速看行右侧 IconBtn 打开.
   const [askQid, setAskQid] = useState<string | null>(null);
   const openAsk = useCallback((qid: string): void => setAskQid(qid), []);
   const closeAsk = useCallback((): void => setAskQid(null), []);
 
+  const nextStep = useMemo(() => {
+    if (overview.outcome === 'all_correct') {
+      return {
+        title: RESULT_COPY.next.allCorrectTitle,
+        description: RESULT_COPY.next.allCorrectDescription,
+        actionLabel: RESULT_COPY.next.primaryRetry,
+        actionIcon: <RefreshIcon className="h-4 w-4" />,
+        onAction: onRetry,
+        disabled: retryDisabled,
+      };
+    }
+    return {
+      title:
+        overview.outcome === 'wrong_heavy'
+          ? RESULT_COPY.next.wrongHeavyTitle
+          : RESULT_COPY.next.wrongReviewTitle,
+      description:
+        overview.outcome === 'wrong_heavy'
+          ? RESULT_COPY.next.wrongHeavyDescription
+          : RESULT_COPY.next.wrongReviewDescription,
+      actionLabel: RESULT_COPY.next.primaryWrong,
+      actionIcon: <ToolEyeIcon className="h-4 w-4" />,
+      onAction: onViewWrong,
+      disabled: viewWrongDisabled,
+    };
+  }, [onRetry, onViewWrong, overview.outcome, retryDisabled, viewWrongDisabled]);
+
   return (
-    <div
-      className="m-pbody min-h-full pb-6"
-      data-testid="result-mobile-view"
-    >
-      {/* app-head — 返回 / 标题 / placeholder 占右 */}
+    <div className="m-pbody min-h-full pb-6" data-testid="result-mobile-view">
       <header className="m-app-head">
         <button
           type="button"
           className="m-app-head__icon-btn"
-          aria-label="返回首页"
+          aria-label={RESULT_COPY.status.homeMobile}
           onClick={onBackHome}
         >
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
-            <path d="M15 5l-8 7 8 7" />
-          </svg>
+          <NavBackIcon size={20} />
         </button>
-        <div className="min-w-0 text-center flex-1 px-2">
-          <p className="m-app-head__sub m-0 leading-tight">本次练习</p>
+        <div className="min-w-0 flex-1 px-2 text-center">
+          <p className="m-app-head__sub m-0 leading-tight">{RESULT_COPY.header.mobileEyebrow}</p>
           <h1 className="m-app-head__title truncate" title={title}>
             {title}
           </h1>
         </div>
-        {/* 占位 32px — 居中对齐左侧返回 (设计稿 M4 头部 3 槽) */}
         <span className="m-app-head__icon-btn" aria-hidden="true" />
       </header>
 
-      {/* hero 大数字 */}
       <section
         className="result-hero"
         data-testid="result-mobile-hero"
-        aria-label="本次正确率"
+        aria-label={RESULT_COPY.hero.accuracyLabel}
       >
-        <div className="result-hero__label">本次正确率</div>
+        <div className="result-hero__label">{RESULT_COPY.hero.accuracyLabel}</div>
         <div className="result-hero__big">
-          {accuracyPct}
+          {overview.accuracyPct}
           <span className="result-hero__big-unit">%</span>
         </div>
-        <div
-          className="result-hero__delta"
-          style={{ color: 'var(--ink-3)' }}
-        >
-          得分 {result.score}
+        <div className="result-hero__delta text-ink-3">
+          {RESULT_COPY.hero.scorePrefix} {result.score}
         </div>
       </section>
 
-      {/* mstat 三联 — 用时 / 已答 / 新错题 */}
       <section
         className="mstat-row"
         data-testid="result-mobile-mstat"
         aria-label="本次练习统计"
       >
         <div className="mstat">
-          <div className="mstat__label">用时</div>
+          <div className="mstat__label">{RESULT_COPY.metrics.duration}</div>
           <div className="mstat__value">
-            {durationMin !== null ? durationMin : '—'}
+            {durationMin !== null ? durationMin : RESULT_COPY.metrics.emptyDelta}
             {durationMin !== null ? (
-              <span className="mstat__unit">分</span>
+              <span className="mstat__unit">{RESULT_COPY.metrics.durationUnit}</span>
             ) : null}
           </div>
-          <div className="mstat__delta mstat__delta--flat">—</div>
+          <div className="mstat__delta mstat__delta--flat">{RESULT_COPY.metrics.emptyDelta}</div>
         </div>
         <div className="mstat">
-          <div className="mstat__label">已答</div>
+          <div className="mstat__label">{RESULT_COPY.metrics.answered}</div>
           <div className="mstat__value">
-            {result.correctCount + result.incorrectCount}
+            {overview.answeredCount}
             <span className="mstat__unit">题</span>
           </div>
           <div className="mstat__delta mstat__delta--flat">
-            共 {totalQuestionCount}
+            {RESULT_COPY.metrics.answeredPrefix} {overview.totalQuestionCount}
           </div>
         </div>
         <div className="mstat">
-          <div className="mstat__label">新错题</div>
-          <div
-            className="mstat__value"
-            style={{
-              color:
-                result.incorrectCount > 0 ? 'var(--err)' : 'var(--ink-1)',
-            }}
-          >
+          <div className="mstat__label">{RESULT_COPY.metrics.newWrong}</div>
+          <div className={`mstat__value ${result.incorrectCount > 0 ? 'text-err' : 'text-ink'}`}>
             {result.incorrectCount}
             <span className="mstat__unit">题</span>
           </div>
           <div className="mstat__delta mstat__delta--flat">
-            {result.incorrectCount > 0 ? '已入册' : '—'}
+            {result.incorrectCount > 0
+              ? RESULT_COPY.metrics.addedToBook
+              : RESULT_COPY.metrics.emptyDelta}
           </div>
         </div>
       </section>
 
-      {/* 错题速看 — 前 3 + 全部跳 wrong-book */}
       {wrongItems.length > 0 ? (
         <>
           <div className="m-section-head" data-testid="result-mobile-wrong-head">
-            <h2>错题速看</h2>
-            <button
-              type="button"
-              className="m-section-head__more bg-transparent border-none cursor-pointer"
+            <div>
+              <h2>{RESULT_COPY.mobile.wrongTitle}</h2>
+              <p className="mt-1 text-tiny font-semibold text-ink-3">
+                {RESULT_COPY.mobile.viewAll(wrongItems.length)}
+              </p>
+            </div>
+            <ResultIconAction
+              label={RESULT_COPY.actionsViewWrong}
               onClick={onViewWrong}
               disabled={viewWrongDisabled}
-              data-testid="result-mobile-view-all"
+              size="md"
+              testId="result-mobile-view-all"
             >
-              全部 {pluralizeWrong(wrongItems.length)} →
-            </button>
+              <ToolEyeIcon className="h-4 w-4" />
+            </ResultIconAction>
           </div>
-          <section
-            className="m-card"
-            style={{ padding: '6px 14px' }}
-            data-testid="result-mobile-wrong-list"
-          >
+          <section className="m-card px-4 py-2" data-testid="result-mobile-wrong-list">
             {previewWrong.map((item) => {
               const qid = String(item.question.questionId);
               return (
-                // PR10: row 拆 click 区 + ask 区. 主体 button 跳列表, 右侧 ask
-                // IconBtn stopPropagation 打开 AskDrawer (不嵌套 button — 用
-                // div+role 包外, IconBtn 单独是 <button>).
                 <div
                   key={qid}
-                  className="m-list-row flex items-center gap-2"
+                  className="m-list-row flex items-start gap-3"
                   data-testid={`result-mobile-wrong-${item.questionNo}`}
                 >
-                  <button
-                    type="button"
-                    className="flex-1 min-w-0 flex items-center gap-3 bg-transparent border-none text-left p-0 cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
-                    onClick={onViewWrong}
-                    disabled={viewWrongDisabled}
-                    aria-label={`查看错题 ${item.questionNo}`}
-                  >
-                    <div className="min-w-0 flex-1">
-                      <div className="m-list-row__title truncate">
-                        {item.questionNo} ·{' '}
-                        {String(item.question.content.stem)
-                          .replace(/<[^>]+>/g, '')
-                          .slice(0, 30)}
-                      </div>
-                      <div className="m-list-row__meta">
-                        你选 <b style={{ color: 'var(--err)' }}>
-                          {item.userKeys.join('')}
-                        </b>{' '}
-                        · 正解{' '}
-                        <b style={{ color: 'var(--ok)' }}>
-                          {item.correctKeys.join('')}
-                        </b>
-                      </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="m-list-row__title truncate">
+                      {item.questionNo} 路 {plainTextStem(String(item.question.content.stem)).slice(0, 30)}
                     </div>
+                    <div className="m-list-row__meta">
+                      {RESULT_COPY.mobile.youChose}{' '}
+                      <b className="text-err">{item.userKeys.join('')}</b> 路{' '}
+                      {RESULT_COPY.mobile.correctAnswer}{' '}
+                      <b className="text-ok">{item.correctKeys.join('')}</b>
+                    </div>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
                     <span className="m-list-row__right m-list-row__right--err">
-                      ✗
+                      {RESULT_COPY.mobile.wrongMark}
                     </span>
-                  </button>
-                  <button
-                    type="button"
-                    aria-label={`${LLM_QA_COPY.askButton} · 第 ${item.questionNo} 题`}
-                    onClick={() => openAsk(qid)}
-                    data-testid={`result-mobile-ask-${item.questionNo}`}
-                    className="inline-flex items-center justify-center w-10 h-10 rounded-tiny bg-transparent border border-line text-ink-3 hover:bg-surface-alt hover:text-ink transition-colors duration-fast focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
-                  >
-                    <ToolAiIcon size={18} />
-                  </button>
+                    <ResultIconAction
+                      label={RESULT_COPY.mobile.viewWrongAria(item.questionNo)}
+                      onClick={onViewWrong}
+                      disabled={viewWrongDisabled}
+                      size="md"
+                      testId={`result-mobile-view-wrong-${item.questionNo}`}
+                    >
+                      <ToolEyeIcon className="h-4 w-4" />
+                    </ResultIconAction>
+                    <ResultIconAction
+                      label={RESULT_COPY.mobile.askAria(LLM_QA_COPY.askButton, item.questionNo)}
+                      onClick={() => openAsk(qid)}
+                      size="md"
+                      testId={`result-mobile-ask-${item.questionNo}`}
+                    >
+                      <ToolAiIcon className="h-4 w-4" />
+                    </ResultIconAction>
+                  </div>
                 </div>
               );
             })}
           </section>
         </>
       ) : (
-        <section
-          className="m-card"
-          data-testid="result-mobile-no-wrong"
-        >
-          <p className="text-sm text-ink-3 m-0">
-            本次全对 — 完美一次。
-          </p>
+        <section className="m-card" data-testid="result-mobile-no-wrong">
+          <p className="m-0 text-sm text-ink-3">{RESULT_COPY.mobile.noWrong}</p>
         </section>
       )}
 
-      {/* CTA — 再来一次 + 看本套错题 (单 row, ink-first 主按钮) */}
-      <div className="flex gap-2 mt-auto pt-4">
-        <button
-          type="button"
-          className="m-btn-pill"
-          style={{
-            flex: 1,
-            background: 'var(--ink-1)',
-            color: 'var(--paper-1)',
-            minHeight: 44,
-          }}
-          onClick={onRetry}
-          disabled={retryDisabled}
-          data-testid="result-mobile-retry"
-        >
-          再来一次
-        </button>
-        <button
-          type="button"
-          className="m-btn-pill"
-          style={{
-            flex: 1,
-            background: 'var(--paper-1)',
-            color: 'var(--ink-1)',
-            border: '1px solid var(--ink-2)',
-            minHeight: 44,
-          }}
-          onClick={onBackHome}
-          data-testid="result-mobile-home"
-        >
-          回首页
-        </button>
-      </div>
+      <section
+        className="mt-4 rounded-card border border-line bg-paper-2 p-4"
+        data-testid={RESULT_COPY.mobile.nextCardTestId}
+      >
+        <p className="text-tiny font-semibold uppercase tracking-eyebrow text-ink-3">
+          {RESULT_COPY.next.eyebrow}
+        </p>
+        <h2 className="mt-2 text-h3 font-bold text-ink">{nextStep.title}</h2>
+        <p className="mt-2 text-small leading-6 text-ink-3">{nextStep.description}</p>
+        <div className="mt-4">
+          <MvpButton
+            variant="primary"
+            className="w-full"
+            icon={nextStep.actionIcon}
+            onClick={nextStep.onAction}
+            disabled={nextStep.disabled}
+            data-testid={RESULT_COPY.mobile.primaryActionTestId}
+          >
+            {nextStep.actionLabel}
+          </MvpButton>
+        </div>
+        <div className="mt-4 flex items-start justify-center gap-8">
+          <div className="flex flex-col items-center gap-2">
+            <ResultIconAction
+              label={RESULT_COPY.next.note}
+              onClick={onCaptureNote}
+              size="md"
+              testId={RESULT_COPY.mobile.notesActionTestId}
+            >
+              <ActionNoteEditIcon className="h-4 w-4" />
+            </ResultIconAction>
+            <span className="text-tiny font-semibold text-ink-3">{RESULT_COPY.next.note}</span>
+          </div>
+          <div className="flex flex-col items-center gap-2">
+            <ResultIconAction
+              label={RESULT_COPY.status.homeMobile}
+              onClick={onBackHome}
+              size="md"
+              testId="result-mobile-home"
+            >
+              <SubjectHomeIcon className="h-4 w-4" />
+            </ResultIconAction>
+            <span className="text-tiny font-semibold text-ink-3">{RESULT_COPY.status.homeMobile}</span>
+          </div>
+        </div>
+      </section>
+
       {askQid !== null ? (
         <AskDrawer open={true} onClose={closeAsk} questionId={askQid} />
       ) : null}
@@ -320,6 +364,7 @@ export function ResultMobile() {
   });
 
   const onBackHome = useCallback(() => navigate('/app'), [navigate]);
+  const onCaptureNote = useCallback(() => navigate('/notes'), [navigate]);
   const paperCode = query.data?.session?.paperCode ?? null;
   const onRetry = useCallback(() => {
     if (paperCode === null) return;
@@ -333,41 +378,46 @@ export function ResultMobile() {
   if (query.isLoading) return <ResultPageSkeleton />;
   if (query.isError || query.data === undefined) {
     return (
-      <div className="p-4 max-w-3xl mx-auto">
+      <div className="mx-auto max-w-3xl p-4">
         <EmptyState
           tone="error"
           icon={<AlertCircleIcon className="w-8 h-8" />}
           title={ERROR_COPY.result.title}
           description={ERROR_COPY.result.description}
           action={
-            <div className="flex gap-3">
-              <Button
-                variant="secondary"
+            <div className="flex flex-wrap items-center gap-3">
+              <MvpButton
+                variant="primary"
+                icon={<RefreshIcon className="h-4 w-4" />}
                 onClick={() => {
                   void query.refetch();
                 }}
                 data-testid="result-mobile-retry-fetch"
               >
-                <RefreshIcon className="w-4 h-4 mr-2" />
-                重试
-              </Button>
-              <Button
-                variant="quiet"
-                onClick={onBackHome}
-                data-testid="result-mobile-error-home"
-              >
-                返回首页
-              </Button>
+                {RESULT_COPY.status.retry}
+              </MvpButton>
+              <div className="flex items-center gap-2">
+                <ResultIconAction
+                  label={RESULT_COPY.status.homeMobile}
+                  onClick={onBackHome}
+                  testId="result-mobile-error-home"
+                >
+                  <SubjectHomeIcon className="h-4 w-4" />
+                </ResultIconAction>
+                <span className="text-small font-semibold text-ink-3">{RESULT_COPY.status.homeMobile}</span>
+              </div>
             </div>
           }
         />
       </div>
     );
   }
+
   return (
     <ResultMobileBody
       result={query.data}
       onBackHome={onBackHome}
+      onCaptureNote={onCaptureNote}
       onRetry={onRetry}
       onViewWrong={onViewWrong}
       retryDisabled={paperCode === null}

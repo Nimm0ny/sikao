@@ -1,4 +1,5 @@
 import type { AuthUserSummary } from '@sikao/domain/auth/useAuthStore';
+import { PROFILE_COPY } from '@/lib/ui-copy';
 
 // ProfileSidePanel · SIKAO redesign Wave 1 · view 08 hifi 左侧栏.
 //
@@ -80,11 +81,11 @@ function formatStreak(d: number | null): string {
 }
 
 export function ProfileSidePanel({ user, stats, memberSince }: ProfileSidePanelProps) {
-  const displayName = user.displayName ?? user.username ?? '匿名';
+  const displayName = user.displayName ?? user.username ?? PROFILE_COPY.anonymousDisplayName;
   const firstChar = displayName[0] ?? '?';
-  const handle = user.username ?? 'guest';
+  const handle = user.username ?? PROFILE_COPY.guestHandle;
   const meta = memberSince !== null
-    ? `@${handle} · 加入于 ${memberSince}`
+    ? `@${handle} · ${PROFILE_COPY.memberSincePrefix} ${memberSince}`
     : `@${handle}`;
 
   return (
@@ -108,27 +109,27 @@ export function ProfileSidePanel({ user, stats, memberSince }: ProfileSidePanelP
 
       <div className="mt-6 border-t border-line">
         <StatRow
-          label="连续打卡"
+          label={PROFILE_COPY.statStreakLabel}
           value={formatStreak(stats.currentStreakDays)}
           testId="profile-stat-streak"
         />
         <StatRow
-          label="累计时长"
+          label={PROFILE_COPY.statHoursLabel}
           value={formatHours(stats.cumulativeHours)}
           testId="profile-stat-hours"
         />
         <StatRow
-          label="累计题量"
+          label={PROFILE_COPY.statAnsweredLabel}
           value={formatNumber(stats.totalAnswered)}
           testId="profile-stat-answered"
         />
         <StatRow
-          label="错题"
+          label={PROFILE_COPY.statWrongLabel}
           value={formatNumber(stats.totalWrongQuestions)}
           testId="profile-stat-wrong"
         />
         <StatRow
-          label="当前会员"
+          label={PROFILE_COPY.statMembershipLabel}
           value={stats.membershipTier ?? '—'}
           variant="serif"
           testId="profile-stat-tier"

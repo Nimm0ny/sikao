@@ -30,6 +30,21 @@ import {
   type WrongReasonCode,
 } from './wrongReason';
 
+export type ResultOutcome = 'all_correct' | 'wrong_review' | 'wrong_heavy';
+
+export interface ResultOverview {
+  readonly totalQuestionCount: number;
+  readonly answeredCount: number;
+  readonly accuracyPct: number;
+  readonly durationSeconds: number | undefined;
+  readonly outcome: ResultOutcome;
+}
+
+export interface ResultWeakRow {
+  readonly label: string;
+  readonly accuracy: number;
+}
+
 interface PracticeSessionAnswerWithDiagnosis extends PracticeSessionAnswerV2 {
   readonly wrongReasonCode?: WrongReasonCode | null;
   readonly wrongReasonSource?: 'ai' | 'user' | null;
@@ -37,6 +52,51 @@ interface PracticeSessionAnswerWithDiagnosis extends PracticeSessionAnswerV2 {
 
 export function pickTitle(result: PracticeSessionResultV2): string {
   return result.session?.paperName ?? '练习结果';
+}
+
+export function buildResultOverview(
+  result: PracticeSessionResultV2,
+): ResultOverview {
+  const totalQuestionCount =
+    result.totalQuestions > 0
+      ? result.totalQuestions
+      : result.correctCount + result.incorrectCount + result.unansweredCount;
+  const answeredCount = result.correctCount + result.incorrectCount;
+  const accuracyPct =
+    totalQuestionCount > 0
+      ? Math.round((result.correctCount / totalQuestionCount) * 100)
+      : 0;
+  const durationSeconds =
+    result.session === undefined
+      ? undefined
+      : calcDurationSecondsPure(
+          result.session.startedAt,
+          result.session.completedAt,
+        );
+
+  if (result.incorrectCount === 0) {
+    return {
+      totalQuestionCount,
+      answeredCount,
+      accuracyPct,
+      durationSeconds,
+      outcome: 'all_correct',
+    };
+  }
+
+  const wrongHeavyThreshold = Math.max(3, Math.ceil(totalQuestionCount * 0.2));
+  const outcome =
+    accuracyPct < 70 || result.incorrectCount >= wrongHeavyThreshold
+      ? 'wrong_heavy'
+      : 'wrong_review';
+
+  return {
+    totalQuestionCount,
+    answeredCount,
+    accuracyPct,
+    durationSeconds,
+    outcome,
+  };
 }
 
 export function classifyCell(
@@ -177,6 +237,34 @@ export function buildWrongItems(
       needsDiagnosisSync: answer?.wrongReasonCode == null,
     };
   }) as readonly WrongReviewItem[];
+}
+
+export function buildWeakRows(
+  result: PracticeSessionResultV2,
+): readonly ResultWeakRow[] {
+  const source =
+    result.subtypeSummaries?.length === 0 || result.subtypeSummaries === undefined
+      ? (result.subjectSummaries ?? [])
+      : result.subtypeSummaries;
+  return [...source]
+    .map((item) => ({
+      label:
+        'subtype' in item
+          ? `${item.subject ?? '综合'} · ${item.subtype}`
+          : item.subject ?? '综合',
+      accuracy: item.accuracyRate,
+    }))
+    .sort((a, b) => a.accuracy - b.accuracy)
+    .slice(0, 3);
+}
+
+export function formatDurationMinutes(seconds: number): string {
+  const minutes = Math.max(1, Math.round(seconds / 60));
+  return `${minutes} 分钟`;
+}
+
+export function plainTextStem(stem: string): string {
+  return stem.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
 }
 
 export function calcDurationSeconds(

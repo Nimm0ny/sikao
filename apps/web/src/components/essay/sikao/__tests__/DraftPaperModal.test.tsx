@@ -50,6 +50,11 @@ describe('DraftPaperModal', () => {
     expect(onClose).toHaveBeenCalledTimes(1);
   });
 
+  it('exposes an accessible label on the clear action', () => {
+    render(<DraftPaperModal open onClose={vi.fn()} />);
+    expect(screen.getByLabelText('清空')).toBe(screen.getByTestId('essay-draft-paper-clear'));
+  });
+
   it('switches to draw mode and clears the canvas context', () => {
     const clearRect = vi.fn();
     const canvasContext = {
