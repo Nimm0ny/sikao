@@ -1,5 +1,6 @@
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { cn } from '@sikao/shared-utils';
 import {
   BarChart3,
   BookOpen,
@@ -22,10 +23,10 @@ export function MvpCard({
 }) {
   return (
     <section
-      className={[
-        'rounded-lg border border-[#E1E6F0] bg-white shadow-[0_8px_24px_rgba(17,24,39,0.06)]',
+      className={cn(
+        'rounded-card border border-line bg-paper text-ink shadow-card',
         className,
-      ].join(' ')}
+      )}
       data-testid={testId}
     >
       {children}
@@ -49,22 +50,22 @@ export function MvpButton({
   type = 'button',
   ...props
 }: MvpButtonProps) {
-  const variantClass =
-    variant === 'primary'
-      ? 'border-[#2563EB] bg-[#2563EB] text-white hover:bg-[#1D4ED8]'
-      : variant === 'secondary'
-        ? 'border-[#B8C4D8] bg-white text-[#111827] hover:bg-[#F7F8FB]'
-        : 'border-transparent bg-transparent text-[#2563EB] hover:bg-[#EFF6FF]';
+  const variantClass: Record<MvpButtonVariant, string> = {
+    primary: 'border-accent bg-accent text-white hover:border-accent-2 hover:bg-accent-2',
+    secondary: 'border-line-3 bg-paper text-ink hover:border-accent hover:bg-accent-50 hover:text-accent',
+    ghost: 'border-transparent bg-transparent text-accent hover:bg-accent-50',
+  };
+
   return (
     <button
       type={type}
-      className={[
-        'inline-flex min-h-10 items-center justify-center gap-2 rounded-lg border px-4 py-2 text-sm font-semibold transition-colors',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2',
+      className={cn(
+        'inline-flex min-h-10 items-center justify-center gap-2 rounded-tiny border px-4 py-2 text-body font-semibold transition-colors',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
         'disabled:cursor-not-allowed disabled:opacity-55',
-        variantClass,
+        variantClass[variant],
         className,
-      ].join(' ')}
+      )}
       {...props}
     >
       {icon ? <span className="inline-flex h-4 w-4 items-center justify-center">{icon}</span> : null}
@@ -89,13 +90,12 @@ export function MvpIconButton({
     <button
       type={type}
       aria-label={label}
-      title={label}
-      className={[
-        'inline-flex h-10 w-10 items-center justify-center rounded-lg border border-[#D7DFEC] bg-white text-[#4B5563] transition-colors',
-        'hover:bg-[#EFF6FF] hover:text-[#2563EB]',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#2563EB] focus-visible:ring-offset-2',
+      className={cn(
+        'inline-flex h-10 w-10 items-center justify-center rounded-tiny border border-line-2 bg-paper text-ink-3 transition-colors',
+        'hover:bg-accent-50 hover:text-accent',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2',
         className,
-      ].join(' ')}
+      )}
       {...props}
     >
       {children}
@@ -103,23 +103,24 @@ export function MvpIconButton({
   );
 }
 
+type MvpChipTone = 'default' | 'blue' | 'green' | 'amber';
+
 export function MvpChip({
   children,
   tone = 'default',
 }: {
   readonly children: ReactNode;
-  readonly tone?: 'default' | 'blue' | 'green' | 'amber';
+  readonly tone?: MvpChipTone;
 }) {
-  const toneClass =
-    tone === 'blue'
-      ? 'border-[#BFDBFE] bg-[#EFF6FF] text-[#1D4ED8]'
-      : tone === 'green'
-        ? 'border-[#BBF7D0] bg-[#F0FDF4] text-[#15803D]'
-        : tone === 'amber'
-          ? 'border-[#FDE68A] bg-[#FFFBEB] text-[#B45309]'
-          : 'border-[#E1E6F0] bg-[#F7F8FB] text-[#4B5563]';
+  const toneClass: Record<MvpChipTone, string> = {
+    default: 'border-line bg-paper-2 text-ink-3',
+    blue: 'border-accent bg-accent-50 text-accent',
+    green: 'border-ok bg-ok-bg text-ok',
+    amber: 'border-warn bg-warn-bg text-warn',
+  };
+
   return (
-    <span className={['inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold', toneClass].join(' ')}>
+    <span className={cn('inline-flex items-center rounded-pill border px-2.5 py-1 text-tiny font-semibold', toneClass[tone])}>
       {children}
     </span>
   );
@@ -142,11 +143,11 @@ export function MvpActionCard({
 }) {
   return (
     <MvpCard className="flex h-full flex-col p-5" testId={testId}>
-      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-lg bg-[#EFF6FF] text-[#2563EB]">
+      <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-card bg-accent-50 text-accent">
         {icon}
       </div>
-      <h3 className="text-base font-semibold text-[#111827]">{title}</h3>
-      <p className="mt-2 min-h-12 text-sm leading-6 text-[#4B5563]">{description}</p>
+      <h3 className="text-h3 font-semibold text-ink">{title}</h3>
+      <p className="mt-2 min-h-12 text-body leading-6 text-ink-3">{description}</p>
       <MvpButton variant="secondary" className="mt-auto w-full" onClick={onAction}>
         {actionLabel}
       </MvpButton>
@@ -162,27 +163,28 @@ export function MvpProgressRing({
   readonly label: string;
 }) {
   const safeValue = Math.max(0, Math.min(100, value));
-  const style = {
+  const style: CSSProperties & Record<'--mvp-progress', string> = {
     '--mvp-progress': `${safeValue}%`,
-  } as CSSProperties;
+  };
+
   return (
     <div className="flex items-center gap-3">
       <div
-        className="grid h-16 w-16 place-items-center rounded-full"
+        className="grid h-16 w-16 place-items-center rounded-pill"
         style={{
           ...style,
-          background: `conic-gradient(#2563EB var(--mvp-progress), #E5EAF3 0)`,
+          background: 'conic-gradient(var(--accent-1) var(--mvp-progress), var(--line-1) 0)',
         }}
         aria-label={`${label} ${safeValue}%`}
         role="img"
       >
-        <div className="grid h-12 w-12 place-items-center rounded-full bg-white text-sm font-bold text-[#111827]">
+        <div className="grid h-12 w-12 place-items-center rounded-pill bg-paper text-body font-bold text-ink">
           {safeValue}%
         </div>
       </div>
       <div>
-        <p className="text-sm font-semibold text-[#111827]">{label}</p>
-        <p className="text-xs text-[#4B5563]">已完成进度</p>
+        <p className="text-body font-semibold text-ink">{label}</p>
+        <p className="text-tiny text-ink-3">已完成进度</p>
       </div>
     </div>
   );
@@ -223,7 +225,7 @@ export function MvpPage({
   readonly hideHeading?: boolean;
 }) {
   return (
-    <div className="mx-auto w-full max-w-[1280px] px-4 py-5 md:px-8 md:py-6" data-testid={testId}>
+    <div className="mx-auto w-full max-w-7xl px-4 py-5 md:px-8 md:py-6" data-testid={testId}>
       {hideHeading ? (
         <>
           <h1 className="sr-only">{title}</h1>
@@ -233,10 +235,10 @@ export function MvpPage({
         <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
             {eyebrow ? (
-              <p className="mb-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#2563EB]">{eyebrow}</p>
+              <p className="mb-2 text-tiny font-semibold uppercase tracking-eyebrow text-accent">{eyebrow}</p>
             ) : null}
-            <h1 className="text-2xl font-bold tracking-normal text-[#111827] md:text-3xl">{title}</h1>
-            {subtitle ? <p className="mt-2 max-w-2xl text-sm leading-6 text-[#4B5563]">{subtitle}</p> : null}
+            <h1 className="text-h1 font-bold tracking-normal text-ink">{title}</h1>
+            {subtitle ? <p className="mt-2 max-w-2xl text-body leading-6 text-ink-3">{subtitle}</p> : null}
           </div>
           {action}
         </div>
@@ -267,14 +269,14 @@ function isActivePath(pathname: string, to: string): boolean {
 export function MvpShell() {
   const location = useLocation();
   return (
-    <div className="min-h-dvh bg-[#F7F8FB] text-[#111827]" data-testid="mvp-shell">
-      <header className="sticky top-0 z-30 border-b border-[#E1E6F0] bg-white/95 backdrop-blur">
-        <div className="mx-auto flex max-w-[1280px] items-center gap-4 px-4 py-3 md:px-8">
-          <NavLink to="/dashboard" className="flex items-center gap-2 text-[#111827]" data-testid="mvp-brand">
-            <span className="grid h-9 w-9 place-items-center rounded-lg bg-[#2563EB] text-white">
+    <div className="min-h-dvh bg-paper-2 text-ink" data-testid="mvp-shell">
+      <header className="sticky top-0 z-30 border-b border-line bg-paper/95 backdrop-blur">
+        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 md:px-8">
+          <NavLink to="/dashboard" className="flex items-center gap-2 text-ink" data-testid="mvp-brand">
+            <span className="grid h-9 w-9 place-items-center rounded-card bg-accent text-white">
               <BookOpen className="h-5 w-5" aria-hidden="true" />
             </span>
-            <span className="text-base font-bold">SIKAO</span>
+            <span className="text-body font-bold">SIKAO</span>
           </NavLink>
           <nav aria-label="主导航" className="ml-auto hidden items-center gap-1 lg:flex">
             {primaryNav.map((item) => {
@@ -285,10 +287,10 @@ export function MvpShell() {
                   key={item.to}
                   to={item.to}
                   data-testid={item.testId}
-                  className={[
-                    'inline-flex min-h-10 items-center gap-2 rounded-lg px-3 text-sm font-semibold transition-colors',
-                    active ? 'bg-[#EFF6FF] text-[#2563EB]' : 'text-[#4B5563] hover:bg-[#F7F8FB] hover:text-[#111827]',
-                  ].join(' ')}
+                  className={cn(
+                    'inline-flex min-h-10 items-center gap-2 rounded-tiny px-3 text-body font-semibold transition-colors',
+                    active ? 'bg-accent-50 text-accent' : 'text-ink-3 hover:bg-paper-2 hover:text-ink',
+                  )}
                 >
                   <Icon className="h-4 w-4" aria-hidden="true" />
                   <span>{item.label}</span>
@@ -303,7 +305,7 @@ export function MvpShell() {
       </main>
       <nav
         aria-label="移动主导航"
-        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[#E1E6F0] bg-white px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pt-2 lg:hidden"
+        className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-paper px-2 py-2 lg:hidden"
       >
         {primaryNav.slice(0, 5).map((item) => {
           const Icon = item.icon;
@@ -313,10 +315,10 @@ export function MvpShell() {
               key={item.to}
               to={item.to}
               data-testid={`${item.testId}-mobile`}
-              className={[
-                'flex min-h-12 flex-col items-center justify-center gap-1 rounded-lg text-[11px] font-semibold',
-                active ? 'bg-[#EFF6FF] text-[#2563EB]' : 'text-[#4B5563]',
-              ].join(' ')}
+              className={cn(
+                'flex min-h-12 flex-col items-center justify-center gap-1 rounded-tiny text-tiny font-semibold',
+                active ? 'bg-accent-50 text-accent' : 'text-ink-3',
+              )}
             >
               <Icon className="h-5 w-5" aria-hidden="true" />
               <span>{item.label}</span>

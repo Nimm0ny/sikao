@@ -1,7 +1,10 @@
 import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { delay, http, HttpResponse } from 'msw';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
+import { server } from '@/test-utils/server';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 import Dashboard from '../Dashboard';
 
 const navigateMock = vi.fn();
@@ -65,5 +68,98 @@ describe('Dashboard MVP', () => {
     expect(screen.getByTestId('dashboard-action-notes')).toBeInTheDocument();
     expect(screen.getByTestId('dashboard-action-plan')).toBeInTheDocument();
     expect(screen.getByTestId('dashboard-action-essay')).toBeInTheDocument();
+  });
+
+  it('shows the active loop stage and keeps one primary next action', async () => {
+    const { container } = renderWithProviders(<Dashboard />, { initialEntries: ['/dashboard'] });
+
+    expect(await screen.findByTestId('dashboard-loop-stage')).toHaveTextContent(
+      DASHBOARD_COPY.loop.currentLabel,
+    );
+    await screen.findByTestId('dashboard-main-start');
+    expect(screen.getByTestId('dashboard-loop-stage-active')).toHaveTextContent(
+      DASHBOARD_COPY.loop.stages.practice,
+    );
+    expect(container.querySelectorAll('[data-dashboard-role="primary-next-action"]')).toHaveLength(1);
+  });
+
+  it('renders loading state while the main plan query is pending', () => {
+    server.use(
+      http.get('/api/v2/study-plan/today', async () => {
+        await delay(1_000);
+        return HttpResponse.json(null);
+      }),
+    );
+
+    renderWithProviders(<Dashboard />, { initialEntries: ['/dashboard'] });
+
+    expect(screen.getByTestId('dashboard-main-task-loading')).toHaveTextContent(
+      DASHBOARD_COPY.status.loading,
+    );
+  });
+
+  it('renders actionable empty states instead of hiding empty CTAs', async () => {
+    server.use(
+      http.get('/api/v2/study-plan/today', () => HttpResponse.json(null)),
+      http.get('/api/v2/practice/last-session', () => HttpResponse.json(null)),
+      http.get('/api/v2/user-exams', () => HttpResponse.json({ exams: [], total: 0 })),
+      http.get('/api/v2/practice/wrong-questions/weakness', () =>
+        HttpResponse.json({ generatedAt: '2026-05-19T00:00:00Z', modules: [] }),
+      ),
+    );
+
+    renderWithProviders(<Dashboard />, { initialEntries: ['/dashboard'] });
+
+    expect(await screen.findByTestId('dashboard-main-task-empty')).toHaveTextContent(
+      DASHBOARD_COPY.main.emptyTitle,
+    );
+    expect(screen.getByTestId('dashboard-main-empty-practice')).toBeInTheDocument();
+    expect(screen.getByTestId('dashboard-recent-session-empty')).toHaveTextContent(
+      DASHBOARD_COPY.recent.empty,
+    );
+  });
+
+  it('renders retryable error state for failed dashboard data', async () => {
+    server.use(
+      http.get('/api/v2/study-plan/today', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    );
+
+    renderWithProviders(<Dashboard />, { initialEntries: ['/dashboard'] });
+
+    expect(await screen.findByTestId('dashboard-main-task-error')).toHaveTextContent(
+      DASHBOARD_COPY.status.error,
+    );
+    expect(screen.getByTestId('dashboard-main-task-retry')).toBeInTheDocument();
+  });
+
+  it('renders ai hint error instead of fake empty copy when weakness query fails', async () => {
+    server.use(
+      http.get('/api/v2/practice/wrong-questions/weakness', () =>
+        HttpResponse.json({ detail: 'boom' }, { status: 500 }),
+      ),
+    );
+
+    renderWithProviders(<Dashboard />, { initialEntries: ['/dashboard'] });
+
+    expect(await screen.findByTestId('dashboard-ai-hint-error')).toHaveTextContent(
+      DASHBOARD_COPY.status.error,
+    );
+  });
+
+  it('renders auth fallback when dashboard data returns 401', async () => {
+    server.use(
+      http.get('/api/v2/study-plan/today', () =>
+        HttpResponse.json({ detail: 'unauthorized' }, { status: 401 }),
+      ),
+    );
+
+    renderWithProviders(<Dashboard />, { initialEntries: ['/dashboard'] });
+
+    expect(await screen.findByTestId('dashboard-auth-fallback')).toHaveTextContent(
+      DASHBOARD_COPY.auth.title,
+    );
+    expect(screen.getByTestId('dashboard-auth-login')).toBeInTheDocument();
   });
 });

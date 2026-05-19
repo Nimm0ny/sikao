@@ -1,35 +1,141 @@
-// PracticeCenter (/practice/center) 文案 SSOT — PR16 (2026-05-13).
-//
-// 覆盖: views/PracticeCenter.tsx (顶层 hub: 行测/申论 tab + 2 大入口 card).
-// 调性: §1.3 不打鸡血, "图书馆隔壁桌同学" — 用一句话说清"做什么"+"为什么".
-//
-// 路由:
-//   /practice/center                      → PracticeCenter (本文案消费方)
-//   /practice/center/xingce/categories    → CategoryTree (复用现有 view)
-//   /practice/center/xingce/papers        → Papers (复用现有 view)
-//   /practice/center/essay/categories     → EssaySpecialty (复用现有 view)
-//   /practice/center/essay/papers         → EssayPapers (复用现有 view)
-//
-// 旧路由 /papers /xingce/specialty /essay/papers /essay/specialty 通过 router 层
-// redirect 自动转到上述新 canonical path. 老书签 / 外链 0 404.
-
 export const PRACTICE_CENTER_COPY = {
-  pageEyebrow: '02 · Practice / Center',
+  pageEyebrow: 'Practice / Center',
   pageTitle: '练习中心',
-  pageSubtitle: '挑科目, 再决定按章节专攻还是按整卷模考.',
-  subjects: {
-    xingce: '行测',
-    essay: '申论',
+  pageSubtitle: '先决定今天怎么练，再进入专项、套卷或错题复盘。',
+  auth: {
+    title: '登录状态已失效',
+    description: '重新登录后即可回到练习中心继续安排今天的训练。',
+    action: '前往登录',
   },
-  subjectsAriaLabel: '科目选择',
+  filterToggle: '筛选',
+  filterApply: '收起筛选',
+  filterSummaryPrefix: '当前偏向',
+  sections: {
+    entries: '练习入口',
+    support: '练习辅助',
+    focus: '练习焦点',
+  },
+  subjects: {
+    xingce: {
+      tab: '行测',
+      stateTitle: '今天先刷行测',
+      stateDescription: '优先按薄弱模块补短，再决定是否切到整卷。',
+      categoriesLabel: '言语 / 判断 / 数量 / 资料 / 常识',
+      papersLabel: '全真模拟 · 行测套卷',
+      focusEmpty: '还没有薄弱统计，先做一组专项再决定后面的练法。',
+      reason: '行测优先根据薄弱模块和最近进度决定下一步。',
+    },
+    essay: {
+      tab: '申论',
+      stateTitle: '今天先写申论',
+      stateDescription: '先选题型专项热身，再决定要不要切到整卷限时。',
+      categoriesLabel: '概括 / 对策 / 公文 / 文章',
+      papersLabel: '申论套卷 · 限时作答',
+      focusEmpty: '申论当前没有薄弱统计，先从专项或套卷入口进入。',
+      reason: '申论以题型入口和整卷节奏为主，结果页再接评分与复盘。',
+    },
+  },
+  filters: {
+    difficulty: {
+      label: '难度',
+      options: {
+        all: '全部',
+        basic: '基础',
+        standard: '提高',
+        sprint: '冲刺',
+      },
+    },
+    mode: {
+      label: '练法',
+      options: {
+        all: '全部',
+        categories: '专项',
+        papers: '套卷',
+        review: '复盘',
+      },
+    },
+    source: {
+      label: '来源',
+      options: {
+        all: '全部',
+        real: '真题',
+        recommended: '推荐',
+        favorites: '收藏',
+      },
+    },
+  },
+  hero: {
+    chip: '当前推荐',
+    loading: '正在加载今天该怎么练',
+    error: '推荐练法加载失败，请稍后重试。',
+    retry: '重试加载',
+    continueTitle: '继续上次练习',
+    continueContext: '基于最近一次未完成进度',
+    continueDescription: '先接上已经开过的题，再决定要不要切题型。',
+    weakPrefix: '先补',
+    weakContext: '基于当前薄弱模块',
+    weakDescription: '先把最影响提分的模块补一组，再回到套卷或复盘。',
+    essayTitle: '先去申论专项',
+    essayContext: '基于当前科目',
+    essayDescription: '用一题专项热身，写完再决定要不要切整卷限时。',
+    startTitle: '今天从这里开始',
+    startContext: '还没有进行中的练习',
+    startDescription: '先选一条清晰路径，不在练习中心停留太久。',
+    filterContextPrefix: '当前筛选偏向',
+    primary: {
+      continue: '继续上次练习',
+      categories: '先做专项',
+      papers: '直接看套卷',
+      review: '先去复盘',
+      essay: '去申论专项',
+      start: '去练习中心',
+    },
+    secondary: {
+      categories: '查看专项入口',
+      papers: '查看套卷入口',
+      review: '打开错题本',
+    },
+  },
   entries: {
     categories: {
-      title: '分类练习',
-      description: '按章节 / 题型筛题, 针对薄弱知识点反复打磨.',
+      title: '专项练习',
+      description: '按知识点和题型拆开练，适合补弱。',
+      action: '进入专项',
     },
     papers: {
-      title: '套卷练习',
-      description: '完整时间模拟真考节奏, 国考 / 省考真题套卷.',
+      title: '套卷模考',
+      description: '按整卷节奏完成，交卷后看结果诊断。',
+      action: '查看套卷',
     },
+  },
+  recent: {
+    title: '最近练习',
+    loading: '正在加载最近练习',
+    error: '最近练习加载失败，请稍后重试。',
+    empty: '还没有进行中的练习，可以直接开一组新题。',
+    resume: '继续练习',
+    openPapers: '选择套卷',
+    questionUnit: '题',
+  },
+  state: {
+    title: '当前科目',
+    activeFiltersNone: '未启用额外筛选',
+    activeFiltersSome: '已启用筛选',
+    categoriesAction: '专项入口',
+    papersAction: '套卷入口',
+  },
+  focus: {
+    title: '练习焦点',
+    loading: '正在加载当前练习焦点',
+    error: '练习焦点加载失败，请稍后重试。',
+    weakAction: '去练习',
+    weakScoreLabel: '当前分数',
+    essayCategories: '去申论专项',
+    essayPapers: '去申论套卷',
+  },
+  reason: {
+    title: '推荐理由',
+    defaultLine: '优先让下一步动作足够明确，不在入口页堆太多并列选择。',
+    filterLinePrefix: '当前筛选会优先影响推荐动作：',
   },
 } as const;
