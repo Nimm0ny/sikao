@@ -11,6 +11,7 @@
  */
 import { Card } from '@sikao/ui/ui';
 import type { WrongBookSummary } from '@sikao/api-client/queries/wrongBookQueries';
+import { WRONG_BOOK_COPY } from '@/lib/ui-copy';
 
 export interface WrongBookHeroProps {
   readonly summary: WrongBookSummary;
@@ -62,11 +63,11 @@ export function WrongBookHero({ summary }: WrongBookHeroProps) {
           错题本
           <br />
           <span className="text-ink-3 font-normal">
-            把每一处失分练成肌肉记忆
+            {WRONG_BOOK_COPY.heroSubtitle}
           </span>
         </h1>
         <p className="text-sm leading-relaxed text-ink-3 max-w-xl mt-3">
-          行测五大模块的错题集中地——答错即进、蒙对也进、三次连对自动毕业。
+          {WRONG_BOOK_COPY.heroDescPart1}——答错即进、蒙对也进、{WRONG_BOOK_COPY.heroDescPart2}。
         </p>
       </header>
 

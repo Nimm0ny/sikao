@@ -41,7 +41,6 @@ import type {
   WrongQuestionListResponseV2,
 } from '@sikao/api-client/types/api';
 
-// SIKAO Wave 4 Phase 2D · 错题本主页重写 (接 W1 bdfe4f2 7 endpoint).
 //
 // 主页轻量化 (master 拍板 IA): Hero + Standout + FiltersPanel (7 chip viewFilter)
 // + 6-col grid list. 详情移到 DetailA full-screen (/wrong-book/:questionId),
@@ -50,8 +49,6 @@ import type {
 // view filter → mastery 映射: todo/danger/new → not_mastered, doing → reviewing,
 // ok → mastered; meek (蒙对) BE 暂无, 当 danger proxy.
 //
-// SIKAO Wave 5: 学习热图 (5 模块 × 30 天) 集成在 Hero 下方第 1 个 section,
-// --data-* token + endpoint lhr 2026-05-12 批 (§3.7 + plan sikao-wave5-roadmap).
 
 const DEFAULT_PAGE_SIZE = 20;
 const VALID_MASTERY: ReadonlySet<string> = new Set([
@@ -210,12 +207,10 @@ function hasInconsistentWrongBookSummary(
 }
 
 /**
- * WrongBook — device-aware dispatch shell (PR9, 2026-05-13).
  *
  * mobile (<1024)  → WrongBookMobile (M5 layout: chip + 紧凑 wb-row list + 翻页)
  * tablet/desktop  → WrongBookDesktop (现有 hero + heatmap + 7-chip + grid)
  *
- * Handoff §5.1: 不新建 views/m/*.tsx; 共享 react-query queryKey cache.
  */
 export default function WrongBook() {
   const device = useDevice();
@@ -270,7 +265,6 @@ function WrongBookDesktop() {
   const queryClient = useQueryClient();
   const initSession = usePracticeStore((state) => state.initSession);
 
-  // SIKAO Wave 4 Phase 2D 7 endpoint hook.
   const summaryQuery = useWrongBookSummary();
   const gradQuery = useGraduationCandidates(3);
 
@@ -337,7 +331,7 @@ function WrongBookDesktop() {
     },
     onError: (err: unknown) => {
       logger.error('wrong-book.batch-retry.failed', { err: String(err) });
-      toast.error('无法启动批量重做', '检查网络后重试.');
+      toast.error(WRONG_BOOK_COPY.detailRetryFailedTitle, WRONG_BOOK_COPY.heatmapErrorDesc);
     },
   });
 
@@ -350,7 +344,6 @@ function WrongBookDesktop() {
     [navigate],
   );
 
-  // PR10 AskDrawer state — IconBtn 点 question id 打开 ask sheet/drawer.
   const [askQid, setAskQid] = useState<number | null>(null);
   const onAsk = useCallback((qid: number): void => setAskQid(qid), []);
   const closeAsk = useCallback((): void => setAskQid(null), []);
@@ -490,7 +483,6 @@ function WrongBookDesktop() {
                 })()
               : null}
 
-            {/* SIKAO Wave 5 · 学习热图 (5 模块 × 30 天) */}
             <WrongBookHeatmap />
 
             {/* Standout - 毕业候选 + smart-review 入口 */}
@@ -504,7 +496,7 @@ function WrongBookDesktop() {
                 onClick={() => navigate('/wrong-book/smart-review')}
                 className="bg-ink text-white p-6 flex flex-col gap-3 text-left transition-colors duration-fast hover:bg-ink-1 rounded-card"
                 data-testid="wrong-book-smart-review-cta"
-                aria-label="进入智能复盘"
+                aria-label={WRONG_BOOK_COPY.smartReviewAria}
               >
                 <div className="text-tiny font-mono uppercase tracking-eyebrow opacity-60">
                   智能复盘
@@ -530,7 +522,6 @@ function WrongBookDesktop() {
               />
             ) : null}
 
-            {/* 列表 + batch toolbar + pagination */}
             <WrongQuestionList
               items={items}
               selectedId={resolvedSelected?.questionId ?? null}

@@ -1,7 +1,5 @@
 /**
- * SIKAO Wave 4 Phase 2D · 错题详情 (DetailA 纵堆 full-screen).
  *
- * spec: design/SIKAO/handoff/modules/xingce-wrongbook/xingce-wrongbook.html
  *       .det-wrap DetailA.
  *
  * 路由: /wrong-book/:questionId.
@@ -45,7 +43,6 @@ function formatLastWrong(isoStr: string): string {
   return `${M}-${D}`;
 }
 
-// Wave 6E (2026-05-12): 题干 HTML → plain text 截 100 char 给 NoteCaptureLauncher
 // 当 sourceQuote pre-fill. 不走 DOMPurify (那是渲染 sanitize), 这里只剥 tag +
 // collapse whitespace, 入 BE sourceQuote 字段是纯文本.
 function extractStemPlainText(html: string): string {
@@ -79,7 +76,7 @@ export default function WrongQuestionDetailView() {
     },
     onError: (err: unknown) => {
       logger.error('wrong-book.retry.failed', { err: String(err) });
-      toast.error('无法启动重做', '请稍后重试或检查网络');
+      toast.error(WRONG_BOOK_COPY.detailRetryFailedTitle, WRONG_BOOK_COPY.detailRetryFailedDesc);
     },
   });
 
@@ -91,12 +88,12 @@ export default function WrongQuestionDetailView() {
       { questionId: item.questionId },
       {
         onSuccess: () => {
-          toast.info('已标记为已掌握', '本题从错题本毕业');
+          toast.info(WRONG_BOOK_COPY.detailMasteredToast, WRONG_BOOK_COPY.detailMasteredHint);
           navigate('/wrong-book');
         },
         onError: (err) => {
           logger.error('wrong-book.mark-mastered.failed', { err: String(err) });
-          toast.error('标记失败', '请稍后重试');
+          toast.error(WRONG_BOOK_COPY.detailMarkFailedTitle, WRONG_BOOK_COPY.detailRetryHint);
         },
       },
     );
@@ -189,9 +186,6 @@ export default function WrongQuestionDetailView() {
             </b>
           </div>
         </div>
-        {/* Wave 6E (2026-05-12): "添加到笔记本" 跨域 attached note 入口. 错题
-            attachedTo.wrongAnswerIds=[questionId], sourceQuote 为题干 plain
-            text 截 100 char. */}
         <NoteCaptureLauncher
           target={{
             kind: 'wrong_question',
@@ -366,9 +360,6 @@ export default function WrongQuestionDetailView() {
             </div>
           </WrongDetailSection>
 
-          {/* Wave 10 Phase C (2026-05-12): 社区笔记 — 题目下方"同学的笔记".
-              mock data 阶段, Wave 10 Phase B endpoint ship 后切真 useQuery.
-              onViewAll / onCompose 当前 no-op (Phase D 推独立 list view + 写笔记 modal). */}
           <CommunityNotesSection questionId={item.questionId} />
 
           <div className="flex gap-3 mt-6">

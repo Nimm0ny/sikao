@@ -1,7 +1,5 @@
 /**
- * SIKAO Wave 4 Phase 2D · 智能复盘 view.
  *
- * spec: design/SIKAO/handoff/modules/xingce-wrongbook/xingce-wrongbook.html
  *       .sr-modes / .psh / .cal SmartReview.
  *
  * 路由: /wrong-book/smart-review.
@@ -170,10 +168,6 @@ export default function SmartReviewView() {
             </Button>
           </div>
         </header>
-        {/* SIKAO Wave 9 Phase 2b: hero strip 3 档 responsive.
-            mobile ≤768: 2-col grid (4 cell 占 2 行 2×2), gap-px + bg-line 分隔.
-            tablet 769-1023: 单行 4-col grid 紧凑.
-            desktop ≥1024: flex 单行, min-w-[114px] + border-l 分隔 (原版). */}
         <Card padding="none" variant="muted" className="overflow-hidden">
           <div
             className="grid grid-cols-2 md:grid-cols-4 gap-px bg-line lg:flex lg:gap-0 lg:bg-transparent"

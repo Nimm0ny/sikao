@@ -1,6 +1,7 @@
 import { Button, EmptyState } from '@sikao/ui/ui';
 import { WrongQuestionCard } from './WrongQuestionCard';
 import type { WrongQuestionDetailV2 } from '@sikao/api-client/types/api';
+import { WRONG_BOOK_COPY } from '@/lib/ui-copy';
 
 // Phase 5.4e — 中栏列表 + 分页控件。
 
@@ -41,7 +42,7 @@ export function WrongQuestionList({
     return (
       <EmptyState
         title="没有错题"
-        description="完成练习后，做错的题会出现在这里。"
+        description={`${WRONG_BOOK_COPY.listEmptyHint1}，${WRONG_BOOK_COPY.listEmptyHint2}。`}
       />
     );
   }

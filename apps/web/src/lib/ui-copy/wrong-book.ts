@@ -39,6 +39,7 @@ export const WRONG_BOOK_COPY = {
   heroDescPart2:          '三次连对自动毕业',
   // WrongQuestionCard
   cardRedoCta:            '重做这道题',
+  smartReviewAria:        '进入智能复盘',
   // WrongQuestionList
   listEmptyHint1:         '完成练习后',
   listEmptyHint2:         '做错的题会出现在这里',
@@ -48,6 +49,7 @@ export const WRONG_BOOK_COPY = {
   detailRetryFailedDesc:  '请稍后重试或检查网络',
   detailMasteredToast:    '已标记为已掌握',
   detailMasteredHint:     '本题从错题本毕业',
+  detailMarkFailedTitle:  '标记失败',
   detailRetryHint:        '请稍后重试',
   detailNotFoundTitle:    '未找到这道错题',
   detailNotFoundDesc1:    '可能已被移出错题本',
@@ -70,6 +72,7 @@ export const WRONG_BOOK_COPY = {
   detailGoToDangerList:   '查看险题列表',
   // views/WrongQuestionRedoView
   redoPeekedToast:        '已偷看一次',
+  redoPeekFailedTitle:    '偷看失败',
   redoPeekedHint:         '将扣除一次毕业机会',
   redoRetryHint:          '请稍后重试',
   redoChooseFirst:        '请先选择答案',

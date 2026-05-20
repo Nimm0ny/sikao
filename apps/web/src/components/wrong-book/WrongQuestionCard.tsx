@@ -16,7 +16,7 @@ import type { KeyboardEvent, MouseEvent } from 'react';
 import DOMPurify from 'dompurify';
 import { Card, IconBtn } from '@sikao/ui/ui';
 import { ToolAiIcon } from '@sikao/ui/icons';
-import { LLM_QA_COPY } from '@/lib/ui-copy';
+import { LLM_QA_COPY, WRONG_BOOK_COPY } from '@/lib/ui-copy';
 import type { MasteryLevel, WrongQuestionDetailV2 } from '@sikao/api-client/types/api';
 import { cn } from '@sikao/shared-utils';
 
@@ -220,7 +220,7 @@ export function WrongQuestionCard({
         </span>
         <span
           className="hover:text-ink transition-colors duration-fast"
-          aria-label="重做这道题"
+          aria-label={WRONG_BOOK_COPY.cardRedoCta}
         >
           重做 →
         </span>

@@ -1,7 +1,5 @@
 /**
- * SIKAO Wave 4 Phase 2D · 错题重做 (DetailB 分栏挑战模式).
  *
- * spec: design/SIKAO/handoff/modules/xingce-wrongbook/xingce-wrongbook.html
  *       .split DetailB.
  *
  * 路由: /wrong-book/:questionId/redo.
@@ -55,7 +53,6 @@ function formatTimer(seconds: number): string {
   return `${mm}:${ss}`;
 }
 
-// Wave 6E (2026-05-12): 题干 HTML → plain text 截 100 char 给 NoteCaptureLauncher
 // 当 sourceQuote pre-fill. 不走 DOMPurify (那是渲染 sanitize), 这里只剥 tag +
 // collapse whitespace, 入 BE sourceQuote 字段是纯文本.
 function extractStemPlainText(html: string): string {
@@ -128,11 +125,11 @@ export default function WrongQuestionRedoView() {
     peekMutation.mutate(item.questionId, {
       onSuccess: () => {
         setPeeked(true);
-        toast.info('已偷看一次', '将扣除一次毕业机会');
+        toast.info(WRONG_BOOK_COPY.redoPeekedToast, WRONG_BOOK_COPY.redoPeekedHint);
       },
       onError: (err) => {
         logger.error('wrong-book.peek.failed', { err: String(err) });
-        toast.error('偷看失败', '请稍后重试');
+        toast.error(WRONG_BOOK_COPY.redoPeekFailedTitle, WRONG_BOOK_COPY.redoRetryHint);
       },
     });
   }, [item, peekMutation]);
@@ -140,7 +137,7 @@ export default function WrongQuestionRedoView() {
   const onSubmit = useCallback(() => {
     if (item === undefined) return;
     if (selected.size === 0) {
-      toast.warn('请先选择答案');
+      toast.warn(WRONG_BOOK_COPY.redoChooseFirst);
       return;
     }
     submitMutation.mutate(
@@ -155,12 +152,12 @@ export default function WrongQuestionRedoView() {
         onSuccess: (result) => {
           setSubmitResult(result);
           if (result.bluffDetected) {
-            toast.warn('蒙对识破', '耗时异常 — 这次不计毕业');
+            toast.warn('蒙对识破', WRONG_BOOK_COPY.redoBluffNotGraduate);
           }
         },
         onError: (err) => {
           logger.error('wrong-book.submit-bluff.failed', { err: String(err) });
-          toast.error('提交失败', '请稍后重试');
+          toast.error('提交失败', WRONG_BOOK_COPY.redoRetryHint);
         },
       },
     );
@@ -228,7 +225,6 @@ export default function WrongQuestionRedoView() {
             蒙对检测已开 · 耗时异常 (&gt; {Math.floor((AVG_TIME_MS * 2) / 1000)}s) 将判蒙对
           </div>
         </div>
-        {/* Wave 6E (2026-05-12): 重做时灵感即时记 — 跨域 attached note. */}
         <NoteCaptureLauncher
           target={{
             kind: 'wrong_question',
@@ -338,9 +334,9 @@ export default function WrongQuestionRedoView() {
 
           {/* CTA row */}
           <div className="flex gap-3 mt-6">
-            <Tooltip label="返回错题列表" side="top">
+            <Tooltip label={WRONG_BOOK_COPY.redoBackToList} side="top">
               <IconBtn
-                aria-label="返回错题列表"
+                aria-label={WRONG_BOOK_COPY.redoBackToList}
                 onClick={() => navigate('/wrong-book')}
                 data-testid="wrong-redo-back"
               >

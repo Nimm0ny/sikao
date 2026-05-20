@@ -10,6 +10,7 @@
  * Dumb. 卡片点击触发 onSelectMode 回调, smart container 决策路由.
  */
 import type { SmartReviewToday } from '@sikao/api-client/queries/wrongBookQueries';
+import { WRONG_BOOK_COPY } from '@/lib/ui-copy';
 
 export type SmartReviewMode = 'qifei' | 'single' | 'similar' | 'mock' | 'danger';
 
@@ -26,9 +27,9 @@ const MODES: readonly ModeDef[] = [
   {
     key: 'qifei',
     num: '01',
-    title: '亓菲线智能推送',
+    title: WRONG_BOOK_COPY.smartModeQiFeiLine,
     description:
-      '基于遗忘曲线 + 错题反复次数 + 考前距离的复合模型。每天 10-20 题。',
+      `${WRONG_BOOK_COPY.smartModeBasis1} + ${WRONG_BOOK_COPY.smartModeBasis2} + ${WRONG_BOOK_COPY.smartModeBasis3}。每天 10-20 题。`,
     pri: true,
     badge: '主线',
   },
@@ -36,26 +37,26 @@ const MODES: readonly ModeDef[] = [
     key: 'single',
     num: '02',
     title: '单题重做',
-    description: '从错题列表挑一题,原题空白重答。蒙对检测开启,三次连对毕业。',
+    description: `${WRONG_BOOK_COPY.smartModePickOne},${WRONG_BOOK_COPY.smartModeBlankRedo}。${WRONG_BOOK_COPY.smartModeBluffDetect},${WRONG_BOOK_COPY.smartModeThreeGraduate}。`,
   },
   {
     key: 'similar',
     num: '03',
-    title: '同类题练习',
+    title: WRONG_BOOK_COPY.smartModeSimilarTitle,
     description:
-      '围绕一个知识点抽 5 道变题。不重做原题,只练同模型——治"真空白"。',
+      `${WRONG_BOOK_COPY.smartModeSimilarHint1} 5 道变题。${WRONG_BOOK_COPY.smartModeSimilarHint2},${WRONG_BOOK_COPY.smartModeSimilarHint3}——治"真空白"。`,
   },
   {
     key: 'mock',
     num: '04',
     title: '错题抽考',
-    description: '随机抽 20 道错题,限时模考。模拟真实考场压力下的错题再现率。',
+    description: `随机抽 20 道错题,限时模考。${WRONG_BOOK_COPY.smartModeExamPress}。`,
   },
   {
     key: 'danger',
     num: '05',
     title: '险题专项',
-    description: '只抽"险题/陷阱/蒙对"标签的题。这些是你真正不会的。',
+    description: `只抽"险题/陷阱/蒙对"标签的题。${WRONG_BOOK_COPY.smartModeTrueWrong}。`,
   },
 ];
 

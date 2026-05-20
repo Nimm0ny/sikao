@@ -17,15 +17,12 @@ import {
 import type { MasteryLevel } from '@sikao/api-client/types/api';
 
 /**
- * WrongBookMobile — M5 · WrongBook 手机版 (PR9 C4, 2026-05-13).
  *
  * SSOT: docs/design/Mobile and Tablet Pack New.html "M5 · WrongBook"
- * + docs/design/handoff/Mobile and Tablet · Handoff.md §5.2.
  *
  * 复用 WrongBook.tsx 同款 useWrongBookSummary + fetchWrongQuestions; react-query
  * cache dedupe; 设备切换不重复请求.
  *
- * M5 layout 关键 (Handoff §5.2):
  *   1. app-head (h1 错题本 + 筛选 / 导出 icon)
  *   2. greeting strip (累计 N 题 · 本周新增 M 题)
  *   3. wb-chip-row 横滑筛选 (全部 / 行测 / 申论 / 公基 / 近7天)
@@ -35,7 +32,6 @@ import type { MasteryLevel } from '@sikao/api-client/types/api';
  * 跟 desktop WrongBook 区别: desktop 重 hero stat-strip + heatmap + standout
  * + smart-review CTA + 7-chip FiltersPanel + 6-col grid; mobile 走聚焦
  * "今天该练什么 + 一题一题翻", 完整 dashboard 推 desktop / detail view.
- * Handoff §5.1 "list 类跳独立 page" 铁线对齐 — 跳错题详情走全屏 detail
  * (/wrong-book/:questionId).
  *
  * Italic 政策合规: CJK 禁 italic. wb-row__qn / __meta 走 font-serif default
@@ -89,7 +85,6 @@ function mobileFilterToParams(
 
 function pickInitialFilter(params: URLSearchParams): MobileFilter {
   // URL 来 fromdesktop /wrong-book?paperCode=... 时 mobile 不 strict 匹配,
-  // 走"全部" + 后续可加 paperCode chip (Wave 9 backlog).
   const subj = params.get('subject');
   if (subj === '申论') return 'shenlun';
   if (subj === '常识') return 'gongji';
@@ -151,7 +146,6 @@ export function WrongBookMobile() {
     [navigate],
   );
 
-  // PR10 AskDrawer state — wb-row 右侧 IconBtn 打开. 跟 row click 解耦.
   const [askQid, setAskQid] = useState<number | null>(null);
   const openAsk = useCallback((qid: number): void => setAskQid(qid), []);
   const closeAsk = useCallback((): void => setAskQid(null), []);
@@ -272,7 +266,6 @@ export function WrongBookMobile() {
               .replace(/<[^>]+>/g, '')
               .slice(0, 40);
             return (
-              // PR10: row 拆 click 区 + ask 区. 主 button 跳详情, IconBtn 单独
               // open AskDrawer (不嵌套 button).
               <div
                 key={it.questionId}

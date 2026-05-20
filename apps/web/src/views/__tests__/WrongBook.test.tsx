@@ -91,7 +91,6 @@ describe('WrongBook', () => {
     await waitFor(() => {
       expect(screen.getByTestId('wrong-book-view')).toBeInTheDocument();
     });
-    // SIKAO Wave 4 Phase 2D: WrongBookHero renders h1 with "错题本" + subtitle.
     // Use regex to match the leading "错题本" prefix since hero h1 contains
     // additional editorial subtitle inside same heading element.
     expect(

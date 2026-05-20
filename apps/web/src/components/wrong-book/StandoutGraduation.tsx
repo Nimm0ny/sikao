@@ -12,6 +12,7 @@
 import { useNavigate } from 'react-router-dom';
 import { Button, Card, EmptyState } from '@sikao/ui/ui';
 import type { GraduationCandidate } from '@sikao/api-client/queries/wrongBookQueries';
+import { WRONG_BOOK_COPY } from '@/lib/ui-copy';
 
 export interface StandoutGraduationProps {
   readonly candidates: readonly GraduationCandidate[];
@@ -32,21 +33,21 @@ export function StandoutGraduation({
     >
       <header className="flex items-baseline justify-between mb-3">
         <h4 className="font-serif font-semibold text-h-card text-ink m-0">
-          今日毕业候选
+          {WRONG_BOOK_COPY.graduationTodayTitle}
         </h4>
         <span className="text-tiny font-mono uppercase tracking-eyebrow text-ink-3">
           还差一次
         </span>
       </header>
       <p className="text-xs text-ink-3 leading-relaxed mb-3">
-        这些题连对 2 次 — 再做对 1 次即从错题本毕业。
+        {WRONG_BOOK_COPY.graduationHintLead} 2 次 — 再做对 1 次即从错题本毕业。
       </p>
       {isLoading ? (
         <div className="text-sm text-ink-3 py-4">加载中…</div>
       ) : candidates.length === 0 ? (
         <EmptyState
-          title="暂无毕业候选"
-          description="完成更多复盘后会出现在这里。"
+          title={WRONG_BOOK_COPY.graduationEmpty}
+          description={`${WRONG_BOOK_COPY.graduationEmptyHint}。`}
         />
       ) : (
         <div className="flex flex-col gap-2" data-testid="wrong-book-grad-list">

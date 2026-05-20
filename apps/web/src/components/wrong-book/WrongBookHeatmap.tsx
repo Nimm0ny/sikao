@@ -24,6 +24,7 @@ import {
   type WrongBookHeatmapResponse,
   type WrongBookHeatmapRow,
 } from '@sikao/domain/wrong-book/useWrongBookHeatmap';
+import { WRONG_BOOK_COPY } from '@/lib/ui-copy';
 
 const SUBJECT_ORDER = ['言语', '数量', '判推', '资分', '常识'] as const;
 type SubjectShort = (typeof SUBJECT_ORDER)[number];
@@ -272,7 +273,7 @@ export function WrongBookHeatmap({ days = 30 }: WrongBookHeatmapProps) {
     <section
       className="bg-paper border border-line p-5 md:p-6 rounded-card"
       data-testid="wrong-book-heatmap"
-      aria-label="错题分布热图"
+      aria-label={WRONG_BOOK_COPY.heatmapTitle}
     >
       <header className="flex flex-col gap-2 md:flex-row md:justify-between md:items-baseline md:gap-3 mb-4">
         <h3 className="font-serif font-semibold text-base text-ink m-0">
@@ -287,8 +288,8 @@ export function WrongBookHeatmap({ days = 30 }: WrongBookHeatmapProps) {
         query={query}
         testId="wrong-book-heatmap"
         skeleton={<HeatmapSkeleton days={days} />}
-        errorTitle="热图加载失败"
-        errorDescription="检查网络后重试."
+        errorTitle={WRONG_BOOK_COPY.heatmapErrorTitle}
+        errorDescription={`${WRONG_BOOK_COPY.heatmapErrorDesc}.`}
       >
         {(data) => (
           <>

@@ -13,6 +13,7 @@ import { useState } from 'react';
 import DOMPurify from 'dompurify';
 import { Button, Card } from '@sikao/ui/ui';
 import type { SmartReviewNext } from '@sikao/api-client/queries/wrongBookQueries';
+import { WRONG_BOOK_COPY } from '@/lib/ui-copy';
 
 export interface FlashcardProps {
   readonly question: SmartReviewNext;
@@ -79,7 +80,7 @@ export function Flashcard({
           onClick={() => setFlipped((s) => !s)}
           data-testid="smart-review-flashcard-flip"
         >
-          {flipped ? '收起提示' : '翻牌看提示'}
+          {flipped ? '收起提示' : WRONG_BOOK_COPY.flashcardFlipHint}
         </Button>
         <Button
           variant="quiet"
