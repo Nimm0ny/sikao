@@ -287,7 +287,7 @@ class PracticeSessionV2(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False)
     track: Mapped[str] = mapped_column(String(32), nullable=False)
-    entry_kind: Mapped[str] = mapped_column(String(32), nullable=False)
+    entry_kind: Mapped[str] = mapped_column(String(64), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
     paper_id: Mapped[int | None] = mapped_column(ForeignKey("papers_v2.id", ondelete="SET NULL"), nullable=True)
     revision_id: Mapped[int | None] = mapped_column(
@@ -305,6 +305,11 @@ class PracticeSessionAnswerV2(Base):
     __tablename__ = "practice_session_answers_v2"
     __table_args__ = (
         Index("ix_practice_session_answers_v2_session", "session_id", "display_order"),
+        UniqueConstraint(
+            "session_id",
+            "question_key",
+            name="uq_practice_session_answers_v2_session_question_key",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -314,7 +319,7 @@ class PracticeSessionAnswerV2(Base):
     question_id: Mapped[int | None] = mapped_column(
         ForeignKey("questions_v2.id", ondelete="SET NULL"), nullable=True
     )
-    question_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    question_key: Mapped[str] = mapped_column(String(64), nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False)
     response_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
     is_correct: Mapped[bool | None] = mapped_column(Boolean, nullable=True)

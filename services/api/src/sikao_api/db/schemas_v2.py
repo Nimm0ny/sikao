@@ -147,7 +147,7 @@ class PracticeSessionCreateRequestV2(CamelModel):
 
 class PracticeSessionItemV2(CamelModel):
     id: str
-    question_key: str | None = None
+    question_key: str
     prompt: str
     answer_kind: str
     status: str

@@ -20,7 +20,7 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
         sa.Column("user_id", sa.Integer(), sa.ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False),
         sa.Column("track", sa.String(length=32), nullable=False),
-        sa.Column("entry_kind", sa.String(length=32), nullable=False),
+        sa.Column("entry_kind", sa.String(length=64), nullable=False),
         sa.Column("status", sa.String(length=32), nullable=False),
         sa.Column("paper_id", sa.Integer(), sa.ForeignKey("papers_v2.id", ondelete="SET NULL"), nullable=True),
         sa.Column("revision_id", sa.Integer(), sa.ForeignKey("paper_revisions_v2.id", ondelete="SET NULL"), nullable=True),
@@ -36,12 +36,17 @@ def upgrade() -> None:
         sa.Column("id", sa.Integer(), primary_key=True, autoincrement=True),
         sa.Column("session_id", sa.Integer(), sa.ForeignKey("practice_sessions_v2.id", ondelete="CASCADE"), nullable=False),
         sa.Column("question_id", sa.Integer(), sa.ForeignKey("questions_v2.id", ondelete="SET NULL"), nullable=True),
-        sa.Column("question_key", sa.String(length=64), nullable=True),
+        sa.Column("question_key", sa.String(length=64), nullable=False),
         sa.Column("display_order", sa.Integer(), nullable=False),
         sa.Column("response_json", _JSONB_COMPAT, nullable=False),
         sa.Column("is_correct", sa.Boolean(), nullable=True),
         sa.Column("duration_seconds", sa.Integer(), nullable=True),
         sa.Column("answered_at", sa.DateTime(), nullable=False),
+        sa.UniqueConstraint(
+            "session_id",
+            "question_key",
+            name="uq_practice_session_answers_v2_session_question_key",
+        ),
     )
     op.create_index(
         "ix_practice_session_answers_v2_session",
