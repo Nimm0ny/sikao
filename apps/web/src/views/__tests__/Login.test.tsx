@@ -40,7 +40,6 @@ describe('Login', () => {
     });
     fireEvent.click(screen.getByTestId('login-submit'));
 
-    // Phase B.4b + post-Phase D P1-1: store 仅持 user; csrf 在 cookie 不在 store.
     await waitFor(() => {
       expect(useAuthStore.getState().user?.username).toBe('alice');
     });

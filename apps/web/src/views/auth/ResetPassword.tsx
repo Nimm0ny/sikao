@@ -121,7 +121,7 @@ export default function ResetPassword() {
               value={confirmPassword}
               onChange={setConfirmPassword}
               testId="reset-confirm-password"
-              placeholder="再次输入新密码"
+              placeholder={AUTH_COPY.reset.confirmPasswordPlaceholder}
             />
 
             {formError !== null ? (

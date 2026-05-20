@@ -93,7 +93,7 @@ export default function BindPhone() {
       }
       setConfirmed(true);
       toast.info(AUTH_COPY.bindPhone.successTitle);
-      window.setTimeout(() => navigate('/profile', { replace: true }), 1500);
+      navigate('/profile', { replace: true });
     } catch (err) {
       logger.error('auth.bind.phone.failed', { phone, err: String(err) });
       const next = classifyBindError(err);

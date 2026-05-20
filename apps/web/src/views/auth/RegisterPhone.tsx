@@ -7,7 +7,7 @@ import { api } from '@sikao/api-client/request';
 import { useAuthStore, type AuthUserSummary } from '@sikao/domain/auth/useAuthStore';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
-import { ERROR_COPY } from '@/lib/ui-copy';
+import { AUTH_COPY, ERROR_COPY } from '@/lib/ui-copy';
 import SendCodeButton from '@/components/auth/SendCodeButton';
 import { useNationalExamCountdown } from '@sikao/api-client/queries/examEventsQueries';
 
@@ -34,8 +34,6 @@ interface LoginResponseV2 {
   readonly user: AuthUserSummary;
 }
 
-// SIKAO Redesign Wave 1 · 01c RegisterPhone (2026-05-11).
-// 视觉: hifi 二段式 (左 ink art + 右 paper form) — AuthSplitLayout 包.
 // 业务: phone + smsCode (6 位) + password → /auth/register/phone,
 // verify-then-write (短信先验). normalize_phone 由后端处理.
 export default function RegisterPhone() {
@@ -47,7 +45,6 @@ export default function RegisterPhone() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<FormError | null>(null);
 
-  // Wave 4 X2 verify P1: sub 文案 wire useNationalExamCountdown — BE
   // /exam-events 全集 filter category=='national' 升序 first (跟 Login 一致).
   // loading / error / 空集 退 hardcode 兜底; days<0 切回原文案.
   const { examLabel, daysUntil } = useNationalExamCountdown();
@@ -60,7 +57,7 @@ export default function RegisterPhone() {
     e.preventDefault();
     setFormError(null);
     if (phone.trim().length < 11) {
-      toast.warn('手机号格式有误');
+      toast.warn(AUTH_COPY.bindPhone.phoneInvalidWarn);
       return;
     }
     if (!/^\d{6}$/.test(smsCode)) {
@@ -93,7 +90,7 @@ export default function RegisterPhone() {
     }
     if (response === null) throw new Error('auth.register.phone missing response');
     setSession(response.user, response.expiresIn);
-    toast.info('注册成功', '欢迎加入思考');
+    toast.info(AUTH_COPY.register.successTitle, AUTH_COPY.register.successDesc);
     navigate('/app', { replace: true });
   };
 
@@ -103,8 +100,6 @@ export default function RegisterPhone() {
         <div className="font-mono text-tiny tracking-eyebrow uppercase text-ink-3 mb-3">
           SIGN UP · PHONE
         </div>
-        {/* Wave 9 Phase 1 responsive: mobile (≤768) text-h-section 28px 防 375px
-            viewport 上 42px 撑爆; md+ tablet/desktop text-h-mkt 42px 还原 hifi. */}
         <h1 className="font-serif text-h-section md:text-h-mkt font-medium text-ink mb-2">开始你的备考。</h1>
         <p className="text-sm text-ink-3 mb-8" data-testid="register-phone-sub">
           {subCopy}
@@ -173,9 +168,6 @@ export default function RegisterPhone() {
           </button>
         </form>
 
-        {/* Wave 5C P2-2: footer link 区在 mobile (≤640px) 纵排避免在 375 viewport
-            justify-between 拉得过宽. Wave 9 Phase 1: 收紧 breakpoint sm:→md:
-            跟 mobile-style-guide §1.3 3 档对齐 (≤768=mobile 全纵排). */}
         <div className="mt-8 pt-6 border-t border-line flex flex-col gap-2 text-xs text-ink-3 md:flex-row md:justify-between md:gap-4">
           <span>
             已有账号？

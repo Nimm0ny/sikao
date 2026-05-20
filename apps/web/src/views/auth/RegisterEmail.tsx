@@ -7,7 +7,7 @@ import { api } from '@sikao/api-client/request';
 import { useAuthStore, type AuthUserSummary } from '@sikao/domain/auth/useAuthStore';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
-import { ERROR_COPY } from '@/lib/ui-copy';
+import { AUTH_COPY, ERROR_COPY } from '@/lib/ui-copy';
 import { useNationalExamCountdown } from '@sikao/api-client/queries/examEventsQueries';
 
 interface FormError {
@@ -30,10 +30,7 @@ interface LoginResponseV2 {
   readonly user: AuthUserSummary;
 }
 
-// SIKAO Redesign Wave 1 · 01b RegisterEmail (2026-05-11).
-// 视觉: hifi 二段式 (左 ink art + 右 paper form) — AuthSplitLayout 包.
 // 业务: email + displayName(opt) + password → /auth/register/email,
-// write-then-verify (Phase B), 注册即可登录.
 export default function RegisterEmail() {
   const navigate = useNavigate();
   const setSession = useAuthStore((s) => s.setSession);
@@ -43,7 +40,6 @@ export default function RegisterEmail() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<FormError | null>(null);
 
-  // Wave 4 X2 verify P1: sub 文案 wire useNationalExamCountdown — BE
   // /exam-events 全集 filter category=='national' 升序 first (跟 Login 一致).
   // loading / error / 空集 退 hardcode 兜底; days<0 切回原文案.
   const { examLabel, daysUntil } = useNationalExamCountdown();
@@ -56,7 +52,7 @@ export default function RegisterEmail() {
     e.preventDefault();
     setFormError(null);
     if (!email.includes('@')) {
-      toast.warn('邮箱格式有误');
+      toast.warn(AUTH_COPY.bindEmail.emailInvalidWarn);
       return;
     }
     if (password.length < 6) {
@@ -85,7 +81,7 @@ export default function RegisterEmail() {
     }
     if (response === null) throw new Error('auth.register.email missing response');
     setSession(response.user, response.expiresIn);
-    toast.info('注册成功', '欢迎加入思考');
+    toast.info(AUTH_COPY.register.successTitle, AUTH_COPY.register.successDesc);
     navigate('/app', { replace: true });
   };
 
@@ -95,8 +91,6 @@ export default function RegisterEmail() {
         <div className="font-mono text-tiny tracking-eyebrow uppercase text-ink-3 mb-3">
           SIGN UP · EMAIL
         </div>
-        {/* Wave 9 Phase 1 responsive: mobile (≤768) text-h-section 28px 防 375px
-            viewport 上 42px 撑爆; md+ tablet/desktop text-h-mkt 42px 还原 hifi. */}
         <h1 className="font-serif text-h-section md:text-h-mkt font-medium text-ink mb-2">开始你的备考。</h1>
         <p className="text-sm text-ink-3 mb-8" data-testid="register-email-sub">
           {subCopy}
@@ -118,7 +112,7 @@ export default function RegisterEmail() {
             label="显示名 (可选)"
             type="text"
             autoComplete="nickname"
-            placeholder="留空自动用邮箱前缀"
+            placeholder={AUTH_COPY.register.emailDisplayNamePlaceholder}
             value={displayName}
             onChange={setDisplayName}
             testId="register-email-display-name"
@@ -164,9 +158,6 @@ export default function RegisterEmail() {
           创建账号即视为同意《用户协议》与《隐私政策》。
         </p>
 
-        {/* Wave 5C P2-2: footer link 区在 mobile (≤640px) 纵排避免在 375 viewport
-            justify-between 拉得过宽. Wave 9 Phase 1: 收紧 breakpoint sm:→md:
-            跟 mobile-style-guide §1.3 3 档对齐 (≤768=mobile 全纵排). */}
         <div className="mt-8 pt-6 border-t border-line flex flex-col gap-2 text-xs text-ink-3 md:flex-row md:justify-between md:gap-4">
           <span>
             已有账号？

@@ -84,11 +84,8 @@ describe('CompleteProfile', () => {
       expect(useAuthStore.getState().user?.needsIdentifierSetup).toBe(false);
     });
 
-    await waitFor(
-      () => {
-        expect(navigateSpy).toHaveBeenCalledWith('/app', { replace: true });
-      },
-      { timeout: 2500 },
-    );
+    await waitFor(() => {
+      expect(navigateSpy).toHaveBeenCalledWith('/app', { replace: true });
+    });
   });
 });

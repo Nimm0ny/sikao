@@ -52,12 +52,9 @@ describe('BindPhone', () => {
       expect(useAuthStore.getState().user?.phone).toBe('13800138000');
     });
 
-    await waitFor(
-      () => {
-        expect(navigateSpy).toHaveBeenCalledWith('/profile', { replace: true });
-      },
-      { timeout: 2500 },
-    );
+    await waitFor(() => {
+      expect(navigateSpy).toHaveBeenCalledWith('/profile', { replace: true });
+    });
   });
 
   it('410 code_invalid: keeps user on form and renders error strip', async () => {

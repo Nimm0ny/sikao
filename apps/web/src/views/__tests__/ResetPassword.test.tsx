@@ -28,7 +28,6 @@ describe('ResetPassword', () => {
     await waitFor(() => {
       expect(screen.getByText('链接已失效')).toBeInTheDocument();
     });
-    // commit #6j: 视觉切 v1-minimal AuthShell, 不再用 EmptyState role=alert.
     // 重新申请 link 进 forgot-password 即可断言失败态.
     const requestNew = screen.getByTestId('reset-request-new');
     expect(requestNew).toHaveAttribute('href', '/forgot-password');

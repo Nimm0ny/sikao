@@ -27,9 +27,6 @@ interface LoginResponseV2 {
   readonly user: AuthUserSummary;
 }
 
-// SIKAO Redesign Wave 1 · 01 Login (2026-05-11).
-// 视觉: hifi 二段式 (左 ink art + 右 paper form) — AuthSplitLayout 包.
-// 表单输入改 hifi .inp 风 (border-bottom only) + serif h2 欢迎回来.
 // 业务: identifier (email/phone/legacy) + password → /auth/login.
 export default function Login() {
   const navigate = useNavigate();
@@ -42,9 +39,7 @@ export default function Login() {
 
   const from = resolvePostLoginTarget(location.state);
 
-  // Wave 1 Round 2: sub 文案带"距 N 国考还有 N 天" 实时计算. days<0
   // (考期已过) 切回"继续你的备考节奏。" 兜底.
-  // Wave 4 X2: 真值走 useNationalExamCountdown — BE /exam-events 全集 filter
   // category=='national' 升序 first. loading / error / 空集 退 hardcode 兜底,
   // 避免 flash; error 走 toast (hook 内自动).
   const { examLabel, daysUntil } = useNationalExamCountdown();
@@ -103,8 +98,6 @@ export default function Login() {
         <div className="auth-anim-up d-1 font-mono text-tiny tracking-eyebrow uppercase text-ink-3 mb-3">
           {AUTH_COPY.login.eyebrow}
         </div>
-        {/* Wave 9 Phase 1 responsive: mobile (≤768) text-h-section 28px 防 375px
-            viewport 上 42px 撑爆; md+ tablet/desktop text-h-mkt 42px 还原 hifi. */}
         <h1 className="auth-anim-up d-2 font-serif text-h-section md:text-h-mkt font-medium text-ink mb-2">
           {AUTH_COPY.login.title}
         </h1>
@@ -185,10 +178,6 @@ export default function Login() {
           </div>
         </form>
 
-        {/* Wave 5C P2-2: 副 register CTA 在 mobile (≤640px) 纵排避免超 375 viewport.
-            Wave 9 Phase 1: 收紧 breakpoint sm:→md: 跟 mobile-style-guide §1.3
-            3 档对齐 (≤768=mobile 全纵排; ≥769=tablet/desktop 横排).
-            P2 alt CTA 加 pv-btn + hover translateY + scale + shadow 跟主 CTA 同款"浮出"反馈. */}
         <div className="auth-anim-up d-6 mt-8 pt-6 border-t border-line flex flex-col gap-2 md:flex-row md:gap-3">
           <Link
             to="/register/email"

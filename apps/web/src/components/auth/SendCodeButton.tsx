@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { api } from '@sikao/api-client/request';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
-import { ERROR_COPY } from '@/lib/ui-copy';
+import { AUTH_COPY, ERROR_COPY } from '@/lib/ui-copy';
 
 const COUNTDOWN_SECONDS = 60;
 
@@ -69,7 +69,7 @@ export default function SendCodeButton({
 
   const handleSend = async () => {
     if (phone.trim().length < 11) {
-      toast.warn('请输入有效手机号');
+      toast.warn(AUTH_COPY.sendCode.phoneInvalidWarn);
       return;
     }
     setIsSending(true);
@@ -80,7 +80,7 @@ export default function SendCodeButton({
           ? { phone: phone.trim() }
           : { phone: phone.trim(), purpose };
       await api.post<SendCodeResponse, typeof body>(endpoint, body);
-      toast.info('验证码已发送', '60 秒内有效');
+      toast.info(AUTH_COPY.sendCode.sentTitle, AUTH_COPY.sendCode.sentDesc);
       startCountdown();
     } catch (err) {
       logger.error('auth.sms.send-code.failed', { phone, err: String(err) });
@@ -91,7 +91,7 @@ export default function SendCodeButton({
           ERROR_COPY.registerSmsRateLimit.description,
         );
       } else {
-        toast.error('发送失败', '检查网络后重试');
+        toast.error(AUTH_COPY.sendCode.sendFailedTitle, AUTH_COPY.sendCode.sendFailedDesc);
       }
     } finally {
       setIsSending(false);

@@ -278,6 +278,7 @@ export const AUTH_COPY = {
     newPasswordLabel: '新密码',
     newPasswordHint: '至少 6 个字符',
     confirmPasswordLabel: '确认密码',
+    confirmPasswordPlaceholder: '再次输入新密码',
     mismatchError: '密码不一致',
     submit: '确认重置',
     submitting: '重置中…',
@@ -347,6 +348,18 @@ export const AUTH_COPY = {
     successTitle: '手机已绑定',
     successDesc: '可以用新手机号登录了',
     backToProfile: '返回个人中心',
+  },
+  sendCode: {
+    phoneInvalidWarn: '请输入有效手机号',
+    sentTitle: '验证码已发送',
+    sentDesc: '60 秒内有效',
+    sendFailedTitle: '发送失败',
+    sendFailedDesc: '检查网络后重试',
+  },
+  register: {
+    successTitle: '注册成功',
+    successDesc: '欢迎加入思考',
+    emailDisplayNamePlaceholder: '留空自动用邮箱前缀',
   },
   completeProfile: {
     eyebrow: 'ACCOUNT SETUP',

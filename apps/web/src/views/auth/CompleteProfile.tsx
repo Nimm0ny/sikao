@@ -143,7 +143,7 @@ export default function CompleteProfile() {
       }
       setPhoneCompleted(true);
       toast.info(AUTH_COPY.bindPhone.successTitle);
-      window.setTimeout(() => navigate('/app', { replace: true }), 1500);
+      navigate('/app', { replace: true });
     } catch (err) {
       logger.error('auth.complete.phone.failed', { err: String(err) });
       const next = classifyPhoneErr(err);
