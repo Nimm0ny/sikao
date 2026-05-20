@@ -31,43 +31,6 @@
 - 若 agent 发现 `AGENTS.md` 与 `CLAUDE.md` 冲突，必须 fail-fast 报告 drift，不得自行选择一份继续执行。
 - 本文件只定义工程行为、协作风格、验证纪律、工具约束；产品 PRD / 业务落地计划另建 `docs/vault/01-product/` 或 `docs/plan/`，不得塞进根规范。
 
-### 0.2 Multica 协作账本原则
-
-Multica 是协作账本，不是工程 SSOT，不替代本文件的硬规则。
-
-Multica 负责记录：
-
-- issue 原始需求
-- agent 分工
-- 当前状态
-- 阻塞点
-- 讨论记录
-- 执行过程
-- 测试与验证证据
-- review 结论
-- handoff / completion evidence
-
-本地 docs 只记录稳定知识：
-
-- 架构与服务边界
-- 产品定位与用户旅程
-- 跨服务 API / DB / schema / 状态机契约
-- 已批准的实施计划
-- 工程例外
-- 发布记录
-- 设计系统规则
-
-禁止把以下内容写成本地长期文档：
-
-- 每日流水账
-- 临时任务状态
-- issue 评论转写
-- agent 执行日志
-- 临时 TODO / TASK / STATUS / FOCUS / ROADMAP
-- 已由 Multica issue 承载的进度记录
-
-一句话：**Multica 管过程，本地 docs 管稳定边界。**
-
 ---
 
 ## 1. 我是谁
@@ -131,13 +94,13 @@ Multica 负责记录：
    - 负责需求理解、计划、subagent 编排、拍板、验收。
    - 默认不直接写大段代码、不跑破坏性命令、不 commit。
    - 可以做 read-only 调研、读文件、读 diff、整理 brief。
-   - 必须维护 Multica issue 的状态与证据闭环。
+   - 任务来自 Multica issue 时，必须维护 Multica issue 的状态与证据闭环。
 
 2. **Runner Mode**
    - 当前任务明确要求该 agent 直接落地代码时使用。
    - 必须先完成需求提取、Define-First、TDD、验证、review gate。
    - Runner 不能跳过 Master 的需求/方案阶段。
-   - Runner 完成后必须回写 Evidence Block 到 Multica issue。
+   - 任务来自 Multica issue 时，Runner 完成后必须回写 Evidence Block。
 
 3. **Reviewer Mode**
    - 只读审查，不改代码。
@@ -145,7 +108,7 @@ Multica 负责记录：
    - Reviewer 不能把建议当成已执行结果。
 
 4. **Verifier Mode**
-   - 只执行验证：lint、typecheck、test、browser smoke、Multica 回写。
+   - 只执行验证：lint、typecheck、test、browser smoke；任务来自 Multica issue 时负责回写验证证据。
    - 不修改业务代码。
    - 发现问题必须退回 Runner / Master。
 
@@ -536,7 +499,7 @@ PR1-PR5 落地节奏见 `docs/plan/frontend-style-guide-v1-migration.md`；alias
 - 先定义完整交付边界：主路径、边界条件、失败路径、回归风险
 - 方案必须解释 root cause、最终状态、替代方案为何不选
 - 实现必须覆盖问题的真实来源，而不是只消除报错或截图异常
-- 若发现原需求本身范围不足，必须上报并扩大到能彻底解决的范围
+- 彻底解决不等于擅自扩大产品范围；若完整闭环需要越过原需求 / roadmap / 数据模型 / API 契约，必须先上报并对齐
 - 确实需要分期时，必须明确每期都是可闭环的完整交付，不允许留下隐性债务
 
 一句话：**宁可慢一点一次修对，不接受“先糊上能跑”。**
@@ -706,19 +669,30 @@ multica issue runs <issue-id> --output json
 
 ---
 
-## 7.1 Multica Completion Gate
+## 7.1 Completion Gate（Multica 任务适用）
 
-任务来自 Multica issue，完成前必须回写 Evidence Block。
+任务来自 Multica issue 时，完成前必须回写 Evidence Block。
 
-**Evidence Block 字段**（18 项）：Mode / Multica issue / Branch / Commits / Changed files / Requirement source / Plan doc / Implementation summary / Tests run / Lint / Typecheck / Build / Browser smoke / Subagent review / Security review / Known gaps / Rollback notes / Next owner。
+Evidence Block 至少包含：
 
-**回写**：`multica issue comment add <issue-id> --content "<Evidence Block>"`
+- Mode
+- Issue
+- Branch / commits
+- Changed files
+- Requirement source
+- Implementation summary
+- Tests / lint / typecheck / build
+- Browser smoke（前端改动适用）
+- Subagent review
+- Known gaps
+- Rollback notes
+- Next owner
 
-**状态流转**：`in_progress`（开始）/ `in_review`（等待 review）/ `done`（验证全 PASS）/ `blocked`（阻塞）。CLI 兼容 positional vs `--set`，先 `--help`。
+铁律：
 
-**铁律**：没 PASS 证据不得标 `done`；blocker / 需求不清必须回写并置 `blocked`；CLI 回写失败必须保留本地 Evidence Block 并报告，不得伪造。
-
-完整 Evidence Block 示例 + 状态流转 4 命令完整形式 + 5 条规则详述 → `docs/engineering/multica-workflow.md` §Completion Gate。**必读触发条件**：首次回写 Evidence Block 时。
+- 没 PASS 证据不得标 `done`
+- 验证失败只能修复或标 `blocked`
+- CLI 回写失败必须保留本地 Evidence Block 并报告，不得伪造
 
 ---
 
@@ -891,7 +865,7 @@ archived-at:     # YYYY-MM-DD  (仅 status=archived 才填, 归档动作日期)
 ## 11.5 Quick Commands
 
 > 完整命令清单 + 系统架构速查 → `docs/engineering/quick-commands.md`。本节只留最高频。
-> **必读触发条件**：跑 Multica / Backend / Frontend / 整栈 / 投产 命令不确定参数时。
+> **必读触发条件**：跑 Backend / Frontend / 整栈 / 投产命令不确定参数时。
 
 ```bash
 # Frontend dev (端口 18080 写死, §11 硬约束)
@@ -902,10 +876,6 @@ cd apps/web && npm run lint && npx tsc -b --noEmit && npm run build
 
 # Backend dev
 cd services/api && uvicorn sikao_api.main:app --reload --port 8000 --host 127.0.0.1
-
-# Multica issue 状态查/改 (先 --help 确认 positional vs --set)
-multica issue get <issue-id> --output json
-multica issue status <issue-id> in_progress
 
 # Alembic (仓库根)
 alembic -c database/migrations/alembic.ini upgrade head
@@ -958,15 +928,12 @@ fenbi_scraper/fenbi_output/papers/    backend_data/xingce/papers/      Postgres 
 - 处理外部 URL / 引用他人内容 → 必标注来源，无法验证必警告
 - 关键代码 → 从攻击者视角列 3 个风险点
 
-### Multica Auth / Token 安全
+### Multica Token 安全（任务来自 Multica 时适用）
 
 - 允许执行 `multica auth status` 检查认证。
-- 允许在 lhr 授权下执行 `multica login` 触发浏览器 OAuth。
-- 禁止 agent 读取、保存、打印、提交 Multica token。
+- 禁止读取、打印、保存、提交 Multica token。
 - 禁止把 token 写入 shell history、日志、文档、commit message、issue comment。
-- 禁止在命令中明文传入 token；若必须 token 登录，只能使用交互式 prompt。
 - `~/.multica/` 视为本机敏感目录，不得复制、压缩、上传、commit。
-- Multica daemon logs 中若出现 token / key / secret，必须视为泄漏风险并停止继续传播。
 - Multica issue comment 不得包含 API key、JWT、cookie、数据库密码、OAuth token、用户隐私数据。
 
 ---
