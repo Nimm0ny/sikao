@@ -3,20 +3,20 @@
  * lint-ui-copy-ssot.mjs — 巡检 view 内联中文文案的 SSOT 漂移.
  *
  * docs/plan/frontend-style-guide-v1-migration.md §4 PR4:
- *   - frontend/src/{views,components}/** 路径下, JSX text node / placeholder /
- *     aria-label 内 > 4 中文字符的字面量, 必须来自 @/lib/ui-copy import
- *   - 初期 warn-only mode (退出码 0), PR5 后 lhr 决定转 error
+ *   - frontend/src/{views,components}/** 路径下, `toast.*(...)` / `placeholder=`
+ *     / `aria-label=` 内 > 4 中文字符的字面量, 必须来自 @/lib/ui-copy
+ *   - 当前默认 error mode (退出码 1). 仅在明确需要排查旧债时临时切回 warn.
  *
  * 实现思路:
- *   - regex 抓 JSX text node 中字符 [一-鿿]{5,}
  *   - 抓 attribute placeholder="..." / aria-label="..." 字面量
- *   - 检查同文件 import 是否含 `from '@/lib/ui-copy'` / `from '../lib/ui-copy'`
- *   - 未 import 即触发 (warn-only / error 取决于 mode)
+ *   - 抓 `toast.error|warn|info|success(...)` 行内字符串字面量
+ *   - 不允许“只要 import 过 ui-copy 就整文件豁免”的假清零
+ *   - 命中即触发 (warn-only / error 取决于 mode)
  *
  * Mode 控制:
- *   - 默认 `--mode=warn` (退出码 0)
- *   - `--mode=error` (退出码 1, 用于 PR5 后转 hard fail)
- *   - 环境变量 `LINT_UI_COPY_MODE=error` 也支持
+ *   - 默认 `--mode=error` (退出码 1)
+ *   - `--mode=warn` (退出码 0, 仅排查存量债时使用)
+ *   - 环境变量 `LINT_UI_COPY_MODE=warn` 也支持
  *
  * 白名单 / 例外:
  *   - 路径白名单: views/marketing/ / views/landing/ / assets/illustrations/
@@ -52,17 +52,25 @@ const TARGET_PREFIXES = ['views/', 'components/'];
 function getMode() {
   const argMode = process.argv.find((a) => a.startsWith('--mode='));
   if (argMode) return argMode.slice('--mode='.length);
-  if (process.env.LINT_UI_COPY_MODE === 'error') return 'error';
-  return 'warn';
+  if (process.env.LINT_UI_COPY_MODE === 'warn') return 'warn';
+  return 'error';
 }
 const MODE = getMode();
 
 // >=5 个连续中文字符 (CJK Unified Ideographs)
-const CJK_LONG_RE = /[一-鿿]{5,}/g;
-
-// import from '@/lib/ui-copy' / from '../lib/ui-copy' / from 'src/lib/ui-copy'
-const UI_COPY_IMPORT_RE =
-  /from\s+['"](?:@\/lib\/ui-copy|.*?\/lib\/ui-copy|src\/lib\/ui-copy)['"]/;
+const CJK_LONG_RE = /[一-鿿]{5,}/;
+const STRING_LITERAL_RE = /(['"`])((?:\\.|(?!\1).)*)\1/g;
+const TOAST_CALL_RE = /toast\.(?:error|warn|info|success)\s*\(/;
+const ATTR_PATTERNS = [
+  {
+    name: 'aria-label',
+    regex: /\baria-label\s*=\s*(["'`])((?:\\.|(?!\1).)*)\1/g,
+  },
+  {
+    name: 'placeholder',
+    regex: /\bplaceholder\s*=\s*(["'`])((?:\\.|(?!\1).)*)\1/g,
+  },
+];
 
 function listFiles(dir) {
   const out = [];
@@ -102,14 +110,13 @@ function stripComments(src) {
     .replace(/\{\/\*[\s\S]*?\*\/\}/g, (m) => m.replace(/[^\n]/g, ' '));
 }
 
-// 判断 match 是否落在 <title>...</title> JSX 节点内
-function isInTitleNode(content, matchIndex) {
-  // 向前找最近 `<title` 或 `</title>` / 其它 closing tag
-  const before = content.slice(Math.max(0, matchIndex - 200), matchIndex);
-  const lastTitleOpen = before.lastIndexOf('<title');
-  const lastTitleClose = before.lastIndexOf('</title>');
-  if (lastTitleOpen > lastTitleClose && lastTitleOpen !== -1) return true;
-  return false;
+function pushViolation(violations, file, line, snippet, kind) {
+  violations.push({
+    file: relative(process.cwd(), file).replace(/\\/g, '/'),
+    line,
+    snippet: snippet.length > 30 ? `${snippet.slice(0, 30)}...` : snippet,
+    kind,
+  });
 }
 
 const files = listFiles(ROOT)
@@ -125,31 +132,29 @@ for (const file of files) {
 
   const content = stripComments(rawContent);
 
-  // 检查 import 状态
-  const hasUiCopyImport = UI_COPY_IMPORT_RE.test(content);
-  if (hasUiCopyImport) continue;
-
-  // 找所有 >=5 中文字符的 match (出现位置不限 — JSX text / attribute value / template str 等)
-  const matches = [...content.matchAll(CJK_LONG_RE)];
-  if (matches.length === 0) continue;
-
   const lines = content.split('\n');
 
-  for (const m of matches) {
-    const matchIndex = m.index;
-    const lineNum = content.slice(0, matchIndex).split('\n').length;
+  for (let index = 0; index < lines.length; index += 1) {
+    const line = lines[index] ?? '';
+    const lineNum = index + 1;
+    if (ALLOW_RE.test(line)) continue;
 
-    // 行级 escape
-    if (ALLOW_RE.test(lines[lineNum - 1] ?? '')) continue;
-    // <title> 节点放过 (HTML title — 页面标题)
-    if (isInTitleNode(content, matchIndex)) continue;
+    for (const pattern of ATTR_PATTERNS) {
+      pattern.regex.lastIndex = 0;
+      for (const match of line.matchAll(pattern.regex)) {
+        const literal = match[2] ?? '';
+        if (!CJK_LONG_RE.test(literal)) continue;
+        pushViolation(violations, file, lineNum, literal, pattern.name);
+      }
+    }
 
-    const snippet = m[0].length > 30 ? m[0].slice(0, 30) + '...' : m[0];
-    violations.push({
-      file: relative(process.cwd(), file).replace(/\\/g, '/'),
-      line: lineNum,
-      snippet,
-    });
+    if (!TOAST_CALL_RE.test(line)) continue;
+    STRING_LITERAL_RE.lastIndex = 0;
+    for (const match of line.matchAll(STRING_LITERAL_RE)) {
+      const literal = match[2] ?? '';
+      if (!CJK_LONG_RE.test(literal)) continue;
+      pushViolation(violations, file, lineNum, literal, 'toast');
+    }
   }
 }
 
@@ -163,11 +168,11 @@ if (violations.length > 0) {
     `\n${icon} ${violations.length} ui-copy-ssot ${label}${modeNote} across ${files.length} files:\n`,
   );
   for (const v of violations) {
-    console.error(`  ${v.file}:${v.line}  inline CJK >4 chars: "${v.snippet}"`);
+    console.error(`  ${v.file}:${v.line}  ${v.kind} literal >4 chars: "${v.snippet}"`);
   }
   console.error(
     `\n规则 (PR4 — Frontend Style Guide v1 ui-copy SSOT):\n` +
-      `  - frontend/src/{views,components}/** 内联中文 >4 字符必须来自 @/lib/ui-copy import\n` +
+      `  - frontend/src/{views,components}/** 的 toast / placeholder / aria-label 字面量 >4 中文字符必须来自 @/lib/ui-copy\n` +
       `  - 把字面量收编进 ui-copy.ts 对应 namespace (EMPTY / ERROR / AUTH / BYOM / LLM_QA / ESSAY / ...)\n` +
       `  - 然后从该文件 import \`from '@/lib/ui-copy'\` 引用\n` +
       `  - 路径白名单: views/marketing/ / views/landing/\n` +

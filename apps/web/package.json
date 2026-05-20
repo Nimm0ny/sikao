@@ -10,7 +10,7 @@
     "typecheck": "tsc -b --noEmit",
     "lint": "npm run lint:eslint && npm run lint:guardrails",
     "lint:eslint": "eslint .",
-    "lint:guardrails": "npm run lint:icon-button && npm run lint:no-emoji-as-icon && npm run lint:italic && npm run lint:cn-simplified",
+    "lint:guardrails": "npm run lint:hardcode && npm run lint:radius-token && npm run lint:ui-copy-ssot && npm run lint:breadcrumb-comments && npm run lint:icon-button && npm run lint:no-emoji-as-icon && npm run lint:italic && npm run lint:cn-simplified",
     "lint:guardrails:full": "npm run lint:guardrails && npm run lint:practice-svg-only",
     "lint:hardcode": "node ./scripts/lint-hardcode.mjs",
     "lint:radius-token": "node ./scripts/lint-radius-token.mjs",

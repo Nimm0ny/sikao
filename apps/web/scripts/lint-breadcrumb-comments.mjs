@@ -3,8 +3,8 @@
  * lint-breadcrumb-comments.mjs — audit implementation-history breadcrumb comments.
  *
  * Slice 9 requires a guardrail for comment cleanup, but current page slices still carry
- * historical rollout notes. This script stays warn-only by default so workers can see
- * the debt without blocking unrelated page implementation.
+ * historical rollout notes. This script now fails by default so touched files
+ * cannot re-introduce rollout-history comments silently.
  *
  * Scope:
  *   - apps/web/src/views/**
@@ -16,8 +16,8 @@
  *   temporary implementation history
  *
  * Modes:
- *   - default warn (exit 0)
- *   - --mode=error or LINT_BREADCRUMB_MODE=error (exit 1)
+ *   - default error (exit 1)
+ *   - --mode=warn or LINT_BREADCRUMB_MODE=warn (exit 0)
  *
  * Escape hatch:
  *   - line-level `// breadcrumb-allow: <reason>`
@@ -52,8 +52,8 @@ const PATTERNS = [
 function getMode() {
   const argMode = process.argv.find((arg) => arg.startsWith('--mode='));
   if (argMode) return argMode.slice('--mode='.length);
-  if (process.env.LINT_BREADCRUMB_MODE === 'error') return 'error';
-  return 'warn';
+  if (process.env.LINT_BREADCRUMB_MODE === 'warn') return 'warn';
+  return 'error';
 }
 
 const MODE = getMode();
