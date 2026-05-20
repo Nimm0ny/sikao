@@ -10,6 +10,7 @@ import {
 } from '@sikao/domain/study-record/exam-calendar';
 import { isTrackedExam, toggleTrackedExam } from '@sikao/domain/study-record/exam-tracking';
 import { cn } from '@sikao/shared-utils';
+import { EXAM_COPY } from '@/lib/ui-copy';
 
 // Phase 7.x — 单 exam 倒计时卡片. dumb 组件, props-only.
 //
@@ -22,7 +23,7 @@ import { cn } from '@sikao/shared-utils';
 // (audit #13). 其他 phase 保持现状.
 
 const PHASE_COPY: Record<ExamPhase, { label: string; tone: 'neutral' | 'warn' | 'danger' | 'success' }> = {
-  'before-registration': { label: '报名未开始', tone: 'neutral' },
+  'before-registration': { label: EXAM_COPY.countdownNotOpen, tone: 'neutral' },
   'registration-open': { label: '正在报名', tone: 'warn' },
   preparation: { label: '备考中', tone: 'neutral' },
   imminent: { label: '即将开考', tone: 'danger' },
@@ -70,11 +71,11 @@ function buildIcsBlob(event: ExamEvent): Blob {
     desc.push(`报名期: ${event.registrationStart} ~ ${event.registrationEnd}`);
   }
   if (event.notes !== undefined) desc.push(event.notes);
-  if (event.precision === 'estimate') desc.push('日期为估算值, 以官方公告为准.');
+  if (event.precision === 'estimate') desc.push(`${EXAM_COPY.countdownEstimatePart1}, ${EXAM_COPY.countdownEstimatePart2}.`);
   // desc 数组拼接前各段单独 escape, 用 literal \n (RFC 5545) 分行.
   const description = desc.length > 0
     ? desc.map(escapeIcsText).join('\\n')
-    : escapeIcsText('公考考试日');
+    : escapeIcsText(EXAM_COPY.countdownExamDay);
   const lines = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',

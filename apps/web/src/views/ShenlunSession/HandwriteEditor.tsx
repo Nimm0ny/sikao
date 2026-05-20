@@ -10,10 +10,7 @@ import { COLS, ROWS_PER_PAGE, CELL } from '@sikao/answer-engine/grid-layout/grid
 import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 import { cn } from '@sikao/shared-utils';
 
-// ShenlunSession/HandwriteEditor (PR13 P3, 2026-05-13) — canvas 横格手写编辑器.
 //
-// Spec SSOT: docs/design/handoff/Shenlun & Tablet Refinements · Handoff.md §2.6
-// + plan docs/plan/sikao-shenlun-dual-mode-pr13.md §6.
 //
 // 设计:
 //   - 25×18 横格 (横线 only, NOT 田字格). 复用 gridLayout.ts 的 COLS/ROWS_PER_PAGE/

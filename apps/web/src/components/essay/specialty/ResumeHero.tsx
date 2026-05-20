@@ -16,6 +16,7 @@ import { useMemo } from 'react';
 import type { SpecialtyResumeV2 } from '@sikao/api-client/queries/essaySpecialtyQueries';
 import type { XingceSpecialtyResumeV2 } from '@sikao/api-client/queries/xingceSpecialtyQueries';
 import type { SpecialtyMode } from './StatStrip';
+import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 
 export interface ResumeHeroProps {
   readonly resume: SpecialtyResumeV2 | XingceSpecialtyResumeV2;
@@ -83,7 +84,7 @@ export function ResumeHero({
             data-pattern="dot"
           />
           <span className="font-mono text-tiny tracking-widest uppercase text-paper/55">
-            上次练到这里
+            {ESSAY_SIKAO_COPY.resumeHere}
           </span>
         </div>
         <h2 className="font-serif text-xl font-medium tracking-tight leading-snug">

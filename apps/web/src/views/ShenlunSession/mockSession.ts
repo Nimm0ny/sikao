@@ -1,9 +1,7 @@
-// Mock session data for PR13 P2 layout — gets replaced by BE wiring in P5.
 //
 // Why: TopBar + MaterialPane render end-to-end against this stub so the
 // layout can be validated visually + by Chrome MCP audit before the
 // /essay/sessions/{id}/draft endpoint lands. Shape is intentionally kept
-// minimal — only the fields the two PR2 components actually consume.
 //
 // Replacement contract (P5): BE returns the same Material / Question shape
 // (or a superset) via /api/v2/essay/sessions/{id}; the FE adapter maps
@@ -31,7 +29,6 @@ export interface ShenlunMockSession {
 }
 
 // TD1 设计稿对齐 (Mobile and Tablet Pack New.html line 2257-2261 + 2229-2240).
-// 内容是节选, 不是真实试题, 只用于 PR13 P2 layout 调试.
 export const MOCK_SHENLUN_SESSION: ShenlunMockSession = {
   examLabel: '2024 国考 · 模拟一',
   materials: [

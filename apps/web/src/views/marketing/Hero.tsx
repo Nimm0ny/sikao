@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom';
 
 // Marketing V1 Hero — 思考 蓝色下划线渐入 + 大 chip + 64px h1 weight 600 balance + 大 CTA hover scale.
-// Preview card 已拆到 Preview.tsx (Phase C2). Hero 只剩 chip + h1 + lead + CTAs + meta.
 
 export function MarketingHero() {
   return (

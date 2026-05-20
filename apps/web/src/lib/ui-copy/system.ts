@@ -106,6 +106,7 @@ export const LLM_QA_COPY = {
   askButton:         '问解析',
   askButtonShort:    '问解析',          // 同字段, 留 future 区分桌面/紧凑.
   panelTitle:        '解析问答',
+  intentAriaLabel:   '选择问题意图',
   // PR10 AskDrawer 三态宿主标题 fmt — "问 · 第 N 题" (设计稿 M3 .sheet-head h3).
   askDrawerTitle:    (n: number): string => `问 · 第 ${n} 题`,
   // PR10 AskDrawer 推荐 prompt chips (3 条铁线 — 不增不减).
@@ -133,6 +134,7 @@ export const LLM_QA_COPY = {
   historyEmpty:      '还没有解析问答会话.',
   historyMessageCount: '条消息',
   deleteConfirm:     '确认删除这个会话? 历史不可恢复.',
+  deleteRemovedDesc: '会话已移除',
   delete:            '删除',
   cancel:            '取消',
 } as const;
@@ -217,12 +219,15 @@ export const ESSAY_GRADING_COPY = {
   // 进度: M / N 题已完成批改
   examResultsProgressFmt: (completed: number, total: number): string =>
     `${completed} / ${total} 题已完成批改`,
+  examResultsTaskSyncWarn: '申论报告已就绪，但今日任务状态同步失败',
   // partial submit (5 题中 M 题成功, N - M 题 POST 失败 / 弃考). 头部红色提示.
   examResultsMissingHint: (submitted: number, total: number): string =>
     `本卷 ${total} 题, ${submitted} 题进入批改; ${total - submitted} 题未提交 (网络失败 / 弃考).`,
   examResultsInvalidLink: '链接无效',
   examResultsInvalidLinkDesc: '整卷成绩单链接缺少题号信息. 请回到「我的申论」从历史记录进入.',
   examResultsRetryFailed: '重新提交此题批改',
+  retryFailedTitle:       '重新提交失败',
+  retryFailedDesc:        '请稍后重试.',
 } as const;
 
 export const OFFLINE_COPY = {

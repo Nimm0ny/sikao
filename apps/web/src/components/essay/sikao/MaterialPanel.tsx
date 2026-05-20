@@ -7,7 +7,7 @@ import {
   TrashIcon,
 } from '@sikao/ui/icons';
 import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
-import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy/essay-sikao';
+import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 import { MaterialClip } from './MaterialClip';
 import { buildSourceLabel } from './lib/sourceLabel';
 import type { Material, Highlight } from '@sikao/domain/shenlun/types';
@@ -153,7 +153,7 @@ export function MaterialPanel({
         ) : (
           <div />
         )}
-        <div className="essay-material-actions" aria-label="材料标注工具">
+        <div className="essay-material-actions" aria-label={ESSAY_SIKAO_COPY.materialToolbar}>
           <span className="essay-proto-toolbar-divider" aria-hidden="true" />
           <Tooltip label={ESSAY_SIKAO_COPY.materialUnderline} side="bottom">
             <IconBtn

@@ -1,12 +1,10 @@
 /**
- * EssaySpecialty — SIKAO Wave 4 Phase 2C /essay/specialty hifi 升级.
  *
  * 接 Y2-BE d14b0ab 2 endpoint (summary + categories):
  *   - GET /papers/essay/specialty/summary    → StatStrip + ResumeHero
  *   - GET /papers/essay/specialty/categories → 5 CategoryCard (公文/应用文 BE 拆开
  *     2 条, FE 视觉上不再合并 — BE 返 6 cats 即 6 卡; "公文" 题库未补齐时 state='empty')
  *
- * 旧 view (chip-filter list) 整套替换为 hifi:
  *   - StatStrip 4 格 (已练 / 连续 / 本周 / 平均分)
  *   - ResumeHero (条件渲染, resume === null → 隐藏)
  *   - 5+ CategoryCard 展开 + 子行选题 → /essay/specialty/{questionId}
@@ -137,7 +135,6 @@ function CategoryList({
   onStartCategory,
   onPickSubtype,
 }: CategoryListProps) {
-  // 默认展开规则: 第一卡 open (跟 hifi 一致); 后续若 resume 落在某卡, 优先展开它.
   const continueCatIdx = resumeQuestionId !== null
     ? cats.findIndex((c) =>
         c.subTypes.some((s) => s.questionId === resumeQuestionId),

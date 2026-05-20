@@ -12,6 +12,7 @@ import {
 } from '@sikao/ui/icons';
 import { cn } from '@sikao/shared-utils';
 import { useAuthStore } from '@sikao/domain/auth/useAuthStore';
+import { HOME_COPY } from '@/lib/ui-copy';
 
 /**
  * MobileTabBar — 移动端底部 4 项 tab 栏（Phase 5.7）。
@@ -81,7 +82,7 @@ export function MobileTabBar() {
           'grid grid-cols-4',
           'bg-surface/95 backdrop-blur border-t border-line',
         )}
-        aria-label="移动端底部导航"
+        aria-label={HOME_COPY.mobileNavAriaLabel}
         data-testid="mobile-tabbar"
       >
         {TAB_ENTRIES.map((entry) => (

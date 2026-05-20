@@ -9,9 +9,7 @@ import { NavSubmitIcon } from '@sikao/ui/icons/NavSubmitIcon';
 import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 import { cn } from '@sikao/shared-utils';
 
-// ShenlunSession/TopBar (PR13 P2, 2026-05-13) — 60px 单行 TD1 顶条.
 //
-// Spec SSOT: docs/design/handoff/Shenlun & Tablet Refinements · Handoff.md §2.3
 // + docs/design/Mobile and Tablet Pack New.html line 2229-2240.
 //
 // 元素左→右: 退出 IconBtn / 模拟标识 / 计时 / 字数 / 保存态 / spacer / 上一题 /

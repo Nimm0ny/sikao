@@ -6,7 +6,6 @@ import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { server } from '@sikao/test-utils/server';
 import EssayPapers from '../EssayPapers';
 
-// SIKAO Wave 4 Phase 2C: 旧 PaperListCard grid 已被 hifi FiltersPanel +
 // PaperRow list 替换. 后端 endpoint 从 /papers/essay/list 切到
 // /papers/essay/{list/extended,filters}.
 

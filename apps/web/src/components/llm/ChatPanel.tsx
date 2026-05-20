@@ -193,7 +193,7 @@ export function ChatPanel({
         <div
           className="flex flex-wrap gap-2 px-7 py-4 border-b border-line shrink-0"
           role="radiogroup"
-          aria-label="选择问题意图"
+          aria-label={LLM_QA_COPY.intentAriaLabel}
         >
           {INTENT_OPTIONS.map((opt) => (
             <button

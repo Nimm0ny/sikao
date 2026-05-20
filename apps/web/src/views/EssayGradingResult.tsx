@@ -1,6 +1,5 @@
 // EssayGradingResult — Slice 2d /essay/grades/:recordId 申论批改报告 view.
 //
-// SIKAO Wave 2 Phase 3 — hifi 05b paper-tint 升级 (Fixer D).
 //   - essay-res grid 1fr/320px 双段 layout
 //   - 主区: <EssayResultHero> + <QuestionBreakdown> (单 record = 1 行 5 维)
 //           + <EssayThinkBlock> (suggestions/strengths) + <SampleAnswerCard>
@@ -10,7 +9,6 @@
 // 三态 dispatch:
 //   pending   → EssayGradingPending (loader + 30s slow hint)
 //   failed    → EssayGradingFailed (product copy + retry button 走新 record)
-//   completed → 新 hifi 05b 报告布局
 //
 // retry on failed: 拉原 question.answerText (已落 record.answerText), 走
 // POST /grade 创新 record + navigate(/grades/new-id). 旧 record immutable.
@@ -55,7 +53,6 @@ import type { EssayFeedbackV2, EssayGradingV2 } from '@sikao/api-client/types/ap
 const POLL_INTERVAL_MS = 1000;
 
 export default function EssayGradingResult() {
-  // Phase 3.6 fenbi-merge — D3: 申论批改报告属考场态, 应用 examTheme.
   useApplyExamTheme();
   const { recordId: rawId } = useParams<{ recordId: string }>();
   const recordId = rawId !== undefined ? Number(rawId) : NaN;
@@ -83,7 +80,7 @@ export default function EssayGradingResult() {
       // 跟 EssayPractice submitMutation onError 一样不 re-throw — useMutation
       // 自身 isError state 已 first-class.
       logger.error('essay.grade.retry_failed', { recordId, err: String(err) });
-      toast.error('重新提交失败', '请稍后重试.');
+      toast.error(ESSAY_GRADING_COPY.retryFailedTitle, ESSAY_GRADING_COPY.retryFailedDesc);
     },
   });
 

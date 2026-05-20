@@ -57,7 +57,7 @@ export default function ConversationsHistory() {
       void queryClient.invalidateQueries({ queryKey: llmConversationsKeys.list() });
       if (selectedId === id) setSelectedId(null);
       setPendingDelete(null);
-      toast.info('已删除', '会话已移除');
+      toast.info('已删除', LLM_QA_COPY.deleteRemovedDesc);
     },
     onError: (err) => {
       logger.error('llm.conversation.delete_failed', { err: String(err) });

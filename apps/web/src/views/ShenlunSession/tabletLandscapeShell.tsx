@@ -35,17 +35,14 @@ function mapDraftStatusToTopBar(status: DraftSaveStatus): TopBarSaveStatus {
   return status;
 }
 
-// TabletLandscapeShell — TD1 / TD1b 横屏统一容器 (PR13 P2, 2026-05-13).
 //
 // 布局: TopBar (60px) + 三栏 body (左 340 MaterialPane / 中 flex-1 editor 占位
 //       / 右 32-320 OutlineAside 占位). 编辑器在 P3 实施, OutlineAside 在 P4
 //       实施, BE wire 在 P5 替换 mock 数据.
 //
 // `mode` 由 ShenlunSession dispatcher 下发: 'typed' = TD1 / 'handwritten' = TD1b.
-// PR13 P2 只在 data-mode 上反映, 视觉差异 (TypedEditor / HandwriteEditor 切换)
 // 由 P3 完成.
 //
-// 状态管理: PR13 P2 用本地 useState 持有 activeQuestionId / saveStatus / elapsed
 // 等. P5 接 BE 后由 react-query + sessionStore 替换. 不引 zustand store 现在
 // 是因为 mock 数据是 readonly const, 没有跨组件同步需求.
 
@@ -214,13 +211,9 @@ export default function TabletLandscapeShell({
             />
           )}
         </main>
-        {/* Pencil 模式右侧 OCR stub 240w (handoff §2.6 spec); typed 模式不出现.
-            OcrPanel 紧贴 OutlineAside 浮条左侧, 视觉权重: editor > OcrPanel > OutlineAside. */}
         {mode === 'handwritten' ? (
           <OcrPanel onSubmitHandwritten={handleSubmitHandwritten} />
         ) : null}
-        {/* 大纲浮条默认 collapsed 32px (handoff §2.5 spec); 跨 typed / handwritten
-            模式共用同一 outline state (用户即使切模式 outline 也不丢). */}
         <OutlineAside
           questionId={activeQuestion.id}
           questionLabel={activeQuestion.label}

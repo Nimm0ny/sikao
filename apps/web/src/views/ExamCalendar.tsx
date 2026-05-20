@@ -5,11 +5,10 @@ import { Button, EmptyState, PageHeader, Skeleton } from '@sikao/ui/ui';
 import { ExamCountdownCard } from '@/components/exam/ExamCountdownCard';
 import { sortByUpcoming, daysUntil, type ExamCategory, type ExamEvent } from '@sikao/domain/study-record/exam-calendar';
 import { getTrackedExamSlugs } from '@sikao/domain/study-record/exam-tracking';
-import { ERROR_COPY } from '@/lib/ui-copy';
+import { ERROR_COPY, EXAM_COPY } from '@/lib/ui-copy';
 import { examEventsKeys, fetchExamEvents } from '@sikao/api-client/apiQueries';
 import { cn } from '@sikao/shared-utils';
 
-// Phase 7.x — 考试日历 view. 列出近期 + 历史考试, 提供 倒计时.
 //
 // ARCH §7.3 P3 (2026-04-28): 数据从前端 hardcoded 移到后端 admin 维护.
 // 通过 GET /api/v2/exam-events 拉 (visible=True 的 events). admin 通过
@@ -80,7 +79,7 @@ export default function ExamCalendar() {
       <div
         className="flex flex-wrap gap-2"
         role="tablist"
-        aria-label="按类别筛选"
+        aria-label={EXAM_COPY.categoryFilterAria}
         data-testid="exam-calendar-facets"
       >
         {CATEGORY_FACETS.map((opt) => {

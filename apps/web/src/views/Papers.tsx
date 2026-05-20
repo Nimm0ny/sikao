@@ -1,5 +1,4 @@
 /**
- * Papers — SIKAO Wave 5A /papers 行测套卷题库 hifi 升级.
  *
  * 接 Xa-BE 7a06b94 2 endpoint (mirror EssayPapers):
  *   - GET /papers/xingce/filters         → FiltersPanel chip 候选 (regions/years/paperTypes)
@@ -11,7 +10,6 @@
  *   - 切 filter → page reset 到 1 (跨筛选 page 索引无意义)
  *   - 单页 (totalPages=1) 不渲染 pager
  *
- * 旧 view (clientside FENBI- prefix filter + PaperListSection grid) 整套替换为 hifi:
  *   - FiltersPanel 3 行 chip (地区 / 卷型 / 年份) + 重置入口
  *   - PaperRow 5 列 grid (yr/title+tags/stat+difficulty/status+lastAttempt/cta)
  *   - Pagination atom (server-side pagination, 不再 client-side filter 762)

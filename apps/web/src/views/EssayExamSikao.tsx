@@ -7,7 +7,7 @@ import { EssayShellSikao } from '@/components/essay/sikao';
 import { essayClient } from '@sikao/api-client/essay-client';
 import { trackEvent } from '@/lib/analytics';
 import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
-import { ERROR_COPY } from '@/lib/ui-copy';
+import { ERROR_COPY, ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
 import { useApplyExamTheme } from '@/styles/useThemeStore';
@@ -82,7 +82,6 @@ export default function EssayExamSikao() {
       if (!snap) return;
       const paper = query.data?.paper;
       if (!paper) return;
-      // 进 submitting 而非 finish — 跟 EssayExam.tsx PR3 流程一致, 失败 setState
       // 回 'running' 让用户重交.
       startSubmitting();
       void essayClient
@@ -115,7 +114,7 @@ export default function EssayExamSikao() {
         .catch((err: unknown) => {
           logger.error('essay-exam.submit-failed', { err: String(err) });
           useExamSession.setState({ phase: 'running' });
-          toast.error('交卷失败,请稍后再试');
+          toast.error(ESSAY_SIKAO_COPY.submitRetry);
         });
     },
     [finish, navigate, paperCode, query.data, startSubmitting, studyTaskId, toSnapshot],

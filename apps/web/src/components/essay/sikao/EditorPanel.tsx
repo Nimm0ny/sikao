@@ -10,6 +10,7 @@ import { useCallback, useMemo, useRef } from 'react';
 import { IconBtn } from '@sikao/ui/ui/IconBtn';
 import { NavCloseIcon } from '@sikao/ui/icons';
 import { NoteCaptureLauncher } from '@/components/notes';
+import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
 import { bodyChars } from '@sikao/answer-engine/word-limit/bodyChars';
 import { CiteBar } from './CiteBar';
@@ -203,7 +204,7 @@ export function EditorPanel({ onJumpToClip }: Props) {
         onDragOver={handleDragOver}
         onDrop={handleDrop}
         spellCheck={false}
-        placeholder="在此作答…"
+        placeholder={ESSAY_SIKAO_COPY.typedEditorPlaceholder}
         aria-label={`作答：${question.title}`}
         data-testid="essay-editor-panel-textarea"
         className="flex-1 min-h-0 w-full px-6 py-5 font-serif text-ink bg-transparent outline-none resize-none"
@@ -228,7 +229,7 @@ export function EditorPanel({ onJumpToClip }: Props) {
             sourceRef: `申论题 ${question.no} · ${question.title}`,
           }}
           sourceQuote={question.body || question.title}
-          tooltip="添加到笔记本"
+          tooltip={ESSAY_SIKAO_COPY.editorAddToNotebook}
           testId="essay-editor-panel-capture"
         />
         <IconBtn

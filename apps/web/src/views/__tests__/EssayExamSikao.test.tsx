@@ -18,7 +18,6 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Phase 3 申论 SIKAO V3 wire test — 同 EssayExam.test.tsx pattern, 把
 // EssayShellSikao mock 成最小 harness, 验证 EssayExamSikao 的 query / hydrate
 // /handleSubmit 链路 (复用 EssayExam.tsx 整套 pipeline, 只换底层渲染组件).
 vi.mock('@/components/essay/sikao', async () => {

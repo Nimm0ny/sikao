@@ -1,5 +1,4 @@
 /**
- * CategoryTree — SIKAO Wave 5A /categories 行测专项 hifi 升级.
  *
  * 接 Xa-BE 7a06b94 2 endpoint (mirror EssaySpecialty):
  *   - GET /papers/xingce/specialty/summary    → StatStrip + ResumeHero
@@ -7,7 +6,6 @@
  *
  * 5 大类: 言语 / 判断 / 数量 / 资料 / 常识 (BE 服务端硬编码 _XINGCE_CATEGORIES).
  *
- * 旧 view (6 卡 ProgressBar grid) 整套替换为 hifi:
  *   - StatStrip 4 格 (已练 / 连续 / 本周 / 正确率)
  *   - ResumeHero (条件渲染, resume === null → 隐藏)
  *   - 5 CategoryCard 展开 + 子行选题 → /practice/custom/start?topType=X
@@ -19,7 +17,6 @@
  * UI 差异仅 StatStrip avgScore suffix (essay /100, xingce %) + aria-label. 复用
  * 比复制 ~600 行更 SRP. 详 fixer 报告.
  *
- * 路由保持 /categories (避免动 sidebar nav, IA cleanup 留 Wave 5c).
  */
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';

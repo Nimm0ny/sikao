@@ -142,7 +142,6 @@ describe('ExamCalendar view', () => {
     expect(screen.getByTestId('exam-countdown-gw')).toBeInTheDocument();
   });
 
-  // 规范官 Phase C P1-3 (2026-05-08): ICS download 行为 + RFC 5545 escape 验证.
   it('ICS button click → URL.createObjectURL 调用 + blob 含 BEGIN:VCALENDAR + escape 逗号', async () => {
     // notes 里加逗号让 buildIcsBlob 触 escape 分支 (规范官 P1-2).
     server.use(

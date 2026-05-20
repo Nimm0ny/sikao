@@ -4,7 +4,6 @@ import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import HandwriteEditor from './HandwriteEditor';
 import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 
-// HandwriteEditor tests (PR13 P3, 2026-05-13).
 //
 // 覆盖:
 //   - 渲染 required props 不崩 + canvas role="img" + aria-label 含 questionLabel

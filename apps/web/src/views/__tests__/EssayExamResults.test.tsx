@@ -8,9 +8,7 @@ import { server } from '@sikao/test-utils/server';
 import EssayExamResults from '../EssayExamResults';
 import type { EssayFeedbackV2, EssayGradingV2 } from '@sikao/api-client/types/api';
 
-// PR2 — 整卷模考成绩单. URL: /essay/exam/results?paperCode&ids&total
 //
-// 5 个 case (review §5 PR2):
 //   - URL 无 ids / 非数 → 链接无效占位
 //   - 全 pending → 进度 0/N, 加权得分占位 "无法计算"
 //   - 部分 completed → 进度 M/N, 加权得分按 fullScore 计算 (review P0 #8)

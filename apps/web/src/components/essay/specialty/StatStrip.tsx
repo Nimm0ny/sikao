@@ -13,6 +13,7 @@
  */
 import type { SpecialtyTotalsV2 } from '@sikao/api-client/queries/essaySpecialtyQueries';
 import type { XingceSpecialtyTotalsV2 } from '@sikao/api-client/queries/xingceSpecialtyQueries';
+import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 
 export type SpecialtyMode = 'essay' | 'xingce';
 
@@ -68,7 +69,7 @@ function buildCells(
 
 export function StatStrip({ totals, mode = 'essay' }: StatStripProps) {
   const cells = buildCells(totals, mode);
-  const ariaLabel = mode === 'xingce' ? '行测专项总览' : '申论专项总览';
+  const ariaLabel = mode === 'xingce' ? ESSAY_SIKAO_COPY.statXingceOverview : ESSAY_SIKAO_COPY.statEssayOverview;
   return (
     <section
       className="flex border border-line bg-paper rounded-card overflow-hidden shrink-0"

@@ -4,7 +4,6 @@ import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import OutlineAside from './OutlineAside';
 import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 
-// OutlineAside tests (PR13 P4, 2026-05-13).
 //
 // 覆盖:
 //   - 默认 collapsed (defaultCollapsed 未传) → 渲染 32px 浮条 (role=button +

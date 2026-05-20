@@ -6,7 +6,6 @@ import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { server } from '@sikao/test-utils/server';
 import EssaySpecialty from '../EssaySpecialty';
 
-// SIKAO Wave 4 Phase 2C: 旧 chip-filter list 已被 hifi StatStrip + ResumeHero
 // + 5 CategoryCard 替换. 后端 endpoint 从 /essay/specialty/questions 切到
 // /papers/essay/specialty/{summary,categories}.
 

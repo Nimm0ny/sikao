@@ -1,5 +1,4 @@
 /**
- * CategoryTree — SIKAO Wave 5A /categories 行测专项 hifi 升级测试.
  *
  * 接 Xa-BE 7a06b94 2 endpoint (mirror EssaySpecialty):
  *   - /papers/xingce/specialty/summary    → StatStrip + ResumeHero

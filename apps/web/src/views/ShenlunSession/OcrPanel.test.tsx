@@ -4,16 +4,13 @@ import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import OcrPanel from './OcrPanel';
 import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 
-// OcrPanel tests (PR13 P4, 2026-05-13).
 //
 // 覆盖:
 //   - 渲染 required props 不崩 + ocrPanelTitle / ocrPanelDisabled 文案出现
 //   - stub 状态: OCR 提交 button disabled, 手写原稿 button **不** disabled
-//     (handoff §7 mitigation "不禁用手写本身")
 //   - 双 button 都有 aria-label (CLAUDE.md §4 SVG-only / IconBtn a11y 铁律)
 //   - onSubmitHandwritten 触发当 click
 //   - onSubmitOcr 不触发当 disabled (click 不上来)
-//   - width default 240 (handoff §2.6 spec)
 //   - width prop 自定义
 //
 // 不覆盖 (后续 phase):

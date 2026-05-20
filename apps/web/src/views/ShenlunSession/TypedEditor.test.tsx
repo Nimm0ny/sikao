@@ -4,7 +4,6 @@ import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import TypedEditor from './TypedEditor';
 import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 
-// TypedEditor tests (PR13 P3, 2026-05-13).
 //
 // 覆盖:
 //   - 渲染 required props 不崩 + question label 可见

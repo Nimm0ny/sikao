@@ -64,7 +64,6 @@ describe('VerifyEmailLanding', () => {
       expect(screen.getByTestId('verify-failed')).toBeInTheDocument();
     });
     expect(screen.getByText('验证链接已失效')).toBeInTheDocument();
-    // 未登录 → /login link (commit #6j: 视觉切 v1-minimal AuthShell, 不再用
     // EmptyState role=alert; testid + text + link 即可断言失败态)
     const link = screen.getByTestId('verify-failed-link');
     expect(link).toHaveAttribute('href', '/login');

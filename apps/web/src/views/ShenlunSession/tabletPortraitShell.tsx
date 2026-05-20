@@ -29,11 +29,9 @@ function mapDraftStatusToTopBar(status: DraftSaveStatus): TopBarSaveStatus {
   return status;
 }
 
-// TabletPortraitShell — TD2 竖屏容器 (PR13 P2, 2026-05-13).
 //
 // 布局: TopBar (60px, 同 TD1) + 上下叠 body (MaterialPane 顶部 + editor 占位
 //       下方). 竖屏空间窄, MaterialPane 走全宽 (overflow scroll), 不固定 340.
-//       底部 toolbar (T4 三键) 跟 PR15 配套, P2 不实施.
 //
 // 跟横屏 shell 的差异: 没有 mode prop (TD2 不区分手写/键入 - 竖屏 = pencil
 // pad + 触控键盘, 同一 editor stub). 直接 default editor 占位.
@@ -67,7 +65,6 @@ export default function TabletPortraitShell(): ReactElement {
   );
 
   // P4 outline state — 跟 landscape shell 同 pattern. portrait 不显示 OcrPanel
-  // (handoff §2.5 spec 未明确 portrait OutlineAside 落点 → master 决策: portrait
   // 走 OutlineAside collapsed 浮条放右下角, 不显示 OcrPanel; spec 显式说 OcrPanel
   // 只在 Pencil/TD1b 模式出现).
   const [outlinesByQuestion, setOutlinesByQuestion] = useState<Record<string, string>>({});
@@ -170,11 +167,6 @@ export default function TabletPortraitShell(): ReactElement {
             className="flex-1"
           />
         </main>
-        {/* 大纲浮条 — portrait 走 absolute 右侧悬浮 (32px vertical strip).
-            handoff §2.5 未明确 portrait OutlineAside 落点, master 决策: portrait
-            也保留大纲入口 (跟 landscape 体验对齐, 用户随手切题写 outline). 用
-            absolute + pointer-events-none/auto 不挤占主内容 click; 浮条展开
-            为 320 panel 时仍走 .t-aside 默认 sticky/right-side flow. */}
         <div className="absolute top-0 right-0 bottom-0 z-10 flex pointer-events-none">
           <div className="pointer-events-auto">
             <OutlineAside

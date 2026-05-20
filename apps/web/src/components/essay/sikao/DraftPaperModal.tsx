@@ -25,6 +25,12 @@ export function DraftPaperModal({ open, onClose }: DraftPaperModalProps) {
     drawingSnapshotRef.current = canvas.toDataURL('image/png');
   };
 
+  const readCanvasStrokeColor = () => {
+    const tokenColor = window.getComputedStyle(document.documentElement).getPropertyValue('--ink-1').trim();
+    if (tokenColor.length > 0) return tokenColor;
+    return window.getComputedStyle(document.body).color;
+  };
+
   useEffect(() => {
     if (!open || mode !== 'draw') return;
     const canvas = canvasRef.current;
@@ -37,7 +43,7 @@ export function DraftPaperModal({ open, onClose }: DraftPaperModalProps) {
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
-    ctx.strokeStyle = '#111827';
+    ctx.strokeStyle = readCanvasStrokeColor();
     ctx.lineWidth = 1.6;
     ctx.lineCap = 'round';
     const snapshot = drawingSnapshotRef.current;
@@ -127,7 +133,7 @@ export function DraftPaperModal({ open, onClose }: DraftPaperModalProps) {
             </div>
           </div>
           <div className="flex items-center gap-1">
-            <div className="flex p-0.5 rounded-tiny bg-paper-2 border border-line mr-2">
+            <div className="mr-2 flex rounded-tiny border border-line bg-paper-2 p-1">
               <button
                 type="button"
                 onClick={() => switchMode('write')}
@@ -151,7 +157,7 @@ export function DraftPaperModal({ open, onClose }: DraftPaperModalProps) {
             <button
               type="button"
               onClick={clear}
-              className="h-8 px-2.5 rounded-tiny border border-line text-ink-2 hover:border-ink-1 flex items-center gap-1 text-meta"
+              className="flex h-8 items-center gap-1 rounded-tiny border border-line px-3 text-meta text-ink-2 hover:border-ink-1"
               aria-label={ESSAY_SIKAO_COPY.draftClear}
               data-testid="essay-draft-paper-clear"
             >

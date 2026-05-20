@@ -79,7 +79,6 @@ describe('EssayGradingResult', () => {
       expect(screen.getByTestId('essay-grading-result-completed')).toBeInTheDocument(),
     );
     expect(screen.getByText('申论批改报告')).toBeInTheDocument();
-    // SIKAO Wave 2 Phase 3: 新 hifi 05b 布局 — EssayResultHero +
     // QuestionBreakdown + EssayThinkBlock + SampleAnswerCard + ResultActions
     expect(screen.getByTestId('essay-result-hero')).toBeInTheDocument();
     expect(screen.getByTestId('qbreak')).toBeInTheDocument();
@@ -90,7 +89,6 @@ describe('EssayGradingResult', () => {
     expect(screen.getByTestId('essay-grading-result-print')).toHaveTextContent('打印报告');
     expect(screen.getByTestId('essay-grading-result-actions-back')).toHaveTextContent('返回我的申论');
     // 不暴露 LLM / Pro 等"机器在评分"暗示 (调性: 像图书馆同学批改).
-    // 注意: "AI · 思考" 是新 hifi tag, 它本身被允许 — 不属于"机器在评分"暗示;
     // 只要不出现 "LLM" / "智能评分" / "Pro" / "模型" 字样.
     expect(screen.queryByText(/LLM|智能评分|模型/i)).not.toBeInTheDocument();
     expect(analyticsBody).toEqual({

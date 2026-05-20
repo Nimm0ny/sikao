@@ -9,6 +9,7 @@
 import { ToolEyeIcon } from '@sikao/ui/icons/ToolEyeIcon';
 import { XCloseIcon } from '@sikao/ui/icons/XCloseIcon';
 import type { Citation } from './types';
+import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 
 export interface CiteBarProps {
   readonly citations: readonly Citation[];
@@ -34,7 +35,7 @@ export function CiteBar({ citations, onJump, onRemove }: CiteBarProps) {
             type="button"
             onClick={() => onJump(cite)}
             className="inline-flex items-center gap-1 cursor-pointer"
-            aria-label={`跳到引用源 ${cite.sourceLabel}`}
+            aria-label={`${ESSAY_SIKAO_COPY.citeJumpToSource} ${cite.sourceLabel}`}
           >
             <ToolEyeIcon size={12} />
             {cite.sourceLabel}

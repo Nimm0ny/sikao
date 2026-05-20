@@ -2,10 +2,7 @@ import { useCallback, useId, type ReactElement } from 'react';
 import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 import { cn } from '@sikao/shared-utils';
 
-// ShenlunSession/TypedEditor (PR13 P3, 2026-05-13) — 键盘 textarea 编辑器.
 //
-// Spec SSOT: docs/design/handoff/Shenlun & Tablet Refinements · Handoff.md §2.6
-// + plan docs/plan/sikao-shenlun-dual-mode-pr13.md §6.
 //
 // 设计:
 //   - dumb 组件: 不读 zustand store / 不调 API. value + onChange 由 shell 持有,

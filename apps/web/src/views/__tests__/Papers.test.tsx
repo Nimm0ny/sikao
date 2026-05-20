@@ -1,5 +1,4 @@
 /**
- * Papers — SIKAO Wave 5A /papers 行测套卷题库 hifi 升级测试.
  *
  * 接 Xa-BE 7a06b94 2 endpoint (mirror EssayPapers):
  *   - /papers/xingce/filters         → FiltersPanel chip

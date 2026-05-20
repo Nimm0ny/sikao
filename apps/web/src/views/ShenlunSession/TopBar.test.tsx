@@ -4,7 +4,6 @@ import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import TopBar from './TopBar';
 import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 
-// TopBar tests (PR13 P2, 2026-05-13).
 //
 // 覆盖:
 //   - 渲染 required props 不崩

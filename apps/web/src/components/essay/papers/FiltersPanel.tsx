@@ -22,6 +22,7 @@ import { useMemo } from 'react';
 import type { EssayPapersFiltersResponseV2 } from '@sikao/api-client/queries/essaySpecialtyQueries';
 import type { XingcePapersFiltersResponseV2 } from '@sikao/api-client/queries/xingceSpecialtyQueries';
 import type { SpecialtyMode } from '../specialty/StatStrip';
+import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 
 export type FilterField = 'region' | 'year' | 'paperType';
 
@@ -107,7 +108,7 @@ export function FiltersPanel({
   onChange,
   onReset,
 }: FiltersPanelProps) {
-  const ariaLabel = mode === 'xingce' ? '行测真题筛选' : '申论真题筛选';
+  const ariaLabel = mode === 'xingce' ? ESSAY_SIKAO_COPY.filtersXingce : ESSAY_SIKAO_COPY.filtersEssay;
   const tid = (k: string): string => `${mode}-papers-${k}`;
   const sumTags = useMemo(() => buildSumTags(value), [value]);
   const hasFilters = sumTags.length > 0;

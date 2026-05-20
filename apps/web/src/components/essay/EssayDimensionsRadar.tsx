@@ -1,5 +1,6 @@
 import { cn } from '@sikao/shared-utils';
 import type { EssayDimensionV2 } from '@sikao/api-client/types/api';
+import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 
 // Slice 2d — 申论 5 维度雷达图 (dumb, props-only).
 //
@@ -87,7 +88,7 @@ export function EssayDimensionsRadar({
         viewBox={`0 0 ${VIEW_BOX} ${VIEW_BOX}`}
         className="w-full h-auto"
         role="img"
-        aria-label="申论 5 维度评分雷达图"
+        aria-label={`申论 5 ${ESSAY_SIKAO_COPY.radarAriaLabel}`}
       >
         {/* grid rings */}
         {gridRings.map((ratio) => (

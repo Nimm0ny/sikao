@@ -29,6 +29,7 @@ import type {
 } from '@sikao/api-client/queries/xingceSpecialtyQueries';
 import { SubtypeRow } from './SubtypeRow';
 import type { SpecialtyMode } from './StatStrip';
+import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 
 export type AnyCategory = SpecialtyCategoryV2 | XingceSpecialtyCategoryV2;
 type AnyRow = SpecialtySubtypeRowV2 | XingceSpecialtySubtypeRowV2;
@@ -190,9 +191,9 @@ export function CategoryCard({
             />
           </div>
           <div className="flex justify-between font-mono text-tiny tracking-loose uppercase text-ink-3">
-            <span>
+              <span>
               {isEmpty
-                ? '题库导入中'
+                ? ESSAY_SIKAO_COPY.specialtyImporting
                 : `${cat.subTypes.length} 子项`}
             </span>
             <span className="text-ink font-semibold">{pctText}</span>
@@ -232,7 +233,7 @@ export function CategoryCard({
         >
           <div className="flex items-center justify-between mb-3 px-1">
             <h3 className="font-mono text-tiny tracking-widest uppercase text-ink-3 font-medium">
-              ↓ 按题型 · 选一子项专攻
+              ↓ 按题型 · {ESSAY_SIKAO_COPY.specialtyPickSub}
             </h3>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2">

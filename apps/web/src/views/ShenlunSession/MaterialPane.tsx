@@ -5,16 +5,12 @@ import { cn } from '@sikao/shared-utils';
 import ShenlunMaterialReader from './ShenlunMaterialReader';
 import type { ShenlunMaterial } from './mockSession';
 
-// ShenlunSession/MaterialPane (PR13 P2, 2026-05-13) — TD1 / TD1b 左 340 材料阅读区.
 //
-// Spec SSOT: docs/design/handoff/Shenlun & Tablet Refinements · Handoff.md §2.4
 // + docs/design/Mobile and Tablet Pack New.html line 2243-2270.
 //
-// 结构 (PR13 P2 范围):
 //   - 顶部 chip nav 行: 题号 chip 横排 (Chip primitive · rounded-pill)
 //   - 底部材料阅读区: ShenlunMaterialReader (serif 14 / 1.85, 滚动)
 //
-// PR13 P2 不包含:
 //   - 退出行 (TD1 在 TopBar 已持; TD1b 由 portrait shell 自己持)
 //   - 段 chips (给定材料 · 5 段) — 切材料的导航, 跟题号 chip 概念上重叠, 现在
 //     用题号 chip 同时驱动 material 切换 (1 题 ↔ 1 材料 mock 简化). 真实场景
@@ -23,7 +19,6 @@ import type { ShenlunMaterial } from './mockSession';
 //
 // 设计决策:
 //   - 不复用 components/essay/sikao/MaterialPanel: 那是高耦合 store +
-//     MaterialClip drag-drop primitive, 跟 PR13 P2 (纯 layout) 不匹配. 见
 //     ShenlunMaterialReader.tsx 顶部 comment.
 //   - 用 Chip primitive 做题号 nav: Chip 已是 design system pill button 标准件,
 //     selected 态自动反白 (规范 §5 .chip-btn.is-on), 不需要自绘. 横排可滚动

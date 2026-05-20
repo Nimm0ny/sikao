@@ -17,6 +17,7 @@ import { ActionPlusIcon } from '@sikao/ui/icons/ActionPlusIcon';
 import { ScratchIcon } from '@sikao/ui/icons/ScratchIcon';
 import { IconBtn } from '@sikao/ui/ui/IconBtn';
 import { Tooltip } from '@sikao/ui/ui/Tooltip';
+import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
 import { ScratchClip as ScratchClipCard } from './ScratchClip';
 import { ScratchNote as ScratchNoteCard } from './ScratchNote';
@@ -165,14 +166,14 @@ export function ScratchPad() {
         <ScratchIcon size={14} className="text-accent" />
         <span className="text-sm font-semibold text-ink tracking-wide">草稿纸</span>
         <span className="text-tiny text-ink-4">
-          拖入材料短语 · 全题共享
+          {ESSAY_SIKAO_COPY.scratchPadDragHint} · 全题共享
         </span>
         <div className="flex-1" />
-        <Tooltip label="添加自由便签" side="bottom">
+        <Tooltip label={ESSAY_SIKAO_COPY.scratchPadAddNote} side="bottom">
           <IconBtn
             type="button"
             size="sm"
-            aria-label="添加自由便签"
+            aria-label={ESSAY_SIKAO_COPY.scratchPadAddNote}
             onClick={handleAddNote}
             data-testid="essay-scratch-pad-add-note"
           >
@@ -188,7 +189,7 @@ export function ScratchPad() {
         <DropMarker />
         {totalItems === 0 ? (
           <div className="text-tiny text-ink-4 text-center px-2 py-8 leading-relaxed">
-            从左侧材料拖入划线短语<br />或点击「+ 自由便签」添加便签
+            {ESSAY_SIKAO_COPY.scratchPadEmpty}<br />或点击「+ {ESSAY_SIKAO_COPY.scratchPadAddNote}」添加便签
           </div>
         ) : (
           <>

@@ -2,15 +2,12 @@ import type { ReactElement } from 'react';
 import { cn } from '@sikao/shared-utils';
 import type { ShenlunMaterial } from './mockSession';
 
-// ShenlunMaterialReader (PR13 P2, 2026-05-13) — thin material body renderer.
 //
 // Why a separate primitive instead of reusing components/essay/sikao/MaterialPanel:
 //   - MaterialPanel hard-couples to `useExamSession` store + renders
 //     draggable `MaterialClip` spans on top of `highlights[matId]`.
-//     PR13 申论双模 (TD1 / TD1b) does NOT have the drag-to-scratch flow yet
 //     (P2 is layout only, P3 brings TypedEditor / HandwriteEditor without
 //     scratch). Pulling MaterialPanel in would (a) drag the store dependency
-//     into PR13's stub flow (b) leak MaterialClip drag handlers + grip UI
 //     into a reader that should just present serif body text.
 //   - Spec §2.4 simply asks "材料阅读区 (滚动)" — no highlight, no clip, no
 //     drag at this stage. The reader is essentially a serif <article>.

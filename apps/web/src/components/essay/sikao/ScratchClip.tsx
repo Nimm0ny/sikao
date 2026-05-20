@@ -16,6 +16,7 @@ import {
   type EssayClipDragPayload,
   type ScratchClip as ScratchClipModel,
 } from './types';
+import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 
 export interface ScratchClipProps {
   readonly clip: ScratchClipModel;
@@ -54,7 +55,7 @@ export function ScratchClip({ clip, onRemove }: ScratchClipProps) {
       <button
         type="button"
         onClick={() => onRemove(clip.id)}
-        aria-label={`删除草稿片段：${clip.text.slice(0, 12)}`}
+        aria-label={`${ESSAY_SIKAO_COPY.scratchClipDelete}：${clip.text.slice(0, 12)}`}
         className="absolute top-1 right-1 text-ink-4 hover:text-accent transition-colors duration-fast"
         data-testid={`essay-scratch-clip-remove-${clip.id}`}
       >

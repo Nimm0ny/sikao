@@ -1,7 +1,6 @@
 // EssayHistory — Slice 2d /essay/history 我的批改历史 view.
 //
 // 拉 GET /api/v2/essay/grades (latest 20 DESC), 用 EssayHistoryRow (Slice
-// 2d Commit 2c) 列每条 record. 三态走 QueryBoundary (T-C3 收敛).
 
 import { useQuery } from '@tanstack/react-query';
 import { FileTextIcon, LayersIcon } from '@sikao/ui/icons';

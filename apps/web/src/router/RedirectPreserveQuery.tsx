@@ -2,7 +2,6 @@ import type { ReactElement } from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 
 /**
- * RedirectPreserveQuery — PR16 (2026-05-13) 练习中心整合 redirect helper.
  *
  * React Router 默认 `<Navigate to="/x" />` 丢 `location.search`. 用 hook 取当前
  * search 拼到 to 上, 让 `?region= / ?year= / ?paperType= / ?page=` 等 query 透传.

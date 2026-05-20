@@ -9,4 +9,5 @@ export const EXAM_COPY = {
   countdownEstimatePart1: '日期为估算值',
   countdownEstimatePart2: '以官方公告为准',
   countdownExamDay:       '公考考试日',
+  categoryFilterAria:     '按类别筛选',
 } as const;

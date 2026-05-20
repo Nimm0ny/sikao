@@ -1,4 +1,3 @@
-// EssaySpecialtyExamSikao — Phase D /essay/specialty/:questionId 单题答题
 // view (SIKAO V3 双栏版). 复用 EssaySpecialtyExam.tsx 整套 pipeline (单题
 // wrap 成 1-question Paper / POST /essay/grade 单条 / navigate
 // /essay/grades/:recordId), 仅把 ExamShell mode='single' 替换成
@@ -21,7 +20,7 @@ import {
 import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
 import type { Paper } from '@sikao/domain/shenlun/types';
 import { api } from '@sikao/api-client/request';
-import { ERROR_COPY } from '@/lib/ui-copy';
+import { ERROR_COPY, ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
 import { useApplyExamTheme } from '@/styles/useThemeStore';
@@ -85,7 +84,7 @@ export default function EssaySpecialtyExamSikao() {
       if (!snap || !paper) return;
       const text = (snap.textsByQ[0] ?? '').trim();
       if (text.length === 0) {
-        toast.error('请先写下答案再提交');
+        toast.error(ESSAY_SIKAO_COPY.submitAnswerRequired);
         return;
       }
       const backendId = paper.questions[0]?.backendId;
@@ -105,7 +104,7 @@ export default function EssaySpecialtyExamSikao() {
         .catch((err: unknown) => {
           logger.error('essay-specialty.submit-failed', { err: String(err) });
           useExamSession.setState({ phase: 'running' });
-          toast.error('提交失败,请稍后再试');
+          toast.error(ESSAY_SIKAO_COPY.submitRetry);
         });
     },
     [toSnapshot, query.data, startSubmitting, finish, navigate],

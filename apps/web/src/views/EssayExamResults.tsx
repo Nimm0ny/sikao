@@ -1,6 +1,4 @@
-// EssayExamResults — 整卷模考成绩单 view (PR2 + SIKAO Wave 2 Phase 3 升级).
 //
-// SIKAO Wave 2 Phase 3 — hifi 05b paper-tint 升级 (Fixer D).
 //   - essay-res grid 1fr/320px 双段 layout
 //   - 主区: <EssayResultHero> (整卷加权得分) + <QuestionBreakdown> (N 题汇总,
 //           Q1...QN 一行一条 5 维 rubric + 总分 + retry slot) +
@@ -283,7 +281,7 @@ function ResultsContent({
           studyTaskId,
           err: String(err),
         });
-        toast.warn('申论报告已就绪，但今日任务状态同步失败');
+        toast.warn(ESSAY_GRADING_COPY.examResultsTaskSyncWarn);
         taskCompletionSyncRef.current = 'failed';
       });
   }, [allSubmittedCompleted, patchStudyTask, studyTaskId]);

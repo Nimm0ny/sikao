@@ -6,19 +6,15 @@ import { PenIcon } from '@sikao/ui/icons/PenIcon';
 import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 import { cn } from '@sikao/shared-utils';
 
-// ShenlunSession/OcrPanel (PR13 P4, 2026-05-13) — Pencil 模式专属 240w 右栏 OCR
 // 识别 + 双轨提交.
 //
-// Spec SSOT: docs/design/handoff/Shenlun & Tablet Refinements · Handoff.md §2.6
 //            (TD1b · Pencil 模式差异) + §7 (风险与回滚 — "OCR 端上模型未就位 →
 //            OcrPanel 显示 '识别服务暂未启用', 不禁用手写本身").
-//            + plan docs/plan/sikao-shenlun-dual-mode-pr13.md §7 (P4 recon
 //            "stub per lhr decision #1 — fake recognition data").
 //
 // 设计决策 (master 拍板 2026-05-13):
 //   - **stub 状态** (端上 OCR 模型未就位): 上半身显示 ocrPanelDisabled 兜底
 //     文案; 下半身**双 IconBtn 仍渲染**, 但 OCR 按钮 disabled (没识别文本可提交),
-//     手写原稿按钮**保持启用** (handoff §7 mitigation 铁线 "不禁用手写本身").
 //   - **一屏 ≤1 主 CTA** (CLAUDE.md §4): 提交 OCR (variant=primary) + 提交手写
 //     原稿 (variant=secondary). 双 button 都是 [SVG + 文字] 双形态 — 主 CTA
 //     例外允许. 实际 stub 状态下 OCR disabled, 唯一活跃 CTA 是手写原稿.
@@ -34,7 +30,6 @@ import { cn } from '@sikao/shared-utils';
 //   - 编辑识别错字 (textarea 修正) — 等 OCR 落地.
 
 export interface OcrPanelProps {
-  /** 宽度 px, handoff §2.6 spec 240. */
   readonly width?: number;
   /**
    * 提交 OCR 文本 callback. P4 stub 阶段实际 disabled, 留位给 P5+ 真实 OCR
@@ -43,7 +38,6 @@ export interface OcrPanelProps {
   readonly onSubmitOcr?: (recognizedText: string) => void;
   /**
    * 提交手写原稿 callback (上传 canvas snapshot 当作 image asset). P4 stub 阶段
-   * 保持启用 (handoff §7 mitigation "不禁用手写本身"). caller 传 undefined →
    * fail-fast (caller 错误集成).
    */
   readonly onSubmitHandwritten?: () => void;

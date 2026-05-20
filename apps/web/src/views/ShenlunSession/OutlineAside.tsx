@@ -2,19 +2,14 @@ import { useCallback, useId, useState, type ReactElement } from 'react';
 import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 import { cn } from '@sikao/shared-utils';
 
-// ShenlunSession/OutlineAside (PR13 P4, 2026-05-13) — 右侧单 panel 大纲面板.
 //
-// Spec SSOT: docs/design/handoff/Shenlun & Tablet Refinements · Handoff.md §2.5
-//            + plan docs/plan/sikao-shenlun-dual-mode-pr13.md §7.
 //
 // 设计决策 (master 拍板 2026-05-13):
-//   - **不复用** layouts/Aside.tsx (PR11 答题 view 通用 3-tab 抽屉容器).
 //     原因: layouts/Aside.tsx 是 useAsideOutlet context driven multi-tab
 //     (analysis / notes / ask), ShenlunSession 单 panel (大纲) 不需要 outlet
 //     解耦. 直接 inline 渲染避免引一套 context infra. 借鉴**视觉 + a11y pattern**
 //     (32px collapsed 浮条 + 320 展开 + role=button + tabIndex=0 + aria-label).
 //   - **复用 CSS class** `.t-aside.is-collapsed` / `.t-aside__collapse` (src/index.css
-//     PR11/PR14 已写) — 避免双套样式; 浮条态 rotate 90° data-label 走 ::after.
 //   - 单 textarea, 五段法 prefill 当 default value (用户首次进入时 outline 是骨架,
 //     直接在每段下填内容). value 受 shell 控制, onChange 喂回 shell state map.
 //   - **frontend/CLAUDE.md §3.7 表单 label 政策**: textarea 必须有 visible label.
@@ -34,7 +29,6 @@ export interface OutlineAsideProps {
   readonly value: string;
   readonly onChange: (next: string) => void;
   /**
-   * 浮条默认开关 (handoff §2.5 默认 `is-collapsed`).
    *
    * - true (默认): 默认 32px 浮条, click / Enter / Space 展开为 320 panel.
    * - false: 直接渲染 320 panel.
@@ -84,7 +78,6 @@ export default function OutlineAside({
     [onChange],
   );
 
-  // collapsed 态: 32px 浮条, 复用 .t-aside.is-collapsed CSS (src/index.css PR11/PR14).
   // 旋转 90° data-label 走 ::after, 顶部 › 走 ::before. role=button + tabIndex=0
   // + aria-label 让键盘 nav 可触达.
   if (collapsed) {

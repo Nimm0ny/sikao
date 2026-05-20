@@ -1,5 +1,4 @@
 /**
- * EssayPapers — SIKAO Wave 4 Phase 2C /essay/papers hifi 升级.
  *
  * 接 Y2-BE d14b0ab 2 endpoint (filters + list/extended):
  *   - GET /papers/essay/filters         → FiltersPanel chip 候选 (regions/years/paperTypes)
@@ -11,7 +10,6 @@
  *   - 切 filter → page reset 到 1 (跨筛选 page 索引无意义)
  *   - 单页 (totalPages=1) 不渲染 pager
  *
- * 旧 PaperListCard grid 整套替换为 hifi 单行 PaperRow (8 列网格 → 5 列 grid 行).
  */
 import { useCallback, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';

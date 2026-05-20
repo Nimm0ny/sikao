@@ -4,7 +4,6 @@ import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import MaterialPane from './MaterialPane';
 import type { ShenlunMaterial } from './mockSession';
 
-// MaterialPane tests (PR13 P2, 2026-05-13).
 //
 // 覆盖:
 //   - 渲染 required props 不崩

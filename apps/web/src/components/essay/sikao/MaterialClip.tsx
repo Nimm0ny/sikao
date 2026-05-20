@@ -17,6 +17,7 @@ import {
   ESSAY_CLIP_MIME,
   type EssayClipDragPayload,
 } from './types';
+import { ESSAY_SIKAO_COPY } from '@/lib/ui-copy';
 
 export interface MaterialClipProps {
   readonly matId: string;
@@ -54,7 +55,7 @@ export function MaterialClip({
   };
 
   return (
-    <Tooltip label={`${sourceLabel} · 拖到草稿或编辑器`}>
+    <Tooltip label={`${sourceLabel} · ${ESSAY_SIKAO_COPY.materialClipDragHint}`}>
     {/* a11y: inline draggable phrase 内嵌 reader 段落, drag 是 mouse-only enhancement,
         SR / keyboard 用户从右侧 HighlightRail (已带 role=button + Enter handler) 操作.
         给 span 加 role=button 会让 SR 把每段 reading 念成 button, 破坏阅读流, 不可取. */}
