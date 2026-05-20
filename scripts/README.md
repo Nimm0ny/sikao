@@ -6,6 +6,7 @@
 
 - `migration/` — new_web → sikao 一次性迁移辅助脚本（如批量重命名、import 改写）
 - `import/`    — 题库 / 数据导入脚本（fenbi adapter、aipta 转换、backfill）
+- `gates/`     — 本地工程门禁脚本（preflight / Multica intake / review / validation / git batch）
 
 ## Legacy Source
 
