@@ -1,6 +1,7 @@
 import { AnswerCell, Card } from '@sikao/ui/ui';
 import type { AnswerCellStatus } from '@sikao/ui/ui';
 import type { PracticeSectionSummaryV2 } from '@sikao/api-client/types/api';
+import { RESULT_COPY } from '@/lib/ui-copy';
 
 // Phase 4.5 fenbi-merge — 改造为按 section 分段紧凑视图. 对齐 prototype 07
 // .qgrid-section: 左侧 section 名 + 正确率 meta, 右侧 26x26 cell 流式排.
@@ -143,7 +144,7 @@ export function AnswerComparisonGrid({ cells, sections }: AnswerComparisonGridPr
       <div className="flex items-center justify-between gap-4 mb-4 flex-wrap">
         <div>
           <h3 className="font-bold text-2xl text-ink">逐题状态</h3>
-          <p className="text-xs text-ink-3 mt-1">按模块分段, 点击题号看解析 (即将上线)</p>
+          <p className="text-xs text-ink-3 mt-1">{RESULT_COPY.comparisonByModule}, {RESULT_COPY.comparisonClickHint} (即将上线)</p>
         </div>
         <div className="text-xs text-ink-3 flex items-center gap-3 flex-wrap">
           <LegendChip label="正确" swatchClass="bg-ok-bg border border-ok" />

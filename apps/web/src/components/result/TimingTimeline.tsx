@@ -1,5 +1,6 @@
 import { Card } from '@sikao/ui/ui';
 import { formatElapsed, type QuestionTiming } from '@sikao/shared-utils';
+import { RESULT_COPY } from '@/lib/ui-copy';
 
 // Mirrors design/scenes/result.jsx ResultC §150-170 — horizontal timeline
 // where each question is a vertical bar, width ∝ elapsedSec, color = state.
@@ -90,7 +91,7 @@ export function TimingTimeline({
       <div
         className="flex h-14 rounded-card overflow-hidden bg-surface-alt"
         role="img"
-        aria-label="每题用时分布条"
+        aria-label={RESULT_COPY.timingPerQuestion}
       >
         {active.map((t) => (
           <Segment

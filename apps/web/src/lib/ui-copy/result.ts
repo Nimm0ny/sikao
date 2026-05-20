@@ -66,6 +66,7 @@ export const RESULT_COPY = {
   },
   mobile: {
     wrongTitle: '错题速看',
+    statsAriaLabel: '本次练习统计',
     viewAll: (count: number) => `全部 ${count} 题 →`,
     noWrong: '本次全对，直接进入下一组。',
     youChose: '你选',
@@ -100,6 +101,8 @@ export const RESULT_COPY = {
   actionsNoPaperWarn1:    '本场没有试卷编号',
   actionsNoPaperWarn2:    '无法定位本套错题',
   actionsViewWrong:       '看本套错题',
+  wrongReasonSaveFailed:  '错因保存失败',
+  retryHint:              '请稍后重试',
   // ResultHero (banner copy across 5 score buckets)
   heroHighStable:         '高分段稳健',
   heroHighStableHint:     '把节奏保住就好',

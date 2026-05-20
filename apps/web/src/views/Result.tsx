@@ -201,7 +201,7 @@ function ResultBody({
             answerId,
             err: String(err),
           });
-          toast.error('错因保存失败', '请稍后重试');
+          toast.error(RESULT_COPY.wrongReasonSaveFailed, RESULT_COPY.retryHint);
         })
         .finally(() => {
           setSavingAnswerId((current) => (current === answerId ? null : current));
@@ -300,7 +300,7 @@ function ResultBody({
             ].map((action) => (
               <div
                 key={action.testId}
-                className="flex items-center justify-between gap-3 rounded-card border border-line bg-paper px-3 py-2.5"
+                className="flex items-center justify-between gap-3 rounded-card border border-line bg-paper px-3 py-3"
               >
                 <span className="text-small font-semibold text-ink">{action.label}</span>
                 <ResultIconAction

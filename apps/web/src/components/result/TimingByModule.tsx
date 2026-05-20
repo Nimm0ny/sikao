@@ -1,6 +1,7 @@
 import { Card } from '@sikao/ui/ui';
 import { formatElapsed, type QuestionTiming } from '@sikao/shared-utils';
 import type { PracticeSectionSummaryV2, QuestionDetailV2 } from '@sikao/api-client/types/api';
+import { RESULT_COPY } from '@/lib/ui-copy';
 
 // Phase 4.6 fenbi-merge — 模块级用时分析横条 (对齐 prototype 07
 // .module-row 节奏). 每行: 模块名 / 进度条 (实际用时 vs max) / 数值
@@ -133,7 +134,7 @@ export function TimingByModule({ timings, sections, questions }: TimingByModuleP
       <div className="flex items-baseline justify-between mb-3">
         <div>
           <h3 className="font-bold text-ink">用时分析</h3>
-          <p className="text-xs text-ink-3 mt-1">每模块实际用时 vs 推荐</p>
+          <p className="text-xs text-ink-3 mt-1">{RESULT_COPY.timingPerModule} vs 推荐</p>
         </div>
         {overSec > 0 ? (
           <span className="text-xs text-err" data-testid="timing-by-module-over">
@@ -147,7 +148,7 @@ export function TimingByModule({ timings, sections, questions }: TimingByModuleP
         推荐用时
         {skippedTitles.length > 0 ? (
           <span className="ml-auto" data-testid="timing-by-module-skipped">
-            {skippedTitles.length} 个模块未在统计内
+            {skippedTitles.length} {RESULT_COPY.timingUntrackedSuffix}
           </span>
         ) : null}
       </div>

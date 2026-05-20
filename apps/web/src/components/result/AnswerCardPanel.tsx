@@ -1,4 +1,5 @@
 import type { PracticeSectionSummaryV2 } from '@sikao/api-client/types/api';
+import { RESULT_COPY } from '@/lib/ui-copy';
 
 // 答题卡分段展示 (design/session/session-d.jsx 形态精简版, Result 上下文).
 // Result 页只关心 3 态: 正确 / 错误 / 未答 (没有答题中的 marked / skip / current).
@@ -31,7 +32,7 @@ const STATE_STYLES: Record<CellState, string> = {
 
 const STATE_ARIA_SUFFIX: Record<CellState, string> = {
   correct: '正确',
-  wrong: '错误，跳转到解析',
+  wrong: `错误，${RESULT_COPY.panelJumpToExplanation}`,
   empty: '未答',
   marked: '标记',
 };

@@ -188,7 +188,7 @@ function ResultMobileBody({
       <section
         className="mstat-row"
         data-testid="result-mobile-mstat"
-        aria-label="本次练习统计"
+        aria-label={RESULT_COPY.mobile.statsAriaLabel}
       >
         <div className="mstat">
           <div className="mstat__label">{RESULT_COPY.metrics.duration}</div>

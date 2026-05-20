@@ -1,4 +1,5 @@
 import type { PracticeSubtypeSummaryV2 } from '@sikao/api-client/types/api';
+import { RESULT_COPY } from '@/lib/ui-copy';
 
 // Phase 4.7 fenbi-merge — 重构为浅蓝渐变 banner (对齐 prototype 07
 // .ai-banner). 旧版本是 sidebar 黑底卡放在 grid col-5; 现在升级为
@@ -50,7 +51,7 @@ export function AiSuggestionCard({ subtypes, onSelect }: AiSuggestionCardProps) 
         </div>
         <div className="text-sm text-ink" data-testid="ai-suggestion-target">
           <span className="font-semibold">{display}</span>
-          <span className="text-ink-3"> 错 {target.wrongCount} 题, 建议针对这个考点专项练习.</span>
+          <span className="text-ink-3"> 错 {target.wrongCount} 题, {RESULT_COPY.aiSuggestion}.</span>
         </div>
       </div>
       {interactive ? (

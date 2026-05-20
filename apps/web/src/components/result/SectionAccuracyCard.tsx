@@ -1,5 +1,6 @@
 import { Card, ProgressBar } from '@sikao/ui/ui';
 import type { PracticeSectionSummaryV2 } from '@sikao/api-client/types/api';
+import { RESULT_COPY } from '@/lib/ui-copy';
 
 // Mirrors docs/ui-demo/ui-preview.html §457-461 — `分区正确率` Card with
 // per-section bars. The demo computes accuracy client-side; we use the
@@ -43,7 +44,7 @@ export function SectionAccuracyCard({ sections }: SectionAccuracyCardProps) {
   if (sections.length === 0) return null;
   return (
     <Card padding="md" data-testid="section-accuracy-card">
-      <h3 className="font-bold text-ink mb-4">分区正确率</h3>
+      <h3 className="font-bold text-ink mb-4">{RESULT_COPY.sectionAccuracyTitle}</h3>
       <div className="space-y-4">
         {sections.map((section) => (
           <SectionRow key={section.sectionId} section={section} />

@@ -7,6 +7,7 @@
  * 调性: ink-first / hairline / 不打鸡血. 走 brand v2 token.
  */
 import { type ReactNode } from 'react';
+import { RESULT_COPY } from '@/lib/ui-copy';
 
 export interface ResultTabItem {
   /** anchor id (DOM section id) */
@@ -27,7 +28,7 @@ export function ResultTabNav({ tabs, activeId, onTabClick }: ResultTabNavProps) 
   return (
     <nav
       role="tablist"
-      aria-label="结果分页导航"
+      aria-label={RESULT_COPY.tabNavAriaLabel}
       data-testid="result-tab-nav"
       className="sticky top-0 z-30 -mx-4 md:-mx-6 mb-4 backdrop-blur-sm border-b border-line bg-paper/80"
     >

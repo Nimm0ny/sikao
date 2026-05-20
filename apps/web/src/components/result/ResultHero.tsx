@@ -1,5 +1,6 @@
 import { Button, Tooltip } from '@sikao/ui/ui';
 import { ScoreHeader } from './ScoreHeader';
+import { RESULT_COPY } from '@/lib/ui-copy';
 
 // SIKAO Wave 2 Phase 2 — 报告页 hero 区. 替代 Phase 4.3 的 brand-bg
 // ScoreHero (深色面板里塞数据矩阵), 切到 hifi 05 paper-tint 风格:
@@ -125,11 +126,11 @@ function ScoreBell({ defeatPercentile }: ScoreBellProps) {
 function pickHeadline(score: number): string {
   // 静态文案池 — backend 当前没 NLG 字段, 用分数段映射 4 句话.
   // 跟 hifi spec 调性 ("稳定段中游, 资料分析是关键") 一致.
-  if (score >= 90) return '高分段稳健, 把节奏保住就好。';
-  if (score >= 80) return '稳定段中游, 找一个掉链子的板块补上去。';
-  if (score >= 70) return '已过及格线, 距高分段还差一两个模块。';
-  if (score >= 60) return '基础在, 优先复盘最弱模块的方法论。';
-  return '先稳住基础题节奏, 别陷在难题里。';
+  if (score >= 90) return `${RESULT_COPY.heroHighStable}, ${RESULT_COPY.heroHighStableHint}。`;
+  if (score >= 80) return `${RESULT_COPY.heroMidStable}, ${RESULT_COPY.heroMidStableHint}。`;
+  if (score >= 70) return `${RESULT_COPY.heroPassed}, ${RESULT_COPY.heroPassedHint}。`;
+  if (score >= 60) return `基础在, ${RESULT_COPY.heroWeakModulePrio}。`;
+  return `${RESULT_COPY.heroBasicHold}, ${RESULT_COPY.heroBasicHoldHint}。`;
 }
 
 function pickSubtitle(
@@ -141,16 +142,16 @@ function pickSubtitle(
   if (prevScoreDelta !== null) {
     if (prevScoreDelta > 0) parts.push(`比上次 +${prevScoreDelta.toFixed(1)} 分`);
     else if (prevScoreDelta < 0) parts.push(`比上次 ${prevScoreDelta.toFixed(1)} 分`);
-    else parts.push('跟上次持平');
+    else parts.push(RESULT_COPY.heroSameAsLast);
   }
   if (durationSeconds !== undefined && Number.isFinite(durationSeconds)) {
     parts.push(`用时 ${formatDuration(durationSeconds)}`);
   }
   if (parts.length === 0) {
-    if (score >= 80) return '下一步: 把弱项专项做掉, 再做一次完整模考。';
-    return '下一步: 优先看错题里的高频题型。';
+    if (score >= 80) return `下一步: ${RESULT_COPY.heroNextWeakRetake}, ${RESULT_COPY.heroNextRunFull}。`;
+    return `下一步: ${RESULT_COPY.heroPriorityFreq}。`;
   }
-  return parts.join(' · ') + '。下一步看错题, 把高频题型先扫一遍。';
+  return `${parts.join(' · ')}。${RESULT_COPY.heroCtaNextWrong}, ${RESULT_COPY.heroCtaFreqFirst}。`;
 }
 
 interface HeroActionsProps {

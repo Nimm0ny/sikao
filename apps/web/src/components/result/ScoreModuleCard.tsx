@@ -1,5 +1,6 @@
 import { Card, ProgressBar } from '@sikao/ui/ui';
 import type { PracticeSectionSummaryV2, PracticeSubjectSummaryV2 } from '@sikao/api-client/types/api';
+import { RESULT_COPY } from '@/lib/ui-copy';
 
 // Phase 3 ScoreModuleCard — 合并 ResultHero(score/counts) + SectionAccuracyCard +
 // StrengthWeaknessCards 为单张 Figma 对齐卡片。
@@ -92,8 +93,8 @@ function ModuleAccuracy({ sections }: { readonly sections: readonly PracticeSect
   return (
     <div className="space-y-4 md:w-[232px]">
       <div>
-        <h3 className="font-bold text-2xl text-ink">分项准确率</h3>
-        <p className="text-xs text-ink-3 mt-2">从最低项开始复盘，避免平均用力。</p>
+        <h3 className="font-bold text-2xl text-ink">{RESULT_COPY.moduleAccuracyLabel}</h3>
+        <p className="text-xs text-ink-3 mt-2">{RESULT_COPY.moduleStartFromLowest}，{RESULT_COPY.moduleAvoidAverage}。</p>
       </div>
       <div className="space-y-3">
         {sections.map((sec) => {
