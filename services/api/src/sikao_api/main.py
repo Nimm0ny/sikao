@@ -38,6 +38,7 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
         app.state.settings = app_settings
         app.state.db = db
         _logger.info("backend startup: database_url=%s", app_settings.database_url)
+        # SQLite test/dev convenience only; all non-SQLite environments must use Alembic.
         if initialize_schema is True or (initialize_schema is None and app_settings.is_sqlite):
             db.create_all()
         await init_limiter(app_settings.redis_url)
@@ -51,7 +52,7 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
         CORSMiddleware,
         allow_origins=list(app_settings.cors_allowed_origins),
         allow_credentials=True,
-        allow_methods=["GET", "POST", "PATCH", "DELETE", "OPTIONS"],
+        allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
         allow_headers=[
             "Authorization",
             "Content-Type",
