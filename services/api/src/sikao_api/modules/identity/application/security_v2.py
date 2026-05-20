@@ -20,6 +20,7 @@ bearer_security = HTTPBearer(auto_error=False)
 
 AUTH_SESSION_COOKIE_NAME = "auth_session_v2"
 CSRF_COOKIE_NAME = "csrf_token_v2"
+CSRF_HEADER_NAME = "X-CSRF-Token"
 SESSION_LIFETIME = timedelta(days=7)
 
 
@@ -91,7 +92,14 @@ def build_auth_session(*, user: UserV2) -> tuple[AuthSessionV2, str]:
     return auth_session, raw_token
 
 
-def set_auth_cookies(response: Response, *, raw_token: str, csrf_token: str, expires_at: datetime) -> None:
+def set_auth_cookies(
+    response: Response,
+    *,
+    raw_token: str,
+    csrf_token: str,
+    expires_at: datetime,
+    secure: bool,
+) -> None:
     max_age = int((expires_at.replace(tzinfo=UTC) - datetime.now(UTC)).total_seconds())
     response.set_cookie(
         AUTH_SESSION_COOKIE_NAME,
@@ -99,7 +107,7 @@ def set_auth_cookies(response: Response, *, raw_token: str, csrf_token: str, exp
         max_age=max_age,
         httponly=True,
         samesite="strict",
-        secure=False,
+        secure=secure,
         path="/",
     )
     response.set_cookie(
@@ -108,7 +116,7 @@ def set_auth_cookies(response: Response, *, raw_token: str, csrf_token: str, exp
         max_age=max_age,
         httponly=False,
         samesite="strict",
-        secure=False,
+        secure=secure,
         path="/",
     )
 
@@ -119,8 +127,10 @@ def clear_auth_cookies(response: Response) -> None:
 
 
 def verify_csrf_v2(request: Request) -> None:
+    if not request.cookies.get(AUTH_SESSION_COOKIE_NAME):
+        return
     cookie_token = request.cookies.get(CSRF_COOKIE_NAME)
-    header_token = request.headers.get("X-CSRF-Token")
+    header_token = request.headers.get(CSRF_HEADER_NAME)
     if not cookie_token or not header_token:
         raise ForbiddenError("missing csrf token", code="csrf_missing")
     if cookie_token != header_token:

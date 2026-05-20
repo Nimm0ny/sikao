@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from datetime import date
 from decimal import Decimal
 from typing import Any, Literal
 
@@ -49,7 +48,6 @@ class AuthUserV2(CamelModel):
 
 class AuthSessionV2(CamelModel):
     id: int
-    token: str
     issued_at: UtcDatetime
     expires_at: UtcDatetime
 
@@ -57,7 +55,6 @@ class AuthSessionV2(CamelModel):
 class AuthSessionResponseV2(CamelModel):
     user: AuthUserV2
     session: AuthSessionV2
-    csrf_token: str
 
 
 class AuthSessionStateResponseV2(CamelModel):
@@ -84,6 +81,7 @@ class RegisterEmailRequestV2(CamelModel):
 
 class RegisterPhoneRequestV2(CamelModel):
     phone: str = Field(min_length=6, max_length=32)
+    sms_code: str = Field(min_length=4, max_length=16)
     password: str = Field(min_length=6, max_length=255)
     display_name: str = Field(min_length=1, max_length=255, default="New User")
 
@@ -98,7 +96,6 @@ class SendCodeResponseV2(CamelModel):
     ok: bool
     purpose: str
     delivery: str
-    dev_code: str
 
 
 class VerifyCodeRequestV2(CamelModel):

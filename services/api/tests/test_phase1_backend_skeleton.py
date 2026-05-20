@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from contextlib import contextmanager
 from pathlib import Path
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 
@@ -128,7 +129,6 @@ def test_notes_profile_and_session_skeleton_endpoints_work(tmp_path: Path) -> No
             json={"title": "First note", "body": "Skeleton note body"},
         )
         assert create_note.status_code == 200, create_note.text
-        note_id = create_note.json()["id"]
 
         list_notes = client.get("/api/v2/notes")
         assert list_notes.status_code == 200, list_notes.text
@@ -185,36 +185,59 @@ def test_phase1_contract_smoke_covers_all_new_endpoints(tmp_path: Path) -> None:
         _register_and_seed_auth(client, email="phase1@example.com")
 
         # auth auxiliary flows
-        send_register_code = client.post(
-            "/api/v2/auth/send-code",
-            json={"targetKind": "email", "targetValue": "verify@example.com", "purpose": "register"},
-        )
-        assert send_register_code.status_code == 200, send_register_code.text
-        verify_code = client.post(
-            "/api/v2/auth/verify-code",
-            json={
-                "targetKind": "email",
-                "targetValue": "verify@example.com",
-                "purpose": "register",
-                "code": send_register_code.json()["devCode"],
-            },
-        )
-        assert verify_code.status_code == 200, verify_code.text
+        with patch(
+            "sikao_api.modules.identity.application.service.generate_verification_code",
+            side_effect=["111111", "222222"],
+        ):
+            send_register_code = client.post(
+                "/api/v2/auth/send-code",
+                json={
+                    "targetKind": "email",
+                    "targetValue": "verify@example.com",
+                    "purpose": "register",
+                },
+            )
+            assert send_register_code.status_code == 200, send_register_code.text
+            assert "devCode" not in send_register_code.json()
+            verify_code = client.post(
+                "/api/v2/auth/verify-code",
+                json={
+                    "targetKind": "email",
+                    "targetValue": "verify@example.com",
+                    "purpose": "register",
+                    "code": "111111",
+                },
+            )
+            assert verify_code.status_code == 200, verify_code.text
 
-        reset_code = client.post(
-            "/api/v2/auth/send-code",
-            json={"targetKind": "email", "targetValue": "phase1@example.com", "purpose": "reset_password"},
-        )
-        assert reset_code.status_code == 200, reset_code.text
-        reset_password = client.post(
-            "/api/v2/auth/reset-password",
-            json={
-                "identifier": "phase1@example.com",
-                "code": reset_code.json()["devCode"],
-                "newPassword": "newsecret456",
-            },
-        )
-        assert reset_password.status_code == 200, reset_password.text
+            reset_code = client.post(
+                "/api/v2/auth/send-code",
+                json={
+                    "targetKind": "email",
+                    "targetValue": "phase1@example.com",
+                    "purpose": "reset_password",
+                },
+            )
+            assert reset_code.status_code == 200, reset_code.text
+            assert "devCode" not in reset_code.json()
+            reset_password = client.post(
+                "/api/v2/auth/reset-password",
+                json={
+                    "identifier": "phase1@example.com",
+                    "code": "222222",
+                    "newPassword": "newsecret456",
+                },
+            )
+            assert reset_password.status_code == 200, reset_password.text
+            relogin = client.post(
+                "/api/v2/auth/login",
+                json={
+                    "identifier": "phase1@example.com",
+                    "password": "newsecret456",
+                },
+            )
+            assert relogin.status_code == 200, relogin.text
+            client.headers["X-CSRF-Token"] = relogin.cookies["csrf_token_v2"]
 
         # dashboard
         for path in [

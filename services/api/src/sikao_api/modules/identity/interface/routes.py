@@ -2,10 +2,12 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from sikao_api.core.deps import get_app_settings
+from sikao_api.core.config import Settings
 from sikao_api.db.models_v2 import EmailContactV2, PhoneContactV2, UserV2
 from sikao_api.db.schemas_v2 import (
     AuthAckV2,
@@ -52,10 +54,9 @@ def _serialize_user(session: Session, user: UserV2) -> AuthUserV2:
     )
 
 
-def _serialize_session(raw_token: str, issued_at, expires_at, session_id: int) -> AuthSessionOutV2:
+def _serialize_session(issued_at, expires_at, session_id: int) -> AuthSessionOutV2:
     return AuthSessionOutV2(
         id=session_id,
-        token=raw_token,
         issued_at=issued_at,
         expires_at=expires_at,
     )
@@ -66,6 +67,7 @@ def register_email(
     payload: RegisterEmailRequestV2,
     response: Response,
     session: Annotated[Session, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_app_settings)],
 ) -> AuthSessionResponseV2:
     service = IdentityServiceV2(session)
     user, auth_session, raw_token = service.register_email(
@@ -81,11 +83,11 @@ def register_email(
         raw_token=raw_token,
         csrf_token=auth_session.csrf_token,
         expires_at=auth_session.expires_at,
+        secure=settings.auth_cookie_secure,
     )
     return AuthSessionResponseV2(
         user=_serialize_user(session, user),
-        session=_serialize_session(raw_token, auth_session.issued_at, auth_session.expires_at, auth_session.id),
-        csrf_token=auth_session.csrf_token,
+        session=_serialize_session(auth_session.issued_at, auth_session.expires_at, auth_session.id),
     )
 
 
@@ -94,10 +96,12 @@ def register_phone(
     payload: RegisterPhoneRequestV2,
     response: Response,
     session: Annotated[Session, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_app_settings)],
 ) -> AuthSessionResponseV2:
     service = IdentityServiceV2(session)
     user, auth_session, raw_token = service.register_phone(
         phone=payload.phone,
+        sms_code=payload.sms_code,
         password=payload.password,
         display_name=payload.display_name,
     )
@@ -109,11 +113,11 @@ def register_phone(
         raw_token=raw_token,
         csrf_token=auth_session.csrf_token,
         expires_at=auth_session.expires_at,
+        secure=settings.auth_cookie_secure,
     )
     return AuthSessionResponseV2(
         user=_serialize_user(session, user),
-        session=_serialize_session(raw_token, auth_session.issued_at, auth_session.expires_at, auth_session.id),
-        csrf_token=auth_session.csrf_token,
+        session=_serialize_session(auth_session.issued_at, auth_session.expires_at, auth_session.id),
     )
 
 
@@ -122,6 +126,7 @@ def login(
     payload: LoginRequestV2,
     response: Response,
     session: Annotated[Session, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_app_settings)],
 ) -> AuthSessionResponseV2:
     service = IdentityServiceV2(session)
     user, auth_session, raw_token = service.login(
@@ -135,11 +140,11 @@ def login(
         raw_token=raw_token,
         csrf_token=auth_session.csrf_token,
         expires_at=auth_session.expires_at,
+        secure=settings.auth_cookie_secure,
     )
     return AuthSessionResponseV2(
         user=_serialize_user(session, user),
-        session=_serialize_session(raw_token, auth_session.issued_at, auth_session.expires_at, auth_session.id),
-        csrf_token=auth_session.csrf_token,
+        session=_serialize_session(auth_session.issued_at, auth_session.expires_at, auth_session.id),
     )
 
 
@@ -160,14 +165,11 @@ def logout(
 def get_session(
     auth_context: Annotated[object, Depends(get_current_auth_context)],
     session: Annotated[Session, Depends(get_db_session)],
-    request: Request,
 ) -> AuthSessionStateResponseV2:
-    raw_token = request.cookies.get("auth_session_v2") or request.headers.get("Authorization", "").removeprefix("Bearer ").strip()
     return AuthSessionStateResponseV2(
         authenticated=True,
         user=_serialize_user(session, auth_context.user),  # type: ignore[attr-defined]
         session=_serialize_session(
-            raw_token,
             auth_context.auth_session.issued_at,  # type: ignore[attr-defined]
             auth_context.auth_session.expires_at,  # type: ignore[attr-defined]
             auth_context.auth_session.id,  # type: ignore[attr-defined]
@@ -180,13 +182,13 @@ def send_code(
     payload: SendCodeRequestV2,
     session: Annotated[Session, Depends(get_db_session)],
 ) -> SendCodeResponseV2:
-    token, code = IdentityServiceV2(session).send_code(
+    token, _code = IdentityServiceV2(session).send_code(
         target_kind=payload.target_kind,
         target_value=payload.target_value,
         purpose=payload.purpose,
     )
     session.commit()
-    return SendCodeResponseV2(ok=True, purpose=token.purpose, delivery="dev", dev_code=code)
+    return SendCodeResponseV2(ok=True, purpose=token.purpose, delivery="dev")
 
 
 @router.post("/verify-code", response_model=VerifyCodeResponseV2)

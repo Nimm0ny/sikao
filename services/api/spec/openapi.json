@@ -1,1727 +1,121 @@
 {
-  "openapi": "3.1.0",
-  "info": {
-    "title": "exam-api",
-    "version": "0.1.0"
-  },
-  "paths": {
-    "/healthz": {
-      "get": {
-        "tags": [
-          "ops"
-        ],
-        "summary": "Healthz",
-        "operationId": "healthz_healthz_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HealthResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/readyz": {
-      "get": {
-        "tags": [
-          "ops"
-        ],
-        "summary": "Readyz",
-        "operationId": "readyz_readyz_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReadyzResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/version": {
-      "get": {
-        "tags": [
-          "ops"
-        ],
-        "summary": "Version",
-        "operationId": "version_version_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VersionResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/version.json": {
-      "get": {
-        "tags": [
-          "ops"
-        ],
-        "summary": "Version Json",
-        "operationId": "version_json_version_json_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VersionResponse"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/system/bootstrap": {
-      "get": {
-        "tags": [
-          "system-v2"
-        ],
-        "summary": "Bootstrap",
-        "operationId": "bootstrap_api_v2_system_bootstrap_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/BootstrapResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/auth/register/email": {
-      "post": {
-        "tags": [
-          "identity-v2"
-        ],
-        "summary": "Register Email",
-        "operationId": "register_email_api_v2_auth_register_email_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterEmailRequestV2"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthSessionResponseV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/auth/register/phone": {
-      "post": {
-        "tags": [
-          "identity-v2"
-        ],
-        "summary": "Register Phone",
-        "operationId": "register_phone_api_v2_auth_register_phone_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/RegisterPhoneRequestV2"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthSessionResponseV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/auth/login": {
-      "post": {
-        "tags": [
-          "identity-v2"
-        ],
-        "summary": "Login",
-        "operationId": "login_api_v2_auth_login_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/LoginRequestV2"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthSessionResponseV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/auth/logout": {
-      "post": {
-        "tags": [
-          "identity-v2"
-        ],
-        "summary": "Logout",
-        "operationId": "logout_api_v2_auth_logout_post",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthAckV2"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v2/auth/session": {
-      "get": {
-        "tags": [
-          "identity-v2"
-        ],
-        "summary": "Get Session",
-        "operationId": "get_session_api_v2_auth_session_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthSessionStateResponseV2"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v2/auth/send-code": {
-      "post": {
-        "tags": [
-          "identity-v2"
-        ],
-        "summary": "Send Code",
-        "operationId": "send_code_api_v2_auth_send_code_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/SendCodeRequestV2"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/SendCodeResponseV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/auth/verify-code": {
-      "post": {
-        "tags": [
-          "identity-v2"
-        ],
-        "summary": "Verify Code",
-        "operationId": "verify_code_api_v2_auth_verify_code_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/VerifyCodeRequestV2"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/VerifyCodeResponseV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/auth/reset-password": {
-      "post": {
-        "tags": [
-          "identity-v2"
-        ],
-        "summary": "Reset Password",
-        "operationId": "reset_password_api_v2_auth_reset_password_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ResetPasswordRequestV2"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/AuthAckV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/overview": {
-      "get": {
-        "tags": [
-          "planning-v2"
-        ],
-        "summary": "Get Dashboard Overview",
-        "operationId": "get_dashboard_overview_api_v2_dashboard_overview_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OverviewResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/today": {
-      "get": {
-        "tags": [
-          "planning-v2"
-        ],
-        "summary": "Get Dashboard Today",
-        "operationId": "get_dashboard_today_api_v2_dashboard_today_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DashboardTodayResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/today/must-do": {
-      "get": {
-        "tags": [
-          "planning-v2"
-        ],
-        "summary": "Get Dashboard Today Must Do",
-        "operationId": "get_dashboard_today_must_do_api_v2_dashboard_today_must_do_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OverviewResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/today/continue": {
-      "get": {
-        "tags": [
-          "planning-v2"
-        ],
-        "summary": "Get Dashboard Today Continue",
-        "operationId": "get_dashboard_today_continue_api_v2_dashboard_today_continue_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OverviewResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/today/review": {
-      "get": {
-        "tags": [
-          "planning-v2"
-        ],
-        "summary": "Get Dashboard Today Review",
-        "operationId": "get_dashboard_today_review_api_v2_dashboard_today_review_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OverviewResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/weekly-plan": {
-      "get": {
-        "tags": [
-          "planning-v2"
-        ],
-        "summary": "Get Dashboard Weekly Plan",
-        "operationId": "get_dashboard_weekly_plan_api_v2_dashboard_weekly_plan_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DashboardWeeklyPlanResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/weekly-plan/goal": {
-      "get": {
-        "tags": [
-          "planning-v2"
-        ],
-        "summary": "Get Dashboard Weekly Goal",
-        "operationId": "get_dashboard_weekly_goal_api_v2_dashboard_weekly_plan_goal_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OverviewResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/weekly-plan/today-completion": {
-      "get": {
-        "tags": [
-          "planning-v2"
-        ],
-        "summary": "Get Dashboard Weekly Completion",
-        "operationId": "get_dashboard_weekly_completion_api_v2_dashboard_weekly_plan_today_completion_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OverviewResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/weekly-plan/adjust": {
-      "get": {
-        "tags": [
-          "planning-v2"
-        ],
-        "summary": "Get Dashboard Weekly Adjust",
-        "operationId": "get_dashboard_weekly_adjust_api_v2_dashboard_weekly_plan_adjust_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OverviewResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/progress": {
-      "get": {
-        "tags": [
-          "progress-v2"
-        ],
-        "summary": "Get Progress Overview",
-        "operationId": "get_progress_overview_api_v2_dashboard_progress_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DashboardProgressResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/progress/trend": {
-      "get": {
-        "tags": [
-          "progress-v2"
-        ],
-        "summary": "Get Progress Trend",
-        "operationId": "get_progress_trend_api_v2_dashboard_progress_trend_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OverviewResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/progress/weakness": {
-      "get": {
-        "tags": [
-          "progress-v2"
-        ],
-        "summary": "Get Progress Weakness",
-        "operationId": "get_progress_weakness_api_v2_dashboard_progress_weakness_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OverviewResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/progress/diagnosis": {
-      "get": {
-        "tags": [
-          "progress-v2"
-        ],
-        "summary": "Get Progress Diagnosis",
-        "operationId": "get_progress_diagnosis_api_v2_dashboard_progress_diagnosis_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OverviewResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/dashboard/records": {
-      "get": {
-        "tags": [
-          "record-v2"
-        ],
-        "summary": "Get Dashboard Records",
-        "operationId": "get_dashboard_records_api_v2_dashboard_records_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/DashboardRecordsResponseV2"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v2/practice/center": {
-      "get": {
-        "tags": [
-          "content-v2"
-        ],
-        "summary": "Get Practice Center",
-        "operationId": "get_practice_center_api_v2_practice_center_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PracticeCenterResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/practice/xingce/categories": {
-      "get": {
-        "tags": [
-          "content-v2"
-        ],
-        "summary": "List Xingce Categories",
-        "operationId": "list_xingce_categories_api_v2_practice_xingce_categories_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CatalogListResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/practice/xingce/papers": {
-      "get": {
-        "tags": [
-          "content-v2"
-        ],
-        "summary": "List Xingce Papers",
-        "operationId": "list_xingce_papers_api_v2_practice_xingce_papers_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CatalogListResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/practice/essay/categories": {
-      "get": {
-        "tags": [
-          "content-v2"
-        ],
-        "summary": "List Essay Categories",
-        "operationId": "list_essay_categories_api_v2_practice_essay_categories_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CatalogListResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/practice/essay/papers": {
-      "get": {
-        "tags": [
-          "content-v2"
-        ],
-        "summary": "List Essay Papers",
-        "operationId": "list_essay_papers_api_v2_practice_essay_papers_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/CatalogListResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/practice/sessions": {
-      "post": {
-        "tags": [
-          "session-v2"
-        ],
-        "summary": "Create Session",
-        "operationId": "create_session_api_v2_practice_sessions_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PracticeSessionCreateRequestV2"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PracticeSessionEnvelopeV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v2/practice/sessions/{session_id}": {
-      "get": {
-        "tags": [
-          "session-v2"
-        ],
-        "summary": "Get Session",
-        "operationId": "get_session_api_v2_practice_sessions__session_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Session Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PracticeSessionEnvelopeV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/practice/sessions/{session_id}/answers": {
-      "post": {
-        "tags": [
-          "session-v2"
-        ],
-        "summary": "Save Answers",
-        "operationId": "save_answers_api_v2_practice_sessions__session_id__answers_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Session Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PracticeAnswerUpsertRequestV2"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OperationAckV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/practice/sessions/{session_id}/submit": {
-      "post": {
-        "tags": [
-          "session-v2"
-        ],
-        "summary": "Submit Session",
-        "operationId": "submit_session_api_v2_practice_sessions__session_id__submit_post",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Session Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OperationAckV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/practice/sessions/{session_id}/result": {
-      "get": {
-        "tags": [
-          "session-v2"
-        ],
-        "summary": "Get Result",
-        "operationId": "get_result_api_v2_practice_sessions__session_id__result_get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "session_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Session Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/PracticeSessionResultResponseV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/review/items": {
-      "get": {
-        "tags": [
-          "review-v2"
-        ],
-        "summary": "List Review Items",
-        "operationId": "list_review_items_api_v2_review_items_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReviewListResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/review/smart": {
-      "get": {
-        "tags": [
-          "review-v2"
-        ],
-        "summary": "Get Smart Review",
-        "operationId": "get_smart_review_api_v2_review_smart_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OverviewResponseV2"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/review/items/{item_id}": {
-      "get": {
-        "tags": [
-          "review-v2"
-        ],
-        "summary": "Get Review Item",
-        "operationId": "get_review_item_api_v2_review_items__item_id__get",
-        "parameters": [
-          {
-            "name": "item_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Item Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ReviewDetailResponseV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/review/items/{item_id}/redo": {
-      "post": {
-        "tags": [
-          "review-v2"
-        ],
-        "summary": "Redo Review Item",
-        "operationId": "redo_review_item_api_v2_review_items__item_id__redo_post",
-        "parameters": [
-          {
-            "name": "item_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Item Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/OperationAckV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/notes": {
-      "get": {
-        "tags": [
-          "notes-v2-skeleton"
-        ],
-        "summary": "List Notes",
-        "operationId": "list_notes_api_v2_notes_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NoteListResponseV2"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      },
-      "post": {
-        "tags": [
-          "notes-v2-skeleton"
-        ],
-        "summary": "Create Note",
-        "operationId": "create_note_api_v2_notes_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NoteCreateRequestV2"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NoteDetailV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v2/notes/{note_id}": {
-      "get": {
-        "tags": [
-          "notes-v2-skeleton"
-        ],
-        "summary": "Get Note",
-        "operationId": "get_note_api_v2_notes__note_id__get",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "note_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Note Id"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NoteDetailV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      },
-      "put": {
-        "tags": [
-          "notes-v2-skeleton"
-        ],
-        "summary": "Update Note",
-        "operationId": "update_note_api_v2_notes__note_id__put",
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ],
-        "parameters": [
-          {
-            "name": "note_id",
-            "in": "path",
-            "required": true,
-            "schema": {
-              "type": "integer",
-              "title": "Note Id"
-            }
-          }
-        ],
-        "requestBody": {
-          "required": true,
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/NoteUpdateRequestV2"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/NoteDetailV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
-    "/api/v2/profile/overview": {
-      "get": {
-        "tags": [
-          "profile-v2"
-        ],
-        "summary": "Get Profile Overview",
-        "operationId": "get_profile_overview_api_v2_profile_overview_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProfileOverviewResponseV2"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v2/profile/security": {
-      "get": {
-        "tags": [
-          "profile-v2"
-        ],
-        "summary": "Get Profile Security",
-        "operationId": "get_profile_security_api_v2_profile_security_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProfileSecurityResponseV2"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      },
-      "put": {
-        "tags": [
-          "profile-v2"
-        ],
-        "summary": "Put Profile Security",
-        "operationId": "put_profile_security_api_v2_profile_security_put",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProfileSecurityUpdateRequestV2"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProfileSecurityResponseV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v2/profile/goals": {
-      "get": {
-        "tags": [
-          "profile-v2"
-        ],
-        "summary": "Get Profile Goals",
-        "operationId": "get_profile_goals_api_v2_profile_goals_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProfileGoalsResponseV2"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      },
-      "put": {
-        "tags": [
-          "profile-v2"
-        ],
-        "summary": "Put Profile Goals",
-        "operationId": "put_profile_goals_api_v2_profile_goals_put",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProfileGoalsUpdateRequestV2"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProfileGoalsResponseV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    },
-    "/api/v2/profile/info": {
-      "get": {
-        "tags": [
-          "profile-v2"
-        ],
-        "summary": "Get Profile Info",
-        "operationId": "get_profile_info_api_v2_profile_info_get",
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProfileInfoResponseV2"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      },
-      "put": {
-        "tags": [
-          "profile-v2"
-        ],
-        "summary": "Put Profile Info",
-        "operationId": "put_profile_info_api_v2_profile_info_put",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/ProfileInfoUpdateRequestV2"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "description": "Successful Response",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ProfileInfoResponseV2"
-                }
-              }
-            }
-          },
-          "422": {
-            "description": "Validation Error",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            }
-          }
-        },
-        "security": [
-          {
-            "HTTPBearer": []
-          }
-        ]
-      }
-    }
-  },
   "components": {
     "schemas": {
       "ActionLinkV2": {
         "properties": {
-          "key": {
-            "type": "string",
-            "title": "Key"
-          },
-          "label": {
-            "type": "string",
-            "title": "Label"
+          "enabled": {
+            "default": true,
+            "title": "Enabled",
+            "type": "boolean"
           },
           "href": {
-            "type": "string",
-            "title": "Href"
+            "title": "Href",
+            "type": "string"
           },
-          "enabled": {
-            "type": "boolean",
-            "title": "Enabled",
-            "default": true
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "key",
           "label",
           "href"
         ],
-        "title": "ActionLinkV2"
+        "title": "ActionLinkV2",
+        "type": "object"
       },
       "AuthAckV2": {
         "properties": {
-          "ok": {
-            "type": "boolean",
-            "title": "Ok"
-          },
           "message": {
-            "type": "string",
-            "title": "Message"
+            "title": "Message",
+            "type": "string"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
           }
         },
-        "type": "object",
         "required": [
           "ok",
           "message"
         ],
-        "title": "AuthAckV2"
+        "title": "AuthAckV2",
+        "type": "object"
       },
       "AuthSessionResponseV2": {
         "properties": {
-          "user": {
-            "$ref": "#/components/schemas/AuthUserV2"
-          },
           "session": {
             "$ref": "#/components/schemas/AuthSessionV2"
           },
-          "csrfToken": {
-            "type": "string",
-            "title": "Csrftoken"
+          "user": {
+            "$ref": "#/components/schemas/AuthUserV2"
           }
         },
-        "type": "object",
         "required": [
           "user",
-          "session",
-          "csrfToken"
+          "session"
         ],
-        "title": "AuthSessionResponseV2"
+        "title": "AuthSessionResponseV2",
+        "type": "object"
       },
       "AuthSessionStateResponseV2": {
         "properties": {
           "authenticated": {
-            "type": "boolean",
-            "title": "Authenticated"
-          },
-          "user": {
-            "$ref": "#/components/schemas/AuthUserV2"
+            "title": "Authenticated",
+            "type": "boolean"
           },
           "session": {
             "$ref": "#/components/schemas/AuthSessionV2"
+          },
+          "user": {
+            "$ref": "#/components/schemas/AuthUserV2"
           }
         },
-        "type": "object",
         "required": [
           "authenticated",
           "user",
           "session"
         ],
-        "title": "AuthSessionStateResponseV2"
+        "title": "AuthSessionStateResponseV2",
+        "type": "object"
       },
       "AuthSessionV2": {
         "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
+          "expiresAt": {
+            "title": "Expiresat",
+            "type": "string"
           },
-          "token": {
-            "type": "string",
-            "title": "Token"
+          "id": {
+            "title": "Id",
+            "type": "integer"
           },
           "issuedAt": {
-            "type": "string",
-            "title": "Issuedat"
-          },
-          "expiresAt": {
-            "type": "string",
-            "title": "Expiresat"
+            "title": "Issuedat",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
-          "token",
           "issuedAt",
           "expiresAt"
         ],
-        "title": "AuthSessionV2"
+        "title": "AuthSessionV2",
+        "type": "object"
       },
       "AuthUserV2": {
         "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "publicId": {
-            "type": "string",
-            "title": "Publicid"
+          "createdAt": {
+            "title": "Createdat",
+            "type": "string"
           },
           "displayName": {
-            "type": "string",
-            "title": "Displayname"
+            "title": "Displayname",
+            "type": "string"
           },
           "email": {
             "anyOf": [
@@ -1734,6 +128,14 @@
             ],
             "title": "Email"
           },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "isActive": {
+            "title": "Isactive",
+            "type": "boolean"
+          },
           "phone": {
             "anyOf": [
               {
@@ -1745,16 +147,11 @@
             ],
             "title": "Phone"
           },
-          "isActive": {
-            "type": "boolean",
-            "title": "Isactive"
-          },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
+          "publicId": {
+            "title": "Publicid",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "publicId",
@@ -1762,25 +159,18 @@
           "isActive",
           "createdAt"
         ],
-        "title": "AuthUserV2"
+        "title": "AuthUserV2",
+        "type": "object"
       },
       "BootstrapResponseV2": {
         "properties": {
           "appName": {
-            "type": "string",
-            "title": "Appname"
-          },
-          "env": {
-            "type": "string",
-            "title": "Env"
-          },
-          "publishedPaperCount": {
-            "type": "integer",
-            "title": "Publishedpapercount"
+            "title": "Appname",
+            "type": "string"
           },
           "canStartPractice": {
-            "type": "boolean",
-            "title": "Canstartpractice"
+            "title": "Canstartpractice",
+            "type": "boolean"
           },
           "defaultPaperCode": {
             "anyOf": [
@@ -1792,26 +182,38 @@
               }
             ],
             "title": "Defaultpapercode"
+          },
+          "env": {
+            "title": "Env",
+            "type": "string"
+          },
+          "publishedPaperCount": {
+            "title": "Publishedpapercount",
+            "type": "integer"
           }
         },
-        "type": "object",
         "required": [
           "appName",
           "env",
           "publishedPaperCount",
           "canStartPractice"
         ],
-        "title": "BootstrapResponseV2"
+        "title": "BootstrapResponseV2",
+        "type": "object"
       },
       "CatalogItemV2": {
         "properties": {
-          "id": {
-            "type": "string",
-            "title": "Id"
+          "href": {
+            "title": "Href",
+            "type": "string"
           },
-          "title": {
-            "type": "string",
-            "title": "Title"
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
           },
           "subtitle": {
             "anyOf": [
@@ -1824,23 +226,19 @@
             ],
             "title": "Subtitle"
           },
-          "status": {
-            "type": "string",
-            "title": "Status"
-          },
-          "href": {
-            "type": "string",
-            "title": "Href"
+          "title": {
+            "title": "Title",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "title",
           "status",
           "href"
         ],
-        "title": "CatalogItemV2"
+        "title": "CatalogItemV2",
+        "type": "object"
       },
       "CatalogListResponseV2": {
         "properties": {
@@ -1848,103 +246,102 @@
             "items": {
               "$ref": "#/components/schemas/CatalogItemV2"
             },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
+            "title": "Items",
+            "type": "array"
           },
           "page": {
-            "type": "integer",
-            "title": "Page"
+            "title": "Page",
+            "type": "integer"
           },
           "pageSize": {
-            "type": "integer",
-            "title": "Pagesize"
+            "title": "Pagesize",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
           }
         },
-        "type": "object",
         "required": [
           "items",
           "total",
           "page",
           "pageSize"
         ],
-        "title": "CatalogListResponseV2"
+        "title": "CatalogListResponseV2",
+        "type": "object"
       },
       "DashboardProgressResponseV2": {
         "properties": {
-          "summary": {
+          "actions": {
             "items": {
-              "$ref": "#/components/schemas/SummaryMetricV2"
+              "$ref": "#/components/schemas/ActionLinkV2"
             },
-            "type": "array",
-            "title": "Summary"
+            "title": "Actions",
+            "type": "array"
           },
           "sections": {
             "items": {
               "$ref": "#/components/schemas/SectionCardV2"
             },
-            "type": "array",
-            "title": "Sections"
+            "title": "Sections",
+            "type": "array"
           },
-          "actions": {
+          "summary": {
             "items": {
-              "$ref": "#/components/schemas/ActionLinkV2"
+              "$ref": "#/components/schemas/SummaryMetricV2"
             },
-            "type": "array",
-            "title": "Actions"
+            "title": "Summary",
+            "type": "array"
           }
         },
-        "type": "object",
         "required": [
           "summary",
           "sections",
           "actions"
         ],
-        "title": "DashboardProgressResponseV2"
+        "title": "DashboardProgressResponseV2",
+        "type": "object"
       },
       "DashboardRecordsResponseV2": {
         "properties": {
-          "summary": {
-            "$ref": "#/components/schemas/LearningRecordSummaryV2"
-          },
-          "sections": {
-            "items": {
-              "$ref": "#/components/schemas/SectionCardV2"
-            },
-            "type": "array",
-            "title": "Sections"
-          },
           "actions": {
             "items": {
               "$ref": "#/components/schemas/ActionLinkV2"
             },
-            "type": "array",
-            "title": "Actions"
+            "title": "Actions",
+            "type": "array"
           },
           "items": {
             "items": {
               "$ref": "#/components/schemas/LearningRecordItemV2"
             },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
+            "title": "Items",
+            "type": "array"
           },
           "page": {
-            "type": "integer",
-            "title": "Page"
+            "title": "Page",
+            "type": "integer"
           },
           "pageSize": {
-            "type": "integer",
-            "title": "Pagesize"
+            "title": "Pagesize",
+            "type": "integer"
+          },
+          "sections": {
+            "items": {
+              "$ref": "#/components/schemas/SectionCardV2"
+            },
+            "title": "Sections",
+            "type": "array"
+          },
+          "summary": {
+            "$ref": "#/components/schemas/LearningRecordSummaryV2"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
           }
         },
-        "type": "object",
         "required": [
           "summary",
           "sections",
@@ -1954,71 +351,72 @@
           "page",
           "pageSize"
         ],
-        "title": "DashboardRecordsResponseV2"
+        "title": "DashboardRecordsResponseV2",
+        "type": "object"
       },
       "DashboardTodayResponseV2": {
         "properties": {
-          "summary": {
+          "actions": {
             "items": {
-              "$ref": "#/components/schemas/SummaryMetricV2"
+              "$ref": "#/components/schemas/ActionLinkV2"
             },
-            "type": "array",
-            "title": "Summary"
+            "title": "Actions",
+            "type": "array"
           },
           "sections": {
             "items": {
               "$ref": "#/components/schemas/SectionCardV2"
             },
-            "type": "array",
-            "title": "Sections"
+            "title": "Sections",
+            "type": "array"
           },
-          "actions": {
+          "summary": {
             "items": {
-              "$ref": "#/components/schemas/ActionLinkV2"
+              "$ref": "#/components/schemas/SummaryMetricV2"
             },
-            "type": "array",
-            "title": "Actions"
+            "title": "Summary",
+            "type": "array"
           }
         },
-        "type": "object",
         "required": [
           "summary",
           "sections",
           "actions"
         ],
-        "title": "DashboardTodayResponseV2"
+        "title": "DashboardTodayResponseV2",
+        "type": "object"
       },
       "DashboardWeeklyPlanResponseV2": {
         "properties": {
-          "summary": {
+          "actions": {
             "items": {
-              "$ref": "#/components/schemas/SummaryMetricV2"
+              "$ref": "#/components/schemas/ActionLinkV2"
             },
-            "type": "array",
-            "title": "Summary"
+            "title": "Actions",
+            "type": "array"
           },
           "sections": {
             "items": {
               "$ref": "#/components/schemas/SectionCardV2"
             },
-            "type": "array",
-            "title": "Sections"
+            "title": "Sections",
+            "type": "array"
           },
-          "actions": {
+          "summary": {
             "items": {
-              "$ref": "#/components/schemas/ActionLinkV2"
+              "$ref": "#/components/schemas/SummaryMetricV2"
             },
-            "type": "array",
-            "title": "Actions"
+            "title": "Summary",
+            "type": "array"
           }
         },
-        "type": "object",
         "required": [
           "summary",
           "sections",
           "actions"
         ],
-        "title": "DashboardWeeklyPlanResponseV2"
+        "title": "DashboardWeeklyPlanResponseV2",
+        "type": "object"
       },
       "HTTPValidationError": {
         "properties": {
@@ -2026,50 +424,46 @@
             "items": {
               "$ref": "#/components/schemas/ValidationError"
             },
-            "type": "array",
-            "title": "Detail"
+            "title": "Detail",
+            "type": "array"
           }
         },
-        "type": "object",
-        "title": "HTTPValidationError"
+        "title": "HTTPValidationError",
+        "type": "object"
       },
       "HealthResponse": {
         "properties": {
           "status": {
-            "type": "string",
             "const": "ok",
-            "title": "Status"
+            "title": "Status",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "status"
         ],
-        "title": "HealthResponse"
+        "title": "HealthResponse",
+        "type": "object"
       },
       "LearningRecordItemV2": {
         "properties": {
           "id": {
-            "type": "string",
-            "title": "Id"
+            "title": "Id",
+            "type": "string"
           },
           "kind": {
-            "type": "string",
-            "title": "Kind"
+            "title": "Kind",
+            "type": "string"
           },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
+          "occurredAt": {
+            "title": "Occurredat",
+            "type": "string"
           },
           "score": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
               },
               {
                 "type": "null"
@@ -2077,12 +471,15 @@
             ],
             "title": "Score"
           },
-          "occurredAt": {
-            "type": "string",
-            "title": "Occurredat"
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "kind",
@@ -2090,31 +487,28 @@
           "status",
           "occurredAt"
         ],
-        "title": "LearningRecordItemV2"
+        "title": "LearningRecordItemV2",
+        "type": "object"
       },
       "LearningRecordSummaryV2": {
         "properties": {
-          "totalAttempts": {
-            "type": "integer",
-            "title": "Totalattempts"
-          },
-          "xingceAttempts": {
-            "type": "integer",
-            "title": "Xingceattempts"
-          },
-          "essayAttempts": {
-            "type": "integer",
-            "title": "Essayattempts"
-          },
-          "completedAttempts": {
-            "type": "integer",
-            "title": "Completedattempts"
+          "avgEssayScore": {
+            "anyOf": [
+              {
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Avgessayscore"
           },
           "avgXingceAccuracy": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
               },
               {
                 "type": "null"
@@ -2122,98 +516,101 @@
             ],
             "title": "Avgxingceaccuracy"
           },
-          "avgEssayScore": {
-            "anyOf": [
-              {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Avgessayscore"
+          "completedAttempts": {
+            "title": "Completedattempts",
+            "type": "integer"
+          },
+          "essayAttempts": {
+            "title": "Essayattempts",
+            "type": "integer"
+          },
+          "totalAttempts": {
+            "title": "Totalattempts",
+            "type": "integer"
+          },
+          "xingceAttempts": {
+            "title": "Xingceattempts",
+            "type": "integer"
           }
         },
-        "type": "object",
         "required": [
           "totalAttempts",
           "xingceAttempts",
           "essayAttempts",
           "completedAttempts"
         ],
-        "title": "LearningRecordSummaryV2"
+        "title": "LearningRecordSummaryV2",
+        "type": "object"
       },
       "LoginRequestV2": {
         "properties": {
           "identifier": {
-            "type": "string",
             "maxLength": 255,
             "minLength": 1,
-            "title": "Identifier"
+            "title": "Identifier",
+            "type": "string"
           },
           "password": {
-            "type": "string",
             "maxLength": 255,
             "minLength": 6,
-            "title": "Password"
+            "title": "Password",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "identifier",
           "password"
         ],
-        "title": "LoginRequestV2"
+        "title": "LoginRequestV2",
+        "type": "object"
       },
       "NoteCreateRequestV2": {
         "properties": {
+          "body": {
+            "default": "",
+            "title": "Body",
+            "type": "string"
+          },
           "title": {
-            "type": "string",
             "maxLength": 255,
             "minLength": 1,
-            "title": "Title"
-          },
-          "body": {
-            "type": "string",
-            "title": "Body",
-            "default": ""
+            "title": "Title",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "title"
         ],
-        "title": "NoteCreateRequestV2"
+        "title": "NoteCreateRequestV2",
+        "type": "object"
       },
       "NoteDetailV2": {
         "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
           "body": {
-            "type": "string",
-            "title": "Body"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
+            "title": "Body",
+            "type": "string"
           },
           "createdAt": {
-            "type": "string",
-            "title": "Createdat"
+            "title": "Createdat",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
+            "title": "Updatedat",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "title",
@@ -2222,36 +619,36 @@
           "createdAt",
           "updatedAt"
         ],
-        "title": "NoteDetailV2"
+        "title": "NoteDetailV2",
+        "type": "object"
       },
       "NoteItemV2": {
         "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
+          "createdAt": {
+            "title": "Createdat",
+            "type": "string"
           },
           "excerpt": {
-            "type": "string",
-            "title": "Excerpt"
+            "title": "Excerpt",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
           },
           "status": {
-            "type": "string",
-            "title": "Status"
+            "title": "Status",
+            "type": "string"
           },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
+          "title": {
+            "title": "Title",
+            "type": "string"
           },
           "updatedAt": {
-            "type": "string",
-            "title": "Updatedat"
+            "title": "Updatedat",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "title",
@@ -2260,7 +657,8 @@
           "createdAt",
           "updatedAt"
         ],
-        "title": "NoteItemV2"
+        "title": "NoteItemV2",
+        "type": "object"
       },
       "NoteListResponseV2": {
         "properties": {
@@ -2268,118 +666,112 @@
             "items": {
               "$ref": "#/components/schemas/NoteItemV2"
             },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
+            "title": "Items",
+            "type": "array"
           },
           "page": {
-            "type": "integer",
-            "title": "Page"
+            "title": "Page",
+            "type": "integer"
           },
           "pageSize": {
-            "type": "integer",
-            "title": "Pagesize"
+            "title": "Pagesize",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
           }
         },
-        "type": "object",
         "required": [
           "items",
           "total",
           "page",
           "pageSize"
         ],
-        "title": "NoteListResponseV2"
+        "title": "NoteListResponseV2",
+        "type": "object"
       },
       "NoteUpdateRequestV2": {
         "properties": {
-          "title": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 1,
-            "title": "Title"
-          },
           "body": {
-            "type": "string",
+            "default": "",
             "title": "Body",
-            "default": ""
+            "type": "string"
           },
           "status": {
-            "type": "string",
+            "default": "active",
             "title": "Status",
-            "default": "active"
+            "type": "string"
+          },
+          "title": {
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "title"
         ],
-        "title": "NoteUpdateRequestV2"
+        "title": "NoteUpdateRequestV2",
+        "type": "object"
       },
       "OperationAckV2": {
         "properties": {
           "ok": {
-            "type": "boolean",
-            "title": "Ok"
+            "title": "Ok",
+            "type": "boolean"
           },
           "status": {
-            "type": "string",
-            "title": "Status"
+            "title": "Status",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "ok",
           "status"
         ],
-        "title": "OperationAckV2"
+        "title": "OperationAckV2",
+        "type": "object"
       },
       "OverviewResponseV2": {
         "properties": {
-          "summary": {
+          "actions": {
             "items": {
-              "$ref": "#/components/schemas/SummaryMetricV2"
+              "$ref": "#/components/schemas/ActionLinkV2"
             },
-            "type": "array",
-            "title": "Summary"
+            "title": "Actions",
+            "type": "array"
           },
           "sections": {
             "items": {
               "$ref": "#/components/schemas/SectionCardV2"
             },
-            "type": "array",
-            "title": "Sections"
+            "title": "Sections",
+            "type": "array"
           },
-          "actions": {
+          "summary": {
             "items": {
-              "$ref": "#/components/schemas/ActionLinkV2"
+              "$ref": "#/components/schemas/SummaryMetricV2"
             },
-            "type": "array",
-            "title": "Actions"
+            "title": "Summary",
+            "type": "array"
           }
         },
-        "type": "object",
         "required": [
           "summary",
           "sections",
           "actions"
         ],
-        "title": "OverviewResponseV2"
+        "title": "OverviewResponseV2",
+        "type": "object"
       },
       "PracticeAnswerPayloadV2": {
         "properties": {
-          "questionKey": {
-            "type": "string",
-            "maxLength": 64,
-            "minLength": 1,
-            "title": "Questionkey"
-          },
           "answer": {
             "additionalProperties": true,
-            "type": "object",
-            "title": "Answer"
+            "title": "Answer",
+            "type": "object"
           },
           "durationSeconds": {
             "anyOf": [
@@ -2391,13 +783,19 @@
               }
             ],
             "title": "Durationseconds"
+          },
+          "questionKey": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Questionkey",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "questionKey"
         ],
-        "title": "PracticeAnswerPayloadV2"
+        "title": "PracticeAnswerPayloadV2",
+        "type": "object"
       },
       "PracticeAnswerUpsertRequestV2": {
         "properties": {
@@ -2405,60 +803,52 @@
             "items": {
               "$ref": "#/components/schemas/PracticeAnswerPayloadV2"
             },
-            "type": "array",
-            "title": "Answers"
+            "title": "Answers",
+            "type": "array"
           }
         },
-        "type": "object",
-        "title": "PracticeAnswerUpsertRequestV2"
+        "title": "PracticeAnswerUpsertRequestV2",
+        "type": "object"
       },
       "PracticeCenterResponseV2": {
         "properties": {
-          "summary": {
+          "actions": {
             "items": {
-              "$ref": "#/components/schemas/SummaryMetricV2"
+              "$ref": "#/components/schemas/ActionLinkV2"
             },
-            "type": "array",
-            "title": "Summary"
+            "title": "Actions",
+            "type": "array"
           },
           "sections": {
             "items": {
               "$ref": "#/components/schemas/SectionCardV2"
             },
-            "type": "array",
-            "title": "Sections"
+            "title": "Sections",
+            "type": "array"
           },
-          "actions": {
+          "summary": {
             "items": {
-              "$ref": "#/components/schemas/ActionLinkV2"
+              "$ref": "#/components/schemas/SummaryMetricV2"
             },
-            "type": "array",
-            "title": "Actions"
+            "title": "Summary",
+            "type": "array"
           }
         },
-        "type": "object",
         "required": [
           "summary",
           "sections",
           "actions"
         ],
-        "title": "PracticeCenterResponseV2"
+        "title": "PracticeCenterResponseV2",
+        "type": "object"
       },
       "PracticeSessionCreateRequestV2": {
         "properties": {
-          "track": {
-            "type": "string",
-            "enum": [
-              "xingce",
-              "essay"
-            ],
-            "title": "Track"
-          },
           "entryKind": {
-            "type": "string",
             "maxLength": 64,
             "minLength": 1,
-            "title": "Entrykind"
+            "title": "Entrykind",
+            "type": "string"
           },
           "paperCode": {
             "anyOf": [
@@ -2471,61 +861,65 @@
             ],
             "title": "Papercode"
           },
+          "payload": {
+            "additionalProperties": true,
+            "title": "Payload",
+            "type": "object"
+          },
           "questionIds": {
             "items": {
               "type": "integer"
             },
-            "type": "array",
-            "title": "Questionids"
+            "title": "Questionids",
+            "type": "array"
           },
-          "payload": {
-            "additionalProperties": true,
-            "type": "object",
-            "title": "Payload"
+          "track": {
+            "enum": [
+              "xingce",
+              "essay"
+            ],
+            "title": "Track",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "track",
           "entryKind"
         ],
-        "title": "PracticeSessionCreateRequestV2"
+        "title": "PracticeSessionCreateRequestV2",
+        "type": "object"
       },
       "PracticeSessionEnvelopeV2": {
         "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "track": {
-            "type": "string",
-            "title": "Track"
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/ActionLinkV2"
+            },
+            "title": "Actions",
+            "type": "array"
           },
           "entryKind": {
-            "type": "string",
-            "title": "Entrykind"
+            "title": "Entrykind",
+            "type": "string"
           },
-          "status": {
-            "type": "string",
-            "title": "Status"
+          "id": {
+            "title": "Id",
+            "type": "integer"
           },
           "items": {
             "items": {
               "$ref": "#/components/schemas/PracticeSessionItemV2"
             },
-            "type": "array",
-            "title": "Items"
-          },
-          "actions": {
-            "items": {
-              "$ref": "#/components/schemas/ActionLinkV2"
-            },
-            "type": "array",
-            "title": "Actions"
+            "title": "Items",
+            "type": "array"
           },
           "startedAt": {
-            "type": "string",
-            "title": "Startedat"
+            "title": "Startedat",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
           },
           "submittedAt": {
             "anyOf": [
@@ -2537,9 +931,12 @@
               }
             ],
             "title": "Submittedat"
+          },
+          "track": {
+            "title": "Track",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "track",
@@ -2549,13 +946,22 @@
           "actions",
           "startedAt"
         ],
-        "title": "PracticeSessionEnvelopeV2"
+        "title": "PracticeSessionEnvelopeV2",
+        "type": "object"
       },
       "PracticeSessionItemV2": {
         "properties": {
+          "answerKind": {
+            "title": "Answerkind",
+            "type": "string"
+          },
           "id": {
-            "type": "string",
-            "title": "Id"
+            "title": "Id",
+            "type": "string"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
           },
           "questionKey": {
             "anyOf": [
@@ -2568,59 +974,51 @@
             ],
             "title": "Questionkey"
           },
-          "prompt": {
-            "type": "string",
-            "title": "Prompt"
-          },
-          "answerKind": {
-            "type": "string",
-            "title": "Answerkind"
-          },
           "status": {
-            "type": "string",
-            "title": "Status"
+            "title": "Status",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "prompt",
           "answerKind",
           "status"
         ],
-        "title": "PracticeSessionItemV2"
+        "title": "PracticeSessionItemV2",
+        "type": "object"
       },
       "PracticeSessionResultResponseV2": {
         "properties": {
-          "summary": {
+          "actions": {
             "items": {
-              "$ref": "#/components/schemas/SummaryMetricV2"
+              "$ref": "#/components/schemas/ActionLinkV2"
             },
-            "type": "array",
-            "title": "Summary"
+            "title": "Actions",
+            "type": "array"
           },
           "sections": {
             "items": {
               "$ref": "#/components/schemas/SectionCardV2"
             },
-            "type": "array",
-            "title": "Sections"
+            "title": "Sections",
+            "type": "array"
           },
-          "actions": {
+          "summary": {
             "items": {
-              "$ref": "#/components/schemas/ActionLinkV2"
+              "$ref": "#/components/schemas/SummaryMetricV2"
             },
-            "type": "array",
-            "title": "Actions"
+            "title": "Summary",
+            "type": "array"
           }
         },
-        "type": "object",
         "required": [
           "summary",
           "sections",
           "actions"
         ],
-        "title": "PracticeSessionResultResponseV2"
+        "title": "PracticeSessionResultResponseV2",
+        "type": "object"
       },
       "ProfileGoalsResponseV2": {
         "properties": {
@@ -2638,8 +1036,8 @@
           "targetScore": {
             "anyOf": [
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
               },
               {
                 "type": "null"
@@ -2659,8 +1057,8 @@
             "title": "Weeklytargethours"
           }
         },
-        "type": "object",
-        "title": "ProfileGoalsResponseV2"
+        "title": "ProfileGoalsResponseV2",
+        "type": "object"
       },
       "ProfileGoalsUpdateRequestV2": {
         "properties": {
@@ -2681,8 +1079,8 @@
                 "type": "number"
               },
               {
-                "type": "string",
-                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$"
+                "pattern": "^(?!^[-+.]*$)[+-]?0*\\d*\\.?\\d*$",
+                "type": "string"
               },
               {
                 "type": "null"
@@ -2702,14 +1100,25 @@
             "title": "Weeklytargethours"
           }
         },
-        "type": "object",
-        "title": "ProfileGoalsUpdateRequestV2"
+        "title": "ProfileGoalsUpdateRequestV2",
+        "type": "object"
       },
       "ProfileInfoResponseV2": {
         "properties": {
+          "bio": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio"
+          },
           "displayName": {
-            "type": "string",
-            "title": "Displayname"
+            "title": "Displayname",
+            "type": "string"
           },
           "realName": {
             "anyOf": [
@@ -2732,38 +1141,39 @@
               }
             ],
             "title": "Region"
-          },
-          "bio": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Bio"
           }
         },
-        "type": "object",
         "required": [
           "displayName"
         ],
-        "title": "ProfileInfoResponseV2"
+        "title": "ProfileInfoResponseV2",
+        "type": "object"
       },
       "ProfileInfoUpdateRequestV2": {
         "properties": {
+          "bio": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bio"
+          },
           "displayName": {
-            "type": "string",
             "maxLength": 255,
             "minLength": 1,
-            "title": "Displayname"
+            "title": "Displayname",
+            "type": "string"
           },
           "realName": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 255
+                "maxLength": 255,
+                "type": "string"
               },
               {
                 "type": "null"
@@ -2774,335 +1184,329 @@
           "region": {
             "anyOf": [
               {
-                "type": "string",
-                "maxLength": 128
+                "maxLength": 128,
+                "type": "string"
               },
               {
                 "type": "null"
               }
             ],
             "title": "Region"
-          },
-          "bio": {
-            "anyOf": [
-              {
-                "type": "string",
-                "maxLength": 2000
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Bio"
           }
         },
-        "type": "object",
         "required": [
           "displayName"
         ],
-        "title": "ProfileInfoUpdateRequestV2"
+        "title": "ProfileInfoUpdateRequestV2",
+        "type": "object"
       },
       "ProfileOverviewResponseV2": {
         "properties": {
-          "summary": {
+          "actions": {
             "items": {
-              "$ref": "#/components/schemas/SummaryMetricV2"
+              "$ref": "#/components/schemas/ActionLinkV2"
             },
-            "type": "array",
-            "title": "Summary"
+            "title": "Actions",
+            "type": "array"
           },
           "sections": {
             "items": {
               "$ref": "#/components/schemas/SectionCardV2"
             },
-            "type": "array",
-            "title": "Sections"
+            "title": "Sections",
+            "type": "array"
           },
-          "actions": {
+          "summary": {
             "items": {
-              "$ref": "#/components/schemas/ActionLinkV2"
+              "$ref": "#/components/schemas/SummaryMetricV2"
             },
-            "type": "array",
-            "title": "Actions"
+            "title": "Summary",
+            "type": "array"
           }
         },
-        "type": "object",
         "required": [
           "summary",
           "sections",
           "actions"
         ],
-        "title": "ProfileOverviewResponseV2"
+        "title": "ProfileOverviewResponseV2",
+        "type": "object"
       },
       "ProfileSecurityResponseV2": {
         "properties": {
-          "passwordSet": {
-            "type": "boolean",
-            "title": "Passwordset"
+          "activeSessions": {
+            "title": "Activesessions",
+            "type": "integer"
           },
           "emailBound": {
-            "type": "boolean",
-            "title": "Emailbound"
+            "title": "Emailbound",
+            "type": "boolean"
+          },
+          "passwordSet": {
+            "title": "Passwordset",
+            "type": "boolean"
           },
           "phoneBound": {
-            "type": "boolean",
-            "title": "Phonebound"
-          },
-          "activeSessions": {
-            "type": "integer",
-            "title": "Activesessions"
+            "title": "Phonebound",
+            "type": "boolean"
           }
         },
-        "type": "object",
         "required": [
           "passwordSet",
           "emailBound",
           "phoneBound",
           "activeSessions"
         ],
-        "title": "ProfileSecurityResponseV2"
+        "title": "ProfileSecurityResponseV2",
+        "type": "object"
       },
       "ProfileSecurityUpdateRequestV2": {
         "properties": {
           "currentPassword": {
-            "type": "string",
             "maxLength": 255,
             "minLength": 6,
-            "title": "Currentpassword"
+            "title": "Currentpassword",
+            "type": "string"
           },
           "newPassword": {
-            "type": "string",
             "maxLength": 255,
             "minLength": 6,
-            "title": "Newpassword"
+            "title": "Newpassword",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "currentPassword",
           "newPassword"
         ],
-        "title": "ProfileSecurityUpdateRequestV2"
+        "title": "ProfileSecurityUpdateRequestV2",
+        "type": "object"
       },
       "ReadyzDependency": {
         "properties": {
+          "detail": {
+            "title": "Detail",
+            "type": "string"
+          },
           "name": {
-            "type": "string",
-            "title": "Name"
+            "title": "Name",
+            "type": "string"
           },
           "status": {
-            "type": "string",
             "enum": [
               "ok",
               "skipped",
               "error"
             ],
-            "title": "Status"
-          },
-          "detail": {
-            "type": "string",
-            "title": "Detail"
+            "title": "Status",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "name",
           "status",
           "detail"
         ],
-        "title": "ReadyzDependency"
+        "title": "ReadyzDependency",
+        "type": "object"
       },
       "ReadyzResponse": {
         "properties": {
-          "status": {
-            "type": "string",
-            "enum": [
-              "ok",
-              "error"
-            ],
-            "title": "Status"
-          },
           "dependencies": {
             "items": {
               "$ref": "#/components/schemas/ReadyzDependency"
             },
-            "type": "array",
-            "title": "Dependencies"
+            "title": "Dependencies",
+            "type": "array"
+          },
+          "status": {
+            "enum": [
+              "ok",
+              "error"
+            ],
+            "title": "Status",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "status",
           "dependencies"
         ],
-        "title": "ReadyzResponse"
+        "title": "ReadyzResponse",
+        "type": "object"
       },
       "RegisterEmailRequestV2": {
         "properties": {
-          "email": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 3,
-            "title": "Email"
-          },
-          "password": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 6,
-            "title": "Password"
-          },
           "displayName": {
-            "type": "string",
+            "default": "New User",
             "maxLength": 255,
             "minLength": 1,
             "title": "Displayname",
-            "default": "New User"
+            "type": "string"
+          },
+          "email": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Email",
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 255,
+            "minLength": 6,
+            "title": "Password",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "email",
           "password"
         ],
-        "title": "RegisterEmailRequestV2"
+        "title": "RegisterEmailRequestV2",
+        "type": "object"
       },
       "RegisterPhoneRequestV2": {
         "properties": {
-          "phone": {
-            "type": "string",
-            "maxLength": 32,
-            "minLength": 6,
-            "title": "Phone"
-          },
-          "password": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 6,
-            "title": "Password"
-          },
           "displayName": {
-            "type": "string",
+            "default": "New User",
             "maxLength": 255,
             "minLength": 1,
             "title": "Displayname",
-            "default": "New User"
+            "type": "string"
+          },
+          "password": {
+            "maxLength": 255,
+            "minLength": 6,
+            "title": "Password",
+            "type": "string"
+          },
+          "phone": {
+            "maxLength": 32,
+            "minLength": 6,
+            "title": "Phone",
+            "type": "string"
+          },
+          "smsCode": {
+            "maxLength": 16,
+            "minLength": 4,
+            "title": "Smscode",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "phone",
+          "smsCode",
           "password"
         ],
-        "title": "RegisterPhoneRequestV2"
+        "title": "RegisterPhoneRequestV2",
+        "type": "object"
       },
       "ResetPasswordRequestV2": {
         "properties": {
-          "identifier": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 3,
-            "title": "Identifier"
-          },
           "code": {
-            "type": "string",
             "maxLength": 16,
             "minLength": 4,
-            "title": "Code"
+            "title": "Code",
+            "type": "string"
+          },
+          "identifier": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Identifier",
+            "type": "string"
           },
           "newPassword": {
-            "type": "string",
             "maxLength": 255,
             "minLength": 6,
-            "title": "Newpassword"
+            "title": "Newpassword",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "identifier",
           "code",
           "newPassword"
         ],
-        "title": "ResetPasswordRequestV2"
+        "title": "ResetPasswordRequestV2",
+        "type": "object"
       },
       "ReviewAttemptOutV2": {
         "properties": {
+          "attemptedAt": {
+            "title": "Attemptedat",
+            "type": "string"
+          },
           "id": {
-            "type": "integer",
-            "title": "Id"
+            "title": "Id",
+            "type": "integer"
           },
           "outcome": {
-            "type": "string",
-            "title": "Outcome"
-          },
-          "attemptedAt": {
-            "type": "string",
-            "title": "Attemptedat"
+            "title": "Outcome",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "outcome",
           "attemptedAt"
         ],
-        "title": "ReviewAttemptOutV2"
+        "title": "ReviewAttemptOutV2",
+        "type": "object"
       },
       "ReviewDetailResponseV2": {
         "properties": {
-          "item": {
-            "$ref": "#/components/schemas/ReviewItemV2"
+          "actions": {
+            "items": {
+              "$ref": "#/components/schemas/ActionLinkV2"
+            },
+            "title": "Actions",
+            "type": "array"
           },
           "history": {
             "items": {
               "$ref": "#/components/schemas/ReviewAttemptOutV2"
             },
-            "type": "array",
-            "title": "History"
+            "title": "History",
+            "type": "array"
           },
-          "actions": {
-            "items": {
-              "$ref": "#/components/schemas/ActionLinkV2"
-            },
-            "type": "array",
-            "title": "Actions"
+          "item": {
+            "$ref": "#/components/schemas/ReviewItemV2"
           }
         },
-        "type": "object",
         "required": [
           "item",
           "history",
           "actions"
         ],
-        "title": "ReviewDetailResponseV2"
+        "title": "ReviewDetailResponseV2",
+        "type": "object"
       },
       "ReviewItemV2": {
         "properties": {
-          "id": {
-            "type": "integer",
-            "title": "Id"
-          },
-          "kind": {
-            "type": "string",
-            "title": "Kind"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
+          "createdAt": {
+            "title": "Createdat",
+            "type": "string"
           },
           "href": {
-            "type": "string",
-            "title": "Href"
+            "title": "Href",
+            "type": "string"
           },
-          "createdAt": {
-            "type": "string",
-            "title": "Createdat"
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "kind": {
+            "title": "Kind",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "id",
           "kind",
@@ -3111,7 +1515,8 @@
           "href",
           "createdAt"
         ],
-        "title": "ReviewItemV2"
+        "title": "ReviewItemV2",
+        "type": "object"
       },
       "ReviewListResponseV2": {
         "properties": {
@@ -3119,55 +1524,54 @@
             "items": {
               "$ref": "#/components/schemas/ReviewItemV2"
             },
-            "type": "array",
-            "title": "Items"
-          },
-          "total": {
-            "type": "integer",
-            "title": "Total"
+            "title": "Items",
+            "type": "array"
           },
           "page": {
-            "type": "integer",
-            "title": "Page"
+            "title": "Page",
+            "type": "integer"
           },
           "pageSize": {
-            "type": "integer",
-            "title": "Pagesize"
+            "title": "Pagesize",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
           }
         },
-        "type": "object",
         "required": [
           "items",
           "total",
           "page",
           "pageSize"
         ],
-        "title": "ReviewListResponseV2"
+        "title": "ReviewListResponseV2",
+        "type": "object"
       },
       "SectionCardV2": {
         "properties": {
-          "key": {
-            "type": "string",
-            "title": "Key"
-          },
-          "title": {
-            "type": "string",
-            "title": "Title"
-          },
           "description": {
-            "type": "string",
-            "title": "Description"
-          },
-          "status": {
-            "type": "string",
-            "title": "Status"
+            "title": "Description",
+            "type": "string"
           },
           "href": {
-            "type": "string",
-            "title": "Href"
+            "title": "Href",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "key",
           "title",
@@ -3175,101 +1579,104 @@
           "status",
           "href"
         ],
-        "title": "SectionCardV2"
+        "title": "SectionCardV2",
+        "type": "object"
       },
       "SendCodeRequestV2": {
         "properties": {
-          "targetKind": {
-            "type": "string",
-            "enum": [
-              "email",
-              "phone"
-            ],
-            "title": "Targetkind"
-          },
-          "targetValue": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 3,
-            "title": "Targetvalue"
-          },
           "purpose": {
-            "type": "string",
             "enum": [
               "register",
               "reset_password",
               "login",
               "bind"
             ],
-            "title": "Purpose"
+            "title": "Purpose",
+            "type": "string"
+          },
+          "targetKind": {
+            "enum": [
+              "email",
+              "phone"
+            ],
+            "title": "Targetkind",
+            "type": "string"
+          },
+          "targetValue": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Targetvalue",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "targetKind",
           "targetValue",
           "purpose"
         ],
-        "title": "SendCodeRequestV2"
+        "title": "SendCodeRequestV2",
+        "type": "object"
       },
       "SendCodeResponseV2": {
         "properties": {
+          "delivery": {
+            "title": "Delivery",
+            "type": "string"
+          },
           "ok": {
-            "type": "boolean",
-            "title": "Ok"
+            "title": "Ok",
+            "type": "boolean"
           },
           "purpose": {
-            "type": "string",
-            "title": "Purpose"
-          },
-          "delivery": {
-            "type": "string",
-            "title": "Delivery"
-          },
-          "devCode": {
-            "type": "string",
-            "title": "Devcode"
+            "title": "Purpose",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "ok",
           "purpose",
-          "delivery",
-          "devCode"
+          "delivery"
         ],
-        "title": "SendCodeResponseV2"
+        "title": "SendCodeResponseV2",
+        "type": "object"
       },
       "SummaryMetricV2": {
         "properties": {
           "key": {
-            "type": "string",
-            "title": "Key"
+            "title": "Key",
+            "type": "string"
           },
           "label": {
-            "type": "string",
-            "title": "Label"
-          },
-          "value": {
-            "type": "string",
-            "title": "Value"
+            "title": "Label",
+            "type": "string"
           },
           "tone": {
-            "type": "string",
+            "default": "neutral",
             "title": "Tone",
-            "default": "neutral"
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "key",
           "label",
           "value"
         ],
-        "title": "SummaryMetricV2"
+        "title": "SummaryMetricV2",
+        "type": "object"
       },
       "ValidationError": {
         "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
           "loc": {
             "items": {
               "anyOf": [
@@ -3281,125 +1688,117 @@
                 }
               ]
             },
-            "type": "array",
-            "title": "Location"
+            "title": "Location",
+            "type": "array"
           },
           "msg": {
-            "type": "string",
-            "title": "Message"
+            "title": "Message",
+            "type": "string"
           },
           "type": {
-            "type": "string",
-            "title": "Error Type"
-          },
-          "input": {
-            "title": "Input"
-          },
-          "ctx": {
-            "type": "object",
-            "title": "Context"
+            "title": "Error Type",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "loc",
           "msg",
           "type"
         ],
-        "title": "ValidationError"
+        "title": "ValidationError",
+        "type": "object"
       },
       "VerifyCodeRequestV2": {
         "properties": {
-          "targetKind": {
-            "type": "string",
-            "enum": [
-              "email",
-              "phone"
-            ],
-            "title": "Targetkind"
-          },
-          "targetValue": {
-            "type": "string",
-            "maxLength": 255,
-            "minLength": 3,
-            "title": "Targetvalue"
+          "code": {
+            "maxLength": 16,
+            "minLength": 4,
+            "title": "Code",
+            "type": "string"
           },
           "purpose": {
-            "type": "string",
             "enum": [
               "register",
               "reset_password",
               "login",
               "bind"
             ],
-            "title": "Purpose"
+            "title": "Purpose",
+            "type": "string"
           },
-          "code": {
-            "type": "string",
-            "maxLength": 16,
-            "minLength": 4,
-            "title": "Code"
+          "targetKind": {
+            "enum": [
+              "email",
+              "phone"
+            ],
+            "title": "Targetkind",
+            "type": "string"
+          },
+          "targetValue": {
+            "maxLength": 255,
+            "minLength": 3,
+            "title": "Targetvalue",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "targetKind",
           "targetValue",
           "purpose",
           "code"
         ],
-        "title": "VerifyCodeRequestV2"
+        "title": "VerifyCodeRequestV2",
+        "type": "object"
       },
       "VerifyCodeResponseV2": {
         "properties": {
-          "verified": {
-            "type": "boolean",
-            "title": "Verified"
-          },
           "message": {
-            "type": "string",
-            "title": "Message"
+            "title": "Message",
+            "type": "string"
+          },
+          "verified": {
+            "title": "Verified",
+            "type": "boolean"
           }
         },
-        "type": "object",
         "required": [
           "verified",
           "message"
         ],
-        "title": "VerifyCodeResponseV2"
+        "title": "VerifyCodeResponseV2",
+        "type": "object"
       },
       "VersionResponse": {
         "properties": {
           "appName": {
-            "type": "string",
-            "title": "Appname"
+            "title": "Appname",
+            "type": "string"
           },
           "appVersion": {
-            "type": "string",
-            "title": "Appversion"
-          },
-          "gitSha": {
-            "type": "string",
-            "title": "Gitsha"
-          },
-          "imageTag": {
-            "type": "string",
-            "title": "Imagetag"
+            "title": "Appversion",
+            "type": "string"
           },
           "buildTime": {
-            "type": "string",
-            "title": "Buildtime"
-          },
-          "schemaVersion": {
-            "type": "string",
-            "title": "Schemaversion"
+            "title": "Buildtime",
+            "type": "string"
           },
           "env": {
-            "type": "string",
-            "title": "Env"
+            "title": "Env",
+            "type": "string"
+          },
+          "gitSha": {
+            "title": "Gitsha",
+            "type": "string"
+          },
+          "imageTag": {
+            "title": "Imagetag",
+            "type": "string"
+          },
+          "schemaVersion": {
+            "title": "Schemaversion",
+            "type": "string"
           }
         },
-        "type": "object",
         "required": [
           "appName",
           "appVersion",
@@ -3409,13 +1808,1606 @@
           "schemaVersion",
           "env"
         ],
-        "title": "VersionResponse"
+        "title": "VersionResponse",
+        "type": "object"
       }
     },
     "securitySchemes": {
       "HTTPBearer": {
-        "type": "http",
-        "scheme": "bearer"
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "exam-api",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v2/auth/login": {
+      "post": {
+        "operationId": "login_api_v2_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LoginRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Login",
+        "tags": [
+          "identity-v2"
+        ]
+      }
+    },
+    "/api/v2/auth/logout": {
+      "post": {
+        "operationId": "logout_api_v2_auth_logout_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthAckV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Logout",
+        "tags": [
+          "identity-v2"
+        ]
+      }
+    },
+    "/api/v2/auth/register/email": {
+      "post": {
+        "operationId": "register_email_api_v2_auth_register_email_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterEmailRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register Email",
+        "tags": [
+          "identity-v2"
+        ]
+      }
+    },
+    "/api/v2/auth/register/phone": {
+      "post": {
+        "operationId": "register_phone_api_v2_auth_register_phone_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RegisterPhoneRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Register Phone",
+        "tags": [
+          "identity-v2"
+        ]
+      }
+    },
+    "/api/v2/auth/reset-password": {
+      "post": {
+        "operationId": "reset_password_api_v2_auth_reset_password_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ResetPasswordRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthAckV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Reset Password",
+        "tags": [
+          "identity-v2"
+        ]
+      }
+    },
+    "/api/v2/auth/send-code": {
+      "post": {
+        "operationId": "send_code_api_v2_auth_send_code_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SendCodeRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SendCodeResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Send Code",
+        "tags": [
+          "identity-v2"
+        ]
+      }
+    },
+    "/api/v2/auth/session": {
+      "get": {
+        "operationId": "get_session_api_v2_auth_session_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthSessionStateResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Session",
+        "tags": [
+          "identity-v2"
+        ]
+      }
+    },
+    "/api/v2/auth/verify-code": {
+      "post": {
+        "operationId": "verify_code_api_v2_auth_verify_code_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VerifyCodeRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VerifyCodeResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Verify Code",
+        "tags": [
+          "identity-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/overview": {
+      "get": {
+        "operationId": "get_dashboard_overview_api_v2_dashboard_overview_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Dashboard Overview",
+        "tags": [
+          "planning-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/progress": {
+      "get": {
+        "operationId": "get_progress_overview_api_v2_dashboard_progress_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardProgressResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Progress Overview",
+        "tags": [
+          "progress-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/progress/diagnosis": {
+      "get": {
+        "operationId": "get_progress_diagnosis_api_v2_dashboard_progress_diagnosis_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Progress Diagnosis",
+        "tags": [
+          "progress-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/progress/trend": {
+      "get": {
+        "operationId": "get_progress_trend_api_v2_dashboard_progress_trend_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Progress Trend",
+        "tags": [
+          "progress-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/progress/weakness": {
+      "get": {
+        "operationId": "get_progress_weakness_api_v2_dashboard_progress_weakness_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Progress Weakness",
+        "tags": [
+          "progress-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/records": {
+      "get": {
+        "operationId": "get_dashboard_records_api_v2_dashboard_records_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardRecordsResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Dashboard Records",
+        "tags": [
+          "record-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/today": {
+      "get": {
+        "operationId": "get_dashboard_today_api_v2_dashboard_today_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardTodayResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Dashboard Today",
+        "tags": [
+          "planning-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/today/continue": {
+      "get": {
+        "operationId": "get_dashboard_today_continue_api_v2_dashboard_today_continue_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Dashboard Today Continue",
+        "tags": [
+          "planning-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/today/must-do": {
+      "get": {
+        "operationId": "get_dashboard_today_must_do_api_v2_dashboard_today_must_do_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Dashboard Today Must Do",
+        "tags": [
+          "planning-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/today/review": {
+      "get": {
+        "operationId": "get_dashboard_today_review_api_v2_dashboard_today_review_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Dashboard Today Review",
+        "tags": [
+          "planning-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/weekly-plan": {
+      "get": {
+        "operationId": "get_dashboard_weekly_plan_api_v2_dashboard_weekly_plan_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DashboardWeeklyPlanResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Dashboard Weekly Plan",
+        "tags": [
+          "planning-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/weekly-plan/adjust": {
+      "get": {
+        "operationId": "get_dashboard_weekly_adjust_api_v2_dashboard_weekly_plan_adjust_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Dashboard Weekly Adjust",
+        "tags": [
+          "planning-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/weekly-plan/goal": {
+      "get": {
+        "operationId": "get_dashboard_weekly_goal_api_v2_dashboard_weekly_plan_goal_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Dashboard Weekly Goal",
+        "tags": [
+          "planning-v2"
+        ]
+      }
+    },
+    "/api/v2/dashboard/weekly-plan/today-completion": {
+      "get": {
+        "operationId": "get_dashboard_weekly_completion_api_v2_dashboard_weekly_plan_today_completion_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Dashboard Weekly Completion",
+        "tags": [
+          "planning-v2"
+        ]
+      }
+    },
+    "/api/v2/notes": {
+      "get": {
+        "operationId": "list_notes_api_v2_notes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteListResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Notes",
+        "tags": [
+          "notes-v2-skeleton"
+        ]
+      },
+      "post": {
+        "operationId": "create_note_api_v2_notes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteCreateRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteDetailV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Note",
+        "tags": [
+          "notes-v2-skeleton"
+        ]
+      }
+    },
+    "/api/v2/notes/{note_id}": {
+      "get": {
+        "operationId": "get_note_api_v2_notes__note_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "title": "Note Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteDetailV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Note",
+        "tags": [
+          "notes-v2-skeleton"
+        ]
+      },
+      "put": {
+        "operationId": "update_note_api_v2_notes__note_id__put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "title": "Note Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteUpdateRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteDetailV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Note",
+        "tags": [
+          "notes-v2-skeleton"
+        ]
+      }
+    },
+    "/api/v2/practice/center": {
+      "get": {
+        "operationId": "get_practice_center_api_v2_practice_center_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeCenterResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Practice Center",
+        "tags": [
+          "content-v2"
+        ]
+      }
+    },
+    "/api/v2/practice/essay/categories": {
+      "get": {
+        "operationId": "list_essay_categories_api_v2_practice_essay_categories_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogListResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Essay Categories",
+        "tags": [
+          "content-v2"
+        ]
+      }
+    },
+    "/api/v2/practice/essay/papers": {
+      "get": {
+        "operationId": "list_essay_papers_api_v2_practice_essay_papers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogListResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Essay Papers",
+        "tags": [
+          "content-v2"
+        ]
+      }
+    },
+    "/api/v2/practice/sessions": {
+      "post": {
+        "operationId": "create_session_api_v2_practice_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeSessionCreateRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeSessionEnvelopeV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Session",
+        "tags": [
+          "session-v2"
+        ]
+      }
+    },
+    "/api/v2/practice/sessions/{session_id}": {
+      "get": {
+        "operationId": "get_session_api_v2_practice_sessions__session_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeSessionEnvelopeV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Session",
+        "tags": [
+          "session-v2"
+        ]
+      }
+    },
+    "/api/v2/practice/sessions/{session_id}/answers": {
+      "post": {
+        "operationId": "save_answers_api_v2_practice_sessions__session_id__answers_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PracticeAnswerUpsertRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationAckV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Save Answers",
+        "tags": [
+          "session-v2"
+        ]
+      }
+    },
+    "/api/v2/practice/sessions/{session_id}/result": {
+      "get": {
+        "operationId": "get_result_api_v2_practice_sessions__session_id__result_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeSessionResultResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Result",
+        "tags": [
+          "session-v2"
+        ]
+      }
+    },
+    "/api/v2/practice/sessions/{session_id}/submit": {
+      "post": {
+        "operationId": "submit_session_api_v2_practice_sessions__session_id__submit_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "session_id",
+            "required": true,
+            "schema": {
+              "title": "Session Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationAckV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Submit Session",
+        "tags": [
+          "session-v2"
+        ]
+      }
+    },
+    "/api/v2/practice/xingce/categories": {
+      "get": {
+        "operationId": "list_xingce_categories_api_v2_practice_xingce_categories_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogListResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Xingce Categories",
+        "tags": [
+          "content-v2"
+        ]
+      }
+    },
+    "/api/v2/practice/xingce/papers": {
+      "get": {
+        "operationId": "list_xingce_papers_api_v2_practice_xingce_papers_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CatalogListResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Xingce Papers",
+        "tags": [
+          "content-v2"
+        ]
+      }
+    },
+    "/api/v2/profile/goals": {
+      "get": {
+        "operationId": "get_profile_goals_api_v2_profile_goals_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileGoalsResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Profile Goals",
+        "tags": [
+          "profile-v2"
+        ]
+      },
+      "put": {
+        "operationId": "put_profile_goals_api_v2_profile_goals_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileGoalsUpdateRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileGoalsResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Profile Goals",
+        "tags": [
+          "profile-v2"
+        ]
+      }
+    },
+    "/api/v2/profile/info": {
+      "get": {
+        "operationId": "get_profile_info_api_v2_profile_info_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileInfoResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Profile Info",
+        "tags": [
+          "profile-v2"
+        ]
+      },
+      "put": {
+        "operationId": "put_profile_info_api_v2_profile_info_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileInfoUpdateRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileInfoResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Profile Info",
+        "tags": [
+          "profile-v2"
+        ]
+      }
+    },
+    "/api/v2/profile/overview": {
+      "get": {
+        "operationId": "get_profile_overview_api_v2_profile_overview_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileOverviewResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Profile Overview",
+        "tags": [
+          "profile-v2"
+        ]
+      }
+    },
+    "/api/v2/profile/security": {
+      "get": {
+        "operationId": "get_profile_security_api_v2_profile_security_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileSecurityResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Profile Security",
+        "tags": [
+          "profile-v2"
+        ]
+      },
+      "put": {
+        "operationId": "put_profile_security_api_v2_profile_security_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ProfileSecurityUpdateRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProfileSecurityResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Put Profile Security",
+        "tags": [
+          "profile-v2"
+        ]
+      }
+    },
+    "/api/v2/review/items": {
+      "get": {
+        "operationId": "list_review_items_api_v2_review_items_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewListResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "List Review Items",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/items/{item_id}": {
+      "get": {
+        "operationId": "get_review_item_api_v2_review_items__item_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDetailResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Review Item",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/items/{item_id}/redo": {
+      "post": {
+        "operationId": "redo_review_item_api_v2_review_items__item_id__redo_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationAckV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Redo Review Item",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/smart": {
+      "get": {
+        "operationId": "get_smart_review_api_v2_review_smart_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OverviewResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Get Smart Review",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/system/bootstrap": {
+      "get": {
+        "operationId": "bootstrap_api_v2_system_bootstrap_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/BootstrapResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Bootstrap",
+        "tags": [
+          "system-v2"
+        ]
+      }
+    },
+    "/healthz": {
+      "get": {
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Healthz",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/readyz": {
+      "get": {
+        "operationId": "readyz_readyz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadyzResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Readyz",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/version": {
+      "get": {
+        "operationId": "version_version_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Version",
+        "tags": [
+          "ops"
+        ]
+      }
+    },
+    "/version.json": {
+      "get": {
+        "operationId": "version_json_version_json_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionResponse"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Version Json",
+        "tags": [
+          "ops"
+        ]
       }
     }
   }

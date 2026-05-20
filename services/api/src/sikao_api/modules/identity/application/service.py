@@ -48,15 +48,28 @@ class IdentityServiceV2:
         self.session.flush()
         return user, auth_session, raw_token
 
-    def register_phone(self, *, phone: str, password: str, display_name: str) -> tuple[UserV2, AuthSessionV2, str]:
+    def register_phone(
+        self,
+        *,
+        phone: str,
+        sms_code: str,
+        password: str,
+        display_name: str,
+    ) -> tuple[UserV2, AuthSessionV2, str]:
         normalized = normalize_phone(phone)
         if not normalized:
             raise ValidationError("invalid phone", code="invalid_phone")
         if self.session.scalar(select(PhoneContactV2).where(PhoneContactV2.phone == normalized)) is not None:
             raise ConflictError("phone already registered", code="phone_taken")
+        self.verify_code(
+            target_kind="phone",
+            target_value=normalized,
+            purpose="register",
+            code=sms_code,
+        )
         user = UserV2(display_name=display_name)
         credential = PasswordCredentialV2(user=user, password_hash=hash_password(password))
-        contact = PhoneContactV2(user=user, phone=normalized, is_primary=True, is_verified=False)
+        contact = PhoneContactV2(user=user, phone=normalized, is_primary=True, is_verified=True)
         auth_session, raw_token = build_auth_session(user=user)
         self.session.add_all([user, credential, contact, auth_session])
         self.session.flush()
@@ -145,4 +158,13 @@ class IdentityServiceV2:
         else:
             credential.password_hash = hash_password(new_password)
             self.session.add(credential)
+        revoked_at = datetime.now(UTC).replace(tzinfo=None)
+        active_sessions = self.session.scalars(
+            select(AuthSessionV2)
+            .where(AuthSessionV2.user_id == user.id)
+            .where(AuthSessionV2.revoked_at.is_(None))
+        ).all()
+        for auth_session in active_sessions:
+            auth_session.revoked_at = revoked_at
+            self.session.add(auth_session)
         return user

@@ -4,85 +4,34 @@
  */
 
 export interface paths {
-    "/healthz": {
+    "/api/v2/auth/login": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Healthz */
-        get: operations["healthz_healthz_get"];
+        get?: never;
         put?: never;
-        post?: never;
+        /** Login */
+        post: operations["login_api_v2_auth_login_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/readyz": {
+    "/api/v2/auth/logout": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Readyz */
-        get: operations["readyz_readyz_get"];
+        get?: never;
         put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/version": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Version */
-        get: operations["version_version_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/version.json": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Version Json */
-        get: operations["version_json_version_json_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/system/bootstrap": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Bootstrap */
-        get: operations["bootstrap_api_v2_system_bootstrap_get"];
-        put?: never;
-        post?: never;
+        /** Logout */
+        post: operations["logout_api_v2_auth_logout_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -123,7 +72,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/auth/login": {
+    "/api/v2/auth/reset-password": {
         parameters: {
             query?: never;
             header?: never;
@@ -132,42 +81,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Login */
-        post: operations["login_api_v2_auth_login_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Logout */
-        post: operations["logout_api_v2_auth_logout_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/session": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Session */
-        get: operations["get_session_api_v2_auth_session_get"];
-        put?: never;
-        post?: never;
+        /** Reset Password */
+        post: operations["reset_password_api_v2_auth_reset_password_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -191,6 +106,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Session */
+        get: operations["get_session_api_v2_auth_session_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/auth/verify-code": {
         parameters: {
             query?: never;
@@ -202,23 +134,6 @@ export interface paths {
         put?: never;
         /** Verify Code */
         post: operations["verify_code_api_v2_auth_verify_code_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/reset-password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Reset Password */
-        post: operations["reset_password_api_v2_auth_reset_password_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -242,142 +157,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/dashboard/today": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Dashboard Today */
-        get: operations["get_dashboard_today_api_v2_dashboard_today_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/dashboard/today/must-do": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Dashboard Today Must Do */
-        get: operations["get_dashboard_today_must_do_api_v2_dashboard_today_must_do_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/dashboard/today/continue": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Dashboard Today Continue */
-        get: operations["get_dashboard_today_continue_api_v2_dashboard_today_continue_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/dashboard/today/review": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Dashboard Today Review */
-        get: operations["get_dashboard_today_review_api_v2_dashboard_today_review_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/dashboard/weekly-plan": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Dashboard Weekly Plan */
-        get: operations["get_dashboard_weekly_plan_api_v2_dashboard_weekly_plan_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/dashboard/weekly-plan/goal": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Dashboard Weekly Goal */
-        get: operations["get_dashboard_weekly_goal_api_v2_dashboard_weekly_plan_goal_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/dashboard/weekly-plan/today-completion": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Dashboard Weekly Completion */
-        get: operations["get_dashboard_weekly_completion_api_v2_dashboard_weekly_plan_today_completion_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/dashboard/weekly-plan/adjust": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Dashboard Weekly Adjust */
-        get: operations["get_dashboard_weekly_adjust_api_v2_dashboard_weekly_plan_adjust_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v2/dashboard/progress": {
         parameters: {
             query?: never;
@@ -387,6 +166,23 @@ export interface paths {
         };
         /** Get Progress Overview */
         get: operations["get_progress_overview_api_v2_dashboard_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/progress/diagnosis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Progress Diagnosis */
+        get: operations["get_progress_diagnosis_api_v2_dashboard_progress_diagnosis_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -429,23 +225,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/dashboard/progress/diagnosis": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Progress Diagnosis */
-        get: operations["get_progress_diagnosis_api_v2_dashboard_progress_diagnosis_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v2/dashboard/records": {
         parameters: {
             query?: never;
@@ -463,6 +242,178 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/dashboard/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Today */
+        get: operations["get_dashboard_today_api_v2_dashboard_today_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/today/continue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Today Continue */
+        get: operations["get_dashboard_today_continue_api_v2_dashboard_today_continue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/today/must-do": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Today Must Do */
+        get: operations["get_dashboard_today_must_do_api_v2_dashboard_today_must_do_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/today/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Today Review */
+        get: operations["get_dashboard_today_review_api_v2_dashboard_today_review_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/weekly-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Weekly Plan */
+        get: operations["get_dashboard_weekly_plan_api_v2_dashboard_weekly_plan_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/weekly-plan/adjust": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Weekly Adjust */
+        get: operations["get_dashboard_weekly_adjust_api_v2_dashboard_weekly_plan_adjust_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/weekly-plan/goal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Weekly Goal */
+        get: operations["get_dashboard_weekly_goal_api_v2_dashboard_weekly_plan_goal_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/weekly-plan/today-completion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Weekly Completion */
+        get: operations["get_dashboard_weekly_completion_api_v2_dashboard_weekly_plan_today_completion_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Notes */
+        get: operations["list_notes_api_v2_notes_get"];
+        put?: never;
+        /** Create Note */
+        post: operations["create_note_api_v2_notes_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/{note_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Note */
+        get: operations["get_note_api_v2_notes__note_id__get"];
+        /** Update Note */
+        put: operations["update_note_api_v2_notes__note_id__put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/practice/center": {
         parameters: {
             query?: never;
@@ -472,40 +423,6 @@ export interface paths {
         };
         /** Get Practice Center */
         get: operations["get_practice_center_api_v2_practice_center_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/xingce/categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Xingce Categories */
-        get: operations["list_xingce_categories_api_v2_practice_xingce_categories_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/xingce/papers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Xingce Papers */
-        get: operations["list_xingce_papers_api_v2_practice_xingce_papers_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -599,23 +516,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/practice/sessions/{session_id}/submit": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Submit Session */
-        post: operations["submit_session_api_v2_practice_sessions__session_id__submit_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v2/practice/sessions/{session_id}/result": {
         parameters: {
             query?: never;
@@ -633,58 +533,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/review/items": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Review Items */
-        get: operations["list_review_items_api_v2_review_items_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/review/smart": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Smart Review */
-        get: operations["get_smart_review_api_v2_review_smart_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/review/items/{item_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Review Item */
-        get: operations["get_review_item_api_v2_review_items__item_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/review/items/{item_id}/redo": {
+    "/api/v2/practice/sessions/{session_id}/submit": {
         parameters: {
             query?: never;
             header?: never;
@@ -693,59 +542,23 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Redo Review Item */
-        post: operations["redo_review_item_api_v2_review_items__item_id__redo_post"];
+        /** Submit Session */
+        post: operations["submit_session_api_v2_practice_sessions__session_id__submit_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v2/notes": {
+    "/api/v2/practice/xingce/categories": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** List Notes */
-        get: operations["list_notes_api_v2_notes_get"];
-        put?: never;
-        /** Create Note */
-        post: operations["create_note_api_v2_notes_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/notes/{note_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Note */
-        get: operations["get_note_api_v2_notes__note_id__get"];
-        /** Update Note */
-        put: operations["update_note_api_v2_notes__note_id__put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/profile/overview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Profile Overview */
-        get: operations["get_profile_overview_api_v2_profile_overview_get"];
+        /** List Xingce Categories */
+        get: operations["list_xingce_categories_api_v2_practice_xingce_categories_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -754,17 +567,16 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/profile/security": {
+    "/api/v2/practice/xingce/papers": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get Profile Security */
-        get: operations["get_profile_security_api_v2_profile_security_get"];
-        /** Put Profile Security */
-        put: operations["put_profile_security_api_v2_profile_security_put"];
+        /** List Xingce Papers */
+        get: operations["list_xingce_papers_api_v2_practice_xingce_papers_get"];
+        put?: never;
         post?: never;
         delete?: never;
         options?: never;
@@ -808,152 +620,336 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/profile/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Profile Overview */
+        get: operations["get_profile_overview_api_v2_profile_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/profile/security": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Profile Security */
+        get: operations["get_profile_security_api_v2_profile_security_get"];
+        /** Put Profile Security */
+        put: operations["put_profile_security_api_v2_profile_security_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Review Items */
+        get: operations["list_review_items_api_v2_review_items_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Review Item */
+        get: operations["get_review_item_api_v2_review_items__item_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/items/{item_id}/redo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Redo Review Item */
+        post: operations["redo_review_item_api_v2_review_items__item_id__redo_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/smart": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Smart Review */
+        get: operations["get_smart_review_api_v2_review_smart_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/system/bootstrap": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Bootstrap */
+        get: operations["bootstrap_api_v2_system_bootstrap_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/healthz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Healthz */
+        get: operations["healthz_healthz_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/readyz": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Readyz */
+        get: operations["readyz_readyz_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/version": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Version */
+        get: operations["version_version_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/version.json": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Version Json */
+        get: operations["version_json_version_json_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
         /** ActionLinkV2 */
         ActionLinkV2: {
-            /** Key */
-            key: string;
-            /** Label */
-            label: string;
-            /** Href */
-            href: string;
             /**
              * Enabled
              * @default true
              */
             enabled: boolean;
+            /** Href */
+            href: string;
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
         };
         /** AuthAckV2 */
         AuthAckV2: {
-            /** Ok */
-            ok: boolean;
             /** Message */
             message: string;
+            /** Ok */
+            ok: boolean;
         };
         /** AuthSessionResponseV2 */
         AuthSessionResponseV2: {
-            user: components["schemas"]["AuthUserV2"];
             session: components["schemas"]["AuthSessionV2"];
-            /** Csrftoken */
-            csrfToken: string;
+            user: components["schemas"]["AuthUserV2"];
         };
         /** AuthSessionStateResponseV2 */
         AuthSessionStateResponseV2: {
             /** Authenticated */
             authenticated: boolean;
-            user: components["schemas"]["AuthUserV2"];
             session: components["schemas"]["AuthSessionV2"];
+            user: components["schemas"]["AuthUserV2"];
         };
         /** AuthSessionV2 */
         AuthSessionV2: {
-            /** Id */
-            id: number;
-            /** Token */
-            token: string;
-            /** Issuedat */
-            issuedAt: string;
             /** Expiresat */
             expiresAt: string;
+            /** Id */
+            id: number;
+            /** Issuedat */
+            issuedAt: string;
         };
         /** AuthUserV2 */
         AuthUserV2: {
-            /** Id */
-            id: number;
-            /** Publicid */
-            publicId: string;
+            /** Createdat */
+            createdAt: string;
             /** Displayname */
             displayName: string;
             /** Email */
             email?: string | null;
-            /** Phone */
-            phone?: string | null;
+            /** Id */
+            id: number;
             /** Isactive */
             isActive: boolean;
-            /** Createdat */
-            createdAt: string;
+            /** Phone */
+            phone?: string | null;
+            /** Publicid */
+            publicId: string;
         };
         /** BootstrapResponseV2 */
         BootstrapResponseV2: {
             /** Appname */
             appName: string;
-            /** Env */
-            env: string;
-            /** Publishedpapercount */
-            publishedPaperCount: number;
             /** Canstartpractice */
             canStartPractice: boolean;
             /** Defaultpapercode */
             defaultPaperCode?: string | null;
+            /** Env */
+            env: string;
+            /** Publishedpapercount */
+            publishedPaperCount: number;
         };
         /** CatalogItemV2 */
         CatalogItemV2: {
-            /** Id */
-            id: string;
-            /** Title */
-            title: string;
-            /** Subtitle */
-            subtitle?: string | null;
-            /** Status */
-            status: string;
             /** Href */
             href: string;
+            /** Id */
+            id: string;
+            /** Status */
+            status: string;
+            /** Subtitle */
+            subtitle?: string | null;
+            /** Title */
+            title: string;
         };
         /** CatalogListResponseV2 */
         CatalogListResponseV2: {
             /** Items */
             items: components["schemas"]["CatalogItemV2"][];
-            /** Total */
-            total: number;
             /** Page */
             page: number;
             /** Pagesize */
             pageSize: number;
+            /** Total */
+            total: number;
         };
         /** DashboardProgressResponseV2 */
         DashboardProgressResponseV2: {
-            /** Summary */
-            summary: components["schemas"]["SummaryMetricV2"][];
-            /** Sections */
-            sections: components["schemas"]["SectionCardV2"][];
             /** Actions */
             actions: components["schemas"]["ActionLinkV2"][];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
         };
         /** DashboardRecordsResponseV2 */
         DashboardRecordsResponseV2: {
-            summary: components["schemas"]["LearningRecordSummaryV2"];
-            /** Sections */
-            sections: components["schemas"]["SectionCardV2"][];
             /** Actions */
             actions: components["schemas"]["ActionLinkV2"][];
             /** Items */
             items: components["schemas"]["LearningRecordItemV2"][];
-            /** Total */
-            total: number;
             /** Page */
             page: number;
             /** Pagesize */
             pageSize: number;
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            summary: components["schemas"]["LearningRecordSummaryV2"];
+            /** Total */
+            total: number;
         };
         /** DashboardTodayResponseV2 */
         DashboardTodayResponseV2: {
-            /** Summary */
-            summary: components["schemas"]["SummaryMetricV2"][];
-            /** Sections */
-            sections: components["schemas"]["SectionCardV2"][];
             /** Actions */
             actions: components["schemas"]["ActionLinkV2"][];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
         };
         /** DashboardWeeklyPlanResponseV2 */
         DashboardWeeklyPlanResponseV2: {
-            /** Summary */
-            summary: components["schemas"]["SummaryMetricV2"][];
-            /** Sections */
-            sections: components["schemas"]["SectionCardV2"][];
             /** Actions */
             actions: components["schemas"]["ActionLinkV2"][];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -974,29 +970,29 @@ export interface components {
             id: string;
             /** Kind */
             kind: string;
-            /** Title */
-            title: string;
-            /** Status */
-            status: string;
-            /** Score */
-            score?: string | null;
             /** Occurredat */
             occurredAt: string;
+            /** Score */
+            score?: string | null;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
         };
         /** LearningRecordSummaryV2 */
         LearningRecordSummaryV2: {
+            /** Avgessayscore */
+            avgEssayScore?: string | null;
+            /** Avgxingceaccuracy */
+            avgXingceAccuracy?: string | null;
+            /** Completedattempts */
+            completedAttempts: number;
+            /** Essayattempts */
+            essayAttempts: number;
             /** Totalattempts */
             totalAttempts: number;
             /** Xingceattempts */
             xingceAttempts: number;
-            /** Essayattempts */
-            essayAttempts: number;
-            /** Completedattempts */
-            completedAttempts: number;
-            /** Avgxingceaccuracy */
-            avgXingceAccuracy?: string | null;
-            /** Avgessayscore */
-            avgEssayScore?: string | null;
         };
         /** LoginRequestV2 */
         LoginRequestV2: {
@@ -1007,41 +1003,41 @@ export interface components {
         };
         /** NoteCreateRequestV2 */
         NoteCreateRequestV2: {
-            /** Title */
-            title: string;
             /**
              * Body
              * @default
              */
             body: string;
+            /** Title */
+            title: string;
         };
         /** NoteDetailV2 */
         NoteDetailV2: {
-            /** Id */
-            id: number;
-            /** Title */
-            title: string;
             /** Body */
             body: string;
-            /** Status */
-            status: string;
             /** Createdat */
             createdAt: string;
+            /** Id */
+            id: number;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
             /** Updatedat */
             updatedAt: string;
         };
         /** NoteItemV2 */
         NoteItemV2: {
-            /** Id */
-            id: number;
-            /** Title */
-            title: string;
-            /** Excerpt */
-            excerpt: string;
-            /** Status */
-            status: string;
             /** Createdat */
             createdAt: string;
+            /** Excerpt */
+            excerpt: string;
+            /** Id */
+            id: number;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
             /** Updatedat */
             updatedAt: string;
         };
@@ -1049,17 +1045,15 @@ export interface components {
         NoteListResponseV2: {
             /** Items */
             items: components["schemas"]["NoteItemV2"][];
-            /** Total */
-            total: number;
             /** Page */
             page: number;
             /** Pagesize */
             pageSize: number;
+            /** Total */
+            total: number;
         };
         /** NoteUpdateRequestV2 */
         NoteUpdateRequestV2: {
-            /** Title */
-            title: string;
             /**
              * Body
              * @default
@@ -1070,6 +1064,8 @@ export interface components {
              * @default active
              */
             status: string;
+            /** Title */
+            title: string;
         };
         /** OperationAckV2 */
         OperationAckV2: {
@@ -1080,23 +1076,23 @@ export interface components {
         };
         /** OverviewResponseV2 */
         OverviewResponseV2: {
-            /** Summary */
-            summary: components["schemas"]["SummaryMetricV2"][];
-            /** Sections */
-            sections: components["schemas"]["SectionCardV2"][];
             /** Actions */
             actions: components["schemas"]["ActionLinkV2"][];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
         };
         /** PracticeAnswerPayloadV2 */
         PracticeAnswerPayloadV2: {
-            /** Questionkey */
-            questionKey: string;
             /** Answer */
             answer?: {
                 [key: string]: unknown;
             };
             /** Durationseconds */
             durationSeconds?: number | null;
+            /** Questionkey */
+            questionKey: string;
         };
         /** PracticeAnswerUpsertRequestV2 */
         PracticeAnswerUpsertRequestV2: {
@@ -1105,71 +1101,71 @@ export interface components {
         };
         /** PracticeCenterResponseV2 */
         PracticeCenterResponseV2: {
-            /** Summary */
-            summary: components["schemas"]["SummaryMetricV2"][];
-            /** Sections */
-            sections: components["schemas"]["SectionCardV2"][];
             /** Actions */
             actions: components["schemas"]["ActionLinkV2"][];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
         };
         /** PracticeSessionCreateRequestV2 */
         PracticeSessionCreateRequestV2: {
+            /** Entrykind */
+            entryKind: string;
+            /** Papercode */
+            paperCode?: string | null;
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            };
+            /** Questionids */
+            questionIds?: number[];
             /**
              * Track
              * @enum {string}
              */
             track: "xingce" | "essay";
-            /** Entrykind */
-            entryKind: string;
-            /** Papercode */
-            paperCode?: string | null;
-            /** Questionids */
-            questionIds?: number[];
-            /** Payload */
-            payload?: {
-                [key: string]: unknown;
-            };
         };
         /** PracticeSessionEnvelopeV2 */
         PracticeSessionEnvelopeV2: {
-            /** Id */
-            id: number;
-            /** Track */
-            track: string;
-            /** Entrykind */
-            entryKind: string;
-            /** Status */
-            status: string;
-            /** Items */
-            items: components["schemas"]["PracticeSessionItemV2"][];
             /** Actions */
             actions: components["schemas"]["ActionLinkV2"][];
+            /** Entrykind */
+            entryKind: string;
+            /** Id */
+            id: number;
+            /** Items */
+            items: components["schemas"]["PracticeSessionItemV2"][];
             /** Startedat */
             startedAt: string;
+            /** Status */
+            status: string;
             /** Submittedat */
             submittedAt?: string | null;
+            /** Track */
+            track: string;
         };
         /** PracticeSessionItemV2 */
         PracticeSessionItemV2: {
-            /** Id */
-            id: string;
-            /** Questionkey */
-            questionKey?: string | null;
-            /** Prompt */
-            prompt: string;
             /** Answerkind */
             answerKind: string;
+            /** Id */
+            id: string;
+            /** Prompt */
+            prompt: string;
+            /** Questionkey */
+            questionKey?: string | null;
             /** Status */
             status: string;
         };
         /** PracticeSessionResultResponseV2 */
         PracticeSessionResultResponseV2: {
-            /** Summary */
-            summary: components["schemas"]["SummaryMetricV2"][];
-            /** Sections */
-            sections: components["schemas"]["SectionCardV2"][];
             /** Actions */
             actions: components["schemas"]["ActionLinkV2"][];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
         };
         /** ProfileGoalsResponseV2 */
         ProfileGoalsResponseV2: {
@@ -1191,45 +1187,45 @@ export interface components {
         };
         /** ProfileInfoResponseV2 */
         ProfileInfoResponseV2: {
+            /** Bio */
+            bio?: string | null;
             /** Displayname */
             displayName: string;
             /** Realname */
             realName?: string | null;
             /** Region */
             region?: string | null;
-            /** Bio */
-            bio?: string | null;
         };
         /** ProfileInfoUpdateRequestV2 */
         ProfileInfoUpdateRequestV2: {
+            /** Bio */
+            bio?: string | null;
             /** Displayname */
             displayName: string;
             /** Realname */
             realName?: string | null;
             /** Region */
             region?: string | null;
-            /** Bio */
-            bio?: string | null;
         };
         /** ProfileOverviewResponseV2 */
         ProfileOverviewResponseV2: {
-            /** Summary */
-            summary: components["schemas"]["SummaryMetricV2"][];
-            /** Sections */
-            sections: components["schemas"]["SectionCardV2"][];
             /** Actions */
             actions: components["schemas"]["ActionLinkV2"][];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
         };
         /** ProfileSecurityResponseV2 */
         ProfileSecurityResponseV2: {
-            /** Passwordset */
-            passwordSet: boolean;
-            /** Emailbound */
-            emailBound: boolean;
-            /** Phonebound */
-            phoneBound: boolean;
             /** Activesessions */
             activeSessions: number;
+            /** Emailbound */
+            emailBound: boolean;
+            /** Passwordset */
+            passwordSet: boolean;
+            /** Phonebound */
+            phoneBound: boolean;
         };
         /** ProfileSecurityUpdateRequestV2 */
         ProfileSecurityUpdateRequestV2: {
@@ -1240,6 +1236,8 @@ export interface components {
         };
         /** ReadyzDependency */
         ReadyzDependency: {
+            /** Detail */
+            detail: string;
             /** Name */
             name: string;
             /**
@@ -1247,110 +1245,115 @@ export interface components {
              * @enum {string}
              */
             status: "ok" | "skipped" | "error";
-            /** Detail */
-            detail: string;
         };
         /** ReadyzResponse */
         ReadyzResponse: {
+            /** Dependencies */
+            dependencies: components["schemas"]["ReadyzDependency"][];
             /**
              * Status
              * @enum {string}
              */
             status: "ok" | "error";
-            /** Dependencies */
-            dependencies: components["schemas"]["ReadyzDependency"][];
         };
         /** RegisterEmailRequestV2 */
         RegisterEmailRequestV2: {
+            /**
+             * Displayname
+             * @default New User
+             */
+            displayName: string;
             /** Email */
             email: string;
             /** Password */
             password: string;
-            /**
-             * Displayname
-             * @default New User
-             */
-            displayName: string;
         };
         /** RegisterPhoneRequestV2 */
         RegisterPhoneRequestV2: {
-            /** Phone */
-            phone: string;
-            /** Password */
-            password: string;
             /**
              * Displayname
              * @default New User
              */
             displayName: string;
+            /** Password */
+            password: string;
+            /** Phone */
+            phone: string;
+            /** Smscode */
+            smsCode: string;
         };
         /** ResetPasswordRequestV2 */
         ResetPasswordRequestV2: {
-            /** Identifier */
-            identifier: string;
             /** Code */
             code: string;
+            /** Identifier */
+            identifier: string;
             /** Newpassword */
             newPassword: string;
         };
         /** ReviewAttemptOutV2 */
         ReviewAttemptOutV2: {
+            /** Attemptedat */
+            attemptedAt: string;
             /** Id */
             id: number;
             /** Outcome */
             outcome: string;
-            /** Attemptedat */
-            attemptedAt: string;
         };
         /** ReviewDetailResponseV2 */
         ReviewDetailResponseV2: {
-            item: components["schemas"]["ReviewItemV2"];
-            /** History */
-            history: components["schemas"]["ReviewAttemptOutV2"][];
             /** Actions */
             actions: components["schemas"]["ActionLinkV2"][];
+            /** History */
+            history: components["schemas"]["ReviewAttemptOutV2"][];
+            item: components["schemas"]["ReviewItemV2"];
         };
         /** ReviewItemV2 */
         ReviewItemV2: {
+            /** Createdat */
+            createdAt: string;
+            /** Href */
+            href: string;
             /** Id */
             id: number;
             /** Kind */
             kind: string;
-            /** Title */
-            title: string;
             /** Status */
             status: string;
-            /** Href */
-            href: string;
-            /** Createdat */
-            createdAt: string;
+            /** Title */
+            title: string;
         };
         /** ReviewListResponseV2 */
         ReviewListResponseV2: {
             /** Items */
             items: components["schemas"]["ReviewItemV2"][];
-            /** Total */
-            total: number;
             /** Page */
             page: number;
             /** Pagesize */
             pageSize: number;
+            /** Total */
+            total: number;
         };
         /** SectionCardV2 */
         SectionCardV2: {
-            /** Key */
-            key: string;
-            /** Title */
-            title: string;
             /** Description */
             description: string;
-            /** Status */
-            status: string;
             /** Href */
             href: string;
+            /** Key */
+            key: string;
+            /** Status */
+            status: string;
+            /** Title */
+            title: string;
         };
         /** SendCodeRequestV2 */
         SendCodeRequestV2: {
+            /**
+             * Purpose
+             * @enum {string}
+             */
+            purpose: "register" | "reset_password" | "login" | "bind";
             /**
              * Targetkind
              * @enum {string}
@@ -1358,22 +1361,15 @@ export interface components {
             targetKind: "email" | "phone";
             /** Targetvalue */
             targetValue: string;
-            /**
-             * Purpose
-             * @enum {string}
-             */
-            purpose: "register" | "reset_password" | "login" | "bind";
         };
         /** SendCodeResponseV2 */
         SendCodeResponseV2: {
+            /** Delivery */
+            delivery: string;
             /** Ok */
             ok: boolean;
             /** Purpose */
             purpose: string;
-            /** Delivery */
-            delivery: string;
-            /** Devcode */
-            devCode: string;
         };
         /** SummaryMetricV2 */
         SummaryMetricV2: {
@@ -1381,29 +1377,36 @@ export interface components {
             key: string;
             /** Label */
             label: string;
-            /** Value */
-            value: string;
             /**
              * Tone
              * @default neutral
              */
             tone: string;
+            /** Value */
+            value: string;
         };
         /** ValidationError */
         ValidationError: {
+            /** Context */
+            ctx?: Record<string, never>;
+            /** Input */
+            input?: unknown;
             /** Location */
             loc: (string | number)[];
             /** Message */
             msg: string;
             /** Error Type */
             type: string;
-            /** Input */
-            input?: unknown;
-            /** Context */
-            ctx?: Record<string, never>;
         };
         /** VerifyCodeRequestV2 */
         VerifyCodeRequestV2: {
+            /** Code */
+            code: string;
+            /**
+             * Purpose
+             * @enum {string}
+             */
+            purpose: "register" | "reset_password" | "login" | "bind";
             /**
              * Targetkind
              * @enum {string}
@@ -1411,20 +1414,13 @@ export interface components {
             targetKind: "email" | "phone";
             /** Targetvalue */
             targetValue: string;
-            /**
-             * Purpose
-             * @enum {string}
-             */
-            purpose: "register" | "reset_password" | "login" | "bind";
-            /** Code */
-            code: string;
         };
         /** VerifyCodeResponseV2 */
         VerifyCodeResponseV2: {
-            /** Verified */
-            verified: boolean;
             /** Message */
             message: string;
+            /** Verified */
+            verified: boolean;
         };
         /** VersionResponse */
         VersionResponse: {
@@ -1432,16 +1428,16 @@ export interface components {
             appName: string;
             /** Appversion */
             appVersion: string;
+            /** Buildtime */
+            buildTime: string;
+            /** Env */
+            env: string;
             /** Gitsha */
             gitSha: string;
             /** Imagetag */
             imageTag: string;
-            /** Buildtime */
-            buildTime: string;
             /** Schemaversion */
             schemaVersion: string;
-            /** Env */
-            env: string;
         };
     };
     responses: never;
@@ -1452,14 +1448,18 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    healthz_healthz_get: {
+    login_api_v2_auth_login_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequestV2"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -1467,12 +1467,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["HealthResponse"];
+                    "application/json": components["schemas"]["AuthSessionResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
     };
-    readyz_readyz_get: {
+    logout_api_v2_auth_logout_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1487,67 +1496,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ReadyzResponse"];
-                };
-            };
-        };
-    };
-    version_version_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VersionResponse"];
-                };
-            };
-        };
-    };
-    version_json_version_json_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["VersionResponse"];
-                };
-            };
-        };
-    };
-    bootstrap_api_v2_system_bootstrap_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BootstrapResponseV2"];
+                    "application/json": components["schemas"]["AuthAckV2"];
                 };
             };
         };
@@ -1618,7 +1567,7 @@ export interface operations {
             };
         };
     };
-    login_api_v2_auth_login_post: {
+    reset_password_api_v2_auth_reset_password_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -1627,38 +1576,9 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["LoginRequestV2"];
+                "application/json": components["schemas"]["ResetPasswordRequestV2"];
             };
         };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthSessionResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    logout_api_v2_auth_logout_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -1669,24 +1589,13 @@ export interface operations {
                     "application/json": components["schemas"]["AuthAckV2"];
                 };
             };
-        };
-    };
-    get_session_api_v2_auth_session_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
+            /** @description Validation Error */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AuthSessionStateResponseV2"];
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -1724,6 +1633,26 @@ export interface operations {
             };
         };
     };
+    get_session_api_v2_auth_session_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthSessionStateResponseV2"];
+                };
+            };
+        };
+    };
     verify_code_api_v2_auth_verify_code_post: {
         parameters: {
             query?: never;
@@ -1757,39 +1686,6 @@ export interface operations {
             };
         };
     };
-    reset_password_api_v2_auth_reset_password_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ResetPasswordRequestV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AuthAckV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_dashboard_overview_api_v2_dashboard_overview_get: {
         parameters: {
             query?: never;
@@ -1806,6 +1702,106 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_progress_overview_api_v2_dashboard_progress_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardProgressResponseV2"];
+                };
+            };
+        };
+    };
+    get_progress_diagnosis_api_v2_dashboard_progress_diagnosis_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_progress_trend_api_v2_dashboard_progress_trend_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_progress_weakness_api_v2_dashboard_progress_weakness_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_dashboard_records_api_v2_dashboard_records_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardRecordsResponseV2"];
                 };
             };
         };
@@ -1830,7 +1826,7 @@ export interface operations {
             };
         };
     };
-    get_dashboard_today_must_do_api_v2_dashboard_today_must_do_get: {
+    get_dashboard_today_continue_api_v2_dashboard_today_continue_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1850,7 +1846,7 @@ export interface operations {
             };
         };
     };
-    get_dashboard_today_continue_api_v2_dashboard_today_continue_get: {
+    get_dashboard_today_must_do_api_v2_dashboard_today_must_do_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1910,6 +1906,26 @@ export interface operations {
             };
         };
     };
+    get_dashboard_weekly_adjust_api_v2_dashboard_weekly_plan_adjust_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
     get_dashboard_weekly_goal_api_v2_dashboard_weekly_plan_goal_get: {
         parameters: {
             query?: never;
@@ -1950,7 +1966,7 @@ export interface operations {
             };
         };
     };
-    get_dashboard_weekly_adjust_api_v2_dashboard_weekly_plan_adjust_get: {
+    list_notes_api_v2_notes_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -1965,19 +1981,23 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OverviewResponseV2"];
+                    "application/json": components["schemas"]["NoteListResponseV2"];
                 };
             };
         };
     };
-    get_progress_overview_api_v2_dashboard_progress_get: {
+    create_note_api_v2_notes_post: {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        requestBody?: never;
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteCreateRequestV2"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -1985,16 +2005,27 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DashboardProgressResponseV2"];
+                    "application/json": components["schemas"]["NoteDetailV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
     };
-    get_progress_trend_api_v2_dashboard_progress_trend_get: {
+    get_note_api_v2_notes__note_id__get: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                note_id: number;
+            };
             cookie?: never;
         };
         requestBody?: never;
@@ -2005,39 +2036,34 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OverviewResponseV2"];
+                    "application/json": components["schemas"]["NoteDetailV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
     };
-    get_progress_weakness_api_v2_dashboard_progress_weakness_get: {
+    update_note_api_v2_notes__note_id__put: {
         parameters: {
             query?: never;
             header?: never;
-            path?: never;
+            path: {
+                note_id: number;
+            };
             cookie?: never;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OverviewResponseV2"];
-                };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteUpdateRequestV2"];
             };
         };
-    };
-    get_progress_diagnosis_api_v2_dashboard_progress_diagnosis_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {
@@ -2045,27 +2071,16 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["OverviewResponseV2"];
+                    "application/json": components["schemas"]["NoteDetailV2"];
                 };
             };
-        };
-    };
-    get_dashboard_records_api_v2_dashboard_records_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
+            /** @description Validation Error */
+            422: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["DashboardRecordsResponseV2"];
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -2086,46 +2101,6 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PracticeCenterResponseV2"];
-                };
-            };
-        };
-    };
-    list_xingce_categories_api_v2_practice_xingce_categories_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CatalogListResponseV2"];
-                };
-            };
-        };
-    };
-    list_xingce_papers_api_v2_practice_xingce_papers_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CatalogListResponseV2"];
                 };
             };
         };
@@ -2269,37 +2244,6 @@ export interface operations {
             };
         };
     };
-    submit_session_api_v2_practice_sessions__session_id__submit_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                session_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OperationAckV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
     get_result_api_v2_practice_sessions__session_id__result_get: {
         parameters: {
             query?: never;
@@ -2331,83 +2275,12 @@ export interface operations {
             };
         };
     };
-    list_review_items_api_v2_review_items_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReviewListResponseV2"];
-                };
-            };
-        };
-    };
-    get_smart_review_api_v2_review_smart_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OverviewResponseV2"];
-                };
-            };
-        };
-    };
-    get_review_item_api_v2_review_items__item_id__get: {
+    submit_session_api_v2_practice_sessions__session_id__submit_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                item_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReviewDetailResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    redo_review_item_api_v2_review_items__item_id__redo_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                item_id: number;
+                session_id: number;
             };
             cookie?: never;
         };
@@ -2433,7 +2306,7 @@ export interface operations {
             };
         };
     };
-    list_notes_api_v2_notes_get: {
+    list_xingce_categories_api_v2_practice_xingce_categories_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -2448,111 +2321,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteListResponseV2"];
+                    "application/json": components["schemas"]["CatalogListResponseV2"];
                 };
             };
         };
     };
-    create_note_api_v2_notes_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoteCreateRequestV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteDetailV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_note_api_v2_notes__note_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                note_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteDetailV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_note_api_v2_notes__note_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                note_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoteUpdateRequestV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteDetailV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_profile_overview_api_v2_profile_overview_get: {
+    list_xingce_papers_api_v2_practice_xingce_papers_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -2567,60 +2341,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ProfileOverviewResponseV2"];
-                };
-            };
-        };
-    };
-    get_profile_security_api_v2_profile_security_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProfileSecurityResponseV2"];
-                };
-            };
-        };
-    };
-    put_profile_security_api_v2_profile_security_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ProfileSecurityUpdateRequestV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ProfileSecurityResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
+                    "application/json": components["schemas"]["CatalogListResponseV2"];
                 };
             };
         };
@@ -2727,6 +2448,281 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_overview_api_v2_profile_overview_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileOverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_profile_security_api_v2_profile_security_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSecurityResponseV2"];
+                };
+            };
+        };
+    };
+    put_profile_security_api_v2_profile_security_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileSecurityUpdateRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileSecurityResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_review_items_api_v2_review_items_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewListResponseV2"];
+                };
+            };
+        };
+    };
+    get_review_item_api_v2_review_items__item_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDetailResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    redo_review_item_api_v2_review_items__item_id__redo_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_smart_review_api_v2_review_smart_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    bootstrap_api_v2_system_bootstrap_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["BootstrapResponseV2"];
+                };
+            };
+        };
+    };
+    healthz_healthz_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HealthResponse"];
+                };
+            };
+        };
+    };
+    readyz_readyz_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReadyzResponse"];
+                };
+            };
+        };
+    };
+    version_version_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionResponse"];
+                };
+            };
+        };
+    };
+    version_json_version_json_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VersionResponse"];
                 };
             };
         };
