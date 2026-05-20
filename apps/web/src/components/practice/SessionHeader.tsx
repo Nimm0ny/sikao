@@ -12,6 +12,7 @@ import { Tooltip } from '@sikao/ui/ui';
 import { PracticeTimer, type PracticeTimerMode } from './PracticeTimer';
 import { SettingsPopover } from './SettingsPopover';
 import { ViewModeToggle, type PracticeViewMode } from './ViewModeToggle';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // Phase 3.1 fenbi-merge — 单行 56px header 替代 SessionFooter 主操作栏.
 // 对齐 prototype 03 .session-header. 左: 返回 / paper title / 进度 meta /
@@ -170,7 +171,7 @@ function HeaderLeft({
               {isPaused ? <ToolPlayIcon size={14} /> : <ToolPauseIcon size={14} />}
             </button>
           </Tooltip>
-          <span role="timer" aria-label={isPaused ? '计时已暂停' : '答题计时'}>
+          <span role="timer" aria-label={isPaused ? PRACTICE_COPY.sessionHeaderPaused : '答题计时'}>
             <PracticeTimer
               durationSeconds={timer.durationSeconds}
               elapsedSeconds={timer.elapsedSeconds}

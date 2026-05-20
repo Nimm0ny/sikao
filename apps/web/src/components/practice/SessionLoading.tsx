@@ -1,6 +1,7 @@
 // Skeleton state shown while the practice store is rehydrating between the
 // PracticeStart redirect and the initial render. Kept dumb so we can reuse
 // it from the Result page if/when it grows the same loading shape.
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 export function SessionLoading() {
   return (
@@ -13,7 +14,7 @@ export function SessionLoading() {
           aria-hidden="true"
           className="w-10 h-10 rounded-pill border-4 border-ink-1 border-t-transparent animate-spin"
         />
-        正在加载套卷蓝图...
+        {PRACTICE_COPY.sessionLoading}...
       </div>
     </div>
   );

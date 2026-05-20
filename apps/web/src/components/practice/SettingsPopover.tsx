@@ -7,6 +7,7 @@ import {
   type PracticeFontSize,
 } from '@sikao/domain/xingce/practiceFontSize';
 import { useThemeStore } from '@/styles/useThemeStore';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // Phase 3.5 + 3.6 fenbi-merge — header 设置 popover (字号 + 夜间).
 // 夜间 D3: 仅考场态生效, 离开考场态自动复位 light (useApplyExamTheme).
@@ -158,7 +159,7 @@ function FontSizeSection({ value, onChange }: FontSizeSectionProps) {
         })}
       </div>
       <p className="mt-3 text-xs text-ink-3">
-        改变题干 / 选项 / 材料的阅读字号
+        改变题干 / 选项 / {PRACTICE_COPY.settingsMaterialFont}
       </p>
     </div>
   );
@@ -177,7 +178,7 @@ function DarkModeRow({ theme, onToggle }: DarkModeRowProps) {
         <div className="text-tiny font-bold text-ink-3 tracking-loose">
           夜间模式
         </div>
-        <p className="mt-1 text-xs text-ink-3">仅答题 / 报告 / 考场页生效</p>
+        <p className="mt-1 text-xs text-ink-3">仅答题 / 报告 / {PRACTICE_COPY.settingsExamOnly}</p>
       </div>
       <Tooltip label={isDark ? '切到日间' : '切到夜间'}>
         <button

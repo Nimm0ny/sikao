@@ -1,4 +1,5 @@
 import { Button } from '@sikao/ui/ui';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // 答题卡抽屉底部栏. 对齐 Figma node 11:3 中 "Drawer Footer" (620x64).
 //
@@ -43,7 +44,7 @@ export function DrawerFooter({
           onClick={onBackToCurrent}
           data-testid="drawer-footer-back"
         >
-          返回当前题
+          {PRACTICE_COPY.drawerBackToCurrent}
         </Button>
         <Button
           variant="danger"

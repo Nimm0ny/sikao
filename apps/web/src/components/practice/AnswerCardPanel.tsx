@@ -5,6 +5,7 @@ import { NavCloseIcon } from '@sikao/ui/icons';
 import { Tooltip } from '@sikao/ui/ui';
 import { cn } from '@sikao/shared-utils';
 import { MOTION_SPRING_SOFT } from '@sikao/shared-utils';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // Phase 3.2 Wave D fenbi-merge — 底部 65% panel 替换原右侧 Drawer 答题卡用法.
 // 对齐 prototype 03 frame 2 .answer-card-panel.
@@ -52,7 +53,7 @@ export function AnswerCardPanel({
           <motion.button
             key="acp-scrim"
             type="button"
-            aria-label="关闭答题卡"
+            aria-label={PRACTICE_COPY.panelClose}
             onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -101,7 +102,7 @@ function PanelHeader({ onClose, children }: PanelHeaderProps) {
         <button
           type="button"
           onClick={onClose}
-          aria-label="关闭答题卡"
+          aria-label={PRACTICE_COPY.panelClose}
           className={cn(
             'inline-flex h-7 w-7 items-center justify-center rounded-1 text-ink-3',
             'hover:bg-surface-alt hover:text-ink transition-colors',

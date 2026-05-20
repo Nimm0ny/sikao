@@ -75,7 +75,6 @@ describe('CustomPracticeStart', () => {
     await screen.findByRole('heading', { name: '专项练习' });
     fireEvent.click(screen.getByRole('button', { name: '政治理论' }));
     fireEvent.click(screen.getByRole('button', { name: '近三年' }));
-    // Phase 2 fenbi-merge: 题量从 number input 改 chip group, default 10 已选
     fireEvent.click(screen.getByRole('button', { name: '开始专项练习' }));
 
     await waitFor(() => {
@@ -168,7 +167,6 @@ describe('CustomPracticeStart', () => {
     });
 
     await screen.findByRole('heading', { name: '专项练习' });
-    // Phase 2 fenbi-merge: 切自定义 chip → input 才显, 输 51 越界 → 禁开始
     fireEvent.click(screen.getByRole('button', { name: '自定义' }));
     fireEvent.change(screen.getByLabelText('自定义题量'), { target: { value: '51' } });
 
@@ -177,7 +175,6 @@ describe('CustomPracticeStart', () => {
     expect(postCount).toBe(0);
   });
 
-  // ── Phase 2 fenbi-merge SufficiencyBanner + 自动放宽 (D2 决策) ─────────
 
   it('题量请求 > 候选数 → banner + 禁开始 + 放宽 CTA 移 secondSubtype', async () => {
     server.use(

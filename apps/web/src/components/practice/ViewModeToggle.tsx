@@ -2,6 +2,7 @@ import { cn } from '@sikao/shared-utils';
 import { Tooltip } from '@sikao/ui/ui';
 // R2.4 (2026-05-13): PracticeViewMode 类型 SSOT 上提到 @sikao/domain/xingce/viewMode.
 import type { PracticeViewMode } from '@sikao/domain/xingce/viewMode';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // Phase 3.4 fenbi-merge — header 内的 deck/scroll 视图切换. scroll 模式
 // 实际渲染逻辑在 Phase 3.3 (Wave D) 落地, 本组件先提供 UI 占位 + 偏好
@@ -52,7 +53,7 @@ export function ViewModeToggle({
         const active = value === mode;
         const disabled = mode === 'scroll' && scrollDisabled;
         return (
-          <Tooltip key={mode} label={disabled ? `${label}模式即将上线` : `${label}模式`}>
+        <Tooltip key={mode} label={disabled ? `${label}${PRACTICE_COPY.viewModeComingSoon}` : `${label}模式`}>
             <button
               type="button"
               onClick={() => !disabled && onChange(mode)}

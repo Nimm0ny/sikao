@@ -14,6 +14,7 @@
 //   - legend 4 dot (2 cols grid): 未答 / 已答 / 已标记 / 当前
 
 import { cn } from '@sikao/shared-utils';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 export interface AnswerCardDrawerHeaderProps {
   readonly answeredCount: number;
@@ -57,7 +58,7 @@ export function AnswerCardDrawerHeader({
       </div>
       <ul
         className="grid grid-cols-2 gap-x-3 gap-y-2 pt-3 border-t border-line"
-        aria-label="答题卡图例"
+        aria-label={PRACTICE_COPY.drawerLegend}
         data-testid="answer-card-legend"
       >
         <LegendDot kind="pending" label="未答" />

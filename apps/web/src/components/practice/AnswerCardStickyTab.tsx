@@ -1,6 +1,7 @@
 import { NavAnswerCardIcon } from '@sikao/ui/icons';
 import { Tooltip } from '@sikao/ui/ui';
 import { cn } from '@sikao/shared-utils';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // Phase 3.2 Wave D fenbi-merge — 答题卡 sticky tab.
 //
@@ -31,7 +32,7 @@ export function AnswerCardStickyTab({
   if (hidden) return null;
   const label = `展开答题卡, 已答 ${answeredCount} / ${totalCount}`;
   return (
-    <Tooltip label="展开答题卡" side="top">
+    <Tooltip label={PRACTICE_COPY.stickyOpen} side="top">
     <button
       type="button"
       onClick={onClick}

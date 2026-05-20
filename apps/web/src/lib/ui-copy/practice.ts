@@ -4,6 +4,9 @@
 // 调性: §1.3 答题中文案简短中性, 不催。
 
 export const PRACTICE_COPY = {
+  startFailedTitle:       '无法开始练习',
+  startFailedDesc:        '请稍后重试，或检查网络',
+  startBackToCenterAria:  '返回练习中心',
   // AnswerCardDrawerHeader
   drawerLegend:           '答题卡图例',
   // AnswerCardPanel
@@ -75,6 +78,8 @@ export const PRACTICE_COPY = {
   sessionHeaderPaused:    '计时已暂停',
   // SessionLoading
   sessionLoading:         '正在加载套卷蓝图',
+  sessionSubmitSyncWarn:  '练习已提交，但今日任务状态同步失败',
+  sessionSubmitRetryDesc: '请稍后重试，或联系管理员',
   // SettingsPopover (top-level, non-fb)
   settingsMaterialFont:   '材料的阅读字号',
   settingsExamOnly:       '考场页生效',

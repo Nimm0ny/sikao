@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { ClockIcon } from '@sikao/ui/icons';
 import { cn } from '@sikao/shared-utils';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // 答题计时器 (controlled). 单一 elapsed source 由 smart container (PracticeShell)
 // 持有并下发, 保证 header timer 与 drawer footer 倒计时永远同步, 不会因独立
@@ -80,7 +81,7 @@ export function PracticeTimer({
       aria-label={
         mode === 'exam'
           ? isExpired
-            ? '考试时间已到'
+            ? PRACTICE_COPY.timerEnded
             : `剩余 ${display}`
           : `已用 ${display}`
       }

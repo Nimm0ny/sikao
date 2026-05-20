@@ -11,6 +11,7 @@ import {
 import { usePracticeStore } from '@sikao/domain/answer-session/usePracticeStore';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
+import { CUSTOM_PRACTICE_COPY } from '@/lib/ui-copy';
 import type {
   CustomPracticeFacetsResponseV2,
   CustomPracticeSecondSubtypeFacetV2,
@@ -22,7 +23,6 @@ import type {
 const DEFAULT_QUESTION_COUNT = 10;
 const MIN_QUESTION_COUNT = 1;
 const MAX_QUESTION_COUNT = 50;
-// Phase 2 fenbi-merge — 题量 preset chips (D2 决策外, 视觉 polish per
 // prototype 02). 选 'custom' 时显示数字 input.
 const QUESTION_COUNT_PRESETS = [10, 20, 40] as const;
 type QuestionCountPreset = typeof QUESTION_COUNT_PRESETS[number] | 'custom';
@@ -108,7 +108,6 @@ export default function CustomPracticeStart() {
     setSelectedSecondSubtype(null);
   }, []);
 
-  // Phase 2 fenbi-merge (D2): 自动放宽顺序 secondSubtype → subtype → years.
   // 不跨大类 (top_type 永远保留, plan §D2). 一次只放宽一档, 用户每次必须
   // 显式点 CTA — 不悄悄连续放宽 (D2 "不悄悄替用户决定").
   // Invariant (handleSelectSubtype 维护): selectedSecondSubtype !== null
@@ -140,7 +139,7 @@ export default function CustomPracticeStart() {
       navigate(`/practice/sessions/${sessionData.sessionId}`);
     } catch (err) {
       logger.error('practice.custom.start.failed', { err: String(err) });
-      toast.error('无法开始专项练习', '请调整分类或题量后重试');
+      toast.error(CUSTOM_PRACTICE_COPY.startFailedTitle, CUSTOM_PRACTICE_COPY.startFailedDesc);
       throw err;
     } finally {
       setIsStarting(false);
@@ -201,8 +200,8 @@ function CustomPracticeError({ onRetry }: { readonly onRetry: () => void }) {
       <EmptyState
         tone="error"
         icon={<AlertCircle className="w-8 h-8" aria-hidden="true" />}
-        title="专项分类加载失败"
-        description="分类来自题库真实标签；加载失败时不使用本地兜底。"
+        title={CUSTOM_PRACTICE_COPY.facetsFailedTitle}
+        description={`${CUSTOM_PRACTICE_COPY.facetsFailedDesc1}；${CUSTOM_PRACTICE_COPY.facetsFailedDesc2}。`}
         action={
           <Button variant="secondary" onClick={onRetry}>
             <RefreshCw className="w-4 h-4 mr-2" aria-hidden="true" />
@@ -218,8 +217,8 @@ function CustomPracticeEmpty() {
   return (
     <PageFrame>
       <EmptyState
-        title="暂无可练分类"
-        description="当前题库没有可用于专项练习的行测分类。"
+        title={CUSTOM_PRACTICE_COPY.emptyTitle}
+        description={`${CUSTOM_PRACTICE_COPY.emptyDesc}。`}
       />
     </PageFrame>
   );
@@ -445,7 +444,6 @@ function StartPanel({
 }: ReadyProps) {
   const summaryName = secondSubtype?.name ?? subtype?.name ?? '该大类全部小类';
   const summaryCount = secondSubtype?.questionCount ?? subtype?.questionCount ?? topType.questionCount;
-  // Phase 2 fenbi-merge (D2): 候选题数 < 请求题数 → 直接 banner 提示且
   // disable 开始 (后端会 422 反正). 候选题足够但 < 50 阈值 → soft 提示 +
   // 放宽 CTA (D2 决策: 阈值 50, 不悄悄放宽).
   const insufficient = summaryCount < questionCount;

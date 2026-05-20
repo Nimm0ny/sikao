@@ -12,7 +12,7 @@ import {
 import { api } from '@sikao/api-client/request';
 import { usePracticeStore } from '@sikao/domain/answer-session/usePracticeStore';
 import { logger, toast } from '@sikao/shared-utils';
-import { ERROR_COPY } from '@/lib/ui-copy';
+import { ERROR_COPY, PRACTICE_COPY } from '@/lib/ui-copy';
 import type { PaperRevisionSummary, PracticeSessionStartV2 } from '@sikao/api-client/types/api';
 import { MvpButton, MvpCard, MvpChip, MvpPage } from '@/components/mvp';
 
@@ -39,7 +39,7 @@ export default function PracticeStart() {
       navigate(`/practice/sessions/${sessionData.sessionId}`);
     } catch (err) {
       logger.error('practice.start.failed', { paperCode, err: String(err) });
-      toast.error('无法开始练习', '请稍后重试，或检查网络');
+      toast.error(PRACTICE_COPY.startFailedTitle, PRACTICE_COPY.startFailedDesc);
       throw err;
     } finally {
       setIsStarting(false);
@@ -70,13 +70,13 @@ function PracticeStartSkeleton() {
     <MvpPage title="开始练习" hideHeading testId="practice-start-loading">
       <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_320px]">
         <MvpCard className="p-6">
-          <div className="h-4 w-24 animate-pulse rounded bg-[#E5EAF3]" />
-          <div className="mt-5 h-12 w-2/3 animate-pulse rounded bg-[#E5EAF3]" />
-          <div className="mt-8 h-28 animate-pulse rounded-lg bg-[#F1F4F9]" />
+          <div className="h-4 w-24 animate-pulse rounded-tiny bg-paper-3" />
+          <div className="mt-5 h-12 w-2/3 animate-pulse rounded-tiny bg-paper-3" />
+          <div className="mt-8 h-28 animate-pulse rounded-card bg-paper-2" />
         </MvpCard>
         <MvpCard className="p-6">
-          <div className="h-4 w-20 animate-pulse rounded bg-[#E5EAF3]" />
-          <div className="mt-5 h-24 animate-pulse rounded-lg bg-[#F1F4F9]" />
+          <div className="h-4 w-20 animate-pulse rounded-tiny bg-paper-3" />
+          <div className="mt-5 h-24 animate-pulse rounded-card bg-paper-2" />
         </MvpCard>
       </div>
     </MvpPage>
@@ -93,12 +93,12 @@ function PracticeStartLoadError({ onRetry, onBack }: LoadErrorProps) {
     <MvpPage title="试卷加载失败" hideHeading testId="practice-start-error">
       <MvpCard className="mx-auto max-w-xl p-6" testId="practice-start-error-card">
         <div className="flex items-start gap-4" role="alert" data-tone="error">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[#FEF2F2] text-[#DC2626]">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-card bg-err-50 text-err">
             <AlertCircle className="h-5 w-5" aria-hidden="true" />
           </span>
           <div className="min-w-0">
-            <h2 className="text-lg font-bold text-[#111827]">{ERROR_COPY.paperLoad.title}</h2>
-            <p className="mt-1 text-sm text-[#4B5563]">{ERROR_COPY.paperLoad.description}</p>
+            <h2 className="text-h3 font-bold text-ink">{ERROR_COPY.paperLoad.title}</h2>
+            <p className="mt-1 text-body text-ink-3">{ERROR_COPY.paperLoad.description}</p>
             <div className="mt-5 flex flex-wrap gap-3">
               <MvpButton
                 variant="primary"
@@ -124,12 +124,12 @@ function PracticeStartNotFound({ onBack }: { readonly onBack: () => void }) {
     <MvpPage title="试卷不存在" hideHeading testId="practice-start-empty">
       <MvpCard className="mx-auto max-w-xl p-6">
         <div className="flex items-start gap-4">
-          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[#EFF6FF] text-[#2563EB]">
+          <span className="grid h-11 w-11 shrink-0 place-items-center rounded-card bg-accent-50 text-accent">
             <FileQuestion className="h-5 w-5" aria-hidden="true" />
           </span>
           <div>
-            <h2 className="text-lg font-bold text-[#111827]">{ERROR_COPY.paperNotFound.title}</h2>
-            <p className="mt-1 text-sm text-[#4B5563]">{ERROR_COPY.paperNotFound.description}</p>
+            <h2 className="text-h3 font-bold text-ink">{ERROR_COPY.paperNotFound.title}</h2>
+            <p className="mt-1 text-body text-ink-3">{ERROR_COPY.paperNotFound.description}</p>
             <MvpButton variant="secondary" className="mt-5" onClick={onBack} data-testid="start-back-home">
               返回练习
             </MvpButton>
@@ -159,16 +159,16 @@ function PracticeStartReady({ paper, isStarting, onStart, onBack }: ReadyProps) 
                 <MvpChip tone="blue">{paper.paperCode}</MvpChip>
                 <MvpChip tone={paper.status === 'published' ? 'green' : 'amber'}>{paper.status}</MvpChip>
               </div>
-              <h1 className="mt-5 text-3xl font-bold tracking-normal text-[#111827] md:text-4xl">
+              <h1 className="mt-5 text-display font-bold tracking-normal text-ink">
                 {paperTitle}
               </h1>
             </div>
             <button
               type="button"
               onClick={onBack}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#D7DFEC] bg-white text-[#4B5563] hover:bg-[#EFF6FF] hover:text-[#2563EB]"
-              aria-label="返回练习中心"
-              title="返回练习中心"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-tiny border border-line-2 bg-paper text-ink-3 hover:bg-accent-50 hover:text-accent"
+              aria-label={PRACTICE_COPY.startBackToCenterAria}
+              title={PRACTICE_COPY.startBackToCenterAria}
               data-testid="start-back-home"
             >
               <ArrowLeft className="h-4 w-4" aria-hidden="true" />
@@ -200,12 +200,12 @@ function PracticeStartReady({ paper, isStarting, onStart, onBack }: ReadyProps) 
 
         <MvpCard className="p-6" testId="practice-start-side">
           <div className="flex items-center gap-3">
-            <span className="grid h-10 w-10 place-items-center rounded-lg bg-[#EFF6FF] text-[#2563EB]">
+            <span className="grid h-10 w-10 place-items-center rounded-card bg-accent-50 text-accent">
               <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
             </span>
             <div>
-              <h2 className="text-base font-bold text-[#111827]">准备就绪</h2>
-              <p className="text-sm text-[#4B5563]">答完后查看结果</p>
+              <h2 className="text-body font-bold text-ink">准备就绪</h2>
+              <p className="text-small text-ink-3">答完后查看结果</p>
             </div>
           </div>
           <div className="mt-6 space-y-3">
@@ -221,18 +221,18 @@ function PracticeStartReady({ paper, isStarting, onStart, onBack }: ReadyProps) 
 
 function Metric({ label, value }: { readonly label: string; readonly value: string | number }) {
   return (
-    <div className="rounded-lg border border-[#E1E6F0] bg-[#F7F8FB] p-4">
-      <p className="text-xs font-semibold text-[#4B5563]">{label}</p>
-      <p className="mt-2 text-2xl font-bold text-[#111827]">{value}</p>
+    <div className="rounded-card border border-line-2 bg-paper-2 p-4">
+      <p className="text-tiny font-semibold text-ink-3">{label}</p>
+      <p className="mt-2 text-h2 font-bold text-ink">{value}</p>
     </div>
   );
 }
 
 function SideRow({ label, value }: { readonly label: string; readonly value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 border-t border-[#E1E6F0] pt-3 text-sm">
-      <span className="text-[#4B5563]">{label}</span>
-      <span className="font-semibold text-[#111827]">{value}</span>
+    <div className="flex items-center justify-between gap-4 border-t border-line-2 pt-3 text-small">
+      <span className="text-ink-3">{label}</span>
+      <span className="font-semibold text-ink">{value}</span>
     </div>
   );
 }

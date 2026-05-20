@@ -22,6 +22,7 @@ import {
   putQuestionNote,
 } from '@sikao/api-client/apiQueries';
 import type { QuestionNoteV2 } from '@sikao/api-client/types/api';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // Phase 3.9 fenbi-merge — 题级笔记编辑 modal (markdown).
 //
@@ -37,8 +38,8 @@ const AUTOSAVE_DEBOUNCE_MS = 1500;
 
 // hardcode-allow: markdown qlink syntax sample (`[[#017]]`), not a CSS color literal.
 // lint:hardcode 误报 `#017` 为 hex 颜色 (3-digit hex), 实际是题号引用 markdown 语法.
-const MODAL_DESCRIPTION = '支持 markdown 语法; 关联题号用 [[#017]] 写法'; // hardcode-allow: markdown qlink syntax sample, not a CSS color
-const NOTE_PLACEHOLDER = '在这里写笔记... 粗体 **xx** / 列表 - / 标题 ## / 关联题 [[#017]]'; // hardcode-allow: markdown qlink syntax sample, not a CSS color
+const MODAL_DESCRIPTION = `支持 markdown 语法; ${PRACTICE_COPY.noteEditorQuestionLabel} [[#017]] 写法`; // hardcode-allow: markdown qlink syntax sample, not a CSS color
+const NOTE_PLACEHOLDER = `${PRACTICE_COPY.noteEditorPlaceholder} 粗体 **xx** / 列表 - / 标题 ## / 关联题 [[#017]]`; // hardcode-allow: markdown qlink syntax sample, not a CSS color
 
 export interface NoteEditorProps {
   readonly open: boolean;

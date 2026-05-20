@@ -8,7 +8,6 @@ import { usePracticeStore } from '@sikao/domain/answer-session/usePracticeStore'
 import PracticeSession from '../PracticeSession';
 import type { PracticeSessionStartV2, QuestionDetailV2 } from '@sikao/api-client/types/api';
 
-// SIKAO Phase 3 (2026-05-09): Xingce practice session core.
 //
 // The main answer surface renders a continuous list of all questions.
 

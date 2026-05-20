@@ -1,4 +1,5 @@
 import { Button, Modal } from '@sikao/ui/ui';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // Replacement for `window.confirm('确定要终止...')`. The original was forbidden
 // by frontend/CLAUDE.md §3.3 (alert/confirm/prompt are not allowed in business
@@ -15,9 +16,9 @@ export function ExitConfirmModal({ open, onClose, onConfirm }: ExitConfirmModalP
     <Modal
       open={open}
       onClose={onClose}
-      title="终止本次答题？"
-      description="当前进度将丢失，且无法恢复。如果只是想稍后回来，可以保留页面而不终止。"
-      ariaLabel="终止答题确认"
+      title={`${PRACTICE_COPY.exitTitle}？`}
+      description={`${PRACTICE_COPY.exitDescPart1}，${PRACTICE_COPY.exitDescPart2}。${PRACTICE_COPY.exitDescPart3}，${PRACTICE_COPY.exitDescPart4}。`}
+      ariaLabel={PRACTICE_COPY.exitAriaLabel}
       footer={
         <>
           <Button variant="ghost" onClick={onClose} data-testid="exit-cancel">

@@ -37,13 +37,10 @@ import { usePracticeStore } from '@sikao/domain/answer-session/usePracticeStore'
 import { api } from '@sikao/api-client/request';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
-import { ERROR_COPY } from '@/lib/ui-copy';
+import { ERROR_COPY, PRACTICE_COPY } from '@/lib/ui-copy';
 import { flushPendingPracticeAnswers } from '@/components/questions/pendingAnswerUpdates';
 import type { PracticeSessionStartV2, Section } from '@sikao/api-client/types/api';
 
-// SIKAO Xingce practice session core. SSOT: docs/plan/sikao-xingce-phase3-core.md
-// + Wave 4 docs/plan/sikao-module-sikao-redesign-2026-05-11.md.
-// Wave 4 Phase 2A (2026-05-12): FbTopbar 收为 pause+settings; FbBottomDock 接
 // 5 nav (prev/题号/next/答题卡/提交) sticky 底栏; FbDock → FbDrawer 改名.
 
 // 3 秒后还没 sessionData 视作 "会话已失效"(典型场景: 直接打开 URL / 刷新).
@@ -310,7 +307,7 @@ function PracticeSessionBody({
             sessionId,
             err: String(err),
           });
-          toast.warn('练习已提交，但今日任务状态同步失败');
+          toast.warn(PRACTICE_COPY.sessionSubmitSyncWarn);
         }
       }
       clearSession();
@@ -320,7 +317,7 @@ function PracticeSessionBody({
         sessionId,
         err: String(err),
       });
-      toast.error('交卷失败', '请稍后重试，或联系管理员');
+      toast.error(ERROR_COPY.sessionSubmit.title, PRACTICE_COPY.sessionSubmitRetryDesc);
       throw err;
     } finally {
       ui.setIsSubmitting(false);
@@ -380,14 +377,9 @@ function PracticeSessionBody({
     staleTime: 60_000,
   });
 
-  // Wave 9 Phase 2a (2026-05-12): mobile swipe 左右翻题 (mobile-style-guide §5.6).
   const swipeHandlers = useFbMobileSwipe({ onPrev: handlePrev, onNext: handleNext });
 
-  // PR15 §A (2026-05-13): 注入"解析 / 笔记 / AI"3 panel 到 AsideOutlet, 让平板
-  // 竖屏 TabletShell.AsideBottomBar 弹 BottomSheet 显示. landscape 由 PR11 Aside
   // 复用同 outlet. 答题进行中 analysis 走 placeholder (解析答完才解锁), notes
-  // 给"打开当前题笔记" CTA 复用 NoteEditor modal, ask 给 PR10 占位.
-  // 设计 SSOT: docs/design/handoff/Mobile and Tablet · Handoff.md §6.4 + §7.3.
   const analysisPanel = useMemo(
     () => (
       <div data-testid="practice-aside-analysis" className="py-8 text-center">
