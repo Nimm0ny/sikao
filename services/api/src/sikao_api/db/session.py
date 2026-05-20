@@ -40,6 +40,7 @@ class DatabaseManager:
 
     def create_all(self) -> None:
         from sikao_api.db import models  # noqa: F401
+        from sikao_api.db import models_v2  # noqa: F401
 
         Base.metadata.create_all(self.engine)
 

@@ -72,404 +72,6 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/auth/login": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Login
-         * @description Identity v2 (D1 + D15): identifier (email/phone/username_legacy) + password.
-         *
-         *     Username_legacy 仅命中 email IS NULL AND phone IS NULL 的老 user (D15
-         *     兼容期, 90 天 deprecation). 详细探测逻辑见 auth.detect_identifier_kind.
-         */
-        post: operations["login_api_v2_auth_login_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/refresh": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Refresh
-         * @description Re-issue auth_token + csrf_token cookies without re-login.
-         *
-         *     Post-Phase D P1-2: 解决 SPA 长开后 cookie 过期 (auth/csrf 都同 expiry)
-         *     导致所有 state-mutating 调用 403 的死锁. 前端 axios response interceptor
-         *     在 401 时调 /refresh, 成功 → retry; 失败 → clearSession.
-         *
-         *     Require auth (cookie/bearer 双 source 都行) + CSRF (require cookie 就 require csrf).
-         *
-         *     P1 review fix (#3e): user 字段走 serialize_user (跟 /me 单一来源), 含 phone /
-         *     phone_verified / needs_identifier_setup 派生字段. 之前手 build 缺字段, 前端
-         *     refresh 后 router guard 误判 needs_identifier_setup.
-         */
-        post: operations["refresh_api_v2_auth_refresh_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/logout": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Logout
-         * @description Phase B.2: 清 auth_token cookie. 无 body, 204 No Content.
-         *
-         *     幂等 — 未登录调用也不报错 (cookie 不存在 delete 也是 OK).
-         *     Phase B.3: 加 CSRF 校验 (D4 决策: 防恶意站点 force logout).
-         */
-        post: operations["logout_api_v2_auth_logout_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Me */
-        get: operations["me_api_v2_auth_me_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/forgot-password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Forgot Password
-         * @description D5: 总返 200, 不暴露 email 是否注册.
-         *
-         *     No CSRF: anonymous endpoint, 调用方根本没 cookie. token + user 一一对应,
-         *     攻击者拿不到 user email 就拿不到 link.
-         */
-        post: operations["forgot_password_api_v2_auth_forgot_password_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/reset-password": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Reset Password
-         * @description Token 自身就是鉴权凭据 (sha256 stored, single-use).
-         *
-         *     No CSRF: anonymous endpoint + token 单次使用替防 CSRF (攻击者诱导用户
-         *     重放也只能换 user 自己 password, 而且 token 一次性, 第二次失败).
-         *     Bad token (假 / used / expired) 全 410 + code=token_invalid.
-         */
-        post: operations["reset_password_api_v2_auth_reset_password_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/verify-email/send": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Verify Email Send
-         * @description 已登录 user 主动请求发 verify email.
-         *
-         *     Require auth: 只 verify 自己的 email, 不让人代发.
-         *     Require CSRF: cookie auth + state-mutating, 走 double-submit.
-         */
-        post: operations["verify_email_send_api_v2_auth_verify_email_send_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/verify-email/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Verify Email Confirm
-         * @description Token 自身就是鉴权 (跟 reset-password 同模式).
-         *
-         *     P1-4: 不签 JWT (cookie/session 不变), 只翻 email_verified flag. 前端
-         *     landing page 根据 user.email_verified=True 显示成功 UX.
-         */
-        post: operations["verify_email_confirm_api_v2_auth_verify_email_confirm_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/register/email": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Register Email
-         * @description Identity v2 (D3): email + password 注册. write-then-verify.
-         *
-         *     成功直接返 cookie + csrf; frontend 收到能 setSession + navigate /app.
-         *     Email 重复 → 409 code=email_taken. display_name 默认 split('@')[0].
-         */
-        post: operations["register_email_api_v2_auth_register_email_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/register/phone": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Register Phone
-         * @description Identity v2 (D4 + D10): phone + sms_code + password 注册. verify-then-write.
-         *
-         *     SMS code 必须先验通过 (走 /sms/send-code 拿 code). confirmer_ip 留痕审计
-         *     (额外发现 B). phone 重复 → 409 code=phone_taken. SMS code 错 → 410
-         *     code=code_invalid (跟 reset-password 同模式).
-         */
-        post: operations["register_phone_api_v2_auth_register_phone_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/sms/send-code": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Sms Send Code
-         * @description Identity v2 (D8 + D17): 发 6-digit SMS code.
-         *
-         *     Anonymous-allowed (purpose=register / login_otp); bind_phone 推
-         *     /auth/bind/phone/send-code (commit #4) 才暴露给登录用户. 当前 endpoint
-         *     若 purpose=bind_phone → 403 (force users to use the bind endpoint when
-         *     it lands).
-         *
-         *     限流 (D13) 在 commit #6 fastapi-limiter 加. SMS provider 失败 swallow +
-         *     log (跟 forgot-password D5 silent-200 同模式: 不 leak phone 是否注册).
-         */
-        post: operations["sms_send_code_api_v2_auth_sms_send_code_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/bind/phone/send-code": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bind Phone Send Code
-         * @description Logged-in user 给 newPhone 发 SMS code. D10 不写 user.phone.
-         *
-         *     D18 入口预检 (newPhone 已被别 user 占 → 409 phone_taken; 自己已绑同
-         *     phone → 409 phone_already_bound). dev gate 决定 _devMagicCode 暴露.
-         */
-        post: operations["bind_phone_send_code_api_v2_auth_bind_phone_send_code_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/bind/phone/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bind Phone Confirm
-         * @description Code + password 验通过 → 写 user.phone + phone_verified=True.
-         *
-         *     D12 password confirm (失败 403 password_invalid). D18 二次预检 (race
-         *     window). D17(b) attempt 计数 (3 失败自废). #4a SmsCodeService user_id
-         *     强匹配防 token leak.
-         */
-        post: operations["bind_phone_confirm_api_v2_auth_bind_phone_confirm_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/bind/email/send-link": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bind Email Send Link
-         * @description Logged-in user 给 newEmail 发 verify link. D10 不写 user.email.
-         *
-         *     D18 入口预检. token 是 secrets.token_urlsafe(32). dev gate 决定
-         *     _devMagicLink 暴露. Reuses ForgotPasswordResponse shape (ok + 可选
-         *     _devMagicLink) — D7 dev gate 跟 forgot-password 同模式.
-         */
-        post: operations["bind_email_send_link_api_v2_auth_bind_email_send_link_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/bind/email/confirm": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Bind Email Confirm
-         * @description Token + password 验通过 → 写 user.email + email_verified=True.
-         *
-         *     Token 自身鉴权 (sha256 stored, single-use, user_id-bound). password
-         *     confirm 二次校验 (D12). D18 二次预检 (newEmail 被抢).
-         */
-        post: operations["bind_email_confirm_api_v2_auth_bind_email_confirm_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/unbind/phone": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Unbind Phone
-         * @description Unbind user.phone (D11): email 必须 IS NOT NULL AND email_verified=True.
-         *
-         *     D12 password confirm. 失败 → 409 identifier_must_remain_verified. 已
-         *     unbind (user.phone IS NULL) → idempotent 200 (no state change).
-         */
-        post: operations["unbind_phone_api_v2_auth_unbind_phone_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/auth/unbind/email": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Unbind Email
-         * @description Unbind user.email (D11 反向): phone 必须 IS NOT NULL AND phone_verified=True.
-         */
-        post: operations["unbind_email_api_v2_auth_unbind_email_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
     "/api/v2/system/bootstrap": {
         parameters: {
             query?: never;
@@ -487,202 +89,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/papers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Papers
-         * @description List public papers. Slice 2d: ?kind=essay 过滤含 essay 题的卷 (申论真题入口).
-         */
-        get: operations["list_papers_api_v2_papers_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Categories
-         * @description Phase 1.1 fenbi-merge — 6 大类聚合. 匿名调用 doneByUser=0.
-         */
-        get: operations["list_categories_api_v2_categories_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/papers/me/status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Paper User Status
-         * @description Phase 1.2 fenbi-merge — 当前用户对每个 public paper 的状态 overlay.
-         *
-         *     需登录. 前端在题库列表页登录态下拉这个 endpoint, 跟 /papers join
-         *     显示 status chip 三态.
-         */
-        get: operations["list_paper_user_status_api_v2_papers_me_status_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/papers/essay/list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Essay Papers Paginated
-         * @description batch 5b: 申论卷分页 endpoint, 防 EssayPapers 745 套全量铺 ~67000px DOM
-         *     把 LCP 拉爆 (CLAUDE.md §4 列表收口铁律). Home `/papers?kind=essay` slice
-         *     前 2 走老 endpoint 不动.
-         *
-         *     路由顺序: 必须放在 `/papers/{paper_code}` 之前, 否则 FastAPI 把 `essay/list`
-         *     当成 paper_code='essay' 进 get_paper.
-         */
-        get: operations["list_essay_papers_paginated_api_v2_papers_essay_list_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/papers/{paper_code}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Paper */
-        get: operations["get_paper_api_v2_papers__paper_code__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/papers/{paper_code}/questions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Paper Questions */
-        get: operations["get_paper_questions_api_v2_papers__paper_code__questions_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/questions/{question_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Question */
-        get: operations["get_question_api_v2_questions__question_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/assets/questions/{asset_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Question Asset
-         * @description v1 上线设计 (alembic 0012, M1): asset.file_path 是 settings.assets_root 下
-         *     的相对路径 (`<paperCode>/assets/<basename>`), 这里拼回 absolute. 解决 dev/prod
-         *     路径切换 + 题库搬家不断的 known issue (CLAUDE.md §12 E).
-         */
-        get: operations["get_question_asset_api_v2_assets_questions__asset_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/assets/material-groups/{asset_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Material Group Asset */
-        get: operations["get_material_group_asset_api_v2_assets_material_groups__asset_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/custom/facets": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Custom Practice Facets */
-        get: operations["list_custom_practice_facets_api_v2_practice_custom_facets_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/custom/start": {
+    "/api/v2/auth/register/email": {
         parameters: {
             query?: never;
             header?: never;
@@ -691,15 +98,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Start Custom Practice Session */
-        post: operations["start_custom_practice_session_api_v2_practice_custom_start_post"];
+        /** Register Email */
+        post: operations["register_email_api_v2_auth_register_email_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v2/practice/papers/{paper_code}/start": {
+    "/api/v2/auth/register/phone": {
         parameters: {
             query?: never;
             header?: never;
@@ -708,8 +115,484 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Start Paper Session */
-        post: operations["start_paper_session_api_v2_practice_papers__paper_code__start_post"];
+        /** Register Phone */
+        post: operations["register_phone_api_v2_auth_register_phone_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Login */
+        post: operations["login_api_v2_auth_login_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Logout */
+        post: operations["logout_api_v2_auth_logout_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/auth/session": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Session */
+        get: operations["get_session_api_v2_auth_session_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/auth/send-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Send Code */
+        post: operations["send_code_api_v2_auth_send_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/auth/verify-code": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Verify Code */
+        post: operations["verify_code_api_v2_auth_verify_code_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/auth/reset-password": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset Password */
+        post: operations["reset_password_api_v2_auth_reset_password_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/overview": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Overview */
+        get: operations["get_dashboard_overview_api_v2_dashboard_overview_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Today */
+        get: operations["get_dashboard_today_api_v2_dashboard_today_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/today/must-do": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Today Must Do */
+        get: operations["get_dashboard_today_must_do_api_v2_dashboard_today_must_do_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/today/continue": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Today Continue */
+        get: operations["get_dashboard_today_continue_api_v2_dashboard_today_continue_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/today/review": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Today Review */
+        get: operations["get_dashboard_today_review_api_v2_dashboard_today_review_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/weekly-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Weekly Plan */
+        get: operations["get_dashboard_weekly_plan_api_v2_dashboard_weekly_plan_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/weekly-plan/goal": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Weekly Goal */
+        get: operations["get_dashboard_weekly_goal_api_v2_dashboard_weekly_plan_goal_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/weekly-plan/today-completion": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Weekly Completion */
+        get: operations["get_dashboard_weekly_completion_api_v2_dashboard_weekly_plan_today_completion_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/weekly-plan/adjust": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Weekly Adjust */
+        get: operations["get_dashboard_weekly_adjust_api_v2_dashboard_weekly_plan_adjust_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Progress Overview */
+        get: operations["get_progress_overview_api_v2_dashboard_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/progress/trend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Progress Trend */
+        get: operations["get_progress_trend_api_v2_dashboard_progress_trend_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/progress/weakness": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Progress Weakness */
+        get: operations["get_progress_weakness_api_v2_dashboard_progress_weakness_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/progress/diagnosis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Progress Diagnosis */
+        get: operations["get_progress_diagnosis_api_v2_dashboard_progress_diagnosis_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/dashboard/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Dashboard Records */
+        get: operations["get_dashboard_records_api_v2_dashboard_records_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/center": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Practice Center */
+        get: operations["get_practice_center_api_v2_practice_center_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/xingce/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Xingce Categories */
+        get: operations["list_xingce_categories_api_v2_practice_xingce_categories_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/xingce/papers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Xingce Papers */
+        get: operations["list_xingce_papers_api_v2_practice_xingce_papers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/essay/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Essay Categories */
+        get: operations["list_essay_categories_api_v2_practice_essay_categories_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/essay/papers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Essay Papers */
+        get: operations["list_essay_papers_api_v2_practice_essay_papers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Session */
+        post: operations["create_session_api_v2_practice_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions/{session_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Session */
+        get: operations["get_session_api_v2_practice_sessions__session_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions/{session_id}/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Save Answers */
+        post: operations["save_answers_api_v2_practice_sessions__session_id__answers_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -725,25 +608,8 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Submit Session Answer */
-        post: operations["submit_session_answer_api_v2_practice_sessions__session_id__submit_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/sessions/{session_id}/complete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Complete Session */
-        post: operations["complete_session_api_v2_practice_sessions__session_id__complete_post"];
+        /** Submit Session */
+        post: operations["submit_session_api_v2_practice_sessions__session_id__submit_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -757,8 +623,8 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** Get Session Result */
-        get: operations["get_session_result_api_v2_practice_sessions__session_id__result_get"];
+        /** Get Result */
+        get: operations["get_result_api_v2_practice_sessions__session_id__result_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -767,15 +633,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/practice/history": {
+    "/api/v2/review/items": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /** Get History */
-        get: operations["get_history_api_v2_practice_history_get"];
+        /** List Review Items */
+        get: operations["list_review_items_api_v2_review_items_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -784,22 +650,15 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/practice/wrong-questions": {
+    "/api/v2/review/smart": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Wrong Questions
-         * @description List user's wrong questions (paginate + filter).
-         *
-         *     paperCode (规范官 P0-1, 2026-05-08): 跨页错题过滤. WrongBook view 的
-         *     "本套错题" mode 走这个 server-side filter, 让用户看到该 paper 全集 (跨
-         *     分页), 不再被 client-side filter 限制在当前页 20 条.
-         */
-        get: operations["list_wrong_questions_api_v2_practice_wrong_questions_get"];
+        /** Get Smart Review */
+        get: operations["get_smart_review_api_v2_review_smart_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -808,7 +667,24 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/practice/wrong-questions/retry-batch": {
+    "/api/v2/review/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Review Item */
+        get: operations["get_review_item_api_v2_review_items__item_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/items/{item_id}/redo": {
         parameters: {
             query?: never;
             header?: never;
@@ -817,1332 +693,15 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /**
-         * Retry Wrong Batch
-         * @description Phase 6.4 P2 批量复习 — 一次创建含 N 个错题的 retry session.
-         *
-         *     所有 N 题必须属于同一 paper revision. 跨 paper 由前端 disable
-         *     button (UI 体验更直观, 后端再 reject 兜底).
-         */
-        post: operations["retry_wrong_batch_api_v2_practice_wrong_questions_retry_batch_post"];
+        /** Redo Review Item */
+        post: operations["redo_review_item_api_v2_review_items__item_id__redo_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v2/practice/wrong-questions/{question_id}/retry": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Retry Wrong Question */
-        post: operations["retry_wrong_question_api_v2_practice_wrong_questions__question_id__retry_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/study-plan/start": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Start Study Plan Session */
-        post: operations["start_study_plan_session_api_v2_practice_study_plan_start_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/stats/heatmap": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Stats Heatmap */
-        get: operations["stats_heatmap_api_v2_practice_stats_heatmap_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/stats/trend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Stats Trend */
-        get: operations["stats_trend_api_v2_practice_stats_trend_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/stats/knowledge-points": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Stats Knowledge Points */
-        get: operations["stats_knowledge_points_api_v2_practice_stats_knowledge_points_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/stats/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Stats Summary */
-        get: operations["stats_summary_api_v2_practice_stats_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/wrong-questions/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Wrong Book Summary
-         * @description 主页 hero 5 stat-strip (in_practice / todo / danger / graduated / weekly_new).
-         */
-        get: operations["get_wrong_book_summary_api_v2_practice_wrong_questions_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/wrong-questions/graduation-candidates": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Graduation Candidates
-         * @description 毕业候选 (consecutive_correct_count == 2).
-         */
-        get: operations["get_graduation_candidates_api_v2_practice_wrong_questions_graduation_candidates_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/wrong-questions/{question_id}/mark-mastered": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Mark Wrong Question Mastered
-         * @description 手动标错题已掌握 — state machine: any → 'mastered'.
-         */
-        patch: operations["mark_wrong_question_mastered_api_v2_practice_wrong_questions__question_id__mark_mastered_patch"];
-        trace?: never;
-    };
-    "/api/v2/practice/wrong-questions/{question_id}/peek": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Peek Wrong Question
-         * @description 重做模式偷看答案 — 扣 peek_count, 返剩余.
-         */
-        post: operations["peek_wrong_question_api_v2_practice_wrong_questions__question_id__peek_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/wrong-questions/{question_id}/submit-bluff": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Submit Wrong Question With Bluff
-         * @description 重做模式提交 — 写 attempts + 评估蒙对识破 + update mastery.
-         */
-        post: operations["submit_wrong_question_with_bluff_api_v2_practice_wrong_questions__question_id__submit_bluff_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/smart-review/today": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Smart Review Today
-         * @description 智能复盘"今日"4 stat (pushed / finished / streak / days_to_exam).
-         */
-        get: operations["get_smart_review_today_api_v2_practice_smart_review_today_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/smart-review/next": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Smart Review Next
-         * @description 智能复盘下一题 (priority: 险题 + 久未做对).
-         */
-        get: operations["get_smart_review_next_api_v2_practice_smart_review_next_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/wrong-questions/heatmap": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Wrong Book Heatmap
-         * @description 5 模块 × N 天 错题强度 heatmap.
-         *
-         *     days ∈ {7, 30, 90, 180}; 其他值 → 422. 行固定顺序: 言语 / 数量 / 判推 /
-         *     资分 / 常识. cells[-1] = 今天 (Asia/Shanghai 本地日).
-         */
-        get: operations["get_wrong_book_heatmap_api_v2_practice_wrong_questions_heatmap_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/last-session": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Last Incomplete Practice Session
-         * @description Home "继续答题" 数据源.
-         *
-         *     返回该 user 最近 1 个 completed_at IS NULL 的 PracticeSession summary;
-         *     无中断 session → null body (FE 据此渲 "今日推荐" 替代入口).
-         */
-        get: operations["get_last_incomplete_practice_session_api_v2_practice_last_session_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/wrong-questions/weakness": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Weakness Modules
-         * @description Home block 3 "薄弱模块" 数据源.
-         *
-         *     Top-N 薄弱模块 (默认 N=2). score = wrong_rate × (1 - completion_rate) ×
-         *     subject_weight × 100; 排 desc, top limit 返. limit ∈ [1, 5]; 其他值 → 422.
-         */
-        get: operations["get_weakness_modules_api_v2_practice_wrong_questions_weakness_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/practice/sessions/{session_id}/answers/{answer_id}/diagnosis": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Update Answer Wrong Reason
-         * @description PR-3: Update wrong-reason diagnosis on a submitted answer.
-         *
-         *     Both AI-generated diagnosis (source='ai') and user-override (source='user')
-         *     go through this endpoint. Ownership enforced: answer must belong to a
-         *     session owned by the current user.
-         */
-        patch: operations["update_answer_wrong_reason_api_v2_practice_sessions__session_id__answers__answer_id__diagnosis_patch"];
-        trace?: never;
-    };
-    "/api/v2/admin/import-jobs/standard-json": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Import Standard Json */
-        post: operations["import_standard_json_api_v2_admin_import_jobs_standard_json_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/essay-papers/import-aipta-text": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Import Aipta Text Endpoint
-         * @description Slice 2b: admin paste 申论真题 plain text → ingest 单卷.
-         *
-         *     格式契约见 `app/scripts/aipta_text_to_standard.py` docstring. 解析 / 校验
-         *     错抛 ValidationError(422), 全局 exception handler 自动 map.
-         */
-        post: operations["import_aipta_text_endpoint_api_v2_admin_essay_papers_import_aipta_text_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/import-jobs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Import Jobs */
-        get: operations["list_import_jobs_api_v2_admin_import_jobs_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/import-jobs/{job_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Import Job */
-        get: operations["get_import_job_api_v2_admin_import_jobs__job_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/papers": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Admin Papers */
-        get: operations["list_admin_papers_api_v2_admin_papers_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/papers/{paper_code}/revisions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Paper Revisions */
-        get: operations["list_paper_revisions_api_v2_admin_papers__paper_code__revisions_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/papers/{paper_code}/revisions/{revision_id}/publish": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /** Publish Revision */
-        post: operations["publish_revision_api_v2_admin_papers__paper_code__revisions__revision_id__publish_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/revisions/{revision_id}/publish-status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Publish Status */
-        get: operations["publish_status_api_v2_admin_revisions__revision_id__publish_status_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/questions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List Admin Questions */
-        get: operations["list_admin_questions_api_v2_admin_questions_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/questions/{question_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get Admin Question */
-        get: operations["get_admin_question_api_v2_admin_questions__question_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/exam-events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Visible
-         * @description List visible exam events, sorted by exam_date asc.
-         *
-         *     Public — frontend ExamCalendar 用. visible=False 由 admin 隐藏的 entry
-         *     不进 list (草稿 / 已废弃 entry 不显给 user).
-         */
-        get: operations["list_visible_api_v2_exam_events_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/exam-events": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Admin List
-         * @description Admin list — 含 hidden rows.
-         */
-        get: operations["admin_list_api_v2_admin_exam_events_get"];
-        put?: never;
-        /** Admin Create */
-        post: operations["admin_create_api_v2_admin_exam_events_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/exam-events/{event_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        /** Admin Update */
-        put: operations["admin_update_api_v2_admin_exam_events__event_id__put"];
-        post?: never;
-        /** Admin Delete */
-        delete: operations["admin_delete_api_v2_admin_exam_events__event_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/llm/usage/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get My Usage
-         * @description Profile 'My LLM usage' card. Aggregate over last 30 days.
-         */
-        get: operations["get_my_usage_api_v2_llm_usage_me_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/llm/configs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List My Configs
-         * @description List my BYOM configs. api_key always masked (never raw).
-         */
-        get: operations["list_my_configs_api_v2_llm_configs_get"];
-        put?: never;
-        /**
-         * Create My Config
-         * @description Create BYOM config. SSRF check + AES encrypt + UNIQUE label per user.
-         */
-        post: operations["create_my_config_api_v2_llm_configs_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/llm/configs/{config_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        /** Delete My Config */
-        delete: operations["delete_my_config_api_v2_llm_configs__config_id__delete"];
-        options?: never;
-        head?: never;
-        /**
-         * Update My Config
-         * @description Partial update. base_url 改触发 SSRF re-check, api_key 改触发 AES re-encrypt.
-         */
-        patch: operations["update_my_config_api_v2_llm_configs__config_id__patch"];
-        trace?: never;
-    };
-    "/api/v2/llm/configs/{config_id}/set-default": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Set Default My Config
-         * @description 设当前 config 默认 (build_llm_provider 优先读). 其他 is_default=False.
-         */
-        post: operations["set_default_my_config_api_v2_llm_configs__config_id__set_default_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/llm/configs/{config_id}/test": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Test My Config
-         * @description Test connectivity: 1-token round-trip 调用 LLM, 写 last_tested_at + status.
-         *
-         *     status 字面量 (TestStatus Literal):
-         *       - 'ok': 200 + 正常返
-         *       - 'auth_failed': 401/403
-         *       - 'unreachable': 其他 4xx/5xx / network error
-         *       - 'timeout': httpx.TimeoutException
-         *
-         *     sync service + async route 混合: service 只 build provider (decrypt + SSRF
-         *     re-check), route handler 跑 await call.
-         */
-        post: operations["test_my_config_api_v2_llm_configs__config_id__test_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/llm/usage": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Global Usage
-         * @description Admin LlmUsageAdmin view. System-wide aggregate (含 anonymous calls).
-         */
-        get: operations["get_global_usage_api_v2_admin_llm_usage_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/llm/conversations": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List My Conversations
-         * @description List user's conversations DESC by updated_at, limit 20.
-         */
-        get: operations["list_my_conversations_api_v2_llm_conversations_get"];
-        put?: never;
-        /**
-         * Create My Conversation
-         * @description 创建会话 + 落首条 user message + SSE stream 第一条 assistant 回复.
-         *
-         *     Phase 1 (sync): create_conversation + commit early — 即使 stream 中断,
-         *     user message 仍然落库, 用户能看到自己问了啥, 重发即可.
-         *     Phase 2 (stream generator): 跑 LLM stream + 末尾 finalize assistant + record usage.
-         */
-        post: operations["create_my_conversation_api_v2_llm_conversations_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/llm/conversations/{conversation_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get My Conversation
-         * @description Single conversation + messages 全文. 跨 user → 404.
-         */
-        get: operations["get_my_conversation_api_v2_llm_conversations__conversation_id__get"];
-        put?: never;
-        post?: never;
-        /** Delete My Conversation */
-        delete: operations["delete_my_conversation_api_v2_llm_conversations__conversation_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/llm/conversations/{conversation_id}/messages": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Continue My Conversation
-         * @description 续 user message → SSE stream 续接 assistant 回复. 跨 user → 404.
-         */
-        post: operations["continue_my_conversation_api_v2_llm_conversations__conversation_id__messages_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/essay/grade": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Submit Essay Grade
-         * @description 创建 pending grading record + schedule LLM 评分 BackgroundTask.
-         */
-        post: operations["submit_essay_grade_api_v2_essay_grade_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/essay/grades/{record_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Get My Essay Grade */
-        get: operations["get_my_essay_grade_api_v2_essay_grades__record_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/essay/grades": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** List My Essay Grades */
-        get: operations["list_my_essay_grades_api_v2_essay_grades_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/essay/categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Essay Categories
-         * @description #18 申论专项 category tree (方案 B 修订版).
-         *
-         *     跨 745 套申论真题按 canonical_subtype 聚合, 跟 /api/v2/categories (行测)
-         *     视觉对称. doneByUser 走 EssayGradingRecord status='completed' (申论 SSOT,
-         *     不是 PracticeSession.answer 行测路径).
-         *
-         *     匿名调用 (user=None) → doneByUser 全 0. 返 6 行 raw (公文/应用文 各自一行),
-         *     前端合并 '公文 · 应用文' 显 5 卡.
-         */
-        get: operations["list_essay_categories_api_v2_essay_categories_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/essay/specialty/questions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Essay Specialty Questions
-         * @description 跨卷列出某 canonical_subtype 下的全部 essay 题, paginate.
-         *
-         *     需登录 (last_answered_at 是 per-user 计算). subtype 不在白名单 / 库里
-         *     没题 → 返 total=0 + items=[] (不 404, 让前端 chip 仍可切换).
-         *
-         *     多值 (规范官 P0-3 2026-05-08): subtype 接受逗号分隔多值, e.g.
-         *     `?subtype=公文,应用文`. service 层做 IN 查询, 视觉上视作"合并类".
-         *
-         *     See app/services/essay_grading.py:list_specialty_questions.
-         */
-        get: operations["list_essay_specialty_questions_api_v2_essay_specialty_questions_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/essay/drafts": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Save Essay Draft
-         * @description FE autosave 入口 — 同 (user, question) upsert 草稿.
-         *
-         *     URL deviation from plan §8 (master 拍板): plan 写
-         *     /api/v2/essay/sessions/{session_id}/draft, BE 现状没 session 实体,
-         *     upsert 按 (user_id, question_id) — 简化 URL 到 /drafts. session_id
-         *     是 FE 路由 namespace, 不需 BE 实体对应.
-         */
-        post: operations["save_essay_draft_api_v2_essay_drafts_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/essay/drafts/{question_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get My Essay Draft
-         * @description 获取当前用户某题的最新草稿; 跨用户 / 没存过 → 404 防 leak.
-         *
-         *     EssayDraftService.get_my_draft 已按 user_id 过滤, 拿别人的 draft id
-         *     在本 endpoint 里不可能 (走 question_id 不走 record_id). 没草稿
-         *     → record None → 404 跟 EssayGrading 一致.
-         */
-        get: operations["get_my_essay_draft_api_v2_essay_drafts__question_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/papers/essay/specialty/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Essay Specialty Summary
-         * @description SIKAO essay-specialty hero band 数据.
-         *
-         *     Returns:
-         *       totals: StatStrip 4 格 (practiced / total / streakDays / weekDone / avgScore)
-         *       resume: ResumeHero 续答 (无 grading record → None, FE 隐藏 hero)
-         */
-        get: operations["get_essay_specialty_summary_api_v2_papers_essay_specialty_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/papers/essay/specialty/categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Essay Specialty Categories
-         * @description CategoryCard 5 大类 + per-question 状态 (done / progress / pending).
-         *
-         *     匿名调用 (user=None) → 全 status='pending'. 后端拆开 6 类 (公文 + 应用文 分行),
-         *     FE 按 plan §2.1 合并 "公文 · 应用文" 显 5 卡.
-         *
-         *     每类返前 6 道题 (sub-grid 2 列 × 3 行典型展示); state='empty' 当该类 total=0.
-         */
-        get: operations["get_essay_specialty_categories_api_v2_papers_essay_specialty_categories_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/papers/essay/list/extended": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Essay Papers Extended
-         * @description EssayPapers view 扩字段 list.
-         *
-         *     扩字段: region / track / difficulty / status / progress / lastAttempt / pinned.
-         *     需登录 (status / progress / lastAttempt 是 per-user).
-         *
-         *     Query:
-         *       page / pageSize: 标准分页 (1-based, pageSize ∈ [1,50])
-         *       region: "国考" / "省考" / source_provider 名 / 缺省=全部
-         *       year: exam_year exact match / 缺省=全部
-         *       paperType: source_kind exact match / 缺省=全部
-         *       sort: default(sort_order DESC) / year(year DESC) / recent(lastAttempt DESC)
-         */
-        get: operations["list_essay_papers_extended_api_v2_papers_essay_list_extended_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/papers/essay/filters": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Essay Papers Filters
-         * @description FiltersPanel chip 候选集 (regions / years / paperTypes).
-         *
-         *     匿名可调用 (元数据非 user-specific).
-         */
-        get: operations["get_essay_papers_filters_api_v2_papers_essay_filters_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/papers/xingce/specialty/summary": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Xingce Specialty Summary
-         * @description 行测 specialty hero band 数据.
-         *
-         *     Returns:
-         *       totals: StatStrip (practiced / total / streakDays / weekDone / avgScore=正确率%)
-         *       resume: ResumeHero 续答 (无 answer → None, FE 隐藏 hero)
-         */
-        get: operations["get_xingce_specialty_summary_api_v2_papers_xingce_specialty_summary_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/papers/xingce/specialty/categories": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Xingce Specialty Categories
-         * @description CategoryCard 5 大类 + per-question 状态 (done / progress / pending).
-         *
-         *     匿名调用 (user=None) → 全 status='pending'. 5 大类固定: 言语 / 判断 / 数量 /
-         *     资料 / 常识. 非 5 大类的细分 subtype (e.g. "图形推理" / "公共基础知识") 通过
-         *     keyword bucket 归并 (见 services/xingce_specialty.py _XINGCE_CATEGORIES).
-         *
-         *     每类返前 6 道题 (sub-grid 2 列 × 3 行典型展示); state='empty' 当该类 total=0.
-         */
-        get: operations["get_xingce_specialty_categories_api_v2_papers_xingce_specialty_categories_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/papers/xingce/list/extended": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Xingce Papers Extended
-         * @description XingcePapers view 扩字段 list.
-         *
-         *     扩字段: region / track='gk' / difficulty / status / progress / lastAttempt /
-         *     pinned. 需登录 (status / progress / lastAttempt 是 per-user).
-         *
-         *     Query:
-         *       page / pageSize: 标准分页 (1-based, pageSize ∈ [1,50])
-         *       region: "国考" / "省考" / source_provider 名 / 缺省=全部
-         *       year: exam_year exact match / 缺省=全部
-         *       paperType: source_kind exact match / 缺省=全部
-         *       sort: default(sort_order DESC) / year(year DESC) / recent(lastAttempt DESC)
-         */
-        get: operations["list_xingce_papers_extended_api_v2_papers_xingce_list_extended_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/papers/xingce/filters": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Xingce Papers Filters
-         * @description FiltersPanel chip 候选集 (regions / years / paperTypes).
-         *
-         *     匿名可调用 (元数据非 user-specific).
-         */
-        get: operations["get_xingce_papers_filters_api_v2_papers_xingce_filters_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/study-plan/today": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Today Plan
-         * @description 拿今日 plan. 不存在则同步生成 (D2 阻塞模式, deepseek-flash ~3-5s).
-         *
-         *     分支:
-         *     - cache hit (当天已有) → 直接返
-         *     - cold start (用户答题量 < 阈值 OR 近 7 天 0 答题) → fallback_cold_start
-         *     - LLM 路径成功 → success
-         *     - LLM 任一段失败 → fallback_llm_failed (FE 据 generation_status banner 区分)
-         */
-        get: operations["get_today_plan_api_v2_study_plan_today_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/study-plan/history": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List History
-         * @description Slice 3c: 列出过去的 plan (排除今日, plan_date < today_shanghai).
-         *
-         *     Cursor 分页 by plan_date desc, FE useInfiniteQuery 拿 next_cursor 翻下一页.
-         *     cursor 强类型 `date` — 非法格式 (?cursor=foo / ?cursor=2099-13-99) 自动 422.
-         *     limit 范围 [1, 50] 之外自动 422 (fail-fast, CLAUDE.md §4).
-         */
-        get: operations["list_history_api_v2_study_plan_history_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/study-plan/{plan_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Plan Detail
-         * @description Slice 3d: 按 plan_id 拿完整 plan + tasks (复用 StudyPlanResponse).
-         *
-         *     跨用户 / 不存在 → 404 (统一不暴露 plan 存在性). FastAPI int converter 自动
-         *     422 非法 path param ('abc' / 0 / 负数), 不需要 service 校验.
-         */
-        get: operations["get_plan_detail_api_v2_study_plan__plan_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/study-plan/tasks/{task_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Task Status
-         * @description 改 task status. 单向 pending → completed/skipped (D4).
-         *
-         *     - 跨用户 → 404 (NotFoundError, 防 leak task 存在性)
-         *     - 当前 status != 'pending' → 422 (ServiceValidationError, 已 finalized)
-         */
-        patch: operations["patch_task_status_api_v2_study_plan_tasks__task_id__patch"];
-        trace?: never;
-    };
-    "/api/v2/me/predicted-score": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Me Predicted Score */
-        get: operations["me_predicted_score_api_v2_me_predicted_score_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/me/goals": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Me Get Goals */
-        get: operations["me_get_goals_api_v2_me_goals_get"];
-        /** Me Put Goals */
-        put: operations["me_put_goals_api_v2_me_goals_put"];
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/me/onboarding-status": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Me Onboarding Status
-         * @description PR-1: Check whether current user has completed onboarding.
-         *
-         *     Returns has_goal (UserGoal row exists) + has_exam (any UserExam row exists)
-         *     + is_onboarded (both). FE uses this on /dashboard mount to redirect to
-         *     /study/onboarding when is_onboarded=False.
-         */
-        get: operations["me_onboarding_status_api_v2_me_onboarding_status_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/notes/{question_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /** Notes Get */
-        get: operations["notes_get_api_v2_notes__question_id__get"];
-        /** Notes Put */
-        put: operations["notes_put_api_v2_notes__question_id__put"];
-        post?: never;
-        /** Notes Delete */
-        delete: operations["notes_delete_api_v2_notes__question_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/notebook/notes": {
+    "/api/v2/notes": {
         parameters: {
             query?: never;
             header?: never;
@@ -2150,17 +709,17 @@ export interface paths {
             cookie?: never;
         };
         /** List Notes */
-        get: operations["list_notes_api_v2_notebook_notes_get"];
+        get: operations["list_notes_api_v2_notes_get"];
         put?: never;
         /** Create Note */
-        post: operations["create_note_api_v2_notebook_notes_post"];
+        post: operations["create_note_api_v2_notes_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v2/notebook/notes/{note_id}": {
+    "/api/v2/notes/{note_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -2168,55 +727,25 @@ export interface paths {
             cookie?: never;
         };
         /** Get Note */
-        get: operations["get_note_api_v2_notebook_notes__note_id__get"];
+        get: operations["get_note_api_v2_notes__note_id__get"];
         /** Update Note */
-        put: operations["update_note_api_v2_notebook_notes__note_id__put"];
+        put: operations["update_note_api_v2_notes__note_id__put"];
         post?: never;
-        /** Delete Note */
-        delete: operations["delete_note_api_v2_notebook_notes__note_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/notebook/notes/{note_id}/reviews": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Reviews
-         * @description Audit history. 跨用户 → 404.
-         */
-        get: operations["list_reviews_api_v2_notebook_notes__note_id__reviews_get"];
-        put?: never;
-        /**
-         * Submit Review
-         * @description 提交 SM-2 quality 0-5 → 重算 ease/interval/next_review_at + audit row.
-         *     返 updated note. 跨用户 → 404. quality 不在 0-5 → 422.
-         */
-        post: operations["submit_review_api_v2_notebook_notes__note_id__reviews_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
         trace?: never;
     };
-    "/api/v2/notebook/reviews/due": {
+    "/api/v2/profile/overview": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Due Reviews
-         * @description Due queue: next_review_at IS NULL OR next_review_at <= now. ORDER BY
-         *     next_review_at ASC (NULLS first via CASE). 默认 limit=5 (一日复习包大小).
-         */
-        get: operations["get_due_reviews_api_v2_notebook_reviews_due_get"];
+        /** Get Profile Overview */
+        get: operations["get_profile_overview_api_v2_profile_overview_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2225,19 +754,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/notebook/stats": {
+    "/api/v2/profile/security": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * Get Stats
-         * @description Aggregate counts (total / due_count / by_type / by_source_domain).
-         */
-        get: operations["get_stats_api_v2_notebook_stats_get"];
-        put?: never;
+        /** Get Profile Security */
+        get: operations["get_profile_security_api_v2_profile_security_get"];
+        /** Put Profile Security */
+        put: operations["put_profile_security_api_v2_profile_security_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2245,40 +772,17 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/notebook/notes/{note_id}/public-toggle": {
+    "/api/v2/profile/goals": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Patch Public Toggle
-         * @description Owner-only toggle is_public + display_anonymous. Cross-user → 404.
-         */
-        patch: operations["patch_public_toggle_api_v2_notebook_notes__note_id__public_toggle_patch"];
-        trace?: never;
-    };
-    "/api/v2/questions/{question_id}/public-notes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Public Notes For Question
-         * @description 单题视图 "下方公开笔记" top voted. 匿名访问允许 (liked_by_me/favorited_by_me
-         *     全 false). limit ≤50, 默认 3 (头屏精简).
-         */
-        get: operations["get_public_notes_for_question_api_v2_questions__question_id__public_notes_get"];
-        put?: never;
+        /** Get Profile Goals */
+        get: operations["get_profile_goals_api_v2_profile_goals_get"];
+        /** Put Profile Goals */
+        put: operations["put_profile_goals_api_v2_profile_goals_put"];
         post?: never;
         delete?: never;
         options?: never;
@@ -2286,292 +790,18 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/v2/notebook/notes/{note_id}/comments": {
+    "/api/v2/profile/info": {
         parameters: {
             query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
-        /**
-         * List Comments
-         * @description List comments on a public note. 不要求登录 (公开内容).
-         *
-         *     顶层 + child 一起返, ORDER BY created_at ASC. FE 按 parent_comment_id
-         *     grouping 渲染嵌套.
-         */
-        get: operations["list_comments_api_v2_notebook_notes__note_id__comments_get"];
-        put?: never;
-        /**
-         * Post Comment
-         * @description Create comment (一级嵌套). Rate-limit 10/min/user.
-         *
-         *     Note 必须 is_public=true (404 不公开). parent_comment_id 非空时校验 一级
-         *     嵌套, 否则 422.
-         */
-        post: operations["post_comment_api_v2_notebook_notes__note_id__comments_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/notebook/comments/{comment_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
+        /** Get Profile Info */
+        get: operations["get_profile_info_api_v2_profile_info_get"];
+        /** Put Profile Info */
+        put: operations["put_profile_info_api_v2_profile_info_put"];
         post?: never;
-        /**
-         * Delete Comment
-         * @description Owner-only delete. 跨用户 → 404.
-         */
-        delete: operations["delete_comment_api_v2_notebook_comments__comment_id__delete"];
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/notebook/notes/{note_id}/likes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Toggle Like
-         * @description Toggle like idempotent. Rate-limit 30/min/user. Note 不公开 → 404.
-         */
-        post: operations["toggle_like_api_v2_notebook_notes__note_id__likes_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/notebook/notes/{note_id}/favorites": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Toggle Favorite
-         * @description Toggle favorite idempotent. Rate-limit 30/min/user. Note 不公开 → 404.
-         */
-        post: operations["toggle_favorite_api_v2_notebook_notes__note_id__favorites_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/notebook/reports": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Create Report
-         * @description 举报 note / comment. Rate-limit 5/min/user. Target 不存在 → 404.
-         */
-        post: operations["create_report_api_v2_notebook_reports_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/note-reports": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List Admin Note Reports
-         * @description Admin queue: status='pending' FIFO. items 拼 target_preview + reporter
-         *     display_name. response 含 total (所有 status) + pending_count.
-         */
-        get: operations["list_admin_note_reports_api_v2_admin_note_reports_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/note-reports/{report_id}/dismiss": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Dismiss Report
-         * @description 改 status=dismissed, target 保留. 已 review 的 report 重复 → 422.
-         */
-        post: operations["dismiss_report_api_v2_admin_note_reports__report_id__dismiss_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/admin/note-reports/{report_id}/approve-delete": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Approve Delete Report
-         * @description Cascade 删 target (note / comment) + 改 status=reviewed. 已 review → 422.
-         *
-         *     note target → ORM cascade 带走 comments / likes / favorites / note_reviews.
-         *     comment target → ORM cascade 带走 children. 同 transaction 维护 notes.comments_count.
-         */
-        post: operations["approve_delete_report_api_v2_admin_note_reports__report_id__approve_delete_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/user-exams": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * List User Exams
-         * @description List current user's exams, sorted by exam_date asc.
-         */
-        get: operations["list_user_exams_api_v2_user_exams_get"];
-        put?: never;
-        /**
-         * Create User Exam
-         * @description Create a new user exam. user_id from auth, not payload.
-         */
-        post: operations["create_user_exam_api_v2_user_exams_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/user-exams/{exam_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get User Exam
-         * @description Get a single user exam by id (404 if not owned).
-         */
-        get: operations["get_user_exam_api_v2_user_exams__exam_id__get"];
-        put?: never;
-        post?: never;
-        /**
-         * Delete User Exam
-         * @description Delete user exam (404 if not owned).
-         */
-        delete: operations["delete_user_exam_api_v2_user_exams__exam_id__delete"];
-        options?: never;
-        head?: never;
-        /**
-         * Update User Exam
-         * @description Patch user exam fields (404 if not owned).
-         */
-        patch: operations["update_user_exam_api_v2_user_exams__exam_id__patch"];
-        trace?: never;
-    };
-    "/api/v2/progress/weekly": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Weekly Progress
-         * @description PR-6: Weekly progress summary for the progress dashboard.
-         */
-        get: operations["get_weekly_progress_api_v2_progress_weekly_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/progress/accuracy-trend": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Get Accuracy Trend
-         * @description PR-6: Per-day accuracy trend for the last N days.
-         *
-         *     days must be 7, 30, 90, or 180. 422 for other values.
-         */
-        get: operations["get_accuracy_trend_api_v2_progress_accuracy_trend_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
-    };
-    "/api/v2/analytics/event": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Ingest Analytics Event
-         * @description PR-8: Fire-and-forget client event ingest.
-         *
-         *     Accepts any valid event. Currently logs to the server logger for
-         *     processing by the analytics pipeline. Returns 202 always so that
-         *     FE can send events without blocking the UI.
-         */
-        post: operations["ingest_analytics_event_api_v2_analytics_event_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2582,245 +812,68 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
-        /**
-         * AccuracyTrendPointV2
-         * @description Single day accuracy data point for the trend chart.
-         */
-        AccuracyTrendPointV2: {
+        /** ActionLinkV2 */
+        ActionLinkV2: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Href */
+            href: string;
             /**
-             * Date
-             * Format: date
-             */
-            date: string;
-            /** Accuracy */
-            accuracy: number;
-            /** Answered */
-            answered: number;
-        };
-        /**
-         * AccuracyTrendResponseV2
-         * @description GET /api/v2/progress/accuracy-trend response.
-         */
-        AccuracyTrendResponseV2: {
-            /** Days */
-            days: number;
-            /** Points */
-            points: components["schemas"]["AccuracyTrendPointV2"][];
-        };
-        /** AdminPaperSummaryV2 */
-        AdminPaperSummaryV2: {
-            /** Id */
-            id: number;
-            /** Papercode */
-            paperCode: string;
-            /** Papername */
-            paperName: string;
-            /** Examyear */
-            examYear: number | null;
-            /** Sourceprovider */
-            sourceProvider: string | null;
-            /** Sourcekind */
-            sourceKind: string | null;
-            /** Revisioncount */
-            revisionCount: number;
-            currentRevision?: components["schemas"]["PaperRevisionSummary"] | null;
-            latestRevision?: components["schemas"]["PaperRevisionSummary"] | null;
-            /** Updatedat */
-            updatedAt: string;
-        };
-        /** AdminQuestionDetailV2 */
-        AdminQuestionDetailV2: {
-            /** Id */
-            id: number;
-            /** Position */
-            position: number;
-            /** Sourceuuid */
-            sourceUuid: string;
-            /** Questionkind */
-            questionKind: string;
-            /** Subtypename */
-            subtypeName: string;
-            /** Secondsubtypename */
-            secondSubtypeName: string | null;
-            /** Rawrendertype */
-            rawRenderType?: string | null;
-            /** Stemtext */
-            stemText: string;
-            /** Difficultycode */
-            difficultyCode: string;
-            /** Examyear */
-            examYear: number | null;
-            /** Sourceprovider */
-            sourceProvider: string | null;
-            /** Sourcekind */
-            sourceKind: string | null;
-            /** Isgradable */
-            isGradable: boolean;
-            /** Rendererkey */
-            rendererKey: string;
-            /** Enabled */
-            enabled: boolean;
-            /** Tags */
-            tags: components["schemas"]["TagSummaryV2"][];
-            /** Materialgroupid */
-            materialGroupId: number | null;
-            /** Papercode */
-            paperCode: string;
-            /** Papername */
-            paperName: string;
-            /** Revisionnumber */
-            revisionNumber: number;
-            /** Explanationtext */
-            explanationText: string;
-            /** Options */
-            options: components["schemas"]["OptionOutV2"][];
-            /** Assets */
-            assets: components["schemas"]["QuestionAssetOutV2"][];
-            /** Specialpayload */
-            specialPayload: {
-                [key: string]: unknown;
-            };
-            /** Typepayload */
-            typePayload: {
-                [key: string]: unknown;
-            };
-            /** Selectionmode */
-            selectionMode: string;
-            /** Canonicaltoptype */
-            canonicalTopType: string | null;
-            /** Canonicalsubtype */
-            canonicalSubtype: string | null;
-            /** Canonicalsecondsubtype */
-            canonicalSecondSubtype: string | null;
-            /** Questionid */
-            questionId?: number | null;
-            /** Paperrevisionid */
-            paperRevisionId?: number | null;
-            /** Sectionid */
-            sectionId?: string | null;
-            /** Blockid */
-            blockId?: number | null;
-            /** Questionno */
-            questionNo?: number | null;
-            /** Content */
-            content?: {
-                [key: string]: unknown;
-            } | null;
-            /** Answertext */
-            answerText: string;
-            /** Answerkeys */
-            answerKeys: string[];
-            /** Sourcepayload */
-            sourcePayload: {
-                [key: string]: unknown;
-            };
-            /** Canonicalmappingsource */
-            canonicalMappingSource?: string | null;
-        };
-        /**
-         * AiptaTextImportRequest
-         * @description Slice 2b: admin POST body — paste 申论 plain text + 显式 metadata.
-         *
-         *     parser 不猜年份 / 卷类型 / 标题, admin 直接给; rawText 走 parse_aipta_text 拆
-         *     材料 + 5 道 essay. paperCode 自动 upper-case.
-         */
-        AiptaTextImportRequest: {
-            /** Papercode */
-            paperCode: string;
-            /** Papername */
-            paperName: string;
-            /** Examyear */
-            examYear: number;
-            /** Sourcekind */
-            sourceKind: string;
-            /** Rawtext */
-            rawText: string;
-        };
-        /**
-         * AnalyticsEventAckV2
-         * @description POST /api/v2/analytics/event response.
-         */
-        AnalyticsEventAckV2: {
-            /**
-             * Received
+             * Enabled
              * @default true
              */
-            received: boolean;
+            enabled: boolean;
         };
-        /**
-         * AnalyticsEventPayloadV2
-         * @description POST /api/v2/analytics/event body.
-         *
-         *     event_name: snake_case event identifier (max 64 chars).
-         *     properties: arbitrary key-value pairs (max 20 keys, values max 256 chars).
-         *     session_id: optional FE session/correlation id for grouping.
-         */
-        AnalyticsEventPayloadV2: {
-            /** Eventname */
-            eventName: string;
-            /**
-             * Properties
-             * @default {}
-             */
-            properties: {
-                [key: string]: string;
-            };
-            /** Sessionid */
-            sessionId?: string | null;
+        /** AuthAckV2 */
+        AuthAckV2: {
+            /** Ok */
+            ok: boolean;
+            /** Message */
+            message: string;
         };
-        /**
-         * BindEmailConfirmRequest
-         * @description Token + password 验通过 → 写 user.email + email_verified=True.
-         *
-         *     D18 同 BindPhoneConfirm: confirm 入口先查 newEmail 是否被占.
-         *     Token 跟 reset_password 同模式 (sha256 hash 存 DB, single-use).
-         */
-        BindEmailConfirmRequest: {
+        /** AuthSessionResponseV2 */
+        AuthSessionResponseV2: {
+            user: components["schemas"]["AuthUserV2"];
+            session: components["schemas"]["AuthSessionV2"];
+            /** Csrftoken */
+            csrfToken: string;
+        };
+        /** AuthSessionStateResponseV2 */
+        AuthSessionStateResponseV2: {
+            /** Authenticated */
+            authenticated: boolean;
+            user: components["schemas"]["AuthUserV2"];
+            session: components["schemas"]["AuthSessionV2"];
+        };
+        /** AuthSessionV2 */
+        AuthSessionV2: {
+            /** Id */
+            id: number;
             /** Token */
             token: string;
-            /** Password */
-            password: string;
+            /** Issuedat */
+            issuedAt: string;
+            /** Expiresat */
+            expiresAt: string;
         };
-        /**
-         * BindEmailSendLinkRequest
-         * @description Logged-in user 给 newEmail 发 verify link. D10 先验后写.
-         *
-         *     D16: 跟 register 流的 `KIND_EMAIL_VERIFY` 隔离, 走 pre_register_codes
-         *     purpose='bind_email' + 链接 token (而非 6-digit code).
-         */
-        BindEmailSendLinkRequest: {
+        /** AuthUserV2 */
+        AuthUserV2: {
+            /** Id */
+            id: number;
+            /** Publicid */
+            publicId: string;
+            /** Displayname */
+            displayName: string;
             /** Email */
-            email: string;
-        };
-        /**
-         * BindPhoneConfirmRequest
-         * @description Code + password 验通过 → 写 user.phone + phone_verified=True.
-         *
-         *     D18: confirm 入口先查 newPhone 是否被占 (即使别 user 未 verified), 撞 unique
-         *     直接拒带 code=`identifier_taken`, 不让到 DB IntegrityError 500.
-         */
-        BindPhoneConfirmRequest: {
+            email?: string | null;
             /** Phone */
-            phone: string;
-            /** Smscode */
-            smsCode: string;
-            /** Password */
-            password: string;
-        };
-        /**
-         * BindPhoneSendCodeRequest
-         * @description Logged-in user 给 newPhone 发 SMS code. D10: 不写 user.phone, 验通过后才写.
-         */
-        BindPhoneSendCodeRequest: {
-            /** Phone */
-            phone: string;
-        };
-        /** Body_import_standard_json_api_v2_admin_import_jobs_standard_json_post */
-        Body_import_standard_json_api_v2_admin_import_jobs_standard_json_post: {
-            /** Uploads */
-            uploads: string[];
-            /** Base Dir */
-            base_dir?: string | null;
+            phone?: string | null;
+            /** Isactive */
+            isActive: boolean;
+            /** Createdat */
+            createdAt: string;
         };
         /** BootstrapResponseV2 */
         BootstrapResponseV2: {
@@ -2835,588 +888,72 @@ export interface components {
             /** Defaultpapercode */
             defaultPaperCode?: string | null;
         };
-        /** CategoriesResponseV2 */
-        CategoriesResponseV2: {
-            /** Categories */
-            categories: components["schemas"]["CategorySummaryV2"][];
-        };
-        /** CategorySummaryV2 */
-        CategorySummaryV2: {
-            /** Toptype */
-            topType: string;
-            /** Name */
-            name: string;
-            /** Total */
-            total: number;
-            /** Donebyuser */
-            doneByUser: number;
-        };
-        /** CompleteSessionPayloadV2 */
-        CompleteSessionPayloadV2: {
-            /** Answers */
-            answers?: {
-                [key: string]: string[];
-            };
-        };
-        /** CustomPracticeFacetsResponseV2 */
-        CustomPracticeFacetsResponseV2: {
-            /** Totalquestions */
-            totalQuestions: number;
-            /** Years */
-            years: number[];
-            /** Toptypes */
-            topTypes: components["schemas"]["CustomPracticeTopTypeFacetV2"][];
-        };
-        /** CustomPracticeSecondSubtypeFacetV2 */
-        CustomPracticeSecondSubtypeFacetV2: {
-            /** Name */
-            name: string;
-            /** Questioncount */
-            questionCount: number;
-            /** Years */
-            years: number[];
-        };
-        /** CustomPracticeStartPayload */
-        CustomPracticeStartPayload: {
-            /** Toptype */
-            topType: string;
-            /** Subtype */
-            subtype?: string | null;
-            /** Secondsubtype */
-            secondSubtype?: string | null;
-            /** Years */
-            years?: number[] | null;
-            /** Questioncount */
-            questionCount: number;
-        };
-        /** CustomPracticeSubtypeFacetV2 */
-        CustomPracticeSubtypeFacetV2: {
-            /** Name */
-            name: string;
-            /** Questioncount */
-            questionCount: number;
-            /** Years */
-            years: number[];
-            /** Secondsubtypes */
-            secondSubtypes: components["schemas"]["CustomPracticeSecondSubtypeFacetV2"][];
-        };
-        /** CustomPracticeTopTypeFacetV2 */
-        CustomPracticeTopTypeFacetV2: {
-            /** Name */
-            name: string;
-            /** Questioncount */
-            questionCount: number;
-            /** Years */
-            years: number[];
-            /** Subtypes */
-            subtypes: components["schemas"]["CustomPracticeSubtypeFacetV2"][];
-        };
-        /** DashboardStatsV2 */
-        DashboardStatsV2: {
-            /** Totalanswered */
-            totalAnswered: number;
-            /** Overallaccuracy */
-            overallAccuracy: number;
-            /** Currentstreakdays */
-            currentStreakDays: number;
-            /** Masteredpointscount */
-            masteredPointsCount: number;
-            /** Totalwrongquestions */
-            totalWrongQuestions: number;
-            /**
-             * Studyplananswered
-             * @default 0
-             */
-            studyPlanAnswered: number;
-            /**
-             * Retrywronganswered
-             * @default 0
-             */
-            retryWrongAnswered: number;
-            /**
-             * Paperboundanswered
-             * @default 0
-             */
-            paperBoundAnswered: number;
-        };
-        /**
-         * EssayDimensionV2
-         * @description 5 维度评分单项 — plan §3.4.
-         *
-         *     name: 论点准确 / 材料运用 / 语言 / 结构 / 字数符合度 (业务层 enum).
-         *     weight: 0.30 / 0.25 / 0.20 / 0.15 / 0.10 (5 项加和 1.0).
-         *     score: LLM 给 0-10, sanity check 业务层 clamp.
-         */
-        EssayDimensionV2: {
-            /** Name */
-            name: string;
-            /** Weight */
-            weight: number;
-            /** Score */
-            score: number;
-            /** Comment */
-            comment: string;
-        };
-        /**
-         * EssayDraftSubmissionV2
-         * @description PR13 P5: POST /api/v2/essay/drafts body — 草稿 in-place upsert.
-         *
-         *     跟 EssayGradingSubmissionV2 区分:
-         *       - drafts: in-progress, autosave 写入, 同 (user, question) upsert
-         *       - grade: terminal submit, insert-only, BackgroundTask 触发 LLM
-         *
-         *     typed_draft 上限 5000 (跟 EssayGradingSubmissionV2.answer_text 同).
-         *     handwritten_draft_metadata 是任意 dict (app-level shape, schema 不约束):
-         *       {path?: str, mime_type?: str, asset_id?: int, uploaded_at?: str,
-         *        stroke_count?: int}
-         */
-        EssayDraftSubmissionV2: {
-            /** Questionid */
-            questionId: number;
-            /**
-             * Typeddraft
-             * @default
-             */
-            typedDraft: string;
-            /** Handwrittendraftmetadata */
-            handwrittenDraftMetadata?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /**
-         * EssayDraftV2
-         * @description 单条 essay draft record 序列化形.
-         *
-         *     saved_at = 首次创建时间; updated_at = 最近一次 upsert 时间. FE autosave
-         *     显示 "已保存 X 秒前" 用 updated_at, 不用 saved_at.
-         */
-        EssayDraftV2: {
+        /** CatalogItemV2 */
+        CatalogItemV2: {
             /** Id */
-            id: number;
-            /** Questionid */
-            questionId: number;
-            /** Typeddraft */
-            typedDraft: string;
-            /** Handwrittendraftmetadata */
-            handwrittenDraftMetadata: {
-                [key: string]: unknown;
-            } | null;
-            /** Savedat */
-            savedAt: string;
-            /** Updatedat */
-            updatedAt: string;
-        };
-        /**
-         * EssayFeedbackV2
-         * @description plan §4.2 EssayFeedbackV2 — feedback_json 序列化形.
-         *
-         *     sample_answer 由 LLM 单 call 双输出 (跟 evaluation 一起返). suspicious 是
-         *     业务层 sanity check 兜底标记 (5 维度全相等差 ≤0.5 / sampleAnswer 字数偏离
-         *     ±20%, R10).
-         */
-        EssayFeedbackV2: {
-            /** Overallscore */
-            overallScore: number;
-            /** Dimensions */
-            dimensions: components["schemas"]["EssayDimensionV2"][];
-            /** Strengths */
-            strengths: string[];
-            /** Weaknesses */
-            weaknesses: string[];
-            /** Suggestions */
-            suggestions: string[];
-            /** Sampleanswer */
-            sampleAnswer?: string | null;
-            /**
-             * Suspicious
-             * @default false
-             */
-            suspicious: boolean;
-        };
-        /**
-         * EssayGradingSubmissionV2
-         * @description Slice 2c: POST /api/v2/essay/grade body — 提交一次申论作答给 LLM 评分.
-         *
-         *     answer_text 上限 5000 字 (申论小作文 1000-1200 字 + buffer); 超大答案直接拒,
-         *     防 LLM token 爆 (R7 cost 控制).
-         */
-        EssayGradingSubmissionV2: {
-            /** Questionid */
-            questionId: number;
-            /** Answertext */
-            answerText: string;
-        };
-        /**
-         * EssayGradingV2
-         * @description 单条 essay grading record 序列化形.
-         *
-         *     pending / failed 时 score / feedback 为 None; failure_reason 仅 failed 时填.
-         */
-        EssayGradingV2: {
-            /** Id */
-            id: number;
-            /** Questionid */
-            questionId: number;
-            /** Answertext */
-            answerText: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "completed" | "failed";
-            /** Score */
-            score?: number | null;
-            feedback?: components["schemas"]["EssayFeedbackV2"] | null;
-            /** Failurereason */
-            failureReason?: string | null;
-            /** Createdat */
-            createdAt: string;
-            /** Gradedat */
-            gradedAt?: string | null;
-        };
-        /**
-         * EssayLastAttemptV2
-         * @description PaperRow lastAttempt: 该用户在此 paper 上最近一次 completed batch.
-         */
-        EssayLastAttemptV2: {
-            /** Score */
-            score: number;
-            /** Submittedat */
-            submittedAt: string;
-        };
-        /**
-         * EssayPaperListItemV2Extended
-         * @description GET /api/v2/papers/essay/list (扩展) 单行.
-         *
-         *     扩自 PaperSummaryV2: 加 region / track / difficulty / status / progress /
-         *     last_attempt / pinned. region / track 从 source_provider + paper_code 派生
-         *     (国考 / 省考 / sk=申论 vs gk=综合). difficulty 1-3 由 question_count 启发式
-         *     (≤3=1 易 / 4=2 中 / ≥5=3 难). pinned MVP 全 False (pin endpoint 推后).
-         */
-        EssayPaperListItemV2Extended: {
-            /** Id */
-            id: number;
-            /** Papercode */
-            paperCode: string;
-            /** Papername */
-            paperName: string;
-            /** Examyear */
-            examYear?: number | null;
-            /** Sourceprovider */
-            sourceProvider?: string | null;
-            /** Sourcekind */
-            sourceKind?: string | null;
-            /** Questioncount */
-            questionCount: number;
-            /** Currentrevisionid */
-            currentRevisionId?: number | null;
-            /** Region */
-            region: string;
-            /**
-             * Track
-             * @default sk
-             * @enum {string}
-             */
-            track: "gk" | "sk";
-            /** Difficulty */
-            difficulty?: (1 | 2 | 3) | null;
-            /**
-             * Status
-             * @default todo
-             * @enum {string}
-             */
-            status: "todo" | "doing" | "done";
-            /**
-             * Progress
-             * @default 0/0
-             */
-            progress: string;
-            lastAttempt?: components["schemas"]["EssayLastAttemptV2"] | null;
-            /**
-             * Pinned
-             * @default false
-             */
-            pinned: boolean;
-        };
-        /**
-         * EssayPaperListResponseV2
-         * @description GET /api/v2/papers/essay/list 响应.
-         *
-         *     EssayPapers 专用分页 endpoint, 拆自 GET /papers 防 745 套申论卷全量铺
-         *     DOM 把 LCP 拉爆 (CLAUDE.md §4 列表收口). Home 首屏 EssayPreviewCard
-         *     继续走 GET /papers?kind=essay slice 前 2, 不动.
-         *
-         *     page 1-based; total = 命中 essay 卷总数 (paginate ceil(total/pageSize)).
-         */
-        EssayPaperListResponseV2: {
-            /** Items */
-            items: components["schemas"]["PaperSummaryV2"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Pagesize */
-            pageSize: number;
-        };
-        /**
-         * EssayPapersFiltersResponseV2
-         * @description GET /api/v2/papers/essay/filters response.
-         *
-         *     返候选 chip 集合, 让前端不靠硬编码 region/year list:
-         *       - regions: distinct source_provider (+ 国考 / 省考 派生 bucket)
-         *       - years: distinct exam_year DESC
-         *       - paper_types: distinct source_kind (按 import 来源, 现实多数 "真题")
-         */
-        EssayPapersFiltersResponseV2: {
-            /** Regions */
-            regions: string[];
-            /** Years */
-            years: number[];
-            /** Papertypes */
-            paperTypes: string[];
-        };
-        /**
-         * EssayPapersListExtendedResponseV2
-         * @description GET /api/v2/papers/essay/list (扩字段版) 响应.
-         *
-         *     跟原 EssayPaperListResponseV2 走的是同 endpoint 但 schema 完全不同 — 通过
-         *     `extended=True` query param 切换. MVP 直接走新 schema (Y2-FE wire 完后,
-         *     Home preview slice 走老 endpoint kind=essay, EssayPapers view 走 extended).
-         */
-        EssayPapersListExtendedResponseV2: {
-            /** Items */
-            items: components["schemas"]["EssayPaperListItemV2Extended"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Pagesize */
-            pageSize: number;
-        };
-        /**
-         * EssaySpecialtyCategoriesResponseV2
-         * @description GET /api/v2/papers/essay/specialty/categories response.
-         *
-         *     返 5 大类 (公文 / 应用文 已合并为单 "公文 · 应用文" 视觉类, 后端拆开 2 类
-         *     各自返). 5 = 归纳概括 / 综合分析 / 提出对策 / 公文 / 应用文 / 大作文 (6 raw,
-         *     前端合并显 5 卡).
-         */
-        EssaySpecialtyCategoriesResponseV2: {
-            /** Cats */
-            cats: components["schemas"]["SpecialtyCategoryV2"][];
-        };
-        /**
-         * EssaySpecialtyListResponseV2
-         * @description GET /api/v2/essay/specialty/questions 响应.
-         *
-         *     page 1-based; total = 当前 subtype 命中题总数 (paginate ceil(total/pageSize)).
-         */
-        EssaySpecialtyListResponseV2: {
-            /** Items */
-            items: components["schemas"]["EssaySpecialtyQuestionItemV2"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Pagesize */
-            pageSize: number;
-        };
-        /**
-         * EssaySpecialtyQuestionItemV2
-         * @description 专项列表单行: 题号 / 卷源 / stem 截断 / 字数限制 / 用户已练标记.
-         *
-         *     stem 走前 200 char 截断 (HTML strip 业务层做); word_requirement 是
-         *     "≤ 300 字" 这类显示串 (从 type_payload_json.wordLimitMax 派生).
-         *     last_answered_at 为 None 表示当前 user 未答过该题 (LEFT JOIN miss).
-         */
-        EssaySpecialtyQuestionItemV2: {
-            /** Questionid */
-            questionId: number;
-            /** Papercode */
-            paperCode: string;
-            /** Papername */
-            paperName: string;
-            /** Position */
-            position: number;
-            /** Stem */
-            stem: string;
-            /** Wordrequirement */
-            wordRequirement: string | null;
-            /** Fullscore */
-            fullScore: number | null;
-            /** Lastansweredat */
-            lastAnsweredAt: string | null;
-        };
-        /**
-         * EssaySpecialtySummaryV2
-         * @description GET /api/v2/papers/essay/specialty/summary response.
-         *
-         *     totals 永远填 (空 user 返 0); resume 可空 (无 grading record → None).
-         */
-        EssaySpecialtySummaryV2: {
-            totals: components["schemas"]["SpecialtyTotalsV2"];
-            resume?: components["schemas"]["SpecialtyResumeV2"] | null;
-        };
-        /**
-         * EssayWritingTaskPayload
-         * @description task_kind='essay_writing' payload — 跳 /essay/practice/{questionId}.
-         *
-         *     Stage 2 校验 questionId.renderer_key='essay'.
-         */
-        EssayWritingTaskPayload: {
+            id: string;
             /** Title */
             title: string;
             /** Subtitle */
             subtitle?: string | null;
-            /** Papercode */
-            paperCode: string;
-            /** Questionid */
-            questionId: number;
+            /** Status */
+            status: string;
+            /** Href */
+            href: string;
         };
-        /** EssayWritingTaskResponse */
-        EssayWritingTaskResponse: {
-            /** Id */
-            id: number;
-            /** Displayorder */
-            displayOrder: number;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "completed" | "skipped";
-            /** Completedat */
-            completedAt: string | null;
-            /** Createdat */
-            createdAt: string;
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            taskKind: "essay_writing";
-            payload: components["schemas"]["EssayWritingTaskPayload"];
-        };
-        /** ExamEventCreateRequest */
-        ExamEventCreateRequest: {
-            /** Slug */
-            slug: string;
-            /** Name */
-            name: string;
-            /**
-             * Category
-             * @enum {string}
-             */
-            category: "national" | "provincial" | "institution" | "other";
-            /** Examdate */
-            examDate: string;
-            /** Registrationstart */
-            registrationStart?: string | null;
-            /** Registrationend */
-            registrationEnd?: string | null;
-            /**
-             * Precision
-             * @default estimate
-             * @enum {string}
-             */
-            precision: "confirmed" | "estimate";
-            /** Notes */
-            notes?: string | null;
-            /**
-             * Visible
-             * @default true
-             */
-            visible: boolean;
-        };
-        /** ExamEventListResponse */
-        ExamEventListResponse: {
+        /** CatalogListResponseV2 */
+        CatalogListResponseV2: {
             /** Items */
-            items: components["schemas"]["ExamEventOutV2"][];
+            items: components["schemas"]["CatalogItemV2"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
         };
-        /**
-         * ExamEventOutV2
-         * @description Public exam event row. Frontend ExamCalendar view consumes via
-         *     GET /api/v2/exam-events. visible=False rows excluded from public list.
-         */
-        ExamEventOutV2: {
-            /** Id */
-            id: number;
-            /** Slug */
-            slug: string;
-            /** Name */
-            name: string;
-            /**
-             * Category
-             * @enum {string}
-             */
-            category: "national" | "provincial" | "institution" | "other";
-            /** Examdate */
-            examDate: string;
-            /** Registrationstart */
-            registrationStart?: string | null;
-            /** Registrationend */
-            registrationEnd?: string | null;
-            /**
-             * Precision
-             * @enum {string}
-             */
-            precision: "confirmed" | "estimate";
-            /** Notes */
-            notes?: string | null;
+        /** DashboardProgressResponseV2 */
+        DashboardProgressResponseV2: {
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Actions */
+            actions: components["schemas"]["ActionLinkV2"][];
         };
-        /**
-         * ExamEventUpdateRequest
-         * @description Partial update — 任意字段 None 跳, 已 set 的覆盖.
-         */
-        ExamEventUpdateRequest: {
-            /** Name */
-            name?: string | null;
-            /** Category */
-            category?: ("national" | "provincial" | "institution" | "other") | null;
-            /** Examdate */
-            examDate?: string | null;
-            /** Registrationstart */
-            registrationStart?: string | null;
-            /** Registrationend */
-            registrationEnd?: string | null;
-            /** Precision */
-            precision?: ("confirmed" | "estimate") | null;
-            /** Notes */
-            notes?: string | null;
-            /** Visible */
-            visible?: boolean | null;
+        /** DashboardRecordsResponseV2 */
+        DashboardRecordsResponseV2: {
+            summary: components["schemas"]["LearningRecordSummaryV2"];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Actions */
+            actions: components["schemas"]["ActionLinkV2"][];
+            /** Items */
+            items: components["schemas"]["LearningRecordItemV2"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
         };
-        /** ForgotPasswordRequest */
-        ForgotPasswordRequest: {
-            /** Email */
-            email: string;
+        /** DashboardTodayResponseV2 */
+        DashboardTodayResponseV2: {
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Actions */
+            actions: components["schemas"]["ActionLinkV2"][];
         };
-        /**
-         * ForgotPasswordResponse
-         * @description D5 silent-200 + P0-3 byte-identical (route 用 exclude_none=True 让
-         *     `_devMagicLink` 在 None 时不进 body).
-         */
-        ForgotPasswordResponse: {
-            /**
-             * Ok
-             * @default true
-             * @constant
-             */
-            ok: true;
-            /** Devmagiclink */
-            _devMagicLink?: string | null;
-        };
-        /**
-         * GraduationCandidate
-         * @description 毕业候选 (consecutive_correct_count == 2).
-         */
-        GraduationCandidate: {
-            /** Questionid */
-            questionId: number;
-            /** Stem */
-            stem: string;
-            /** Knowledgepoint */
-            knowledgePoint?: string | null;
-            /** Consecutivecorrect */
-            consecutiveCorrect: number;
+        /** DashboardWeeklyPlanResponseV2 */
+        DashboardWeeklyPlanResponseV2: {
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Actions */
+            actions: components["schemas"]["ActionLinkV2"][];
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -3431,1718 +968,275 @@ export interface components {
              */
             status: "ok";
         };
-        /** HeatmapEntryV2 */
-        HeatmapEntryV2: {
-            /** Date */
-            date: string;
-            /** Count */
-            count: number;
-            /** Rate */
-            rate: number;
-        };
-        /**
-         * IdentifierActionResponse
-         * @description Bind / Unbind / Confirm 通用 response — 返刷新后的 user state
-         *     (含 phone / phone_verified / email / email_verified / needs_identifier_setup).
-         */
-        IdentifierActionResponse: {
-            /**
-             * Ok
-             * @default true
-             * @constant
-             */
-            ok: true;
-            user: components["schemas"]["UserSummaryV2"];
-        };
-        /** ImportJobItemSummary */
-        ImportJobItemSummary: {
+        /** LearningRecordItemV2 */
+        LearningRecordItemV2: {
             /** Id */
-            id: number;
-            /** Filename */
-            filename: string;
-            /** Papercode */
-            paperCode: string | null;
-            /** Papername */
-            paperName: string | null;
-            /** Revisionid */
-            revisionId: number | null;
-            /** Revisionnumber */
-            revisionNumber: number | null;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "completed" | "failed";
-            /** Importedquestioncount */
-            importedQuestionCount: number;
-            /** Sourcehash */
-            sourceHash: string | null;
-            /** Errormessage */
-            errorMessage: string;
-            /** Createdat */
-            createdAt: string;
-        };
-        /** ImportJobSummary */
-        ImportJobSummary: {
-            /** Id */
-            id: number;
-            /** Sourcename */
-            sourceName: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "completed" | "partial" | "failed";
-            /** Totalfiles */
-            totalFiles: number;
-            /** Importedfiles */
-            importedFiles: number;
-            /** Failedfiles */
-            failedFiles: number;
-            /** Importedpapers */
-            importedPapers: number;
-            /** Importedquestions */
-            importedQuestions: number;
-            /** Createdat */
-            createdAt: string;
-            /** Completedat */
-            completedAt?: string | null;
-            /** Items */
-            items: components["schemas"]["ImportJobItemSummary"][];
-        };
-        /** KnowledgePointEntryV2 */
-        KnowledgePointEntryV2: {
-            /** Name */
-            name: string;
-            /** Total */
-            total: number;
-            /** Correct */
-            correct: number;
-            /** Rate */
-            rate: number;
-            /** Category */
-            category: string;
-        };
-        /**
-         * LlmConfigCreateRequest
-         * @description 新建 BYOM config. baseUrl 必须 https:// 或 http://localhost (dev).
-         */
-        LlmConfigCreateRequest: {
-            /** Label */
-            label: string;
-            /** Baseurl */
-            baseUrl: string;
-            /** Apikey */
-            apiKey: string;
-            /** Model */
-            model: string;
-        };
-        /** LlmConfigListResponse */
-        LlmConfigListResponse: {
-            /** Items */
-            items: components["schemas"]["LlmConfigV2"][];
-        };
-        /** LlmConfigTestResponse */
-        LlmConfigTestResponse: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "ok" | "unreachable" | "auth_failed" | "timeout";
-        };
-        /**
-         * LlmConfigUpdateRequest
-         * @description Partial update — None 字段跳过. api_key 改时触发 re-encrypt; base_url
-         *     改时触发 SSRF re-check.
-         */
-        LlmConfigUpdateRequest: {
-            /** Label */
-            label?: string | null;
-            /** Baseurl */
-            baseUrl?: string | null;
-            /** Apikey */
-            apiKey?: string | null;
-            /** Model */
-            model?: string | null;
-        };
-        /**
-         * LlmConfigV2
-         * @description User BYOM config (用户自己看). api_key 始终 mask, 永不返 raw.
-         */
-        LlmConfigV2: {
-            /** Id */
-            id: number;
-            /** Label */
-            label: string;
-            /** Baseurl */
-            baseUrl: string;
-            /** Model */
-            model: string;
-            /** Isdefault */
-            isDefault: boolean;
-            /** Apikeymasked */
-            apiKeyMasked: string;
-            /** Lasttestedat */
-            lastTestedAt?: string | null;
-            /** Lasttestedstatus */
-            lastTestedStatus?: ("ok" | "unreachable" | "auth_failed" | "timeout") | null;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-        };
-        /**
-         * LlmConversationContinueRequest
-         * @description POST /llm/conversations/{id}/messages — 续 user message + SSE stream
-         *     assistant 回复. intent_hint 可在续话时切意图 (e.g. 第一轮 why_wrong, 第二轮
-         *     common_traps).
-         */
-        LlmConversationContinueRequest: {
-            /** Usermessage */
-            userMessage: string;
-            /**
-             * Intenthint
-             * @default freeform
-             * @enum {string}
-             */
-            intentHint: "why_wrong" | "common_traps" | "solving_path" | "category_summary" | "freeform";
-        };
-        /**
-         * LlmConversationCreateRequest
-         * @description POST /llm/conversations — 创建会话 + 首条 user message + SSE stream
-         *     第一条 assistant 回复.
-         *
-         *     title 可选: None → service 用 user_message 前 32 字截断兜底.
-         *     intent_hint 默认 freeform (用户没选意图时).
-         */
-        LlmConversationCreateRequest: {
-            /** Title */
-            title?: string | null;
-            /**
-             * Contextkind
-             * @enum {string}
-             */
-            contextKind: "question" | "wrong_question" | "session_result" | "general";
-            /** Contextid */
-            contextId?: number | null;
-            /** Usermessage */
-            userMessage: string;
-            /**
-             * Intenthint
-             * @default freeform
-             * @enum {string}
-             */
-            intentHint: "why_wrong" | "common_traps" | "solving_path" | "category_summary" | "freeform";
-        };
-        /**
-         * LlmConversationDetailV2
-         * @description 单会话明细 (GET /llm/conversations/{id}) — summary + messages 全文.
-         */
-        LlmConversationDetailV2: {
-            /** Id */
-            id: number;
+            id: string;
+            /** Kind */
+            kind: string;
             /** Title */
             title: string;
-            /**
-             * Contextkind
-             * @enum {string}
-             */
-            contextKind: "question" | "wrong_question" | "session_result" | "general";
-            /** Contextid */
-            contextId?: number | null;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-            /** Messages */
-            messages: components["schemas"]["LlmMessageV2"][];
+            /** Status */
+            status: string;
+            /** Score */
+            score?: string | null;
+            /** Occurredat */
+            occurredAt: string;
         };
-        /** LlmConversationListResponse */
-        LlmConversationListResponse: {
-            /** Items */
-            items: components["schemas"]["LlmConversationSummaryV2"][];
+        /** LearningRecordSummaryV2 */
+        LearningRecordSummaryV2: {
+            /** Totalattempts */
+            totalAttempts: number;
+            /** Xingceattempts */
+            xingceAttempts: number;
+            /** Essayattempts */
+            essayAttempts: number;
+            /** Completedattempts */
+            completedAttempts: number;
+            /** Avgxingceaccuracy */
+            avgXingceAccuracy?: string | null;
+            /** Avgessayscore */
+            avgEssayScore?: string | null;
         };
-        /**
-         * LlmConversationSummaryV2
-         * @description 会话列表项 (GET /llm/conversations). last_preview = 末条 assistant
-         *     消息前 80 字 (前端列表预览, 无 assistant 时 None).
-         */
-        LlmConversationSummaryV2: {
-            /** Id */
-            id: number;
-            /** Title */
-            title: string;
-            /**
-             * Contextkind
-             * @enum {string}
-             */
-            contextKind: "question" | "wrong_question" | "session_result" | "general";
-            /** Contextid */
-            contextId?: number | null;
-            /** Messagecount */
-            messageCount: number;
-            /** Lastpreview */
-            lastPreview?: string | null;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-        };
-        /**
-         * LlmMessageTokenUsageV2
-         * @description Per-message token 数 (assistant 消息有, user/system 无).
-         */
-        LlmMessageTokenUsageV2: {
-            /** Prompttokens */
-            promptTokens: number;
-            /** Completiontokens */
-            completionTokens: number;
-            /** Model */
-            model: string;
-        };
-        /**
-         * LlmMessageV2
-         * @description 单条会话消息. role 字面量 'system'|'user'|'assistant'.
-         */
-        LlmMessageV2: {
-            /** Id */
-            id: number;
-            /**
-             * Role
-             * @enum {string}
-             */
-            role: "system" | "user" | "assistant";
-            /** Content */
-            content: string;
-            /** Createdat */
-            createdAt: string;
-            tokenUsage?: components["schemas"]["LlmMessageTokenUsageV2"] | null;
-        };
-        /**
-         * LlmUsageByFeatureV2
-         * @description Per-feature breakdown row. Slice 1a/2c/3a 各 feature 一行.
-         */
-        LlmUsageByFeatureV2: {
-            /** Prompttokens */
-            promptTokens: number;
-            /** Completiontokens */
-            completionTokens: number;
-            /** Costcents */
-            costCents: number | null;
-        };
-        /**
-         * LlmUsageByUserV2
-         * @description Admin-only: 全用户烧 token 排行 (sorted desc).
-         *
-         *     user_id=None 用于匿名 / 已删除用户 (ON DELETE SET NULL dangling row).
-         *     username=None when user_id is None or lookup miss.
-         */
-        LlmUsageByUserV2: {
-            /** Userid */
-            userId: number | null;
-            /** Username */
-            username: string | null;
-            /** Totaltokens */
-            totalTokens: number;
-            /** Totalcostcents */
-            totalCostCents: number | null;
-        };
-        /**
-         * LlmUsageDayV2
-         * @description Per-day bucket. zero-padded N 天 (今天往前数 days), 升序排.
-         */
-        LlmUsageDayV2: {
-            /** Date */
-            date: string;
-            /** Tokens */
-            tokens: number;
-            /** Costcents */
-            costCents: number | null;
-        };
-        /**
-         * LlmUsageSummaryV2
-         * @description User Profile + admin 共享 schema. by_user 是 admin-only 字段
-         *     (user view 永远 None) — admin dashboard 看 '哪个用户烧最多 token'.
-         */
-        LlmUsageSummaryV2: {
-            /** Totaltokens */
-            totalTokens: number;
-            /** Totalcostcents */
-            totalCostCents: number | null;
-            /** Byfeature */
-            byFeature: {
-                [key: string]: components["schemas"]["LlmUsageByFeatureV2"];
-            };
-            /** Recentdays */
-            recentDays: components["schemas"]["LlmUsageDayV2"][];
-            /** Byuser */
-            byUser?: components["schemas"]["LlmUsageByUserV2"][] | null;
-        };
-        /**
-         * LoginIdentifierRequest
-         * @description Identity v2 login: identifier + password.
-         *
-         *     Identifier 后端 detect_identifier_kind 探测:
-         *       - 含 `@` → email
-         *       - normalize_phone 命中 → phone
-         *       - 其他 + email/phone 都 NULL 的老 user → username legacy fallback (D15)
-         *       - 不命中 → 401 invalid_credentials (不区分 "格式错" vs "用户不存在")
-         *
-         *     legacy username 路径有 90 天 deprecation 期, 老用户登录后强制 /complete-profile.
-         */
-        LoginIdentifierRequest: {
+        /** LoginRequestV2 */
+        LoginRequestV2: {
             /** Identifier */
             identifier: string;
             /** Password */
             password: string;
         };
-        /**
-         * LoginResponseV2
-         * @description Login / register response.
-         *
-         *     Post-Phase D P1-1 + N3: csrf_token + access_token 都从 body 删掉.
-         *     cookie 是 single source of truth:
-         *       - auth_token: httpOnly + samesite=strict, JS 不可读, 浏览器自动跟 (Phase B.2)
-         *       - csrf_token: NOT httpOnly, JS 读 + axios 注 X-CSRF-Token (Phase B.3)
-         *     body 只 echo 期望客户端用得上的非敏感信息: token_type / expires_in / user.
-         *     expires_in 让前端能预判 cookie 过期时间, 提前调 /auth/refresh (N1).
-         */
-        LoginResponseV2: {
-            /**
-             * Tokentype
-             * @default bearer
-             * @constant
-             */
-            tokenType: "bearer";
-            /** Expiresin */
-            expiresIn: number;
-            user: components["schemas"]["UserSummaryV2"];
-        };
-        /** MarkMasteredResult */
-        MarkMasteredResult: {
-            /** Questionid */
-            questionId: number;
-            /** Masterylevel */
-            masteryLevel: string;
-            /** Consecutivecorrectcount */
-            consecutiveCorrectCount: number;
-        };
-        /** MaterialGroupAssetOutV2 */
-        MaterialGroupAssetOutV2: {
-            /** Id */
-            id: number;
-            /** Assetrole */
-            assetRole: string;
-            /** Mimetype */
-            mimeType: string;
-            /** Displayorder */
-            displayOrder: number;
-            /** Metadata */
-            metadata: {
-                [key: string]: unknown;
-            };
-            /** Url */
-            url: string;
-        };
-        /** MaterialGroupOutV2 */
-        MaterialGroupOutV2: {
-            /** Id */
-            id: number;
-            /** Sourcegroupuuid */
-            sourceGroupUuid: string;
-            /** Groupkind */
-            groupKind: string;
+        /** NoteCreateRequestV2 */
+        NoteCreateRequestV2: {
             /** Title */
             title: string;
-            /** Materialtext */
-            materialText: string;
-            /** Instructiontext */
-            instructionText: string;
-            /** Payload */
-            payload: {
-                [key: string]: unknown;
-            };
-            /** Assets */
-            assets: components["schemas"]["MaterialGroupAssetOutV2"][];
-            /** Questionids */
-            questionIds: number[];
-            /** Materialgroupid */
-            materialGroupId?: number | null;
-            /** Blockid */
-            blockId?: number | null;
-            /** Content */
-            content?: string | null;
-            /** Questions */
-            questions?: components["schemas"]["PracticeQuestionItemV2"][];
-        };
-        /**
-         * NoteAdminQueueItemV2
-         * @description Admin /admin/reports queue 列表项. 比 NoteReportOutV2 多带 target 摘要
-         *     (Phase B service 单 query 拼出, 减少 admin 端 N+1).
-         *
-         *     target_preview shape (Phase B 实现 camelCase keys for FE alignment):
-         *       - target_type='note':    { "title": str, "bodyText": str (≤200 char) }
-         *       - target_type='comment': { "noteId": int, "content": str (≤200 char) }
-         *       - 已删 target -> { "deleted": True }
-         *     FE admin 渲染时按 target_type discriminate.
-         */
-        NoteAdminQueueItemV2: {
-            /** Id */
-            id: number;
             /**
-             * Targettype
-             * @enum {string}
-             */
-            targetType: "note" | "comment";
-            /** Targetid */
-            targetId: number;
-            /** Targetpreview */
-            targetPreview: {
-                [key: string]: unknown;
-            };
-            /** Reporteruserid */
-            reporterUserId: number;
-            /** Reporterdisplayname */
-            reporterDisplayName: string | null;
-            /** Reason */
-            reason: string;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "reviewed" | "dismissed";
-            /** Createdat */
-            createdAt: string;
-        };
-        /**
-         * NoteAdminQueueResponseV2
-         * @description Admin queue 列表响应.
-         */
-        NoteAdminQueueResponseV2: {
-            /** Items */
-            items: components["schemas"]["NoteAdminQueueItemV2"][];
-            /** Total */
-            total: number;
-            /** Pendingcount */
-            pendingCount: number;
-        };
-        /**
-         * NoteAttachedToV2
-         * @description Optional links to wrong answers / questions / papers (cross-domain bridge).
-         */
-        NoteAttachedToV2: {
-            /** Wronganswerids */
-            wrongAnswerIds?: number[];
-            /** Questiontypeids */
-            questionTypeIds?: string[];
-            /** Xingcequestionids */
-            xingceQuestionIds?: number[];
-            /** Paperids */
-            paperIds?: number[];
-        };
-        /**
-         * NoteCommentCreateV2
-         * @description 评论创建. parent_comment_id None=顶层 comment, 非空=回复某 comment.
-         *
-         *     一级嵌套: Phase B service 校验 parent.parent_id IS NULL (拒绝 grand-child).
-         *     content ≤500 char (Phase B 业务规则, schema 此处约束硬上限).
-         */
-        NoteCommentCreateV2: {
-            /** Content */
-            content: string;
-            /** Parentcommentid */
-            parentCommentId?: number | null;
-        };
-        /**
-         * NoteCommentListV2
-         * @description 评论列表 (Phase B GET /notes/{id}/comments).
-         */
-        NoteCommentListV2: {
-            /** Items */
-            items: components["schemas"]["NoteCommentOutV2"][];
-            /** Total */
-            total: number;
-        };
-        /**
-         * NoteCommentOutV2
-         * @description 评论详情. 匿名展示由父 note.display_anonymous 决定, 评论本身不带匿名
-         *     flag (设计: 公开笔记下的评论跟笔记同步匿名/具名). user_display_name None
-         *     表示该评论应匿名展示 (FE 直接渲染 '匿名用户' 或类似).
-         */
-        NoteCommentOutV2: {
-            /** Id */
-            id: number;
-            /** Noteid */
-            noteId: number;
-            /** Userid */
-            userId: number;
-            /** Userdisplayname */
-            userDisplayName: string | null;
-            /** Content */
-            content: string;
-            /** Parentcommentid */
-            parentCommentId: number | null;
-            /** Likescount */
-            likesCount: number;
-            /** Createdat */
-            createdAt: string;
-            /** Updatedat */
-            updatedAt: string;
-        };
-        /**
-         * NoteCreateV2
-         * @description Create 单条 note. body shape 由 type 决定, 业务层校验.
-         *
-         *     SIKAO Wave 10 Phase A: 新增 question_id (绑题) optional. 社交字段
-         *     (is_public/display_anonymous) 不在 create 时设, 默认 false/true, 用户
-         *     通过 PATCH (NoteUpdateV2) 主动 "发表" 才切换 is_public=true.
-         */
-        NoteCreateV2: {
-            /**
-             * Type
-             * @enum {string}
-             */
-            type: "quote" | "method" | "reflect" | "material";
-            /** Body */
-            body: {
-                [key: string]: unknown;
-            };
-            /**
-             * Sourcekind
-             * @enum {string}
-             */
-            sourceKind: "paper" | "specialty" | "manual" | "practice" | "grading";
-            /** Sourceref */
-            sourceRef: string;
-            /** Sourcequote */
-            sourceQuote?: string | null;
-            /**
-             * Sourcedomain
-             * @enum {string}
-             */
-            sourceDomain: "xingce" | "essay";
-            /**
-             * Title
+             * Body
              * @default
              */
-            title: string;
-            /** Tags */
-            tags?: string[];
-            attachedTo?: components["schemas"]["NoteAttachedToV2"] | null;
-            /**
-             * Visibility
-             * @default self
-             * @enum {string}
-             */
-            visibility: "self" | "group";
-            /** Questionid */
-            questionId?: number | null;
+            body: string;
         };
-        /**
-         * NoteFavoriteToggleResponseV2
-         * @description Favorite 切换响应. favorited=true 表当前已收藏. 不返回 favorites_count
-         *     (notes 表不缓存 favorites 总数, 见 NoteFavorite model docstring).
-         */
-        NoteFavoriteToggleResponseV2: {
-            /** Favorited */
-            favorited: boolean;
-        };
-        /**
-         * NoteLikeToggleResponseV2
-         * @description Like 切换响应. liked=true 表示当前状态已点赞, false 表示已取消.
-         *     likes_count 是切换后 notes.likes_count 真值 (Phase B service 同 transaction
-         *     更新).
-         */
-        NoteLikeToggleResponseV2: {
-            /** Liked */
-            liked: boolean;
-            /** Likescount */
-            likesCount: number;
-        };
-        /** NoteListOutV2 */
-        NoteListOutV2: {
-            /** Items */
-            items: components["schemas"]["NoteOutV2"][];
-            /** Nextcursor */
-            nextCursor?: number | null;
-        };
-        /**
-         * NoteOutV2
-         * @description Single note 完整字段.
-         *
-         *     SIKAO Wave 10 Phase A: 加 6 社交字段. likes_count / comments_count 是
-         *     服务端缓存读出 (note_likes/note_comments 行数). public_at 首次置
-         *     is_public=true 的时间. question_id None = 笔记不绑题.
-         */
-        NoteOutV2: {
+        /** NoteDetailV2 */
+        NoteDetailV2: {
             /** Id */
             id: number;
-            /**
-             * Type
-             * @enum {string}
-             */
-            type: "quote" | "method" | "reflect" | "material";
-            /** Body */
-            body: {
-                [key: string]: unknown;
-            };
-            /**
-             * Sourcekind
-             * @enum {string}
-             */
-            sourceKind: "paper" | "specialty" | "manual" | "practice" | "grading";
-            /** Sourceref */
-            sourceRef: string;
-            /** Sourcequote */
-            sourceQuote: string | null;
-            /**
-             * Sourcedomain
-             * @enum {string}
-             */
-            sourceDomain: "xingce" | "essay";
             /** Title */
             title: string;
-            /** Tags */
-            tags: string[];
-            attachedTo: components["schemas"]["NoteAttachedToV2"] | null;
-            /**
-             * Visibility
-             * @enum {string}
-             */
-            visibility: "self" | "group";
-            /** Ease */
-            ease: number;
-            /** Reviewcount */
-            reviewCount: number;
-            /** Reviewedat */
-            reviewedAt: string | null;
-            /** Nextreviewat */
-            nextReviewAt: string | null;
-            /** Ispublic */
-            isPublic: boolean;
-            /** Publicat */
-            publicAt: string | null;
-            /** Displayanonymous */
-            displayAnonymous: boolean;
-            /** Likescount */
-            likesCount: number;
-            /** Commentscount */
-            commentsCount: number;
-            /** Questionid */
-            questionId: number | null;
+            /** Body */
+            body: string;
+            /** Status */
+            status: string;
             /** Createdat */
             createdAt: string;
             /** Updatedat */
             updatedAt: string;
         };
-        /**
-         * NotePublicListItemV2
-         * @description 单题视图 "下方公开笔记" 列表项. 跟 NoteOutV2 差异: 隐藏 user_id 之类
-         *     PII (display_anonymous=true 时), 不返 ease/review_count/reviewed_at
-         *     (SM-2 是 owner 私有). liked_by_me / favorited_by_me 是 viewer-specific
-         *     flag (Phase B service 按当前登录 user JOIN note_likes/favorites).
-         */
-        NotePublicListItemV2: {
+        /** NoteItemV2 */
+        NoteItemV2: {
             /** Id */
             id: number;
-            /**
-             * Type
-             * @enum {string}
-             */
-            type: "quote" | "method" | "reflect" | "material";
-            /** Body */
-            body: {
-                [key: string]: unknown;
-            };
             /** Title */
             title: string;
-            /** Tags */
-            tags: string[];
-            /** Userdisplayname */
-            userDisplayName: string | null;
-            /** Likescount */
-            likesCount: number;
-            /** Commentscount */
-            commentsCount: number;
-            /** Likedbyme */
-            likedByMe: boolean;
-            /** Favoritedbyme */
-            favoritedByMe: boolean;
-            /** Publicat */
-            publicAt: string | null;
+            /** Excerpt */
+            excerpt: string;
+            /** Status */
+            status: string;
             /** Createdat */
             createdAt: string;
+            /** Updatedat */
+            updatedAt: string;
         };
-        /**
-         * NotePublicListResponseV2
-         * @description 单题视图 GET /questions/{id}/notes 响应.
-         */
-        NotePublicListResponseV2: {
+        /** NoteListResponseV2 */
+        NoteListResponseV2: {
             /** Items */
-            items: components["schemas"]["NotePublicListItemV2"][];
+            items: components["schemas"]["NoteItemV2"][];
             /** Total */
             total: number;
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
         };
-        /**
-         * NotePublicToggleV2
-         * @description PATCH /api/v2/notebook/notes/{id}/public-toggle 请求体.
-         *
-         *     is_public=true 首次公开 → service 设 public_at=now (Phase B service.toggle_public
-         *     实现). display_anonymous 默认 true (lhr 决议, 隐私优先).
-         */
-        NotePublicToggleV2: {
-            /** Ispublic */
-            isPublic: boolean;
+        /** NoteUpdateRequestV2 */
+        NoteUpdateRequestV2: {
+            /** Title */
+            title: string;
             /**
-             * Displayanonymous
-             * @default true
+             * Body
+             * @default
              */
-            displayAnonymous: boolean;
-        };
-        /**
-         * NoteReportCreateV2
-         * @description 举报创建. target_type/target_id 在 Phase B service create 时校验 target
-         *     存在 (polymorphic FK 无法在 schema 层强约束).
-         */
-        NoteReportCreateV2: {
-            /**
-             * Targettype
-             * @enum {string}
-             */
-            targetType: "note" | "comment";
-            /** Targetid */
-            targetId: number;
-            /** Reason */
-            reason: string;
-        };
-        /**
-         * NoteReportOutV2
-         * @description 举报详情 (admin queue 用).
-         */
-        NoteReportOutV2: {
-            /** Id */
-            id: number;
-            /**
-             * Targettype
-             * @enum {string}
-             */
-            targetType: "note" | "comment";
-            /** Targetid */
-            targetId: number;
-            /** Reporteruserid */
-            reporterUserId: number;
-            /** Reason */
-            reason: string;
+            body: string;
             /**
              * Status
+             * @default active
+             */
+            status: string;
+        };
+        /** OperationAckV2 */
+        OperationAckV2: {
+            /** Ok */
+            ok: boolean;
+            /** Status */
+            status: string;
+        };
+        /** OverviewResponseV2 */
+        OverviewResponseV2: {
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Actions */
+            actions: components["schemas"]["ActionLinkV2"][];
+        };
+        /** PracticeAnswerPayloadV2 */
+        PracticeAnswerPayloadV2: {
+            /** Questionkey */
+            questionKey: string;
+            /** Answer */
+            answer?: {
+                [key: string]: unknown;
+            };
+            /** Durationseconds */
+            durationSeconds?: number | null;
+        };
+        /** PracticeAnswerUpsertRequestV2 */
+        PracticeAnswerUpsertRequestV2: {
+            /** Answers */
+            answers?: components["schemas"]["PracticeAnswerPayloadV2"][];
+        };
+        /** PracticeCenterResponseV2 */
+        PracticeCenterResponseV2: {
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Actions */
+            actions: components["schemas"]["ActionLinkV2"][];
+        };
+        /** PracticeSessionCreateRequestV2 */
+        PracticeSessionCreateRequestV2: {
+            /**
+             * Track
              * @enum {string}
              */
-            status: "pending" | "reviewed" | "dismissed";
-            /** Reviewedbyadminid */
-            reviewedByAdminId: number | null;
-            /** Createdat */
-            createdAt: string;
-        };
-        /** NoteReviewListOutV2 */
-        NoteReviewListOutV2: {
-            /** Items */
-            items: components["schemas"]["NoteReviewOutV2"][];
-        };
-        /** NoteReviewOutV2 */
-        NoteReviewOutV2: {
-            /** Id */
-            id: number;
-            /** Noteid */
-            noteId: number;
-            /** Reviewedat */
-            reviewedAt: string;
-            /** Recallquality */
-            recallQuality: number;
-            /** Easebefore */
-            easeBefore: number;
-            /** Easeafter */
-            easeAfter: number;
-            /** Intervaldays */
-            intervalDays: number;
-            /** Nextreviewat */
-            nextReviewAt: string;
-        };
-        /** NoteReviewSubmitV2 */
-        NoteReviewSubmitV2: {
-            /** Recallquality */
-            recallQuality: number;
-        };
-        /** NoteStatsV2 */
-        NoteStatsV2: {
-            /** Total */
-            total: number;
-            /** Duecount */
-            dueCount: number;
-            /** Bytype */
-            byType: {
-                [key: string]: number;
-            };
-            /** Bysourcedomain */
-            bySourceDomain: {
-                [key: string]: number;
-            };
-        };
-        /**
-         * NoteUpdateV2
-         * @description Update partial.
-         *
-         *     SIKAO Wave 10 Phase A: 加 is_public / display_anonymous / question_id
-         *     让用户能 PATCH 发表/取消公开 + 切换匿名 + 后期绑题. likes_count /
-         *     comments_count / public_at 是服务端字段, 不允许 client 直接 PATCH.
-         */
-        NoteUpdateV2: {
-            /** Type */
-            type?: ("quote" | "method" | "reflect" | "material") | null;
-            /** Body */
-            body?: {
-                [key: string]: unknown;
-            } | null;
-            /** Sourcekind */
-            sourceKind?: ("paper" | "specialty" | "manual" | "practice" | "grading") | null;
-            /** Sourceref */
-            sourceRef?: string | null;
-            /** Sourcequote */
-            sourceQuote?: string | null;
-            /** Sourcedomain */
-            sourceDomain?: ("xingce" | "essay") | null;
-            /** Title */
-            title?: string | null;
-            /** Tags */
-            tags?: string[] | null;
-            attachedTo?: components["schemas"]["NoteAttachedToV2"] | null;
-            /** Visibility */
-            visibility?: ("self" | "group") | null;
-            /** Ispublic */
-            isPublic?: boolean | null;
-            /** Displayanonymous */
-            displayAnonymous?: boolean | null;
-            /** Questionid */
-            questionId?: number | null;
-        };
-        /**
-         * OnboardingStatusV2
-         * @description GET /api/v2/me/onboarding-status response.
-         *
-         *     FE uses is_onboarded to decide whether to redirect to /study/onboarding.
-         *     has_goal and has_exam drive which onboarding steps are pre-filled.
-         */
-        OnboardingStatusV2: {
-            /** Hasgoal */
-            hasGoal: boolean;
-            /** Hasexam */
-            hasExam: boolean;
-            /** Isonboarded */
-            isOnboarded: boolean;
-        };
-        /** OptionOutV2 */
-        OptionOutV2: {
-            /** Id */
-            id: number;
-            /** Optionkey */
-            optionKey: string;
-            /** Optiontext */
-            optionText: string;
-            /** Displayorder */
-            displayOrder: number;
-            /** Key */
-            key?: string | null;
-            /** Text */
-            text?: string | null;
-            /** Iscorrect */
-            isCorrect?: boolean | null;
-        };
-        /** PaperDetailV2 */
-        PaperDetailV2: {
-            paper?: components["schemas"]["PaperSummaryV2"] | null;
-            currentRevision?: components["schemas"]["PaperRevisionSummary"] | null;
-            /** Revisionid */
-            revisionId?: number | null;
+            track: "xingce" | "essay";
+            /** Entrykind */
+            entryKind: string;
             /** Papercode */
             paperCode?: string | null;
-            /** Status */
-            status?: string | null;
-            /** Questioncount */
-            questionCount?: number | null;
-        };
-        /** PaperExamBlockOutV2 */
-        PaperExamBlockOutV2: {
-            /** Type */
-            type: string;
-            /** Sectionid */
-            sectionId: string;
-            /** Questionid */
-            questionId?: number | null;
-            /** Materialgroupid */
-            materialGroupId?: number | null;
             /** Questionids */
             questionIds?: number[];
-            /** Blockid */
-            blockId?: number | null;
-            question?: components["schemas"]["PracticeQuestionItemV2"] | null;
-            materialGroup?: components["schemas"]["MaterialGroupOutV2"] | null;
+            /** Payload */
+            payload?: {
+                [key: string]: unknown;
+            };
         };
-        /** PaperExamSectionOutV2 */
-        PaperExamSectionOutV2: {
+        /** PracticeSessionEnvelopeV2 */
+        PracticeSessionEnvelopeV2: {
+            /** Id */
+            id: number;
+            /** Track */
+            track: string;
+            /** Entrykind */
+            entryKind: string;
+            /** Status */
+            status: string;
+            /** Items */
+            items: components["schemas"]["PracticeSessionItemV2"][];
+            /** Actions */
+            actions: components["schemas"]["ActionLinkV2"][];
+            /** Startedat */
+            startedAt: string;
+            /** Submittedat */
+            submittedAt?: string | null;
+        };
+        /** PracticeSessionItemV2 */
+        PracticeSessionItemV2: {
             /** Id */
             id: string;
-            /** Title */
-            title: string;
-            /** Instructiontext */
-            instructionText: string;
-            /** Questioncount */
-            questionCount: number;
-            /** Sectionid */
-            sectionId?: string | null;
-            /** Description */
-            description?: string | null;
-            /** Blocks */
-            blocks?: components["schemas"]["PaperExamBlockOutV2"][];
+            /** Questionkey */
+            questionKey?: string | null;
+            /** Prompt */
+            prompt: string;
+            /** Answerkind */
+            answerKind: string;
+            /** Status */
+            status: string;
         };
-        /** PaperProgressV2 */
-        PaperProgressV2: {
-            /** Answered */
-            answered: number;
-            /** Total */
-            total: number;
-        };
-        /** PaperQuestionItemV2 */
-        PaperQuestionItemV2: {
-            /** Id */
-            id: number;
-            /** Position */
-            position: number;
-            /** Sourceuuid */
-            sourceUuid: string;
-            /** Questionkind */
-            questionKind: string;
-            /** Subtypename */
-            subtypeName: string;
-            /** Secondsubtypename */
-            secondSubtypeName: string | null;
-            /** Rawrendertype */
-            rawRenderType?: string | null;
-            /** Stemtext */
-            stemText: string;
-            /** Difficultycode */
-            difficultyCode: string;
-            /** Examyear */
-            examYear: number | null;
-            /** Sourceprovider */
-            sourceProvider: string | null;
-            /** Sourcekind */
-            sourceKind: string | null;
-            /** Isgradable */
-            isGradable: boolean;
-            /** Rendererkey */
-            rendererKey: string;
-            /** Enabled */
-            enabled: boolean;
-            /** Tags */
-            tags: components["schemas"]["TagSummaryV2"][];
-            /** Materialgroupid */
-            materialGroupId: number | null;
-            /** Papercode */
-            paperCode: string;
-            /** Papername */
-            paperName: string;
-            /** Revisionnumber */
-            revisionNumber: number;
-            /** Explanationtext */
-            explanationText: string;
-            /** Options */
-            options: components["schemas"]["OptionOutV2"][];
-            /** Assets */
-            assets: components["schemas"]["QuestionAssetOutV2"][];
-            /** Specialpayload */
-            specialPayload: {
-                [key: string]: unknown;
-            };
-            /** Typepayload */
-            typePayload: {
-                [key: string]: unknown;
-            };
-            /** Selectionmode */
-            selectionMode: string;
-            /** Canonicaltoptype */
-            canonicalTopType: string | null;
-            /** Canonicalsubtype */
-            canonicalSubtype: string | null;
-            /** Canonicalsecondsubtype */
-            canonicalSecondSubtype: string | null;
-            /** Questionid */
-            questionId?: number | null;
-            /** Paperrevisionid */
-            paperRevisionId?: number | null;
-            /** Sectionid */
-            sectionId?: string | null;
-            /** Blockid */
-            blockId?: number | null;
-            /** Questionno */
-            questionNo?: number | null;
-            /** Content */
-            content?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /** PaperRevisionSummary */
-        PaperRevisionSummary: {
-            /** Id */
-            id: number;
-            /** Revisionnumber */
-            revisionNumber: number;
-            /** Sortorder */
-            sortOrder: number;
-            /** Papername */
-            paperName: string;
-            /** Examyear */
-            examYear: number | null;
-            /** Sourceprovider */
-            sourceProvider: string | null;
-            /** Sourcekind */
-            sourceKind: string | null;
-            /** Isgradable */
-            isGradable: boolean;
-            /** Usesplaceholderanswers */
-            usesPlaceholderAnswers: boolean;
-            /** Visibleinpublic */
-            visibleInPublic: boolean;
-            /** Questioncount */
-            questionCount: number;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "draft" | "published";
-            /** Createdat */
-            createdAt: string;
-            /** Publishedat */
-            publishedAt?: string | null;
-        };
-        /** PaperSummaryV2 */
-        PaperSummaryV2: {
-            /** Id */
-            id: number;
-            /** Papercode */
-            paperCode: string;
-            /** Papername */
-            paperName: string;
-            /** Examyear */
-            examYear: number | null;
-            /** Sourceprovider */
-            sourceProvider: string | null;
-            /** Sourcekind */
-            sourceKind: string | null;
-            /** Isgradable */
-            isGradable: boolean;
-            /** Visibleinpublic */
-            visibleInPublic: boolean;
-            /** Sortorder */
-            sortOrder: number;
-            /** Questioncount */
-            questionCount: number;
-            /** Usesplaceholderanswers */
-            usesPlaceholderAnswers: boolean;
-            /** Currentrevisionid */
-            currentRevisionId?: number | null;
-            /** Currentrevisionnumber */
-            currentRevisionNumber?: number | null;
-            /** Description */
-            description?: string | null;
-        };
-        /** PaperUserStatusResponseV2 */
-        PaperUserStatusResponseV2: {
-            /** Items */
-            items: components["schemas"]["PaperUserStatusV2"][];
-        };
-        /** PaperUserStatusV2 */
-        PaperUserStatusV2: {
-            /** Papercode */
-            paperCode: string;
-            /**
-             * Userstatus
-             * @enum {string}
-             */
-            userStatus: "untouched" | "in_progress" | "done";
-            /** Attemptcount */
-            attemptCount: number;
-            progress?: components["schemas"]["PaperProgressV2"] | null;
-        };
-        /**
-         * PeekResult
-         * @description 重做模式偷看答案 — 扣 peek_count, 返剩余.
-         */
-        PeekResult: {
-            /** Peekedreference */
-            peekedReference: boolean;
-            /** Peekremaining */
-            peekRemaining: number;
-        };
-        /** PracticeAttemptV2 */
-        PracticeAttemptV2: {
-            /** Id */
-            id: number;
-            /** Sessionid */
-            sessionId: number;
-            /** Questionid */
-            questionId: number;
-            /** Questionstem */
-            questionStem: string;
-            /** Selectedoption */
-            selectedOption: string;
-            /** Correctoption */
-            correctOption: string;
-            /** Iscorrect */
-            isCorrect: boolean;
-            /** Createdat */
-            createdAt: string;
-        };
-        /** PracticeHistoryResponseV2 */
-        PracticeHistoryResponseV2: {
-            summary: components["schemas"]["PracticeSummaryV2"];
-            /** Recentattempts */
-            recentAttempts: components["schemas"]["PracticeAttemptV2"][];
-            /** Wrongquestions */
-            wrongQuestions: components["schemas"]["WrongQuestionV2"][];
-            /** Recentsessions */
-            recentSessions: components["schemas"]["PracticeSessionSummaryV2"][];
-            /** Recentattemptslimit */
-            recentAttemptsLimit: number;
-            /** Recentsessionslimit */
-            recentSessionsLimit: number;
-        };
-        /** PracticeQuestionItemV2 */
-        PracticeQuestionItemV2: {
-            /** Id */
-            id: number;
-            /** Position */
-            position: number;
-            /** Sourceuuid */
-            sourceUuid: string;
-            /** Questionkind */
-            questionKind: string;
-            /** Subtypename */
-            subtypeName: string;
-            /** Secondsubtypename */
-            secondSubtypeName: string | null;
-            /** Rawrendertype */
-            rawRenderType?: string | null;
-            /** Stemtext */
-            stemText: string;
-            /** Difficultycode */
-            difficultyCode: string;
-            /** Examyear */
-            examYear: number | null;
-            /** Sourceprovider */
-            sourceProvider: string | null;
-            /** Sourcekind */
-            sourceKind: string | null;
-            /** Isgradable */
-            isGradable: boolean;
-            /** Rendererkey */
-            rendererKey: string;
-            /** Enabled */
-            enabled: boolean;
-            /** Tags */
-            tags: components["schemas"]["TagSummaryV2"][];
-            /** Materialgroupid */
-            materialGroupId: number | null;
-            /** Papercode */
-            paperCode: string;
-            /** Papername */
-            paperName: string;
-            /** Revisionnumber */
-            revisionNumber: number;
-            /** Options */
-            options: components["schemas"]["OptionOutV2"][];
-            /** Assets */
-            assets: components["schemas"]["QuestionAssetOutV2"][];
-            /** Specialpayload */
-            specialPayload: {
-                [key: string]: unknown;
-            };
-            /** Typepayload */
-            typePayload: {
-                [key: string]: unknown;
-            };
-            /** Selectionmode */
-            selectionMode: string;
-            /** Canonicaltoptype */
-            canonicalTopType: string | null;
-            /** Canonicalsubtype */
-            canonicalSubtype: string | null;
-            /** Canonicalsecondsubtype */
-            canonicalSecondSubtype: string | null;
-            /** Questionid */
-            questionId?: number | null;
-            /** Paperrevisionid */
-            paperRevisionId?: number | null;
-            /** Sectionid */
-            sectionId?: string | null;
-            /** Blockid */
-            blockId?: number | null;
-            /** Questionno */
-            questionNo?: number | null;
-            /** Content */
-            content?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /** PracticeSectionSummaryV2 */
-        PracticeSectionSummaryV2: {
-            /** Sectionid */
-            sectionId: string;
-            /** Title */
-            title: string;
-            /** Instructiontext */
-            instructionText: string;
-            /** Questioncount */
-            questionCount: number;
-            /** Answeredquestions */
-            answeredQuestions: number;
-            /** Correctcount */
-            correctCount: number;
-            /** Wrongcount */
-            wrongCount: number;
-            /** Accuracyrate */
-            accuracyRate: number;
-        };
-        /** PracticeSessionAnswerOutV2 */
-        PracticeSessionAnswerOutV2: {
-            /** Id */
-            id: number;
-            /** Questionid */
-            questionId: number;
-            /** Selectedanswerkeys */
-            selectedAnswerKeys: string[];
-            /** Correctanswerkeys */
-            correctAnswerKeys: string[];
-            /** Iscorrect */
-            isCorrect: boolean;
-            /** Answeredat */
-            answeredAt: string;
-            /** Wrongreasoncode */
-            wrongReasonCode?: string | null;
-            /** Wrongreasonsource */
-            wrongReasonSource?: string | null;
-        };
-        /** PracticeSessionAnswerResultV2 */
-        PracticeSessionAnswerResultV2: {
-            /** Sessionid */
-            sessionId: number;
-            /** Questionid */
-            questionId: number;
-            /** Displayorder */
-            displayOrder: number;
-            /** Selectedanswerkeys */
-            selectedAnswerKeys: string[];
-            /** Answeredquestions */
-            answeredQuestions: number;
-            /** Totalquestions */
-            totalQuestions: number;
-            /** Completed */
-            completed: boolean;
-        };
-        /** PracticeSessionAnswerSubmissionV2 */
-        PracticeSessionAnswerSubmissionV2: {
-            /** Questionid */
-            questionId: number;
-            /** Selectedanswerkeys */
-            selectedAnswerKeys?: string[];
-        };
-        /** PracticeSessionMetaV2 */
-        PracticeSessionMetaV2: {
-            /** Sessionid */
-            sessionId: number;
-            /** Mode */
-            mode: string;
-            /** Totalquestions */
-            totalQuestions: number;
-            /** Startedat */
-            startedAt: string;
-        };
-        /** PracticeSessionResultV2 */
-        PracticeSessionResultV2: {
-            session?: components["schemas"]["PracticeSessionSummaryV2"] | null;
-            /** Sectionsummaries */
-            sectionSummaries?: components["schemas"]["PracticeSectionSummaryV2"][] | null;
-            /** Subjectsummaries */
-            subjectSummaries?: components["schemas"]["PracticeSubjectSummaryV2"][] | null;
-            /** Subtypesummaries */
-            subtypeSummaries?: components["schemas"]["PracticeSubtypeSummaryV2"][] | null;
-            /** Blocks */
-            blocks?: components["schemas"]["PaperExamBlockOutV2"][] | null;
-            /** Questions */
-            questions?: components["schemas"]["PaperQuestionItemV2"][] | null;
-            /** Materialgroups */
-            materialGroups?: components["schemas"]["MaterialGroupOutV2"][] | null;
-            /** Answers */
-            answers?: components["schemas"]["PracticeSessionAnswerOutV2"][] | null;
-            /** Sessionid */
-            sessionId?: number | null;
-            /** Score */
-            score?: number | null;
-            /** Totalquestions */
-            totalQuestions?: number | null;
-            /** Correctcount */
-            correctCount?: number | null;
-            /** Incorrectcount */
-            incorrectCount?: number | null;
-            /** Unansweredcount */
-            unansweredCount?: number | null;
-            /** Useranswers */
-            userAnswers?: {
-                [key: string]: string[];
-            };
-        };
-        /** PracticeSessionStartV2 */
-        PracticeSessionStartV2: {
-            session?: components["schemas"]["PracticeSessionMetaV2"] | null;
-            paper?: components["schemas"]["PaperSummaryV2"] | null;
+        /** PracticeSessionResultResponseV2 */
+        PracticeSessionResultResponseV2: {
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
             /** Sections */
-            sections: components["schemas"]["PaperExamSectionOutV2"][];
-            /** Blocks */
-            blocks?: components["schemas"]["PaperExamBlockOutV2"][] | null;
-            /** Questions */
-            questions?: components["schemas"]["PracticeQuestionItemV2"][] | null;
-            /** Materialgroups */
-            materialGroups?: components["schemas"]["MaterialGroupOutV2"][] | null;
-            /** Savedanswers */
-            savedAnswers: {
-                [key: string]: string[];
-            };
-            /** Sessionid */
-            sessionId?: number | null;
-            /** Papercode */
-            paperCode?: string | null;
-            /** Paperrevisionid */
-            paperRevisionId?: number | null;
-            /** Papername */
-            paperName?: string | null;
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Actions */
+            actions: components["schemas"]["ActionLinkV2"][];
         };
-        /**
-         * PracticeSessionSummary
-         * @description GET /api/v2/practice/last-session 响应 (nullable).
-         *
-         *     Home "继续答题" block 数据源. 服务端返 None 表示无中断 session, FE
-         *     据此渲 "今日推荐" 替代入口. paper_id=0 是 cross-paper retry session
-         *     (paper_id IS NULL) 的 sentinel — FE 用 paper_title 区分文案.
-         */
-        PracticeSessionSummary: {
-            /** Id */
-            id: number;
-            /** Paperid */
-            paperId: number;
-            /** Papertitle */
-            paperTitle: string;
-            /** Currentquestionid */
-            currentQuestionId: number | null;
-            /** Answeredcount */
-            answeredCount: number;
-            /** Total */
-            total: number;
-            /** Startedat */
-            startedAt: string;
+        /** ProfileGoalsResponseV2 */
+        ProfileGoalsResponseV2: {
+            /** Targetexam */
+            targetExam?: string | null;
+            /** Targetscore */
+            targetScore?: string | null;
+            /** Weeklytargethours */
+            weeklyTargetHours?: number | null;
         };
-        /** PracticeSessionSummaryV2 */
-        PracticeSessionSummaryV2: {
-            /** Sessionid */
-            sessionId: number;
-            /** Mode */
-            mode: string;
-            /** Papercode */
-            paperCode: string | null;
-            /** Papername */
-            paperName: string | null;
-            /** Startedat */
-            startedAt: string;
-            /** Completedat */
-            completedAt?: string | null;
-            /** Totalquestions */
-            totalQuestions: number;
-            /** Answeredquestions */
-            answeredQuestions: number;
-            /** Correctcount */
-            correctCount: number;
-            /** Wrongcount */
-            wrongCount: number;
-            /** Accuracyrate */
-            accuracyRate: number;
+        /** ProfileGoalsUpdateRequestV2 */
+        ProfileGoalsUpdateRequestV2: {
+            /** Targetexam */
+            targetExam?: string | null;
+            /** Targetscore */
+            targetScore?: number | string | null;
+            /** Weeklytargethours */
+            weeklyTargetHours?: number | null;
         };
-        /** PracticeSubjectSummaryV2 */
-        PracticeSubjectSummaryV2: {
-            /** Subject */
-            subject: string;
-            /** Questioncount */
-            questionCount: number;
-            /** Answeredquestions */
-            answeredQuestions: number;
-            /** Correctcount */
-            correctCount: number;
-            /** Wrongcount */
-            wrongCount: number;
-            /** Accuracyrate */
-            accuracyRate: number;
+        /** ProfileInfoResponseV2 */
+        ProfileInfoResponseV2: {
+            /** Displayname */
+            displayName: string;
+            /** Realname */
+            realName?: string | null;
+            /** Region */
+            region?: string | null;
+            /** Bio */
+            bio?: string | null;
         };
-        /** PracticeSubtypeSummaryV2 */
-        PracticeSubtypeSummaryV2: {
-            /** Subject */
-            subject: string | null;
-            /** Subtype */
-            subtype: string;
-            /** Questioncount */
-            questionCount: number;
-            /** Answeredquestions */
-            answeredQuestions: number;
-            /** Correctcount */
-            correctCount: number;
-            /** Wrongcount */
-            wrongCount: number;
-            /** Accuracyrate */
-            accuracyRate: number;
+        /** ProfileInfoUpdateRequestV2 */
+        ProfileInfoUpdateRequestV2: {
+            /** Displayname */
+            displayName: string;
+            /** Realname */
+            realName?: string | null;
+            /** Region */
+            region?: string | null;
+            /** Bio */
+            bio?: string | null;
         };
-        /** PracticeSummaryV2 */
-        PracticeSummaryV2: {
-            /** Totalattempts */
-            totalAttempts: number;
-            /** Correctcount */
-            correctCount: number;
-            /** Wrongcount */
-            wrongCount: number;
-            /** Accuracyrate */
-            accuracyRate: number;
+        /** ProfileOverviewResponseV2 */
+        ProfileOverviewResponseV2: {
+            /** Summary */
+            summary: components["schemas"]["SummaryMetricV2"][];
+            /** Sections */
+            sections: components["schemas"]["SectionCardV2"][];
+            /** Actions */
+            actions: components["schemas"]["ActionLinkV2"][];
         };
-        /**
-         * PracticeTaskPayload
-         * @description task_kind='practice' payload — 跳 /papers/{paperCode}.
-         *
-         *     questionIds: None=整卷, 限定题列表=用户只看选定 N 道.
-         */
-        PracticeTaskPayload: {
-            /** Title */
-            title: string;
-            /** Subtitle */
-            subtitle?: string | null;
-            /** Papercode */
-            paperCode: string;
-            /** Questionids */
-            questionIds?: number[] | null;
+        /** ProfileSecurityResponseV2 */
+        ProfileSecurityResponseV2: {
+            /** Passwordset */
+            passwordSet: boolean;
+            /** Emailbound */
+            emailBound: boolean;
+            /** Phonebound */
+            phoneBound: boolean;
+            /** Activesessions */
+            activeSessions: number;
         };
-        /** PracticeTaskResponse */
-        PracticeTaskResponse: {
-            /** Id */
-            id: number;
-            /** Displayorder */
-            displayOrder: number;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "completed" | "skipped";
-            /** Completedat */
-            completedAt: string | null;
-            /** Createdat */
-            createdAt: string;
-            /**
-             * @description discriminator enum property added by openapi-typescript
-             * @enum {string}
-             */
-            taskKind: "practice";
-            payload: components["schemas"]["PracticeTaskPayload"];
-        };
-        /** PredictedScorePaperEntryV2 */
-        PredictedScorePaperEntryV2: {
-            /** Papercode */
-            paperCode: string;
-            /** Papername */
-            paperName: string;
-            /** Score */
-            score: number;
-            /** Completedat */
-            completedAt: string;
-        };
-        /** PredictedScoreV2 */
-        PredictedScoreV2: {
-            /** Predictedscore */
-            predictedScore: number | null;
-            /** Samplesize */
-            sampleSize: number;
-            /** Isreferenceonly */
-            isReferenceOnly: boolean;
-            /** Recentpapers */
-            recentPapers: components["schemas"]["PredictedScorePaperEntryV2"][];
-        };
-        /** PublishStatusResponseV2 */
-        PublishStatusResponseV2: {
-            /** Papercode */
-            paperCode: string;
-            /** Revisionid */
-            revisionId: number;
-            /** Ispublished */
-            isPublished: boolean;
-            /** Iscurrentrevision */
-            isCurrentRevision: boolean;
-            /** Publishedat */
-            publishedAt?: string | null;
-            /** Releaseexecutionid */
-            releaseExecutionId?: string | null;
-        };
-        /** QuestionAssetOutV2 */
-        QuestionAssetOutV2: {
-            /** Id */
-            id: number;
-            /** Assetrole */
-            assetRole: string;
-            /** Mimetype */
-            mimeType: string;
-            /** Displayorder */
-            displayOrder: number;
-            /** Metadata */
-            metadata: {
-                [key: string]: unknown;
-            };
-            /** Url */
-            url: string;
-        };
-        /** QuestionDetailV2 */
-        QuestionDetailV2: {
-            /** Id */
-            id: number;
-            /** Position */
-            position: number;
-            /** Sourceuuid */
-            sourceUuid: string;
-            /** Questionkind */
-            questionKind: string;
-            /** Subtypename */
-            subtypeName: string;
-            /** Secondsubtypename */
-            secondSubtypeName: string | null;
-            /** Rawrendertype */
-            rawRenderType?: string | null;
-            /** Stemtext */
-            stemText: string;
-            /** Difficultycode */
-            difficultyCode: string;
-            /** Examyear */
-            examYear: number | null;
-            /** Sourceprovider */
-            sourceProvider: string | null;
-            /** Sourcekind */
-            sourceKind: string | null;
-            /** Isgradable */
-            isGradable: boolean;
-            /** Rendererkey */
-            rendererKey: string;
-            /** Enabled */
-            enabled: boolean;
-            /** Tags */
-            tags: components["schemas"]["TagSummaryV2"][];
-            /** Materialgroupid */
-            materialGroupId: number | null;
-            /** Papercode */
-            paperCode: string;
-            /** Papername */
-            paperName: string;
-            /** Revisionnumber */
-            revisionNumber: number;
-            /** Explanationtext */
-            explanationText: string;
-            /** Options */
-            options: components["schemas"]["OptionOutV2"][];
-            /** Assets */
-            assets: components["schemas"]["QuestionAssetOutV2"][];
-            /** Specialpayload */
-            specialPayload: {
-                [key: string]: unknown;
-            };
-            /** Typepayload */
-            typePayload: {
-                [key: string]: unknown;
-            };
-            /** Selectionmode */
-            selectionMode: string;
-            /** Canonicaltoptype */
-            canonicalTopType: string | null;
-            /** Canonicalsubtype */
-            canonicalSubtype: string | null;
-            /** Canonicalsecondsubtype */
-            canonicalSecondSubtype: string | null;
-            /** Questionid */
-            questionId?: number | null;
-            /** Paperrevisionid */
-            paperRevisionId?: number | null;
-            /** Sectionid */
-            sectionId?: string | null;
-            /** Blockid */
-            blockId?: number | null;
-            /** Questionno */
-            questionNo?: number | null;
-            /** Content */
-            content?: {
-                [key: string]: unknown;
-            } | null;
-        };
-        /** QuestionListItemV2 */
-        QuestionListItemV2: {
-            /** Id */
-            id: number;
-            /** Position */
-            position: number;
-            /** Sourceuuid */
-            sourceUuid: string;
-            /** Questionkind */
-            questionKind: string;
-            /** Subtypename */
-            subtypeName: string;
-            /** Secondsubtypename */
-            secondSubtypeName: string | null;
-            /** Rawrendertype */
-            rawRenderType?: string | null;
-            /** Stemtext */
-            stemText: string;
-            /** Difficultycode */
-            difficultyCode: string;
-            /** Examyear */
-            examYear: number | null;
-            /** Sourceprovider */
-            sourceProvider: string | null;
-            /** Sourcekind */
-            sourceKind: string | null;
-            /** Isgradable */
-            isGradable: boolean;
-            /** Rendererkey */
-            rendererKey: string;
-            /** Enabled */
-            enabled: boolean;
-            /** Tags */
-            tags: components["schemas"]["TagSummaryV2"][];
-            /** Materialgroupid */
-            materialGroupId: number | null;
-            /** Papercode */
-            paperCode: string;
-            /** Papername */
-            paperName: string;
-            /** Revisionnumber */
-            revisionNumber: number;
-        };
-        /** QuestionNoteUpdateV2 */
-        QuestionNoteUpdateV2: {
-            /** Content */
-            content: string;
-        };
-        /** QuestionNoteV2 */
-        QuestionNoteV2: {
-            /** Hasnote */
-            hasNote: boolean;
-            /** Content */
-            content: string;
-            /** Updatedat */
-            updatedAt: string | null;
+        /** ProfileSecurityUpdateRequestV2 */
+        ProfileSecurityUpdateRequestV2: {
+            /** Currentpassword */
+            currentPassword: string;
+            /** Newpassword */
+            newPassword: string;
         };
         /** ReadyzDependency */
         ReadyzDependency: {
@@ -5166,521 +1260,134 @@ export interface components {
             /** Dependencies */
             dependencies: components["schemas"]["ReadyzDependency"][];
         };
-        /**
-         * RegisterEmailRequest
-         * @description Email 注册 (D3): write-then-verify — 注册即可登录, verify 事后单独走.
-         *
-         *     `display_name` 不填 fallback `email.split("@")[0]` (review fix #6).
-         */
-        RegisterEmailRequest: {
+        /** RegisterEmailRequestV2 */
+        RegisterEmailRequestV2: {
             /** Email */
             email: string;
             /** Password */
             password: string;
-            /** Displayname */
-            displayName?: string | null;
+            /**
+             * Displayname
+             * @default New User
+             */
+            displayName: string;
         };
-        /**
-         * RegisterPhoneRequest
-         * @description Phone 注册 (D4): verify-then-write — 6 位 SMS code 必须先验.
-         *
-         *     Server 端 normalize_phone 会清 +86/空格/横线; 长度 max=20 容纳 "+86 138 0013 8000"
-         *     最长输入. `display_name` 不填 fallback `f"用户{phone[-4:]}"` (review fix #6).
-         */
-        RegisterPhoneRequest: {
+        /** RegisterPhoneRequestV2 */
+        RegisterPhoneRequestV2: {
             /** Phone */
             phone: string;
-            /** Smscode */
-            smsCode: string;
             /** Password */
             password: string;
-            /** Displayname */
-            displayName?: string | null;
+            /**
+             * Displayname
+             * @default New User
+             */
+            displayName: string;
         };
-        /** ResetPasswordRequest */
-        ResetPasswordRequest: {
-            /** Token */
-            token: string;
+        /** ResetPasswordRequestV2 */
+        ResetPasswordRequestV2: {
+            /** Identifier */
+            identifier: string;
+            /** Code */
+            code: string;
             /** Newpassword */
             newPassword: string;
         };
-        /** ResetPasswordResponse */
-        ResetPasswordResponse: {
-            /**
-             * Ok
-             * @default true
-             * @constant
-             */
-            ok: true;
-        };
-        /**
-         * ReviewWrongTaskPayload
-         * @description task_kind='review_wrong' payload — 跳错题复习视图.
-         *
-         *     questionIds 至少 1 个 (sanity Stage 1 结构层); Stage 2 还会校验是否真在
-         *     用户错题表 + mastery_level != 'mastered'.
-         */
-        ReviewWrongTaskPayload: {
-            /** Title */
-            title: string;
-            /** Subtitle */
-            subtitle?: string | null;
-            /** Questionids */
-            questionIds: number[];
-        };
-        /** ReviewWrongTaskResponse */
-        ReviewWrongTaskResponse: {
+        /** ReviewAttemptOutV2 */
+        ReviewAttemptOutV2: {
             /** Id */
             id: number;
-            /** Displayorder */
-            displayOrder: number;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "completed" | "skipped";
-            /** Completedat */
-            completedAt: string | null;
+            /** Outcome */
+            outcome: string;
+            /** Attemptedat */
+            attemptedAt: string;
+        };
+        /** ReviewDetailResponseV2 */
+        ReviewDetailResponseV2: {
+            item: components["schemas"]["ReviewItemV2"];
+            /** History */
+            history: components["schemas"]["ReviewAttemptOutV2"][];
+            /** Actions */
+            actions: components["schemas"]["ActionLinkV2"][];
+        };
+        /** ReviewItemV2 */
+        ReviewItemV2: {
+            /** Id */
+            id: number;
+            /** Kind */
+            kind: string;
+            /** Title */
+            title: string;
+            /** Status */
+            status: string;
+            /** Href */
+            href: string;
             /** Createdat */
             createdAt: string;
+        };
+        /** ReviewListResponseV2 */
+        ReviewListResponseV2: {
+            /** Items */
+            items: components["schemas"]["ReviewItemV2"][];
+            /** Total */
+            total: number;
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+        };
+        /** SectionCardV2 */
+        SectionCardV2: {
+            /** Key */
+            key: string;
+            /** Title */
+            title: string;
+            /** Description */
+            description: string;
+            /** Status */
+            status: string;
+            /** Href */
+            href: string;
+        };
+        /** SendCodeRequestV2 */
+        SendCodeRequestV2: {
             /**
-             * @description discriminator enum property added by openapi-typescript
+             * Targetkind
              * @enum {string}
              */
-            taskKind: "review_wrong";
-            payload: components["schemas"]["ReviewWrongTaskPayload"];
-        };
-        /**
-         * SmartReviewNext
-         * @description 智能复盘"下一题" — priority by mastery + 时间.
-         */
-        SmartReviewNext: {
-            /** Questionid */
-            questionId: number;
-            /**
-             * Mode
-             * @enum {string}
-             */
-            mode: "qifei" | "single" | "similar" | "mock" | "danger";
-            /** Stem */
-            stem: string;
-            /** Knowledgepoint */
-            knowledgePoint?: string | null;
-            /** Consecutivecorrectcount */
-            consecutiveCorrectCount: number;
-            /** Lastwrongtime */
-            lastWrongTime: string;
-        };
-        /**
-         * SmartReviewToday
-         * @description 智能复盘"今日"4 stat.
-         */
-        SmartReviewToday: {
-            /** Pushedtoday */
-            pushedToday: number;
-            /** Finishedtoday */
-            finishedToday: number;
-            /** Streakdays */
-            streakDays: number;
-            /** Daystoexam */
-            daysToExam: number;
-        };
-        /**
-         * SmsSendCodeRequest
-         * @description Send 6-digit SMS code. `purpose` 决定限流维度 + 短信模板.
-         *
-         *     - register: anonymous-allowed (注册阶段还没 user)
-         *     - bind_phone: logged-in only (绑/换绑阶段已登录)
-         *     - login_otp: future (Phase 1 不做, D5)
-         */
-        SmsSendCodeRequest: {
-            /** Phone */
-            phone: string;
+            targetKind: "email" | "phone";
+            /** Targetvalue */
+            targetValue: string;
             /**
              * Purpose
              * @enum {string}
              */
-            purpose: "register" | "bind_phone" | "login_otp";
+            purpose: "register" | "reset_password" | "login" | "bind";
         };
-        /**
-         * SmsSendCodeResponse
-         * @description 跟 ForgotPasswordResponse 同 shape — dev gate (`dev_expose_magic_code`)
-         *     决定 `_devMagicCode` 是否在 body 暴露 6-digit code.
-         */
-        SmsSendCodeResponse: {
+        /** SendCodeResponseV2 */
+        SendCodeResponseV2: {
+            /** Ok */
+            ok: boolean;
+            /** Purpose */
+            purpose: string;
+            /** Delivery */
+            delivery: string;
+            /** Devcode */
+            devCode: string;
+        };
+        /** SummaryMetricV2 */
+        SummaryMetricV2: {
+            /** Key */
+            key: string;
+            /** Label */
+            label: string;
+            /** Value */
+            value: string;
             /**
-             * Ok
-             * @default true
-             * @constant
+             * Tone
+             * @default neutral
              */
-            ok: true;
-            /** Devmagiccode */
-            _devMagicCode?: string | null;
-        };
-        /**
-         * SpecialtyCategoryV2
-         * @description CategoryCard header + body.
-         *
-         *     state='empty' 仅"公文" / "应用文" 题库未补齐场景 (MVP: total=0 时设 empty,
-         *     非空设 None). overall_progress = practiced / total clamp [0, 1].
-         */
-        SpecialtyCategoryV2: {
-            /** Id */
-            id: string;
-            /** Idx */
-            idx: number;
-            /** Name */
-            name: string;
-            /** Desc */
-            desc: string;
-            /** Overallprogress */
-            overallProgress: number;
-            /** Practiced */
-            practiced: number;
-            /** Total */
-            total: number;
-            /** Subtypes */
-            subTypes: components["schemas"]["SpecialtySubtypeRowV2"][];
-            /** State */
-            state?: "empty" | null;
-        };
-        /**
-         * SpecialtyResumeV2
-         * @description ResumeHero 续答 hero band 数据.
-         *
-         *     根据用户最近一条 essay grading 流的"未完成"或"刚 完成 N-1 题"语义派生:
-         *       - 取最近一条 EssayGradingRecord (任意 status), 跟它的 canonical_subtype 匹配
-         *       - q_index = 此 subtype 下当前用户 distinct completed question_id 计数 + 1
-         *       - q_total = 此 subtype 下 public+enabled essay 题总数
-         *       - last_scores = 最近 5 条 completed 的 score (从新到旧)
-         *       - week_goal = [本周 completed 数, 目标=7] (MVP 硬编码 7)
-         *
-         *     没有任何 grading record → null (前端隐藏 ResumeHero).
-         */
-        SpecialtyResumeV2: {
-            /** Typename */
-            typeName: string;
-            /** Questionid */
-            questionId: number;
-            /** Qindex */
-            qIndex: number;
-            /** Qtotal */
-            qTotal: number;
-            /** Lastscores */
-            lastScores: number[];
-            /** Weekgoal */
-            weekGoal: number[];
-        };
-        /**
-         * SpecialtySubtypeRowV2
-         * @description CategoryCard 子类行 (sub-grid 项).
-         *
-         *     id / name / meta 同源: meta 形如 "2024 国考 · 第 1 题" 由最新一道该类题派生.
-         *     status 三态:
-         *       - done: 该用户已 completed 此题
-         *       - progress: 用户有 pending grading record (尚未 completed)
-         *       - pending: 用户未做
-         */
-        SpecialtySubtypeRowV2: {
-            /** Id */
-            id: string;
-            /** Questionid */
-            questionId: number;
-            /** Name */
-            name: string;
-            /** Meta */
-            meta: string;
-            /** Practiced */
-            practiced: number;
-            /** Total */
-            total: number;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "progress" | "done";
-        };
-        /**
-         * SpecialtyTotalsV2
-         * @description StatStrip 4 格汇总 + 平均分.
-         *
-         *     practiced: 当前用户已"完成"批改 (status='completed') 的 distinct essay 题数
-         *     total: 当前 public+enabled essay 题总数 (跨全部 paper)
-         *     streak_days: Asia/Shanghai 本地日连续提交批改的天数 (按 graded_at)
-         *     week_done: 最近 7 天内 completed batch 行数 (含重做同题, 跟 streak 区分)
-         *     avg_score: 当前用户所有 completed batch 的算术平均 0-100, 无 batch 返 0
-         */
-        SpecialtyTotalsV2: {
-            /** Practiced */
-            practiced: number;
-            /** Total */
-            total: number;
-            /** Streakdays */
-            streakDays: number;
-            /** Weekdone */
-            weekDone: number;
-            /** Avgscore */
-            avgScore: number;
-        };
-        /**
-         * StudyPlanHistoryItemV2
-         * @description Slice 3c: GET /api/v2/study-plan/history list item — slim (无 task payload).
-         *
-         *     详情页 (Slice 3d, 暂未做) 才用 full StudyPlanResponse. 列表只显示日期 + 完成
-         *     比例 + generation_status 副标. task_total / task_completed 走 SQL 一句
-         *     GROUP BY + SUM(CASE) 算出 (服务层 list_history, plan §3.1).
-         */
-        StudyPlanHistoryItemV2: {
-            /** Id */
-            id: number;
-            /**
-             * Plandate
-             * Format: date
-             */
-            planDate: string;
-            /**
-             * Generationstatus
-             * @enum {string}
-             */
-            generationStatus: "success" | "fallback_cold_start" | "fallback_llm_failed";
-            /** Tasktotal */
-            taskTotal: number;
-            /** Taskcompleted */
-            taskCompleted: number;
-            /** Createdat */
-            createdAt: string;
-        };
-        /**
-         * StudyPlanHistoryListV2
-         * @description GET /api/v2/study-plan/history response — cursor-paginated slim list.
-         *
-         *     next_cursor: 下一页的 cursor 值 (= 当前页最后一条 plan_date), null = 已到底.
-         *     FE useInfiniteQuery 拿 next_cursor 作 pageParam 翻下一页.
-         */
-        StudyPlanHistoryListV2: {
-            /** Items */
-            items: components["schemas"]["StudyPlanHistoryItemV2"][];
-            /** Nextcursor */
-            nextCursor?: string | null;
-        };
-        /**
-         * StudyPlanResponse
-         * @description GET /api/v2/study-plan/today response.
-         *
-         *     generation_status 三态 (P1-1 方案 A): FE 据此渲不同 banner.
-         *     tasks 走 outer discriminated union, FastAPI auto OpenAPI 输出
-         *     oneOf+discriminator, FE openapi-typescript regen 拿到 narrow.
-         *
-         *     SIKAO Wave 8 Phase A: 加 3 quota 字段 (Home block 4 "今日配额"). 全
-         *     Optional — 老 plan / 新用户未设配额时 None, FE 渲空态.
-         */
-        StudyPlanResponse: {
-            /** Id */
-            id: number;
-            /**
-             * Plandate
-             * Format: date
-             */
-            planDate: string;
-            /**
-             * Generationstatus
-             * @enum {string}
-             */
-            generationStatus: "success" | "fallback_cold_start" | "fallback_llm_failed";
-            /** Createdat */
-            createdAt: string;
-            /** Tasks */
-            tasks: (components["schemas"]["PracticeTaskResponse"] | components["schemas"]["ReviewWrongTaskResponse"] | components["schemas"]["EssayWritingTaskResponse"])[];
-            /** Dailyquota */
-            dailyQuota?: number | null;
-            /** Dailyaccuracytarget */
-            dailyAccuracyTarget?: number | null;
-            /** Subjectquotas */
-            subjectQuotas?: {
-                [key: string]: number;
-            } | null;
-        };
-        /**
-         * StudyPlanStartPayload
-         * @description 学习计划 task → practice session 创建入参.
-         *
-         *     paperCode 可选 (review_wrong 跨卷场景没 paperCode); questionIds 必填,
-         *     至少 1 个. 跟 retry-batch 区别见 ExamPaperService.start_study_plan_session.
-         */
-        StudyPlanStartPayload: {
-            /** Papercode */
-            paperCode?: string | null;
-            /** Questionids */
-            questionIds: number[];
-        };
-        /**
-         * StudyTaskPatchRequest
-         * @description PATCH /api/v2/study-plan/tasks/{id} body.
-         *
-         *     只允许 pending → completed/skipped (不允许改回 pending — D4 单向不可逆).
-         *     跨用户 / 已 finalized 由 service 层校验 (404 / 422).
-         */
-        StudyTaskPatchRequest: {
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "completed" | "skipped";
-        };
-        /** TagSummaryV2 */
-        TagSummaryV2: {
-            /** Id */
-            id: number;
-            /** Name */
-            name: string;
-        };
-        /** TrendEntryV2 */
-        TrendEntryV2: {
-            /** Date */
-            date: string;
-            /** Rate */
-            rate: number;
-            /** Total */
-            total: number;
-        };
-        /**
-         * UnbindRequest
-         * @description Unbind email / phone (D11): 必须保留至少一个**已 verified** identifier.
-         *
-         *     解绑 phone 允许 ⇔ `email IS NOT NULL AND email_verified=True`.
-         *     解绑 email 允许 ⇔ `phone IS NOT NULL AND phone_verified=True`.
-         *     否则拒带 code=`identifier_must_remain_verified`.
-         *     D12: password confirm 必填.
-         */
-        UnbindRequest: {
-            /** Password */
-            password: string;
-        };
-        /**
-         * UserExamCreate
-         * @description POST /api/v2/user-exams body (Phase B). 用户添加一场自定义考试.
-         *
-         *     `exam_event_id` 可选: 用户从 ExamEvent 库选 (auto-fill name/date) 或纯
-         *     手填 (None). `study_plan_id` 可选: 后续 /sync 绑定专属计划. `notes`
-         *     用户自由备注 (动机 / 复习重点 / 报名号 / ...).
-         */
-        UserExamCreate: {
-            /** Name */
-            name: string;
-            /**
-             * Examdate
-             * Format: date
-             */
-            examDate: string;
-            /** Exameventid */
-            examEventId?: number | null;
-            /** Studyplanid */
-            studyPlanId?: number | null;
-            /** Notes */
-            notes?: string | null;
-        };
-        /**
-         * UserExamList
-         * @description GET /api/v2/user-exams 响应 — 全量返回 (Home block 1 极少, ≤10 row).
-         */
-        UserExamList: {
-            /** Exams */
-            exams: components["schemas"]["UserExamRead"][];
-            /** Total */
-            total: number;
-        };
-        /**
-         * UserExamRead
-         * @description 单条用户考试 — list + detail 共用.
-         *
-         *     `days_until` 是 service 派生 ((exam_date - today).days), 不进 DB.
-         *     可负 (考试已过); FE 据此渲 "倒计时 X 天" / "已过 N 天" 两态.
-         */
-        UserExamRead: {
-            /** Id */
-            id: number;
-            /** Name */
-            name: string;
-            /**
-             * Examdate
-             * Format: date
-             */
-            examDate: string;
-            /** Exameventid */
-            examEventId: number | null;
-            /** Studyplanid */
-            studyPlanId: number | null;
-            /** Notes */
-            notes: string | null;
-            /** Createdat */
-            createdAt: string;
-            /** Daysuntil */
-            daysUntil: number;
-        };
-        /**
-         * UserExamUpdate
-         * @description PATCH /api/v2/user-exams/{id} body — partial update.
-         *
-         *     任意字段 None 表示不改. service 层 dict(exclude_unset=True) 按需 set.
-         */
-        UserExamUpdate: {
-            /** Name */
-            name?: string | null;
-            /** Examdate */
-            examDate?: string | null;
-            /** Exameventid */
-            examEventId?: number | null;
-            /** Studyplanid */
-            studyPlanId?: number | null;
-            /** Notes */
-            notes?: string | null;
-        };
-        /** UserGoalUpdateV2 */
-        UserGoalUpdateV2: {
-            /** Targetscore */
-            targetScore: number;
-        };
-        /** UserGoalV2 */
-        UserGoalV2: {
-            /** Hasgoal */
-            hasGoal: boolean;
-            /** Targetscore */
-            targetScore: number | null;
-        };
-        /**
-         * UserSummaryV2
-         * @description Phase B (auth recovery): 加 email + email_verified.
-         *     Identity v2 (D6/D7): username 改 nullable (新 phone 注册无 username);
-         *     加 phone / phone_verified / needs_identifier_setup. needs_identifier_setup
-         *     是 service 层派生 (email 与 phone 都 NULL → True), 不进 DB; 前端 router
-         *     guard 据此 push /complete-profile.
-         */
-        UserSummaryV2: {
-            /** Id */
-            id: number;
-            /** Username */
-            username?: string | null;
-            /** Displayname */
-            displayName: string;
-            /** Email */
-            email?: string | null;
-            /**
-             * Emailverified
-             * @default false
-             */
-            emailVerified: boolean;
-            /** Phone */
-            phone?: string | null;
-            /**
-             * Phoneverified
-             * @default false
-             */
-            phoneVerified: boolean;
-            /**
-             * Needsidentifiersetup
-             * @default false
-             */
-            needsIdentifierSetup: boolean;
+            tone: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -5695,34 +1402,29 @@ export interface components {
             /** Context */
             ctx?: Record<string, never>;
         };
-        /** VerifyEmailConfirmRequest */
-        VerifyEmailConfirmRequest: {
-            /** Token */
-            token: string;
-        };
-        /** VerifyEmailConfirmResponse */
-        VerifyEmailConfirmResponse: {
+        /** VerifyCodeRequestV2 */
+        VerifyCodeRequestV2: {
             /**
-             * Ok
-             * @default true
-             * @constant
+             * Targetkind
+             * @enum {string}
              */
-            ok: true;
-            user: components["schemas"]["UserSummaryV2"];
-        };
-        /**
-         * VerifyEmailSendResponse
-         * @description 跟 ForgotPasswordResponse 同 shape — dev gate 决定 _devMagicLink.
-         */
-        VerifyEmailSendResponse: {
+            targetKind: "email" | "phone";
+            /** Targetvalue */
+            targetValue: string;
             /**
-             * Ok
-             * @default true
-             * @constant
+             * Purpose
+             * @enum {string}
              */
-            ok: true;
-            /** Devmagiclink */
-            _devMagicLink?: string | null;
+            purpose: "register" | "reset_password" | "login" | "bind";
+            /** Code */
+            code: string;
+        };
+        /** VerifyCodeResponseV2 */
+        VerifyCodeResponseV2: {
+            /** Verified */
+            verified: boolean;
+            /** Message */
+            message: string;
         };
         /** VersionResponse */
         VersionResponse: {
@@ -5740,505 +1442,6 @@ export interface components {
             schemaVersion: string;
             /** Env */
             env: string;
-        };
-        /**
-         * WeakModule
-         * @description 单一薄弱模块 score row.
-         *
-         *     score = wrong_rate × (1 - completion_rate) × subject_weight × 100.
-         *     suggested_action 三态: 重做错题 / 继续复盘 / 去练习 (按 wrong_rate 分).
-         */
-        WeakModule: {
-            /**
-             * Subject
-             * @enum {string}
-             */
-            subject: "言语" | "数量" | "判推" | "资分" | "常识";
-            /** Score */
-            score: number;
-            /** Wrongrate */
-            wrongRate: number;
-            /** Completionrate */
-            completionRate: number;
-            /** Suggestedaction */
-            suggestedAction: string;
-        };
-        /**
-         * WeakModuleListResponse
-         * @description GET /api/v2/wrong-questions/weakness 响应 — top-N 薄弱模块.
-         */
-        WeakModuleListResponse: {
-            /** Modules */
-            modules: components["schemas"]["WeakModule"][];
-            /** Generatedat */
-            generatedAt: string;
-        };
-        /**
-         * WeeklyProgressSummaryV2
-         * @description GET /api/v2/progress/weekly response.
-         *
-         *     xingce_answered: total xingce questions answered in the week.
-         *     xingce_accuracy: accuracy rate 0-100 for xingce in the week.
-         *     essay_submitted: total essay grading submissions in the week.
-         *     tasks_completed: study plan tasks completed in the week.
-         *     tasks_total: total study plan tasks for the week.
-         *     streak_days: current consecutive-day streak at time of request.
-         */
-        WeeklyProgressSummaryV2: {
-            /**
-             * Weekstart
-             * Format: date
-             */
-            weekStart: string;
-            /**
-             * Weekend
-             * Format: date
-             */
-            weekEnd: string;
-            /** Xingceanswered */
-            xingceAnswered: number;
-            /** Xingceaccuracy */
-            xingceAccuracy: number;
-            /** Essaysubmitted */
-            essaySubmitted: number;
-            /** Taskscompleted */
-            tasksCompleted: number;
-            /** Taskstotal */
-            tasksTotal: number;
-            /** Streakdays */
-            streakDays: number;
-        };
-        /**
-         * WrongBookHeatmapCell
-         * @description Heatmap 单元格 — 一行内一个日期的错题强度.
-         *
-         *     rate 为 None 表示该日无答题数据 (不是 0 错题, 而是没答题). 前端据此
-         *     区分 "空白日" 跟 "答了但全对" 两态.
-         */
-        WrongBookHeatmapCell: {
-            /**
-             * Date
-             * Format: date
-             */
-            date: string;
-            /** Count */
-            count: number;
-            /** Rate */
-            rate?: number | null;
-        };
-        /**
-         * WrongBookHeatmapResponse
-         * @description Heatmap 完整 response — 5 行 × N 天 cell.
-         */
-        WrongBookHeatmapResponse: {
-            /** Days */
-            days: number;
-            /** Rows */
-            rows: components["schemas"]["WrongBookHeatmapRow"][];
-            /** Generatedat */
-            generatedAt: string;
-        };
-        /**
-         * WrongBookHeatmapRow
-         * @description Heatmap 一行 — 一个 subject 在 days 窗口内的每日错题强度.
-         */
-        WrongBookHeatmapRow: {
-            /**
-             * Subject
-             * @enum {string}
-             */
-            subject: "言语" | "数量" | "判推" | "资分" | "常识";
-            /** Cells */
-            cells: components["schemas"]["WrongBookHeatmapCell"][];
-            /** Peakidx */
-            peakIdx?: number | null;
-            /** Total */
-            total: number;
-        };
-        /**
-         * WrongBookSubmitPayload
-         * @description 错题本提交 (重做模式) — 扩 PracticeSessionAnswerSubmissionV2 加耗时.
-         */
-        WrongBookSubmitPayload: {
-            /** Selectedoptionkeys */
-            selectedOptionKeys: string[];
-            /**
-             * Durationms
-             * @default 0
-             */
-            durationMs: number;
-            /** Errorreason */
-            errorReason?: string | null;
-        };
-        /** WrongBookSubmitResult */
-        WrongBookSubmitResult: {
-            /** Questionid */
-            questionId: number;
-            /** Iscorrect */
-            isCorrect: boolean;
-            /** Bluffdetected */
-            bluffDetected: boolean;
-            /** Masterylevel */
-            masteryLevel: string;
-            /** Consecutivecorrectcount */
-            consecutiveCorrectCount: number;
-            /** Bluffcount */
-            bluffCount: number;
-            /** Attemptno */
-            attemptNo: number;
-        };
-        /**
-         * WrongBookSummary
-         * @description 主页 hero 5 stat-strip 指标.
-         */
-        WrongBookSummary: {
-            /** Inpractice */
-            inPractice: number;
-            /** Todocount */
-            todoCount: number;
-            /** Dangercount */
-            dangerCount: number;
-            /** Graduatedcount */
-            graduatedCount: number;
-            /** Weeklynew */
-            weeklyNew: number;
-        };
-        /** WrongQuestionDetailV2 */
-        WrongQuestionDetailV2: {
-            /** Questionid */
-            questionId: number;
-            /** Stem */
-            stem: string;
-            /** Options */
-            options: components["schemas"]["WrongQuestionOptionV2"][];
-            /** Correctanswerkeys */
-            correctAnswerKeys: string[];
-            /** Userlatestanswerkeys */
-            userLatestAnswerKeys: string[];
-            /** Explanation */
-            explanation: string;
-            /** Subject */
-            subject: string | null;
-            /** Subtype */
-            subtype?: string | null;
-            /** Questionkind */
-            questionKind: string;
-            /** Papercode */
-            paperCode: string | null;
-            /** Papername */
-            paperName: string | null;
-            /** Wrongcount */
-            wrongCount: number;
-            /** Masterylevel */
-            masteryLevel: string;
-            /** Lastwrongtime */
-            lastWrongTime: string;
-            /** Consecutivecorrectcount */
-            consecutiveCorrectCount: number;
-        };
-        /** WrongQuestionListResponseV2 */
-        WrongQuestionListResponseV2: {
-            /** Items */
-            items: components["schemas"]["WrongQuestionDetailV2"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Pagesize */
-            pageSize: number;
-            /** Availablesubjects */
-            availableSubjects: string[];
-            /** Availablesubtypes */
-            availableSubtypes: string[];
-        };
-        /** WrongQuestionOptionV2 */
-        WrongQuestionOptionV2: {
-            /** Key */
-            key: string;
-            /** Text */
-            text: string;
-            /** Iscorrect */
-            isCorrect: boolean;
-        };
-        /** WrongQuestionV2 */
-        WrongQuestionV2: {
-            /** Questionid */
-            questionId: number;
-            /** Questionstem */
-            questionStem: string;
-            /** Latestselectedoption */
-            latestSelectedOption: string;
-            /** Correctoption */
-            correctOption: string;
-            /** Wrongcount */
-            wrongCount: number;
-        };
-        /**
-         * WrongReasonOutV2
-         * @description Response after patching wrong-reason.
-         */
-        WrongReasonOutV2: {
-            /** Answerid */
-            answerId: number;
-            /** Wrongreasoncode */
-            wrongReasonCode: string | null;
-            /** Wrongreasonsource */
-            wrongReasonSource: string | null;
-        };
-        /**
-         * WrongReasonUpdateV2
-         * @description PATCH /api/v2/practice/sessions/{id}/answers/{answer_id}/diagnosis body.
-         *
-         *     wrong_reason_code: one of the 7 canonical diagnosis codes.
-         *     source: 'ai' (LLM diagnosis) or 'user' (user override). Default 'user'
-         *     when sent from FE manually; the AI diagnosis pipeline sends 'ai'.
-         */
-        WrongReasonUpdateV2: {
-            /**
-             * Wrongreasoncode
-             * @enum {string}
-             */
-            wrongReasonCode: "calculation_error" | "concept_gap" | "careless_mistake" | "question_misread" | "knowledge_missing" | "logic_error" | "other";
-            /**
-             * Source
-             * @default user
-             * @enum {string}
-             */
-            source: "ai" | "user";
-        };
-        /** WrongRetryBatchPayload */
-        WrongRetryBatchPayload: {
-            /** Questionids */
-            questionIds: number[];
-        };
-        /**
-         * XingceLastAttemptV2
-         * @description PaperRow lastAttempt: 该用户在此 paper 上最近一次 PracticeSession.
-         *
-         *     score: 此 session 内 distinct correct answer 占 distinct answered 比例 × 100 (0-100).
-         *     submitted_at: PracticeSession.completed_at (无 → 用最新 answer.answered_at fallback).
-         */
-        XingceLastAttemptV2: {
-            /** Score */
-            score: number;
-            /** Submittedat */
-            submittedAt: string;
-        };
-        /**
-         * XingcePaperListItemV2Extended
-         * @description GET /api/v2/papers/xingce/list/extended 单行.
-         *
-         *     扩自 PaperSummaryV2 同 essay 镜像: 加 region / track / difficulty / status /
-         *     progress / last_attempt / pinned. region / track 从 source_provider + paper_code
-         *     派生 (国考 / 省考 / track='gk' 行测综合). difficulty 1-3 由 question_count
-         *     启发式 (≤30=1 易 / 31-80=2 中 / ≥81=3 难, 行测一般 90-130 题). pinned MVP 全 False.
-         */
-        XingcePaperListItemV2Extended: {
-            /** Id */
-            id: number;
-            /** Papercode */
-            paperCode: string;
-            /** Papername */
-            paperName: string;
-            /** Examyear */
-            examYear?: number | null;
-            /** Sourceprovider */
-            sourceProvider?: string | null;
-            /** Sourcekind */
-            sourceKind?: string | null;
-            /** Questioncount */
-            questionCount: number;
-            /** Currentrevisionid */
-            currentRevisionId?: number | null;
-            /** Region */
-            region: string;
-            /**
-             * Track
-             * @default gk
-             * @enum {string}
-             */
-            track: "gk" | "sk";
-            /** Difficulty */
-            difficulty?: (1 | 2 | 3) | null;
-            /**
-             * Status
-             * @default todo
-             * @enum {string}
-             */
-            status: "todo" | "doing" | "done";
-            /**
-             * Progress
-             * @default 0/0
-             */
-            progress: string;
-            lastAttempt?: components["schemas"]["XingceLastAttemptV2"] | null;
-            /**
-             * Pinned
-             * @default false
-             */
-            pinned: boolean;
-        };
-        /**
-         * XingcePapersFiltersResponseV2
-         * @description GET /api/v2/papers/xingce/filters response.
-         *
-         *     返候选 chip 集合 (跟 essay 镜像):
-         *       - regions: distinct source_provider (+ 国考 / 省考 派生 bucket)
-         *       - years: distinct exam_year DESC
-         *       - paper_types: distinct source_kind
-         */
-        XingcePapersFiltersResponseV2: {
-            /** Regions */
-            regions: string[];
-            /** Years */
-            years: number[];
-            /** Papertypes */
-            paperTypes: string[];
-        };
-        /**
-         * XingcePapersListExtendedResponseV2
-         * @description GET /api/v2/papers/xingce/list/extended response.
-         */
-        XingcePapersListExtendedResponseV2: {
-            /** Items */
-            items: components["schemas"]["XingcePaperListItemV2Extended"][];
-            /** Total */
-            total: number;
-            /** Page */
-            page: number;
-            /** Pagesize */
-            pageSize: number;
-        };
-        /**
-         * XingceSpecialtyCategoriesResponseV2
-         * @description GET /api/v2/papers/xingce/specialty/categories response.
-         *
-         *     返 5 大类 (固定顺序: 言语 / 判断 / 数量 / 资料 / 常识). 不在 5 大类
-         *     cleanup 范围的细分 subtype 通过 keyword bucket 归并 (e.g. "图形推理" → 判断
-         *     推理, "公共基础知识" → 常识判断), bucket 映射见 services/xingce_specialty.py.
-         */
-        XingceSpecialtyCategoriesResponseV2: {
-            /** Cats */
-            cats: components["schemas"]["XingceSpecialtyCategoryV2"][];
-        };
-        /**
-         * XingceSpecialtyCategoryV2
-         * @description CategoryCard header + body (行测).
-         *
-         *     state='empty' 当 total=0 (该类无入库题).
-         *     overall_progress = practiced / total clamp [0, 1].
-         */
-        XingceSpecialtyCategoryV2: {
-            /** Id */
-            id: string;
-            /** Idx */
-            idx: number;
-            /** Name */
-            name: string;
-            /** Desc */
-            desc: string;
-            /** Overallprogress */
-            overallProgress: number;
-            /** Practiced */
-            practiced: number;
-            /** Total */
-            total: number;
-            /** Subtypes */
-            subTypes: components["schemas"]["XingceSpecialtySubtypeRowV2"][];
-            /** State */
-            state?: "empty" | null;
-        };
-        /**
-         * XingceSpecialtyResumeV2
-         * @description ResumeHero 续答 hero band 数据 (行测).
-         *
-         *     根据用户最近一条 PracticeSessionAnswer 的 question 派生:
-         *       - 取最近一条 answer (按 answered_at), 落到对应 5 大类 bucket
-         *       - q_index = 此类下当前用户 distinct answered question_id 计数 + 1
-         *       - q_total = 此类下 public+enabled 行测题总数
-         *       - last_scores = 最近 5 条 answer 滚动正确率 (per-batch 2-题滚动窗口百分比) — 简化为
-         *         最近 5 个 answer 是否正确 转 0/100
-         *       - week_goal = [本周 done 数, 目标=7] (MVP 硬编码 7)
-         *
-         *     没有任何 PracticeSessionAnswer → null (前端隐藏 ResumeHero).
-         */
-        XingceSpecialtyResumeV2: {
-            /** Typename */
-            typeName: string;
-            /** Questionid */
-            questionId: number;
-            /** Qindex */
-            qIndex: number;
-            /** Qtotal */
-            qTotal: number;
-            /** Lastscores */
-            lastScores: number[];
-            /** Weekgoal */
-            weekGoal: number[];
-        };
-        /**
-         * XingceSpecialtySubtypeRowV2
-         * @description CategoryCard 子类行 (sub-grid 项, 行测).
-         *
-         *     id / name / meta 同源: meta 形如 "2024 国考 · 第 1 题".
-         *     status 三态:
-         *       - done: 该用户已答此题 (PracticeSessionAnswer 存在)
-         *       - progress: 题挂在 in-progress session (started_at 有值, completed_at 为 None) 但
-         *         本题尚未提交 answer
-         *       - pending: 用户未做
-         *     实测行测无 essay 那种"pending grading"中间态, status=progress 概率较低 (一般答完
-         *     就 commit answer); 保 三态语义跟 essay 镜像方便 FE 复用组件.
-         */
-        XingceSpecialtySubtypeRowV2: {
-            /** Id */
-            id: string;
-            /** Questionid */
-            questionId: number;
-            /** Name */
-            name: string;
-            /** Meta */
-            meta: string;
-            /** Practiced */
-            practiced: number;
-            /** Total */
-            total: number;
-            /**
-             * Status
-             * @enum {string}
-             */
-            status: "pending" | "progress" | "done";
-        };
-        /**
-         * XingceSpecialtySummaryV2
-         * @description GET /api/v2/papers/xingce/specialty/summary response.
-         *
-         *     totals 永远填 (空 user 返 0); resume 可空 (无 answer record → None).
-         */
-        XingceSpecialtySummaryV2: {
-            totals: components["schemas"]["XingceSpecialtyTotalsV2"];
-            resume?: components["schemas"]["XingceSpecialtyResumeV2"] | null;
-        };
-        /**
-         * XingceSpecialtyTotalsV2
-         * @description StatStrip 4 格汇总 + 平均正确率 (行测无 score → avgScore 改成 0-100 百分比正确率).
-         *
-         *     practiced: 当前用户已答 (distinct question_id, 通过 PracticeSessionAnswer) 行测题数
-         *     total: 当前 public+enabled+question_kind!='essay' 行测题总数 (跨全部 paper)
-         *     streak_days: Asia/Shanghai 本地日连续答题的天数 (按 PracticeSessionAnswer.answered_at)
-         *     week_done: 最近 7 天内 distinct PracticeSessionAnswer 数 (含同题再答, 跟 streak 区分)
-         *     avg_score: 当前用户所有 PracticeSessionAnswer 正确率百分比 0-100, 无 answer 返 0
-         */
-        XingceSpecialtyTotalsV2: {
-            /** Practiced */
-            practiced: number;
-            /** Total */
-            total: number;
-            /** Streakdays */
-            streakDays: number;
-            /** Weekdone */
-            weekDone: number;
-            /** Avgscore */
-            avgScore: number;
         };
     };
     responses: never;
@@ -6329,40 +1532,7 @@ export interface operations {
             };
         };
     };
-    login_api_v2_auth_login_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LoginIdentifierRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LoginResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    refresh_api_v2_auth_refresh_post: {
+    bootstrap_api_v2_system_bootstrap_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6377,7 +1547,106 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["LoginResponseV2"];
+                    "application/json": components["schemas"]["BootstrapResponseV2"];
+                };
+            };
+        };
+    };
+    register_email_api_v2_auth_register_email_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterEmailRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthSessionResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    register_phone_api_v2_auth_register_phone_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterPhoneRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthSessionResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    login_api_v2_auth_login_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AuthSessionResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -6392,15 +1661,17 @@ export interface operations {
         requestBody?: never;
         responses: {
             /** @description Successful Response */
-            204: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
-                content?: never;
+                content: {
+                    "application/json": components["schemas"]["AuthAckV2"];
+                };
             };
         };
     };
-    me_api_v2_auth_me_get: {
+    get_session_api_v2_auth_session_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6415,23 +1686,21 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserSummaryV2"];
+                    "application/json": components["schemas"]["AuthSessionStateResponseV2"];
                 };
             };
         };
     };
-    forgot_password_api_v2_auth_forgot_password_post: {
+    send_code_api_v2_auth_send_code_post: {
         parameters: {
-            query?: {
-                response?: unknown;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ForgotPasswordRequest"];
+                "application/json": components["schemas"]["SendCodeRequestV2"];
             };
         };
         responses: {
@@ -6441,7 +1710,40 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ForgotPasswordResponse"];
+                    "application/json": components["schemas"]["SendCodeResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    verify_code_api_v2_auth_verify_code_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["VerifyCodeRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["VerifyCodeResponseV2"];
                 };
             };
             /** @description Validation Error */
@@ -6464,7 +1766,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ResetPasswordRequest"];
+                "application/json": components["schemas"]["ResetPasswordRequestV2"];
             };
         };
         responses: {
@@ -6474,7 +1776,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ResetPasswordResponse"];
+                    "application/json": components["schemas"]["AuthAckV2"];
                 };
             };
             /** @description Validation Error */
@@ -6488,7 +1790,7 @@ export interface operations {
             };
         };
     };
-    verify_email_send_api_v2_auth_verify_email_send_post: {
+    get_dashboard_overview_api_v2_dashboard_overview_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -6503,12 +1805,372 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["VerifyEmailSendResponse"];
+                    "application/json": components["schemas"]["OverviewResponseV2"];
                 };
             };
         };
     };
-    verify_email_confirm_api_v2_auth_verify_email_confirm_post: {
+    get_dashboard_today_api_v2_dashboard_today_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardTodayResponseV2"];
+                };
+            };
+        };
+    };
+    get_dashboard_today_must_do_api_v2_dashboard_today_must_do_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_dashboard_today_continue_api_v2_dashboard_today_continue_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_dashboard_today_review_api_v2_dashboard_today_review_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_dashboard_weekly_plan_api_v2_dashboard_weekly_plan_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardWeeklyPlanResponseV2"];
+                };
+            };
+        };
+    };
+    get_dashboard_weekly_goal_api_v2_dashboard_weekly_plan_goal_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_dashboard_weekly_completion_api_v2_dashboard_weekly_plan_today_completion_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_dashboard_weekly_adjust_api_v2_dashboard_weekly_plan_adjust_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_progress_overview_api_v2_dashboard_progress_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardProgressResponseV2"];
+                };
+            };
+        };
+    };
+    get_progress_trend_api_v2_dashboard_progress_trend_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_progress_weakness_api_v2_dashboard_progress_weakness_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_progress_diagnosis_api_v2_dashboard_progress_diagnosis_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_dashboard_records_api_v2_dashboard_records_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DashboardRecordsResponseV2"];
+                };
+            };
+        };
+    };
+    get_practice_center_api_v2_practice_center_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeCenterResponseV2"];
+                };
+            };
+        };
+    };
+    list_xingce_categories_api_v2_practice_xingce_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogListResponseV2"];
+                };
+            };
+        };
+    };
+    list_xingce_papers_api_v2_practice_xingce_papers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogListResponseV2"];
+                };
+            };
+        };
+    };
+    list_essay_categories_api_v2_practice_essay_categories_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogListResponseV2"];
+                };
+            };
+        };
+    };
+    list_essay_papers_api_v2_practice_essay_papers_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogListResponseV2"];
+                };
+            };
+        };
+    };
+    create_session_api_v2_practice_sessions_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -6517,7 +2179,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["VerifyEmailConfirmRequest"];
+                "application/json": components["schemas"]["PracticeSessionCreateRequestV2"];
             };
         };
         responses: {
@@ -6527,7 +2189,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["VerifyEmailConfirmResponse"];
+                    "application/json": components["schemas"]["PracticeSessionEnvelopeV2"];
                 };
             };
             /** @description Validation Error */
@@ -6541,748 +2203,7 @@ export interface operations {
             };
         };
     };
-    register_email_api_v2_auth_register_email_post: {
-        parameters: {
-            query?: {
-                response?: unknown;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterEmailRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LoginResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    register_phone_api_v2_auth_register_phone_post: {
-        parameters: {
-            query?: {
-                response?: unknown;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RegisterPhoneRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LoginResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    sms_send_code_api_v2_auth_sms_send_code_post: {
-        parameters: {
-            query?: {
-                response?: unknown;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["SmsSendCodeRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SmsSendCodeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bind_phone_send_code_api_v2_auth_bind_phone_send_code_post: {
-        parameters: {
-            query?: {
-                response?: unknown;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BindPhoneSendCodeRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SmsSendCodeResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bind_phone_confirm_api_v2_auth_bind_phone_confirm_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BindPhoneConfirmRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IdentifierActionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bind_email_send_link_api_v2_auth_bind_email_send_link_post: {
-        parameters: {
-            query?: {
-                response?: unknown;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BindEmailSendLinkRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ForgotPasswordResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bind_email_confirm_api_v2_auth_bind_email_confirm_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["BindEmailConfirmRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IdentifierActionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    unbind_phone_api_v2_auth_unbind_phone_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UnbindRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IdentifierActionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    unbind_email_api_v2_auth_unbind_email_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UnbindRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["IdentifierActionResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    bootstrap_api_v2_system_bootstrap_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["BootstrapResponseV2"];
-                };
-            };
-        };
-    };
-    list_papers_api_v2_papers_get: {
-        parameters: {
-            query?: {
-                kind?: "essay" | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperSummaryV2"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_categories_api_v2_categories_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoriesResponseV2"];
-                };
-            };
-        };
-    };
-    list_paper_user_status_api_v2_papers_me_status_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperUserStatusResponseV2"];
-                };
-            };
-        };
-    };
-    list_essay_papers_paginated_api_v2_papers_essay_list_get: {
-        parameters: {
-            query?: {
-                page?: number;
-                pageSize?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EssayPaperListResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_paper_api_v2_papers__paper_code__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                paper_code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperDetailV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_paper_questions_api_v2_papers__paper_code__questions_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                paper_code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperQuestionItemV2"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_question_api_v2_questions__question_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                question_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QuestionDetailV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_question_asset_api_v2_assets_questions__asset_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                asset_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_material_group_asset_api_v2_assets_material_groups__asset_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                asset_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_custom_practice_facets_api_v2_practice_custom_facets_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CustomPracticeFacetsResponseV2"];
-                };
-            };
-        };
-    };
-    start_custom_practice_session_api_v2_practice_custom_start_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CustomPracticeStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PracticeSessionStartV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    start_paper_session_api_v2_practice_papers__paper_code__start_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                paper_code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PracticeSessionStartV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    submit_session_answer_api_v2_practice_sessions__session_id__submit_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "Idempotency-Key"?: string | null;
-            };
-            path: {
-                session_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["PracticeSessionAnswerSubmissionV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PracticeSessionAnswerResultV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    complete_session_api_v2_practice_sessions__session_id__complete_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "Idempotency-Key"?: string | null;
-            };
-            path: {
-                session_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: {
-            content: {
-                "application/json": components["schemas"]["CompleteSessionPayloadV2"] | null;
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_session_result_api_v2_practice_sessions__session_id__result_get: {
+    get_session_api_v2_practice_sessions__session_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -7299,7 +2220,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["PracticeSessionResultV2"];
+                    "application/json": components["schemas"]["PracticeSessionEnvelopeV2"];
                 };
             };
             /** @description Validation Error */
@@ -7313,533 +2234,18 @@ export interface operations {
             };
         };
     };
-    get_history_api_v2_practice_history_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PracticeHistoryResponseV2"];
-                };
-            };
-        };
-    };
-    list_wrong_questions_api_v2_practice_wrong_questions_get: {
-        parameters: {
-            query?: {
-                mastery_level?: string | null;
-                subject?: string | null;
-                subtype?: string | null;
-                paperCode?: string | null;
-                page?: number;
-                page_size?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WrongQuestionListResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    retry_wrong_batch_api_v2_practice_wrong_questions_retry_batch_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WrongRetryBatchPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PracticeSessionStartV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    retry_wrong_question_api_v2_practice_wrong_questions__question_id__retry_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                question_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PracticeSessionStartV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    start_study_plan_session_api_v2_practice_study_plan_start_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StudyPlanStartPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PracticeSessionStartV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    stats_heatmap_api_v2_practice_stats_heatmap_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HeatmapEntryV2"][];
-                };
-            };
-        };
-    };
-    stats_trend_api_v2_practice_stats_trend_get: {
-        parameters: {
-            query?: {
-                days?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["TrendEntryV2"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    stats_knowledge_points_api_v2_practice_stats_knowledge_points_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["KnowledgePointEntryV2"][];
-                };
-            };
-        };
-    };
-    stats_summary_api_v2_practice_stats_summary_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["DashboardStatsV2"];
-                };
-            };
-        };
-    };
-    get_wrong_book_summary_api_v2_practice_wrong_questions_summary_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WrongBookSummary"];
-                };
-            };
-        };
-    };
-    get_graduation_candidates_api_v2_practice_wrong_questions_graduation_candidates_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["GraduationCandidate"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    mark_wrong_question_mastered_api_v2_practice_wrong_questions__question_id__mark_mastered_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                question_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["MarkMasteredResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    peek_wrong_question_api_v2_practice_wrong_questions__question_id__peek_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                question_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PeekResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    submit_wrong_question_with_bluff_api_v2_practice_wrong_questions__question_id__submit_bluff_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                question_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["WrongBookSubmitPayload"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WrongBookSubmitResult"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_smart_review_today_api_v2_practice_smart_review_today_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SmartReviewToday"];
-                };
-            };
-        };
-    };
-    get_smart_review_next_api_v2_practice_smart_review_next_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SmartReviewNext"];
-                };
-            };
-        };
-    };
-    get_wrong_book_heatmap_api_v2_practice_wrong_questions_heatmap_get: {
-        parameters: {
-            query?: {
-                days?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WrongBookHeatmapResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_last_incomplete_practice_session_api_v2_practice_last_session_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PracticeSessionSummary"] | null;
-                };
-            };
-        };
-    };
-    get_weakness_modules_api_v2_practice_wrong_questions_weakness_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["WeakModuleListResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_answer_wrong_reason_api_v2_practice_sessions__session_id__answers__answer_id__diagnosis_patch: {
+    save_answers_api_v2_practice_sessions__session_id__answers_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
                 session_id: number;
-                answer_id: number;
             };
             cookie?: never;
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["WrongReasonUpdateV2"];
+                "application/json": components["schemas"]["PracticeAnswerUpsertRequestV2"];
             };
         };
         responses: {
@@ -7849,7 +2255,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WrongReasonOutV2"];
+                    "application/json": components["schemas"]["OperationAckV2"];
                 };
             };
             /** @description Validation Error */
@@ -7863,98 +2269,12 @@ export interface operations {
             };
         };
     };
-    import_standard_json_api_v2_admin_import_jobs_standard_json_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "multipart/form-data": components["schemas"]["Body_import_standard_json_api_v2_admin_import_jobs_standard_json_post"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportJobSummary"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    import_aipta_text_endpoint_api_v2_admin_essay_papers_import_aipta_text_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AiptaTextImportRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportJobSummary"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_import_jobs_api_v2_admin_import_jobs_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportJobSummary"][];
-                };
-            };
-        };
-    };
-    get_import_job_api_v2_admin_import_jobs__job_id__get: {
+    submit_session_api_v2_practice_sessions__session_id__submit_post: {
         parameters: {
             query?: never;
             header?: never;
             path: {
-                job_id: number;
+                session_id: number;
             };
             cookie?: never;
         };
@@ -7966,7 +2286,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ImportJobSummary"];
+                    "application/json": components["schemas"]["OperationAckV2"];
                 };
             };
             /** @description Validation Error */
@@ -7980,7 +2300,38 @@ export interface operations {
             };
         };
     };
-    list_admin_papers_api_v2_admin_papers_get: {
+    get_result_api_v2_practice_sessions__session_id__result_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeSessionResultResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_review_items_api_v2_review_items_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -7995,172 +2346,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AdminPaperSummaryV2"][];
+                    "application/json": components["schemas"]["ReviewListResponseV2"];
                 };
             };
         };
     };
-    list_paper_revisions_api_v2_admin_papers__paper_code__revisions_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                paper_code: string;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperRevisionSummary"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    publish_revision_api_v2_admin_papers__paper_code__revisions__revision_id__publish_post: {
-        parameters: {
-            query?: never;
-            header?: {
-                "X-Release-Execution-Id"?: string | null;
-            };
-            path: {
-                paper_code: string;
-                revision_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PaperDetailV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    publish_status_api_v2_admin_revisions__revision_id__publish_status_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                revision_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PublishStatusResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_admin_questions_api_v2_admin_questions_get: {
-        parameters: {
-            query?: {
-                paperCode?: string | null;
-                revisionId?: number | null;
-                keyword?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QuestionListItemV2"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_admin_question_api_v2_admin_questions__question_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                question_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AdminQuestionDetailV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_visible_api_v2_exam_events_get: {
+    get_smart_review_api_v2_review_smart_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -8175,12 +2366,74 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExamEventListResponse"];
+                    "application/json": components["schemas"]["OverviewResponseV2"];
                 };
             };
         };
     };
-    admin_list_api_v2_admin_exam_events_get: {
+    get_review_item_api_v2_review_items__item_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDetailResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    redo_review_item_api_v2_review_items__item_id__redo_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_notes_api_v2_notes_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -8195,12 +2448,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExamEventListResponse"];
+                    "application/json": components["schemas"]["NoteListResponseV2"];
                 };
             };
         };
     };
-    admin_create_api_v2_admin_exam_events_post: {
+    create_note_api_v2_notes_post: {
         parameters: {
             query?: never;
             header?: never;
@@ -8209,17 +2462,17 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["ExamEventCreateRequest"];
+                "application/json": components["schemas"]["NoteCreateRequestV2"];
             };
         };
         responses: {
             /** @description Successful Response */
-            201: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ExamEventOutV2"];
+                    "application/json": components["schemas"]["NoteDetailV2"];
                 };
             };
             /** @description Validation Error */
@@ -8233,1206 +2486,7 @@ export interface operations {
             };
         };
     };
-    admin_update_api_v2_admin_exam_events__event_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ExamEventUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExamEventOutV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    admin_delete_api_v2_admin_exam_events__event_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                event_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_my_usage_api_v2_llm_usage_me_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LlmUsageSummaryV2"];
-                };
-            };
-        };
-    };
-    list_my_configs_api_v2_llm_configs_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LlmConfigListResponse"];
-                };
-            };
-        };
-    };
-    create_my_config_api_v2_llm_configs_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LlmConfigCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LlmConfigV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_my_config_api_v2_llm_configs__config_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                config_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_my_config_api_v2_llm_configs__config_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                config_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LlmConfigUpdateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LlmConfigV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    set_default_my_config_api_v2_llm_configs__config_id__set_default_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                config_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LlmConfigV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    test_my_config_api_v2_llm_configs__config_id__test_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                config_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LlmConfigTestResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_global_usage_api_v2_admin_llm_usage_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LlmUsageSummaryV2"];
-                };
-            };
-        };
-    };
-    list_my_conversations_api_v2_llm_conversations_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LlmConversationListResponse"];
-                };
-            };
-        };
-    };
-    create_my_conversation_api_v2_llm_conversations_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LlmConversationCreateRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_my_conversation_api_v2_llm_conversations__conversation_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                conversation_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["LlmConversationDetailV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_my_conversation_api_v2_llm_conversations__conversation_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                conversation_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    continue_my_conversation_api_v2_llm_conversations__conversation_id__messages_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                conversation_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["LlmConversationContinueRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": unknown;
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    submit_essay_grade_api_v2_essay_grade_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EssayGradingSubmissionV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EssayGradingV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_my_essay_grade_api_v2_essay_grades__record_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                record_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EssayGradingV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_my_essay_grades_api_v2_essay_grades_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EssayGradingV2"][];
-                };
-            };
-        };
-    };
-    list_essay_categories_api_v2_essay_categories_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CategoriesResponseV2"];
-                };
-            };
-        };
-    };
-    list_essay_specialty_questions_api_v2_essay_specialty_questions_get: {
-        parameters: {
-            query: {
-                /** @description canonical_subtype 单值或逗号分隔多值. 白名单: 归纳概括 / 大作文 / 综合分析 / 公文 / 应用文 / 提出对策. 前端 '公文 · 应用文' chip 传 'subtype=公文,应用文' (规范官 P0-3 2026-05-08). */
-                subtype: string;
-                page?: number;
-                pageSize?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EssaySpecialtyListResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    save_essay_draft_api_v2_essay_drafts_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["EssayDraftSubmissionV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EssayDraftV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_my_essay_draft_api_v2_essay_drafts__question_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                question_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EssayDraftV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_essay_specialty_summary_api_v2_papers_essay_specialty_summary_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EssaySpecialtySummaryV2"];
-                };
-            };
-        };
-    };
-    get_essay_specialty_categories_api_v2_papers_essay_specialty_categories_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EssaySpecialtyCategoriesResponseV2"];
-                };
-            };
-        };
-    };
-    list_essay_papers_extended_api_v2_papers_essay_list_extended_get: {
-        parameters: {
-            query?: {
-                page?: number;
-                pageSize?: number;
-                region?: string | null;
-                year?: number | null;
-                paperType?: string | null;
-                sort?: "default" | "year" | "recent";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EssayPapersListExtendedResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_essay_papers_filters_api_v2_papers_essay_filters_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["EssayPapersFiltersResponseV2"];
-                };
-            };
-        };
-    };
-    get_xingce_specialty_summary_api_v2_papers_xingce_specialty_summary_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["XingceSpecialtySummaryV2"];
-                };
-            };
-        };
-    };
-    get_xingce_specialty_categories_api_v2_papers_xingce_specialty_categories_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["XingceSpecialtyCategoriesResponseV2"];
-                };
-            };
-        };
-    };
-    list_xingce_papers_extended_api_v2_papers_xingce_list_extended_get: {
-        parameters: {
-            query?: {
-                page?: number;
-                pageSize?: number;
-                region?: string | null;
-                year?: number | null;
-                paperType?: string | null;
-                sort?: "default" | "year" | "recent";
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["XingcePapersListExtendedResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_xingce_papers_filters_api_v2_papers_xingce_filters_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["XingcePapersFiltersResponseV2"];
-                };
-            };
-        };
-    };
-    get_today_plan_api_v2_study_plan_today_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StudyPlanResponse"];
-                };
-            };
-        };
-    };
-    list_history_api_v2_study_plan_history_get: {
-        parameters: {
-            query?: {
-                cursor?: string | null;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StudyPlanHistoryListV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_plan_detail_api_v2_study_plan__plan_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                plan_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["StudyPlanResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    patch_task_status_api_v2_study_plan_tasks__task_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                task_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["StudyTaskPatchRequest"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PracticeTaskResponse"] | components["schemas"]["ReviewWrongTaskResponse"] | components["schemas"]["EssayWritingTaskResponse"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    me_predicted_score_api_v2_me_predicted_score_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["PredictedScoreV2"];
-                };
-            };
-        };
-    };
-    me_get_goals_api_v2_me_goals_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserGoalV2"];
-                };
-            };
-        };
-    };
-    me_put_goals_api_v2_me_goals_put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserGoalUpdateV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserGoalV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    me_onboarding_status_api_v2_me_onboarding_status_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OnboardingStatusV2"];
-                };
-            };
-        };
-    };
-    notes_get_api_v2_notes__question_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                question_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QuestionNoteV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    notes_put_api_v2_notes__question_id__put: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                question_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["QuestionNoteUpdateV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["QuestionNoteV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    notes_delete_api_v2_notes__question_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                question_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_notes_api_v2_notebook_notes_get: {
-        parameters: {
-            query?: {
-                type?: ("quote" | "method" | "reflect" | "material") | null;
-                sourceDomain?: ("xingce" | "essay") | null;
-                tag?: string | null;
-                cursor?: number | null;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteListOutV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_note_api_v2_notebook_notes_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoteCreateV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteOutV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_note_api_v2_notebook_notes__note_id__get: {
+    get_note_api_v2_notes__note_id__get: {
         parameters: {
             query?: never;
             header?: never;
@@ -9449,7 +2503,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteOutV2"];
+                    "application/json": components["schemas"]["NoteDetailV2"];
                 };
             };
             /** @description Validation Error */
@@ -9463,7 +2517,7 @@ export interface operations {
             };
         };
     };
-    update_note_api_v2_notebook_notes__note_id__put: {
+    update_note_api_v2_notes__note_id__put: {
         parameters: {
             query?: never;
             header?: never;
@@ -9474,7 +2528,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["NoteUpdateV2"];
+                "application/json": components["schemas"]["NoteUpdateRequestV2"];
             };
         };
         responses: {
@@ -9484,7 +2538,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteOutV2"];
+                    "application/json": components["schemas"]["NoteDetailV2"];
                 };
             };
             /** @description Validation Error */
@@ -9498,134 +2552,7 @@ export interface operations {
             };
         };
     };
-    delete_note_api_v2_notebook_notes__note_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                note_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_reviews_api_v2_notebook_notes__note_id__reviews_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                note_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteReviewListOutV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    submit_review_api_v2_notebook_notes__note_id__reviews_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                note_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoteReviewSubmitV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteOutV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_due_reviews_api_v2_notebook_reviews_due_get: {
-        parameters: {
-            query?: {
-                cursor?: number | null;
-                limit?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteListOutV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_stats_api_v2_notebook_stats_get: {
+    get_profile_overview_api_v2_profile_overview_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -9640,375 +2567,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["NoteStatsV2"];
+                    "application/json": components["schemas"]["ProfileOverviewResponseV2"];
                 };
             };
         };
     };
-    patch_public_toggle_api_v2_notebook_notes__note_id__public_toggle_patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                note_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NotePublicToggleV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteOutV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_public_notes_for_question_api_v2_questions__question_id__public_notes_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path: {
-                question_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NotePublicListResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_comments_api_v2_notebook_notes__note_id__comments_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-            };
-            header?: never;
-            path: {
-                note_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteCommentListV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    post_comment_api_v2_notebook_notes__note_id__comments_post: {
-        parameters: {
-            query?: {
-                response?: unknown;
-            };
-            header?: never;
-            path: {
-                note_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoteCommentCreateV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteCommentOutV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_comment_api_v2_notebook_comments__comment_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                comment_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    toggle_like_api_v2_notebook_notes__note_id__likes_post: {
-        parameters: {
-            query?: {
-                response?: unknown;
-            };
-            header?: never;
-            path: {
-                note_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteLikeToggleResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    toggle_favorite_api_v2_notebook_notes__note_id__favorites_post: {
-        parameters: {
-            query?: {
-                response?: unknown;
-            };
-            header?: never;
-            path: {
-                note_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteFavoriteToggleResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    create_report_api_v2_notebook_reports_post: {
-        parameters: {
-            query?: {
-                response?: unknown;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["NoteReportCreateV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteReportOutV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_admin_note_reports_api_v2_admin_note_reports_get: {
-        parameters: {
-            query?: {
-                limit?: number;
-                offset?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteAdminQueueResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    dismiss_report_api_v2_admin_note_reports__report_id__dismiss_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                report_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteReportOutV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    approve_delete_report_api_v2_admin_note_reports__report_id__approve_delete_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                report_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["NoteReportOutV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    list_user_exams_api_v2_user_exams_get: {
+    get_profile_security_api_v2_profile_security_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -10023,12 +2587,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserExamList"];
+                    "application/json": components["schemas"]["ProfileSecurityResponseV2"];
                 };
             };
         };
     };
-    create_user_exam_api_v2_user_exams_post: {
+    put_profile_security_api_v2_profile_security_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -10037,102 +2601,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["UserExamCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserExamRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    get_user_exam_api_v2_user_exams__exam_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                exam_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["UserExamRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    delete_user_exam_api_v2_user_exams__exam_id__delete: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                exam_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            204: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content?: never;
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    update_user_exam_api_v2_user_exams__exam_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                exam_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["UserExamUpdate"];
+                "application/json": components["schemas"]["ProfileSecurityUpdateRequestV2"];
             };
         };
         responses: {
@@ -10142,7 +2611,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["UserExamRead"];
+                    "application/json": components["schemas"]["ProfileSecurityResponseV2"];
                 };
             };
             /** @description Validation Error */
@@ -10156,7 +2625,7 @@ export interface operations {
             };
         };
     };
-    get_weekly_progress_api_v2_progress_weekly_get: {
+    get_profile_goals_api_v2_profile_goals_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -10171,43 +2640,12 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["WeeklyProgressSummaryV2"];
+                    "application/json": components["schemas"]["ProfileGoalsResponseV2"];
                 };
             };
         };
     };
-    get_accuracy_trend_api_v2_progress_accuracy_trend_get: {
-        parameters: {
-            query?: {
-                days?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AccuracyTrendResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
-    ingest_analytics_event_api_v2_analytics_event_post: {
+    put_profile_goals_api_v2_profile_goals_put: {
         parameters: {
             query?: never;
             header?: never;
@@ -10216,17 +2654,70 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["AnalyticsEventPayloadV2"];
+                "application/json": components["schemas"]["ProfileGoalsUpdateRequestV2"];
             };
         };
         responses: {
             /** @description Successful Response */
-            202: {
+            200: {
                 headers: {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["AnalyticsEventAckV2"];
+                    "application/json": components["schemas"]["ProfileGoalsResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_profile_info_api_v2_profile_info_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileInfoResponseV2"];
+                };
+            };
+        };
+    };
+    put_profile_info_api_v2_profile_info_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ProfileInfoUpdateRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ProfileInfoResponseV2"];
                 };
             };
             /** @description Validation Error */
