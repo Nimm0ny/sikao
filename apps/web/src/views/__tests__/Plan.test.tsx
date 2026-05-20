@@ -1,5 +1,4 @@
 /**
- * SIKAO Wave 3 PR0 · Plan view test.
  *
  * 覆盖:
  * 1. loading state — skeleton 显

@@ -1,6 +1,7 @@
 import { type ReactElement } from 'react';
 import { cn } from '@sikao/shared-utils';
 import type { NoteSourceDomain } from '@sikao/api-client/queries/notebookQueries';
+import { NOTES_COPY } from '@/lib/ui-copy';
 
 /**
  * SIKAO Wave 4 Phase 2D · NotesToolbar — filter / sort / search.
@@ -57,8 +58,8 @@ export function NotesToolbar({
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
         data-testid="notes-toolbar-search"
-        placeholder="搜索笔记标题 / 内容 / 来源"
-        aria-label="搜索笔记"
+        placeholder={`${NOTES_COPY.toolbarSearchPlaceholder} / 内容 / 来源`}
+        aria-label={NOTES_COPY.toolbarSearchPlaceholder}
         className={cn(
           'flex-1 min-w-[180px] px-3 py-2 bg-transparent border border-line rounded-tiny',
           'font-sans text-sm text-ink placeholder:text-ink-4',
@@ -68,7 +69,7 @@ export function NotesToolbar({
 
       <div
         role="radiogroup"
-        aria-label="学习域筛选"
+        aria-label={NOTES_COPY.toolbarDomainAriaLabel}
         className="flex items-center gap-1"
       >
         {SOURCE_OPTS.map((opt) => {
@@ -113,8 +114,8 @@ export function NotesToolbar({
           'focus-visible:outline-none focus-visible:border-ink',
         )}
       >
-        <option value="created-desc">按创建时间</option>
-        <option value="updated-desc">按更新时间</option>
+        <option value="created-desc">{NOTES_COPY.toolbarSortByCreated}</option>
+        <option value="updated-desc">{NOTES_COPY.toolbarSortByUpdated}</option>
       </select>
     </section>
   );

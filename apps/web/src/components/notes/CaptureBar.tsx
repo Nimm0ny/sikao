@@ -1,6 +1,7 @@
 import { useEffect, useState, type ReactElement } from 'react';
 import { cn } from '@sikao/shared-utils';
 import type { NoteType } from '@sikao/api-client/queries/notebookQueries';
+import { NOTES_COPY } from '@/lib/ui-copy';
 
 /**
  * SIKAO Wave 4 Phase 2D · CaptureBar — top sticky 快速捕获.
@@ -93,8 +94,8 @@ export function CaptureBar({
           }
         }}
         data-testid="capture-bar-input"
-        placeholder="写下此刻的想法 · 金句 / 方法 / 反思 / 素材"
-        aria-label="快速捕获笔记内容"
+        placeholder={`${NOTES_COPY.captureBarPlaceholder} · 金句 / 方法 / 反思 / 素材`}
+        aria-label={NOTES_COPY.captureBarAriaLabel}
         className={cn(
           'flex-1 min-w-[200px] px-3 py-2 bg-transparent border border-line rounded-tiny',
           'font-sans text-sm text-ink placeholder:text-ink-4',
@@ -104,7 +105,7 @@ export function CaptureBar({
 
       <div
         role="radiogroup"
-        aria-label="笔记类型"
+        aria-label={NOTES_COPY.captureBarTypeAriaLabel}
         className="flex items-center gap-1"
       >
         {TYPE_OPTS.map((opt) => {
@@ -138,7 +139,7 @@ export function CaptureBar({
           setSourceDomain(e.target.value === 'xingce' ? 'xingce' : 'essay')
         }
         data-testid="capture-bar-source-domain"
-        aria-label="笔记产生学习域"
+        aria-label={NOTES_COPY.captureDomainAriaLabel}
         className={cn(
           'px-3 py-2 bg-transparent border border-line rounded-tiny',
           'font-mono text-tiny tracking-loose text-ink-3',

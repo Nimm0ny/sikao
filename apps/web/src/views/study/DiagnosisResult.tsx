@@ -48,7 +48,7 @@ export default function DiagnosisResult() {
         )}
 
         <div className='flex gap-3'>
-          <button className='flex-1 py-2 rounded-tiny font-medium'style={{ background: 'var(--accent-1)', color: '#fff', fontSize: 'var(--t-body)' }}
+          <button className='flex-1 py-2 rounded-tiny font-medium' style={{ background: 'var(--accent-1)', color: 'var(--paper-1)', fontSize: 'var(--t-body)' }}
             onClick={() => navigate('/study/today')}>
             {STUDY_COPY.DIAGNOSIS.START_TODAY}
           </button>

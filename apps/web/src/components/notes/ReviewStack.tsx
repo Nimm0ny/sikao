@@ -1,6 +1,7 @@
 import { useState, type ReactElement } from 'react';
 import { cn } from '@sikao/shared-utils';
 import type { NoteOutV2 } from '@sikao/api-client/queries/notebookQueries';
+import { NOTES_COPY } from '@/lib/ui-copy';
 
 /**
  * SIKAO Wave 4 Phase 2D · ReviewStack — SM-2 复习卡 + 0-5 评分.
@@ -50,10 +51,10 @@ export function ReviewStack({
       >
         <h4 className="m-0 font-serif text-lg font-semibold">今日复习</h4>
         <p className="font-mono text-tiny tracking-loose text-ink-4">
-          暂无待复习卡片
+          {NOTES_COPY.reviewEmpty}
         </p>
         <p className="text-xs leading-relaxed text-ink-4 m-0">
-          创建笔记后, 系统按 SM-2 间隔重复推送复习队列.
+          {NOTES_COPY.reviewEmptyHint1}, 系统按 SM-2 {NOTES_COPY.reviewEmptyHint2}.
         </p>
       </section>
     );

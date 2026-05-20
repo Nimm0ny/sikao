@@ -1,21 +1,16 @@
 /**
- * SIKAO Wave 4 Phase 2D · NoteEditor — 笔记编辑器.
  *
  * 路由 `/notes/:noteId` (编辑现有) 和 `/notes/new` (新建).
  *
- * 简版 scope (Phase 2D ship):
- *   - layout: 单列 ed-main (ed-side 元数据栏推 Phase 5)
  *   - editor: textarea (markdown source 渲染) + 实时预览基础版
  *   - 字段: title / type / sourceDomain / sourceRef / tags / body.text (quote /
  *     reflect) 或 body.steps (method) 或 body.rows (material)
- *   - 自动保存: useEffect debounce 1.5s (P2 复用 essay V2 auto-save hook 推 Phase 5)
  *
  * 数据流:
  *   - useNote(id) — 编辑模式 lazy fetch 单卡
  *   - useCreateNote() — /notes/new path
  *   - useUpdateNote() — 编辑现有
  *
- * 拆分 (SIKAO Wave 4 polish 2026-05-12, frontend/CLAUDE.md §3.5):
  *   - 类型 / 常量 / pure helpers → `@/components/notes/_noteEditorHelpers`
  *   - 3 个 primitive field 原子 → `@/components/notes/NoteEditorFields`
  */

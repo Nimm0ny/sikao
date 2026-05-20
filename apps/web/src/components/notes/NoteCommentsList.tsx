@@ -6,6 +6,7 @@ import {
   useCreateNoteComment,
   type CommunityNoteComment,
 } from '@sikao/domain/notes/useCommunityNotes';
+import { NOTES_COPY } from '@/lib/ui-copy';
 
 /**
  * SIKAO Wave 10 Phase C · NoteCommentsList — 评论 + 一级嵌套.
@@ -71,7 +72,7 @@ export function NoteCommentsList({
     >
       {topLevel.length === 0 ? (
         <p className="text-sm text-ink-4">
-          还没有评论, 写一条 →
+          {NOTES_COPY.commentsEmpty}, 写一条 →
         </p>
       ) : (
         <ul className="space-y-3 list-none m-0 p-0">
@@ -86,7 +87,7 @@ export function NoteCommentsList({
       )}
       <form onSubmit={onSubmit} className="flex flex-col gap-2">
         <label className="sr-only" htmlFor={`comment-textarea-${noteId}`}>
-          写一条评论
+          {NOTES_COPY.commentsAriaLabel}
         </label>
         {/* a11y: cross-node <label htmlFor> + <textarea id> 是 W3C 标准 a11y pattern.
             plugin 不识别, 行级 escape. */}
@@ -97,7 +98,7 @@ export function NoteCommentsList({
           onChange={(e) => setDraft(e.target.value)}
           maxLength={MAX_COMMENT_LENGTH}
           rows={2}
-          placeholder="写一条评论 (最多 500 字)"
+          placeholder={`${NOTES_COPY.commentsPlaceholder} (最多 500 字)`}
           className={cn(
             'w-full bg-surface-alt border border-line rounded-card px-3 py-2',
             'text-sm text-ink placeholder:text-ink-4',

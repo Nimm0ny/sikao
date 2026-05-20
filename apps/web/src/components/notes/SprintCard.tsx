@@ -1,5 +1,6 @@
 import { type ReactElement } from 'react';
 import { cn } from '@sikao/shared-utils';
+import { NOTES_COPY } from '@/lib/ui-copy';
 
 /**
  * SIKAO Wave 4 Phase 2D · SprintCard — 考前冲刺. paper 底 1px rule, D-30 前禁态.
@@ -41,15 +42,15 @@ export function SprintCard({
       )}
     >
       <h4 className="m-0 font-serif text-base font-semibold text-ink">
-        考前冲刺池
+        {NOTES_COPY.sprintTitle}
       </h4>
       <p className="text-xs leading-relaxed text-ink-3 m-0">
         距离国考 <span className="font-mono tabular-nums">{daysToExam}</span> 天{disabled ? ` · D-${threshold} 后激活` : ' · 已开放'}
       </p>
       <div className="flex flex-col gap-2">
-        <SprintRow label="高频金句池" value={highFreqQuoteCount} unit="条" />
-        <SprintRow label="方法论卡片" value={methodCardCount} unit="张" />
-        <SprintRow label="建议每日复习" value={dailySuggestion} unit="张" />
+        <SprintRow label={NOTES_COPY.sprintGoldQuotes} value={highFreqQuoteCount} unit="条" />
+        <SprintRow label={NOTES_COPY.sprintMethodCards} value={methodCardCount} unit="张" />
+        <SprintRow label={NOTES_COPY.sprintDailySuggestion} value={dailySuggestion} unit="张" />
       </div>
       <button
         type="button"

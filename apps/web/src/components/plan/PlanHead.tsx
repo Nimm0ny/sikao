@@ -19,6 +19,7 @@
  * |days| 但 hidden via aria + style (PR1 接 BE 后实际不会 < 0).
  */
 import type { ReactElement } from 'react';
+import { PLAN_COPY } from '@/lib/ui-copy';
 
 export interface PlanHeadProps {
   readonly examLabel: string;
@@ -53,7 +54,7 @@ export function PlanHead(props: PlanHeadProps): ReactElement {
   // 文案规则: Wave 5C P2-1 — h1 用 examLabel 拼接, 跟 Login subtitle 一致.
   // 例: "距 2026 国考 (中央机关)还有 208 天。" CJK 无空格连读 (排版习惯).
   const h1Text = isPastExam
-    ? '考试已结束, 看看下一次目标。'
+    ? `${PLAN_COPY.examEnded}, ${PLAN_COPY.examEndedNext}。`
     : `距 ${examLabel}还有 ${displayDays} 天。`;
 
   const subtitleText = renderSubtitle({

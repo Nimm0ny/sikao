@@ -1,5 +1,4 @@
 /**
- * SIKAO Wave 4 Phase 2D · NotesHome — 笔记本主页.
  *
  * 路由 `/notes`. layout:
  *   CaptureBar (sticky top)
@@ -185,7 +184,6 @@ export default function NotesHome(): ReactElement {
   }
 
   // ── data path ──────────────────────────────────────────────────────────
-  // Wave 4 X2 verify P1: defensive — pages 来自 useInfiniteQuery 总是 array,
   // 但 page.items 在 BE 偶发非 array shape (mock 空集 / partial 502) 时
   // .flatMap 会 crash. Guard pages + items 两层.
   const pages = Array.isArray(notesQuery.data?.pages) ? notesQuery.data.pages : [];
@@ -214,7 +212,6 @@ export default function NotesHome(): ReactElement {
   const statsTotal = Math.max(readCount(stats?.total), allNotes.length);
   const statsByType = readCountMap(stats?.byType);
   const statsBySourceDomain = readCountMap(stats?.bySourceDomain);
-  // Wave 4 X2 verify P1: defensive — items 非 array (mock empty / 502 partial)
   // → 下游 .map crash. Array.isArray guard.
   const dueNotes = Array.isArray(dueQuery.data?.items) ? dueQuery.data.items : [];
 

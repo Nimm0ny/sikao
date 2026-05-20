@@ -1,25 +1,19 @@
 /**
- * SIKAO Wave 3 PR0 · 学习计划 view (07 hifi 落地, sikao-redesign plan §0.4).
  *
  * 路由: /plan (替代 /study-plan/history + /study-plan/history/:planId 两路由).
  * 数据流方案 A (master 拍板, 0 BE 改):
  *   - useStudyPlanToday() — 今日 plan (即时显在 today 那一天)
  *   - useStudyPlanHistory() — infinite 拉历史 list (slim items, 客户端按周分组)
- *   - useStudyPlanDetail() — 点 day 时 lazy fetch 单 plan full task (PR1 视情况启用)
  *
- * PR0 范围:
  *   - 周视图 infinite scroll (5 周一次, 滚到底加载更多)
  *   - PlanHead 国考倒计时 helper 复用 (lib/exam-countdown.ts)
  *   - PlanDay 三态 (done/today/future), task click 触发 routing (复用
  *     useStudyPlanRouting hook — Dashboard 同用, 不再 fork 实现保 SSOT)
  *   - PlanAssistant 块硬编码 3 文案 (按 today 任务量 / 完成度 切换)
  *
- * PR1 backlog (留下 session):
  *   - PlanDay onClick 整天卡 → lazy fetch + drawer 展示当天 task list
  *   - 完成进度 ring / 周指标实时算 (今 weekCompletedDays 走 history slim
- *     taskCompleted/Total 静态, real-time refresh PR1 接 patch 后 invalidate)
  *
- * PR2 backlog:
  *   - PlanAssistant LLM 接入 (BE 出 narrative 字段 → 替换硬编码文案)
  *   - "好, 调整一下" → POST /study-plan/regenerate
  */
@@ -97,10 +91,8 @@ export default function Plan(): ReactElement {
   // ── data states (auth fail / loading / error / data) ──────────────────────
   const todayDate = useMemo(() => new Date(), []);
 
-  // Wave 4 X2: 国考倒计时走 useNationalExamCountdown — BE /exam-events 全集
   // filter category=='national' 升序 first. loading / error / 空集 退 hardcode
   // 兜底; error 走 toast (hook 内自动). 跨日重渲 daysUntil 由 hook 计算.
-  // Wave 5C P2-1: 不再格式化 examDateLabel — PlanHead h1 改用 examLabel
   // (跟 Login subtitle 一致 "距 ${examLabel}还有 N 天").
   const { examLabel, daysUntil: days } = useNationalExamCountdown();
 
@@ -174,7 +166,6 @@ export default function Plan(): ReactElement {
   }
 
   // ── data path ────────────────────────────────────────────────────────────
-  // Wave 4 X2 verify P1: defensive — pages 来自 useInfiniteQuery 总是 array,
   // 但 page.items 在 BE 偶发非 array shape (mock 空集 / partial 502) 时
   // .flatMap 会 crash. Guard pages + items 两层.
   const historyPages = Array.isArray(history.data?.pages)
@@ -261,8 +252,6 @@ export default function Plan(): ReactElement {
         ))}
       </div>
 
-      {/* infinite scroll sentinel — hifi 设计未画 sentinel 视觉, 复用
-          StudyPlanHistory IntersectionObserver pattern. nextCursor=null 后整段不渲. */}
       {history.hasNextPage ? (
         <div
           ref={sentinelRef}

@@ -1,5 +1,4 @@
 /**
- * SIKAO Wave 4 Phase 2D · NotesHome view test.
  *
  * 三态覆盖:
  * 1. loading

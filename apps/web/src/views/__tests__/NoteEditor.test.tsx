@@ -1,5 +1,4 @@
 /**
- * SIKAO Wave 4 Phase 2D · NoteEditor view test.
  *
  * 三态覆盖:
  * 1. new (路由 /notes/new): 显空表单 + 创建 cta

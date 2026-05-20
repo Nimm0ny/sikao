@@ -17,6 +17,10 @@ export const STUDY_COPY = {
     EXAM_DATE_PLACEHOLDER: '选择考试日期',
     CONFIRM: '开始备考',
     SKIP: '暂时跳过',
+    GOAL_RANGE_ERROR: '目标分数必须在 0-150 之间',
+    GOAL_SAVE_FAILED: '保存目标失败，请重试',
+    EXAM_REQUIRED: '请填写考试名称和日期',
+    EXAM_SAVE_FAILED: '保存考试失败，请重试',
   },
 
   DIAGNOSIS: {
@@ -42,5 +46,6 @@ export const STUDY_COPY = {
     GO_ESSAY: '去申论',
     GO_WRONG_BOOK: '去错题本',
     GO_PROGRESS: '查看进度',
+    SKIP_FAILED: '跳过任务失败',
   },
 } as const;

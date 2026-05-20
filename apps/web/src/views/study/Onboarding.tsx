@@ -17,7 +17,11 @@ type Step = 'goal' | 'exam';
 
 const inputCls = 'w-full border rounded-tiny px-3 py-2';
 const inputSty = { fontSize: 'var(--t-body)', color: 'var(--ink-1)', borderColor: 'var(--line-1)', background: 'var(--paper-1)' };
-const primarySty = { background: 'var(--accent-1)', color: '#fff', fontSize: 'var(--t-body)' };
+const primarySty = {
+  background: 'var(--accent-1)',
+  color: 'var(--paper-1)',
+  fontSize: 'var(--t-body)',
+};
 const ghostSty = { fontSize: 'var(--t-body)', color: 'var(--ink-3)', border: '1px solid var(--line-1)' };
 
 export default function Onboarding() {
@@ -34,7 +38,7 @@ export default function Onboarding() {
   function handleGoalSubmit(e: FormEvent) {
     e.preventDefault();
     const score = parseInt(targetScore, 10);
-    if (isNaN(score) || score < 0 || score > 150) { toast.error('目标分数必须在 0-150 之间'); return; }
+    if (isNaN(score) || score < 0 || score > 150) { toast.error(STUDY_COPY.ONBOARDING.GOAL_RANGE_ERROR); return; }
     setGoalMutation.mutate({ targetScore: score }, {
       onSuccess: () => {
         trackEvent({
@@ -43,7 +47,7 @@ export default function Onboarding() {
         });
         setStep('exam');
       },
-      onError: (err) => { logger.error('goal save failed', { err: String(err) }); toast.error('保存目标失败，请重试'); },
+      onError: (err) => { logger.error('goal save failed', { err: String(err) }); toast.error(STUDY_COPY.ONBOARDING.GOAL_SAVE_FAILED); },
     });
   }
 
@@ -55,7 +59,7 @@ export default function Onboarding() {
 
   function handleExamSubmit(e: FormEvent) {
     e.preventDefault();
-    if (!examName.trim() || !examDate) { toast.error('请填写考试名称和日期'); return; }
+    if (!examName.trim() || !examDate) { toast.error(STUDY_COPY.ONBOARDING.EXAM_REQUIRED); return; }
     createExamMutation.mutate(
       { name: examName.trim(), examDate, ...(examEventId ? { examEventId: parseInt(examEventId, 10) } : {}) },
       {
@@ -69,7 +73,7 @@ export default function Onboarding() {
           });
           navigate('/study/diagnosis-result');
         },
-        onError: (err) => { logger.error('exam save failed', { err: String(err) }); toast.error('保存考试失败，请重试'); },
+        onError: (err) => { logger.error('exam save failed', { err: String(err) }); toast.error(STUDY_COPY.ONBOARDING.EXAM_SAVE_FAILED); },
       },
     );
   }

@@ -6,6 +6,7 @@ import {
   type CommunityNote,
 } from '@sikao/domain/notes/useCommunityNotes';
 import { CommunityNoteCard } from './CommunityNoteCard';
+import { NOTES_COPY } from '@/lib/ui-copy';
 
 /**
  * SIKAO Wave 10 Phase C · CommunityNotesSection — 题目下方"同学的笔记".
@@ -61,8 +62,8 @@ export function CommunityNotesSection({
       {items.length === 0 ? (
         <EmptyState
           icon={<CommentIcon size={20} />}
-          title={<span className="font-serif">还没有同学的笔记</span>}
-          description="把你的解题思路记下来, 别人也能看到."
+          title={<span className="font-serif">{NOTES_COPY.communityEmpty}</span>}
+          description={`${NOTES_COPY.communityEmptyHint1}, ${NOTES_COPY.communityEmptyHint2}.`}
           action={
             onCompose !== undefined ? (
               <Button
@@ -97,7 +98,7 @@ function Header({ total }: HeaderProps): ReactElement {
   return (
     <div className="flex items-baseline justify-between mb-4">
       <h3 className="font-serif text-lg font-semibold text-ink m-0">
-        同学的笔记
+        {NOTES_COPY.communityHeader}
       </h3>
       <span
         className="text-xs text-ink-4 font-mono tracking-loose tabular-nums"

@@ -29,6 +29,7 @@ import {
 } from '@sikao/api-client/queries/notebookQueries';
 import { logger } from '@sikao/shared-utils';
 import { cn } from '@sikao/shared-utils';
+import { NOTES_COPY } from '@/lib/ui-copy';
 
 // ── attach target FE-local discriminator ─────────────────────────────────────
 //
@@ -89,11 +90,11 @@ function defaultSourceRef(target: NoteAttachTarget): string {
 function attachLabel(target: NoteAttachTarget): string {
   switch (target.kind) {
     case 'xingce_question':
-      return `关联行测题 #${target.refId}`;
+      return `${NOTES_COPY.captureLinkXingce} #${target.refId}`;
     case 'wrong_question':
       return `关联错题 #${target.refId}`;
     case 'essay_question':
-      return `关联申论题 #${target.refId}`;
+      return `${NOTES_COPY.captureLinkEssay} #${target.refId}`;
   }
 }
 
@@ -105,10 +106,10 @@ const TYPE_OPTS: ReadonlyArray<{ value: NoteType; label: string }> = [
 ];
 
 const TYPE_PLACEHOLDER: Record<NoteType, string> = {
-  quote: '记下打动你的那一句…',
-  method: '总结一种可复用的方法…',
-  reflect: '为什么这道题出错? 这次有什么启发?',
-  material: '记录一段素材 / 案例…',
+  quote: `${NOTES_COPY.captureExample1}…`,
+  method: `${NOTES_COPY.captureExample2}…`,
+  reflect: `${NOTES_COPY.captureExample3a}? ${NOTES_COPY.captureExample3b}?`,
+  material: `${NOTES_COPY.captureExample4} / 案例…`,
 };
 
 // ── props ────────────────────────────────────────────────────────────────────
@@ -216,7 +217,7 @@ export function NoteCaptureModal({
         disabled={!canSubmit}
         data-testid="note-capture-modal-submit"
       >
-        保存笔记
+        {NOTES_COPY.captureModalConfirm}
       </Button>
     </>
   );
@@ -225,11 +226,11 @@ export function NoteCaptureModal({
     <Modal
       open={open}
       onClose={onClose}
-      title="添加到笔记"
-      description="记下这一刻的灵感, 关联当前题目自动 attach."
+      title={NOTES_COPY.captureModalTitle}
+      description={`${NOTES_COPY.captureModalSubtitle1}, ${NOTES_COPY.captureModalSubtitle2} attach.`}
       size="md"
       footer={footer}
-      ariaLabel="添加到笔记"
+      ariaLabel={NOTES_COPY.captureModalTitle}
     >
       <div
         className="flex flex-col gap-4"
@@ -298,7 +299,7 @@ export function NoteCaptureModal({
             className="px-3 py-2 bg-bad-bg border-l-2 border-err font-mono text-tiny tracking-wider text-err"
             data-testid="note-capture-modal-error"
           >
-            保存失败, 请稍后重试
+            保存失败, {NOTES_COPY.captureRetryHint}
           </div>
         ) : null}
       </div>

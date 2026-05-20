@@ -25,6 +25,7 @@ import {
   type NoteAttachTarget,
 } from './NoteCaptureModal';
 import type { NoteOutV2, NoteType } from '@sikao/api-client/queries/notebookQueries';
+import { NOTES_COPY } from '@/lib/ui-copy';
 
 export interface NoteCaptureLauncherProps {
   readonly target: NoteAttachTarget;
@@ -40,7 +41,7 @@ export function NoteCaptureLauncher({
   target,
   sourceQuote,
   defaultType,
-  tooltip = '添加到笔记',
+  tooltip = NOTES_COPY.launcherTooltip,
   testId,
   iconSize = 16,
   onCreated,
