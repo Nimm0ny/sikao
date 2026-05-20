@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from sikao_api.db.schemas_v2 import DashboardProgressResponseV2, OverviewResponseV2
+from sikao_api.modules.identity.application.security_v2 import get_current_user_v2
 from sikao_api.modules.progress.application.service import build_progress_leaf, build_progress_overview
 
-router = APIRouter(prefix="/api/v2/dashboard/progress", tags=["progress-v2"])
+router = APIRouter(
+    prefix="/api/v2/dashboard/progress",
+    tags=["progress-v2"],
+    dependencies=[Depends(get_current_user_v2)],
+)
 
 
 @router.get("", response_model=DashboardProgressResponseV2)

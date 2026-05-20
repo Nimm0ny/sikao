@@ -1,11 +1,16 @@
 from __future__ import annotations
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 
 from sikao_api.db.schemas_v2 import DashboardTodayResponseV2, DashboardWeeklyPlanResponseV2, OverviewResponseV2
+from sikao_api.modules.identity.application.security_v2 import get_current_user_v2
 from sikao_api.modules.planning.application.service import build_dashboard_overview, build_dashboard_today, build_dashboard_weekly_plan
 
-router = APIRouter(prefix="/api/v2/dashboard", tags=["planning-v2"])
+router = APIRouter(
+    prefix="/api/v2/dashboard",
+    tags=["planning-v2"],
+    dependencies=[Depends(get_current_user_v2)],
+)
 
 
 @router.get("/overview", response_model=OverviewResponseV2)
