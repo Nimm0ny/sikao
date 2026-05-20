@@ -1,6 +1,7 @@
 import { Card } from '@sikao/ui/ui';
 import { cn } from '@sikao/shared-utils';
 import type { HeatmapEntryV2 } from '@sikao/api-client/types/api';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 /*
  * 本周 7 天横向 strip 日历, 跟 HeatmapChart "近 53 周" 错位分工:
@@ -77,10 +78,10 @@ export function WeekStripCalendar({ entries, className }: WeekStripCalendarProps
       padding="sm"
       className={cn('', className)}
       data-testid="week-strip-calendar"
-      aria-label="本周练习节奏"
+      aria-label={DASHBOARD_COPY.weekCalendarTitle}
     >
       <header className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-ink">本周节奏</h3>
+        <h3 className="font-semibold text-ink">{DASHBOARD_COPY.weekCalendarTitle}</h3>
         <span className="text-tiny font-mono text-ink-4 tracking-wide">
           近 7 天
         </span>

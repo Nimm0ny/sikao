@@ -1,4 +1,5 @@
 import type { HeatmapEntryV2 } from '@sikao/api-client/types/api';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 /**
  * SIKAO Dashboard 02 hifi (2026-05-11 Wave 1) — `.streak-1920` 落地.
@@ -82,7 +83,7 @@ export function StreakCard({
           <br />
           {willBreakRecord ? (
             <span className="font-mono text-tiny tracking-widest text-accent uppercase">
-              → 今天打卡可破纪录
+              → {DASHBOARD_COPY.streakBreakHint}
             </span>
           ) : (
             <span className="font-mono text-tiny tracking-eyebrow text-ink-3 uppercase">

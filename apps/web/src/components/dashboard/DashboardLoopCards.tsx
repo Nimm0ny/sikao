@@ -109,7 +109,7 @@ export function WeakTrendCard({
         ) : (
           <div className="space-y-3">
             {weakModules.slice(0, 3).map((item) => (
-              <div key={item.subject} className="space-y-1.5">
+              <div key={item.subject} className="space-y-2">
                 <div className="flex items-center justify-between text-body">
                   <span className="font-semibold text-ink">{item.subject}</span>
                   <span className="text-ink-3">{Math.round(item.score)}</span>
@@ -291,7 +291,7 @@ export function TodayPlanMini({
             {tasks.slice(0, 4).map((task) => (
               <div key={task.id} className="flex items-start gap-3 text-body">
                 <CheckCircle2
-                  className={cn('mt-0.5 h-4 w-4', task.status === 'pending' ? 'text-line-3' : 'text-ok')}
+                  className={cn('mt-1 h-4 w-4', task.status === 'pending' ? 'text-line-3' : 'text-ok')}
                   aria-hidden="true"
                 />
                 <div className="min-w-0">

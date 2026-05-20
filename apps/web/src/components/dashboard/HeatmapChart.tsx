@@ -1,6 +1,7 @@
 import { Card } from '@sikao/ui/ui';
 import { cn } from '@sikao/shared-utils';
 import type { HeatmapEntryV2 } from '@sikao/api-client/types/api';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 // Phase 5.5 —— GitHub 风格 53 周 × 7 天热力图。零依赖 div grid。
 // 数据约 371 条（后端保证补零），按 date.getDay() 落到 Sun-Sat 7 行。
@@ -52,15 +53,15 @@ export function HeatmapChart({ entries }: HeatmapChartProps) {
         padding="sm"
         className="text-sm text-ink-3"
         data-testid="heatmap-chart-empty"
-        aria-label="练习热力图"
+        aria-label={DASHBOARD_COPY.heatmapTitle}
       >
         <header className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-ink">练习热力图</h3>
+          <h3 className="font-semibold text-ink">{DASHBOARD_COPY.heatmapTitle}</h3>
           <span className="text-tiny font-mono text-ink-4 tracking-wide">
             近 53 周
           </span>
         </header>
-        <p>暂无练习记录, 答过题后热力图会出现在这里。</p>
+        <p>{DASHBOARD_COPY.heatmapEmpty}, {DASHBOARD_COPY.heatmapEmptyHint}。</p>
       </Card>
     );
   }
@@ -76,10 +77,10 @@ export function HeatmapChart({ entries }: HeatmapChartProps) {
     <section
       className="bg-surface border border-line rounded-card p-4 overflow-x-auto"
       data-testid="heatmap-chart"
-      aria-label="练习热力图"
+      aria-label={DASHBOARD_COPY.heatmapTitle}
     >
       <header className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-ink">练习热力图</h3>
+        <h3 className="font-semibold text-ink">{DASHBOARD_COPY.heatmapTitle}</h3>
         <span className="text-tiny font-mono text-ink-4 tracking-wide">
           近 53 周
         </span>

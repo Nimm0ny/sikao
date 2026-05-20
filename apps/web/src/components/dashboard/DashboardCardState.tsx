@@ -33,7 +33,7 @@ export function DashboardCardState({
         data-testid={`${testId}-error`}
         role="alert"
       >
-        <AlertCircle className="mt-0.5 h-4 w-4" aria-hidden="true" />
+        <AlertCircle className="mt-1 h-4 w-4" aria-hidden="true" />
         <span>{DASHBOARD_COPY.status.error}</span>
       </div>
     );

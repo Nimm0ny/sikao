@@ -1,4 +1,5 @@
 import type { KnowledgePointEntryV2 } from '@sikao/api-client/types/api';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 /**
  * SIKAO Dashboard 02 hifi (2026-05-11 Wave 1) — `.weak-1920` 落地.
@@ -42,7 +43,7 @@ export function WeakPointsCard({ points }: WeakPointsCardProps) {
       </header>
 
       {top.length === 0 ? (
-        <p className="text-sm text-ink-3 py-2">暂无薄弱考点数据.</p>
+        <p className="text-sm text-ink-3 py-2">{DASHBOARD_COPY.weakPointsEmpty}.</p>
       ) : (
         <ul className="flex flex-col">
           {top.map((p) => {

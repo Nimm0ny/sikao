@@ -14,25 +14,22 @@ import {
 import { useAuthStore } from '@sikao/domain/auth/useAuthStore';
 import { logger } from '@sikao/shared-utils';
 import { toast } from '@sikao/shared-utils';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 /**
- * DashboardMobile — M1 · Home 手机版 (PR9, 2026-05-13).
  *
  * SSOT: docs/design/Mobile and Tablet Pack New.html "M1 · Home" 原型
- * + docs/design/handoff/Mobile and Tablet · Handoff.md §5.2.
  *
  * 复用 Dashboard.tsx 同款 hooks (useContinueLastSession / useTodayStudyPlan /
  * useUpcomingExams / useWeakModules + useCreateUserExam / useDeleteUserExam),
  * 不重写数据流 — 只换 layout (mobile-first M1 风格替代 desktop 4-block grid).
  *
- * M1 layout 关键 (Handoff §5.2):
  *   1. 黑卡「继续上次」占顶 1/3 (.m-card-elev)
  *   2. 3 列 mstat (本周 / 正确率 / 打卡)
  *   3. 今日计划 list (.m-list-row × N)
  *
  * 跟 desktop 4-block 区别: 第 3 块"临考冲刺"在 M1 简化为 hero greeting strip
  * (距 N 天) 不另起 block; 第 4 块"薄弱模块"在 M1 不显, 由用户从 TabBar 进入
- * 错题本看 (跟 Handoff §5.1 一致 — mobile view 不堆完整 dataset, list 类
  * 跳独立 page).
  *
  * Italic 政策 (CLAUDE.md §4): CJK 禁 italic. mstat__label / __unit / __delta
@@ -122,7 +119,7 @@ export function DashboardMobile() {
         {
           onError: (err) => {
             logger.error('[dashboard-mobile] create exam failed', { err: String(err) });
-            toast.error('保存失败', '请稍后重试');
+            toast.error('保存失败', DASHBOARD_COPY.retryHint);
           },
         },
       );
@@ -138,7 +135,7 @@ export function DashboardMobile() {
             err: String(err),
             examId,
           });
-          toast.error('删除失败', '请稍后重试');
+          toast.error('删除失败', DASHBOARD_COPY.retryHint);
         },
       });
     },
@@ -158,9 +155,9 @@ export function DashboardMobile() {
           className="m-card-elev"
           data-testid="dashboard-mobile-continue-empty"
         >
-          <div className="m-card-elev__head">从这里开始</div>
+          <div className="m-card-elev__head">{DASHBOARD_COPY.mobileStartEyebrow}</div>
           <p className="m-card-elev__title">
-            今天还没开始练习
+            {DASHBOARD_COPY.mobileStartEmpty}
           </p>
           <div className="m-card-elev__cta-row">
             <button
@@ -224,7 +221,6 @@ export function DashboardMobile() {
   // 数据来源 — plan.dailyQuota / weekly stats currently 不一一暴露 in BE schema;
   // MVP 走 plan.tasks 完成度 + lastSession.answeredCount fallback 0.
   const planDone = plan?.tasks.filter((t) => t.status === 'completed').length ?? 0;
-  // 临时 metric strip: 待 BE useWeeklyStats endpoint 上线再切换 (Wave 9 backlog).
   const weeklyAnswered = lastSession?.answeredCount ?? planDone * 10;
   const accuracyPct =
     plan?.dailyAccuracyTarget != null
@@ -259,7 +255,7 @@ export function DashboardMobile() {
         <button
           type="button"
           className="m-app-head__icon-btn"
-          aria-label="编辑考试目标"
+          aria-label={DASHBOARD_COPY.mobileEditExamAria}
           onClick={handleOpenSheet}
           data-testid="dashboard-mobile-edit-exam"
         >
@@ -275,7 +271,7 @@ export function DashboardMobile() {
       <section
         className="mstat-row"
         data-testid="dashboard-mobile-mstat"
-        aria-label="本周练习概览"
+        aria-label={DASHBOARD_COPY.mobileWeekOverviewAria}
       >
         <div className="mstat">
           <div className="mstat__label">本周</div>
@@ -322,7 +318,7 @@ export function DashboardMobile() {
           data-testid="dashboard-mobile-plan-empty"
         >
           <p className="text-sm text-ink-3 m-0">
-            今日无计划。配置学习习惯后会自动生成节奏。
+            {DASHBOARD_COPY.todayPlanEmpty}。{DASHBOARD_COPY.mobileTodayEmptyHint}。
           </p>
         </section>
       ) : (

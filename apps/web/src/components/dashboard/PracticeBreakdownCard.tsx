@@ -15,6 +15,7 @@
 import type { ReactElement, ReactNode } from 'react';
 import { Card } from '@sikao/ui/ui/Card';
 import type { DashboardStatsV2 } from '@sikao/api-client/types/api';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 export interface PracticeBreakdownCardProps {
   readonly data: DashboardStatsV2 | undefined;
@@ -65,12 +66,12 @@ export function PracticeBreakdownCard({
       <h2 className="font-bold text-ink mb-3">答题来源</h2>
       <Row
         label="学习计划"
-        hint="含计划内复习"
+        hint={DASHBOARD_COPY.breakdownPlannedHint}
         value={formatCount(data?.studyPlanAnswered)}
       />
       <Row
         label="错题复习"
-        hint="错题本独立入口"
+        hint={DASHBOARD_COPY.breakdownWrongbookLink}
         value={formatCount(data?.retryWrongAnswered)}
       />
       <Row label="整卷模拟" value={formatCount(data?.paperBoundAnswered)} />

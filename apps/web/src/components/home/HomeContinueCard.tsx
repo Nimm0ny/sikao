@@ -3,6 +3,7 @@ import { Button } from '@sikao/ui/ui';
 import { HomeHero } from './HomeHero';
 import type { ContinueAction } from './pickContinueAction';
 import type { PaperSummaryV2, PracticeSessionSummaryV2 } from '@sikao/api-client/types/api';
+import { HOME_COPY } from '@/lib/ui-copy';
 
 // HomeContinueCard — 学习中心首页 §1 Hero. 三级 fallback (今日计划 → 最近未完
 // 卷 → 推荐第 1 卷). 调性: 备考同伴, 不喊话; 单 CTA 主行动 + ghost 次行动.
@@ -67,7 +68,7 @@ export function HomeContinueCard({
           className="inline-flex items-center justify-center px-2 py-2 text-sm font-medium text-ink-3 hover:text-ink underline underline-offset-4 decoration-line hover:decoration-ink-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent-50 rounded-tiny"
           data-testid="home-cta-secondary"
         >
-          查看全部题库
+          {HOME_COPY.continueViewAll}
         </a>
       }
     />
@@ -86,20 +87,20 @@ function buildHeroView(action: ContinueAction): HeroView {
     return {
       eyebrow: '今日计划',
       title: action.task.payload.title,
-      description: action.task.payload.subtitle ?? '今天给自己挑一段, 把考点想清楚.',
+      description: action.task.payload.subtitle ?? `${HOME_COPY.continueTodayPrefix}，${HOME_COPY.continueTodaySuffix}。`,
       cta: '去做这个 →',
     };
   }
   if (action.kind === 'session') {
     const remain = action.session.totalQuestions - action.session.answeredQuestions;
-    const paperName = action.session.paperName ?? '上次未完的卷';
+    const paperName = action.session.paperName ?? HOME_COPY.continueLast;
     return {
       eyebrow: '继续上次',
       title: paperName,
       description:
         remain > 0
-          ? `还剩 ${remain} 题没做, 接着上次的状态把它收尾.`
-          : '上次答题已答完, 进去看下一步.',
+          ? `还剩 ${remain} 题没做，${HOME_COPY.continueResume}。`
+          : `${HOME_COPY.continueFinished}，${HOME_COPY.continueFinishedHint}。`,
       cta: '继续做 →',
     };
   }
@@ -107,16 +108,16 @@ function buildHeroView(action: ContinueAction): HeroView {
     return {
       eyebrow: '今日推荐',
       title: action.paper.paperName,
-      description: '按套卷练习 · 自动判分 · 错题回看. 选这卷, 把下一题做完.',
+      description: `${HOME_COPY.continueByPaper} · 自动判分 · 错题回看。选这卷，${HOME_COPY.continueByPaperHint}。`,
       cta: '开始练习 →',
     };
   }
   return {
     eyebrow: '正在准备',
-    title: '题库导入中',
+    title: HOME_COPY.continueImporting,
     // 不许诺时长 — fail-fast 延伸: false ETA 等 5 分钟还没好就掉信任.
     // (subagent review 2026-05-08 P2 修法 #5)
-    description: '题库准备中, 数据同步完成后会自动出现. 期间可以先去其他模块.',
+    description: `${HOME_COPY.continuePreparing}，${HOME_COPY.continuePreparingHint1}。${HOME_COPY.continuePreparingHint2}。`,
     cta: '',
   };
 }

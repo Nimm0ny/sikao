@@ -13,6 +13,7 @@
  */
 
 import type { PracticeSessionSummary } from '@sikao/domain/dashboard/useHomeData';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 export interface HomeContinueBlockProps {
   /** 上次中断 session, null 表示无未完成 session. */
@@ -42,7 +43,7 @@ export function HomeContinueBlock({
           </span>
         </header>
         <p className="text-sm text-ink-3 leading-relaxed flex-1">
-          暂无未完成的练习。挑一套今天先做。
+          {DASHBOARD_COPY.continueEmpty}。{DASHBOARD_COPY.continueEmptyHint}。
         </p>
         <button
           type="button"

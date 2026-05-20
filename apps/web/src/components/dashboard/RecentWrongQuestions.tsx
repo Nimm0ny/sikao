@@ -1,6 +1,7 @@
 import DOMPurify from 'dompurify';
 import { EmptyState } from '@sikao/ui/ui';
 import type { WrongQuestionDetailV2 } from '@sikao/api-client/types/api';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 // Phase 5.5 —— 仪表盘底部"最近错题"小列表。复用 WrongBook API 的 page=1,
 // pageSize=5 结果。每项给到 /wrong-book 深度页的跳转提示。
@@ -29,8 +30,8 @@ export function RecentWrongQuestions({ items, onNavigate }: RecentWrongQuestions
       </header>
       {items.length === 0 ? (
         <EmptyState
-          title="还没有错题"
-          description="完成一次练习后错题会自动收录。"
+          title={DASHBOARD_COPY.recentWrongEmpty}
+          description={`${DASHBOARD_COPY.recentWrongEmptyHint}。`}
         />
       ) : (
         <ul className="divide-y divide-line">

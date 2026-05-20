@@ -21,6 +21,7 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { BottomDrawer } from '@sikao/ui/ui';
 import type { UserExamRead } from '@sikao/domain/dashboard/useHomeData';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 export interface ExamCustomSheetProps {
   /** Sheet 开关. */
@@ -96,13 +97,13 @@ export function ExamCustomSheet({
       onToggle={(next) => {
         if (!next) handleSheetClose();
       }}
-      ariaLabel="自定义考试"
+      ariaLabel={DASHBOARD_COPY.examCustomTitle}
       header={
         <div
           className="flex items-baseline justify-between w-full"
           data-testid="exam-custom-sheet-header"
         >
-          <h3 className="font-serif text-h-card font-medium m-0">自定义考试</h3>
+          <h3 className="font-serif text-h-card font-medium m-0">{DASHBOARD_COPY.examCustomTitle}</h3>
           <span className="font-mono text-tiny tracking-eyebrow text-ink-3 uppercase">
             {exams.length} 场
           </span>
@@ -116,7 +117,7 @@ export function ExamCustomSheet({
         {/* 现有考试列表 */}
         {exams.length === 0 ? (
           <p className="text-sm text-ink-3 leading-relaxed">
-            还没添加任何考试。先加一场, 看到倒计时更有节奏。
+            {DASHBOARD_COPY.examCustomEmpty}。先加一场，{DASHBOARD_COPY.examCustomEmptyHint}。
           </p>
         ) : (
           <ul

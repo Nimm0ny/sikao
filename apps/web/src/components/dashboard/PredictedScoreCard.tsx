@@ -10,7 +10,7 @@ import {
   meKeys,
   putUserGoal,
 } from '@sikao/api-client/apiQueries';
-import { ERROR_COPY } from '@/lib/ui-copy';
+import { DASHBOARD_COPY, ERROR_COPY } from '@/lib/ui-copy';
 import type { UserGoalV2 } from '@sikao/api-client/types/api';
 
 // Phase 5.2 + 5.5 fenbi-merge — 用户中心预测分卡 (含目标分编辑入口).
@@ -255,19 +255,19 @@ function GoalEditModal({ open, value, onValueChange, onClose }: GoalEditModalPro
     mutationFn: (targetScore: number) => putUserGoal({ targetScore }),
     onSuccess: (data) => {
       queryClient.setQueryData(meKeys.goal, data);
-      toast.info('目标已更新');
+      toast.info(DASHBOARD_COPY.predictedUpdatedToast);
       onClose();
     },
     onError: (err) => {
       logger.error('me.goal.put.failed', { err: String(err) });
-      toast.error('保存失败', '检查输入或网络后重试');
+      toast.error('保存失败', DASHBOARD_COPY.predictedSaveFailedDesc);
     },
   });
 
   const submit = () => {
     const n = Number(value);
     if (!Number.isInteger(n) || n < TARGET_SCORE_MIN || n > TARGET_SCORE_MAX) {
-      toast.warn('请输入 0–150 之间的整数');
+      toast.warn(DASHBOARD_COPY.predictedRangeWarn);
       return;
     }
     mutation.mutate(n);

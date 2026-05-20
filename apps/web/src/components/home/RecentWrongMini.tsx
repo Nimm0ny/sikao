@@ -1,4 +1,5 @@
 import { Card, StatCallout } from '@sikao/ui/ui';
+import { HOME_COPY } from '@/lib/ui-copy';
 
 // Phase B (P0 #5) — Home 错题区轻量卡, 跟 Dashboard `RecentWrongQuestions`
 // 视觉去重: Dashboard 显完整 5 条 list (翻看场景), Home 只显 reviewing 总数 +
@@ -31,7 +32,7 @@ function buildSubtitle(count: number, lastWrongTime: string | null): string {
   if (count === 0) return '暂无错题, 做新题吧';
   if (lastWrongTime == null) return '待复习';
   const d = daysAgo(lastWrongTime);
-  return d === 0 ? '今天刚错过' : `上次 ${d} 天前`;
+  return d === 0 ? HOME_COPY.recentWrongHint : `上次 ${d} 天前`;
 }
 
 export function RecentWrongMini({
@@ -47,13 +48,13 @@ export function RecentWrongMini({
       padding="md"
       hoverable
       data-testid="recent-wrong-mini"
-      aria-label="错题待复习"
+      aria-label={HOME_COPY.recentWrongLabel}
     >
       <div className="flex flex-col gap-3 h-full">
         <StatCallout
           hairline={false}
           size="lg"
-          label="错题待复习"
+          label={HOME_COPY.recentWrongLabel}
           value={isLoading ? '—' : safeCount}
           unit={!isLoading && safeCount > 0 ? '条' : undefined}
           description={

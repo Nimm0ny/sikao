@@ -1,5 +1,6 @@
 import { Card } from '@sikao/ui/ui';
 import type { PaperSummaryV2 } from '@sikao/api-client/types/api';
+import { HOME_COPY } from '@/lib/ui-copy';
 
 // EssayPreviewCard — 学习中心首页 §6 申论待批改 / 推荐区. /essay/papers 完整
 // 列表是详细页, 这里只显前 2 入口让用户感知"申论模块在这里, 一键进".
@@ -22,7 +23,7 @@ export function EssayPreviewCard({ papers, onPick, onSeeAll }: EssayPreviewCardP
             申论真题 <span className="text-ink-3 font-semibold">· 练笔</span>
           </h2>
           <p className="text-xs text-ink-3 mt-1">
-            选一卷写完提交后查看批改建议和对照答案.
+            {HOME_COPY.essayPreview}。
           </p>
         </div>
         <button

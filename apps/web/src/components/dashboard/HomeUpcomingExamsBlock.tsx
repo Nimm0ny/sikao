@@ -15,6 +15,7 @@
 
 import { useState } from 'react';
 import type { UserExamRead } from '@sikao/domain/dashboard/useHomeData';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 export interface HomeUpcomingExamsBlockProps {
   /** 用户考试列表 (按 daysUntil 升序 caller 排好). */
@@ -46,7 +47,7 @@ export function HomeUpcomingExamsBlock({
           </span>
         </header>
         <p className="text-sm text-ink-3 leading-relaxed flex-1">
-          还没设置考试目标。加一个，看到倒计时更有节奏。
+          {DASHBOARD_COPY.upcomingEmpty}。加一个，{DASHBOARD_COPY.upcomingEmptyHint}。
         </p>
         <button
           type="button"
@@ -54,7 +55,7 @@ export function HomeUpcomingExamsBlock({
           className="self-start rounded-tiny bg-surface text-ink border border-ink px-3 py-2 text-sm font-medium hover:bg-ink hover:text-white transition-colors duration-fast"
           data-testid="home-upcoming-exams-add"
         >
-          添加考试目标 →
+          {DASHBOARD_COPY.upcomingAddCta} →
         </button>
       </section>
     );

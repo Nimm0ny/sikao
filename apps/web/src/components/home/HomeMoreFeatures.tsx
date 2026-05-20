@@ -6,6 +6,7 @@ import {
   SubjectEssayIcon,
   SubjectPlanIcon,
 } from '@sikao/ui/icons';
+import { HOME_COPY } from '@/lib/ui-copy';
 
 // HomeMoreFeatures — 学习中心首页 footer "更多功能" link grid. 4 入口跳分散
 // 模块: 解析问答 / 我的申论 / 学习计划 / 学情数据. 这些在 sidebar 不
@@ -27,7 +28,7 @@ const FEATURES: readonly FeatureLink[] = [
   {
     key: 'conversations',
     title: '解析问答',
-    description: '回看过往提问和答复脉络',
+    description: HOME_COPY.moreFeaturesConversations,
     icon: ChatIcon,
     to: '/conversations',
     testId: 'home-feature-conversations',
@@ -35,7 +36,7 @@ const FEATURES: readonly FeatureLink[] = [
   {
     key: 'essay-history',
     title: '我的申论',
-    description: '查看历次批改和对照答案',
+    description: HOME_COPY.moreFeaturesEssay,
     icon: SubjectEssayIcon,
     to: '/essay/history',
     testId: 'home-feature-essay-history',
@@ -43,7 +44,7 @@ const FEATURES: readonly FeatureLink[] = [
   {
     key: 'study-plan',
     title: '学习计划',
-    description: '查看今日安排和周计划',
+    description: HOME_COPY.moreFeaturesPlan,
     icon: SubjectPlanIcon,
     to: '/plan',
     testId: 'home-feature-study-plan',
@@ -51,7 +52,7 @@ const FEATURES: readonly FeatureLink[] = [
   {
     key: 'dashboard',
     title: '学情数据',
-    description: '查看练习表现和复盘指标',
+    description: HOME_COPY.moreFeaturesAnalytics,
     icon: SubjectDashboardIcon,
     to: '/dashboard',
     testId: 'home-feature-dashboard',

@@ -1,4 +1,5 @@
 import type { TrendEntryV2 } from '@sikao/api-client/types/api';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 // Phase 5.5 —— 14 天正确率折线图。手写 SVG polyline + 下方 area fill。
 // 不用图表库（零依赖，符合 phase5-rebrand.md §Phase 5.5 图表决策）。
@@ -38,7 +39,7 @@ export function TrendLineChart({ entries, compact = false }: TrendLineChartProps
   if (total === 0) {
     return (
       <div className="border border-line bg-surface p-4 text-sm text-ink-3">
-        暂无趋势数据。
+        {DASHBOARD_COPY.trendEmpty}。
       </div>
     );
   }
@@ -75,11 +76,11 @@ export function TrendLineChart({ entries, compact = false }: TrendLineChartProps
       }
       data-testid="trend-line-chart"
       data-compact={compact ? 'true' : 'false'}
-      aria-label={compact ? '正确率趋势 (摘要)' : '近 14 天正确率趋势'}
+      aria-label={compact ? `${DASHBOARD_COPY.trendTitle} (摘要)` : `近 ${total} ${DASHBOARD_COPY.trendDayPrefix}`}
     >
       {!compact ? (
         <header className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-ink">正确率趋势</h3>
+          <h3 className="font-semibold text-ink">{DASHBOARD_COPY.trendTitle}</h3>
           <span className="text-tiny font-mono text-ink-4 tracking-wide">
             近 {total} 天
           </span>

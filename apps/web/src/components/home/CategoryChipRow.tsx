@@ -2,6 +2,7 @@ import { ChevronRightIcon } from '@sikao/ui/icons';
 import { Card } from '@sikao/ui/ui';
 import { cn } from '@sikao/shared-utils';
 import type { CategorySummaryV2 } from '@sikao/api-client/types/api';
+import { HOME_COPY } from '@/lib/ui-copy';
 
 // CategoryChipRow — 学习中心首页 §4 专项练习入口的紧凑版.
 // 6 大类 (CategoriesResponseV2) 一行显示, total=0 禁用. 跟 /categories 完整网格
@@ -21,7 +22,7 @@ export function CategoryChipRow({ categories, onPick, onSeeAll }: CategoryChipRo
         <div className="min-w-0">
           <h2 className="text-lg font-bold text-ink">专项练习</h2>
           <p className="text-xs text-ink-3 mt-1">
-            选一个模块, 按你节奏练. 进度跟着你的实际作答更新.
+            {HOME_COPY.categoryHeader1}，{HOME_COPY.categoryHeader2}。{HOME_COPY.categoryHeader3}。
           </p>
         </div>
         <button

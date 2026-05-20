@@ -40,4 +40,6 @@ export const HOME_COPY = {
   recentWrongLabel:       '错题待复习',
   // MobileTabBar
   mobileNavAriaLabel:     '移动端底部导航',
+  // MvpProgressRing
+  completedProgressLabel: '已完成进度',
 } as const;

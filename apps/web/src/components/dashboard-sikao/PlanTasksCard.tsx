@@ -1,4 +1,5 @@
 import type { StudyPlanResponse } from '@sikao/api-client/types/study-plan';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 /**
  * SIKAO Dashboard 02 hifi (2026-05-11 Wave 1) — `.card-1920` 本周计划 落地.
@@ -58,7 +59,7 @@ export function PlanTasksCard({
       </header>
 
       {tasks.length === 0 ? (
-        <p className="text-sm text-ink-3 py-4">今日无任务.</p>
+        <p className="text-sm text-ink-3 py-4">{DASHBOARD_COPY.planTasksEmpty}.</p>
       ) : (
         <ul className="flex flex-col" data-testid="dashboard-plan-tasks-list">
           {tasks.map((task) => {

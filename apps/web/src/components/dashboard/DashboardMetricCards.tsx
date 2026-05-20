@@ -1,5 +1,6 @@
 import { StatCallout } from '@sikao/ui/ui';
 import type { DashboardStatsV2 } from '@sikao/api-client/types/api';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 // Phase 5.5 —— 顶部 4 张 metric 卡，复用 Phase 5.2 的 StatCallout primitive
 // （大 serif italic 数字 + mono eyebrow）。
@@ -52,11 +53,11 @@ export function DashboardMetricCards({
         hairline={calloutHairline}
         label="累计答题"
         value={s.totalAnswered}
-        description="涵盖所有 session 的答题总量"
+        description={`涵盖所有 session ${DASHBOARD_COPY.metricTotalSuffix}`}
       />
       <StatCallout
         hairline={calloutHairline}
-        label="整体正确率"
+        label={DASHBOARD_COPY.metricAccuracyLabel}
         value={accuracyPct}
         unit="%"
         description="累计答对 / 累计答题"
@@ -66,7 +67,7 @@ export function DashboardMetricCards({
         label="连续打卡"
         value={s.currentStreakDays}
         unit="天"
-        description="按本地日从今天倒推"
+        description={DASHBOARD_COPY.metricStreakHint}
       />
       <StatCallout
         hairline={calloutHairline}
@@ -78,7 +79,7 @@ export function DashboardMetricCards({
             {s.masteredPointsCount + s.totalWrongQuestions}
           </>
         }
-        description="做对 2 次自动掌握"
+        description={`做对 2 ${DASHBOARD_COPY.metricMasteredSuffix}`}
       />
     </div>
   );

@@ -11,6 +11,7 @@
  */
 
 import type { StudyPlanResponse } from '@sikao/domain/dashboard/useHomeData';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 export interface HomeTodayPlanBlockProps {
   /** 今日 plan, null 表示无 plan (未配置 study habit). */
@@ -40,7 +41,7 @@ export function HomeTodayPlanBlock({
           </span>
         </header>
         <p className="text-sm text-ink-3 leading-relaxed flex-1">
-          今日无计划。配置学习习惯后会自动生成每日节奏。
+          {DASHBOARD_COPY.todayPlanEmpty}。{DASHBOARD_COPY.todayPlanEmptyHint}。
         </p>
         <button
           type="button"
@@ -90,7 +91,7 @@ export function HomeTodayPlanBlock({
           {plan.dailyQuota != null ? `每日 ${plan.dailyQuota} 题` : null}
           {plan.dailyQuota != null && accuracyTargetPct != null ? ' · ' : null}
           {accuracyTargetPct != null
-            ? `正确率目标 ${accuracyTargetPct}%`
+            ? `${DASHBOARD_COPY.todayPlanAccuracyLabel} ${accuracyTargetPct}%`
             : null}
         </p>
       ) : null}

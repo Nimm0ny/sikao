@@ -5,6 +5,7 @@ import type {
   PracticeSubtypeSummaryV2,
 } from '@sikao/api-client/types/api';
 import { cn } from '@sikao/shared-utils';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 export interface RecentResultPreviewProps {
   readonly session: PracticeSessionSummaryV2 | null;
@@ -13,12 +14,12 @@ export interface RecentResultPreviewProps {
 }
 
 const FALLBACK_HINTS: readonly string[] = [
-  '完成更多练习以解锁个性化建议',
-  '建议先打通一套完整模考，让系统沉淀基线数据',
-  '建议: 错题本回顾上一阶段难点，再触发新材料',
+  DASHBOARD_COPY.recentResultFallback1,
+  `${DASHBOARD_COPY.recentResultFallback2a}，${DASHBOARD_COPY.recentResultFallback2b}`,
+  `建议: ${DASHBOARD_COPY.recentResultFallback3a}，${DASHBOARD_COPY.recentResultFallback3b}`,
 ];
 
-const ACTION_HINT = '建议: 错题本针对前两个考点优先重做 (≥30 题), 后续再触发新材料';
+const ACTION_HINT = `建议: ${DASHBOARD_COPY.recentResultAction1} (≥30 题), ${DASHBOARD_COPY.recentResultAction2}`;
 
 function formatLabel(subtype: PracticeSubtypeSummaryV2): string {
   return subtype.subject ? `${subtype.subject}·${subtype.subtype}` : subtype.subtype;
@@ -33,7 +34,7 @@ function buildHints(subtypes: readonly PracticeSubtypeSummaryV2[]): readonly str
   });
 
   const weakest = sortedByWrong[0];
-  const hint1 = `${formatLabel(weakest)} 错 ${weakest.wrongCount} 题, 这是当前最大弱项`;
+  const hint1 = `${formatLabel(weakest)} 错 ${weakest.wrongCount} 题, ${DASHBOARD_COPY.recentResultWeakest}`;
 
   if (sortedByWrong.length < 2) {
     return [hint1, FALLBACK_HINTS[1], ACTION_HINT];
@@ -41,7 +42,7 @@ function buildHints(subtypes: readonly PracticeSubtypeSummaryV2[]): readonly str
 
   const second = sortedByWrong[1];
   const pct = Math.round(second.accuracyRate);
-  const hint2 = `${formatLabel(second)} 正确率 ${pct}%, 巩固空间大`;
+  const hint2 = `${formatLabel(second)} 正确率 ${pct}%, ${DASHBOARD_COPY.recentResultLowAcc}`;
 
   return [hint1, hint2, ACTION_HINT];
 }
@@ -61,13 +62,13 @@ function EmptyVariant({ className }: { readonly className?: string }) {
       padding="md"
       className={cn('flex flex-col gap-3', className)}
       data-testid="recent-result-preview"
-      aria-label="最近一次模考"
+      aria-label={DASHBOARD_COPY.recentResultAriaLabel}
     >
       <div className="text-tiny uppercase tracking-wider text-ink-3">
-        最近一次模考
+        {DASHBOARD_COPY.recentResultEyebrow}
       </div>
       <p className="text-sm text-ink-2 leading-relaxed">
-        暂无练习记录, 完成首场练习后这里会显示最近一次表现.
+        {`${DASHBOARD_COPY.recentResultEmpty}, ${DASHBOARD_COPY.recentResultEmptyDesc}.`}
       </p>
       <div className="mt-1 text-right">
         <Link
@@ -93,7 +94,7 @@ export function RecentResultPreview({
 
   const hints = buildHints(subtypes);
   const minutes = diffMinutes(session.startedAt, session.completedAt);
-  const title = session.paperName ?? session.paperCode ?? '未命名练习';
+  const title = session.paperName ?? session.paperCode ?? DASHBOARD_COPY.recentResultUntitled;
   const metaParts: string[] = [`${session.totalQuestions} 题`];
   if (minutes != null) metaParts.push(`用时 ${minutes} min`);
   const meta = metaParts.join(' · ');
@@ -105,10 +106,10 @@ export function RecentResultPreview({
       padding="md"
       className={cn('flex flex-col gap-3', className)}
       data-testid="recent-result-preview"
-      aria-label="最近一次模考"
+      aria-label={DASHBOARD_COPY.recentResultAriaLabel}
     >
       <div className="text-tiny uppercase tracking-wider text-ink-3">
-        最近一次模考
+        {DASHBOARD_COPY.recentResultEyebrow}
       </div>
       <div>
         <h3

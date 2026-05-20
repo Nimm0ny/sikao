@@ -1,5 +1,6 @@
 import { Badge, EmptyState } from '@sikao/ui/ui';
 import type { PracticeSessionSummaryV2 } from '@sikao/api-client/types/api';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 // Phase 5.5 —— 最近练习列表（复用 /practice/history 的 recentSessions）。
 // honesty：项目只有"练习 session"，不叫"考试"，故标题用"最近练习"。
@@ -22,15 +23,15 @@ export function RecentExamsList({ sessions, onOpenResult }: RecentExamsListProps
     <section
       className="bg-surface border border-line p-4 h-full flex flex-col"
       data-testid="recent-exams-list"
-      aria-label="最近练习"
+      aria-label={DASHBOARD_COPY.recent.title}
     >
       <header className="mb-3">
-        <h3 className="font-semibold text-ink">最近练习</h3>
+        <h3 className="font-semibold text-ink">{DASHBOARD_COPY.recent.title}</h3>
       </header>
       {sessions.length === 0 ? (
         <EmptyState
-          title="还没有练习记录"
-          description="完成一场练习后，最近 10 次会出现在这里。"
+          title={DASHBOARD_COPY.recentExamsEmpty}
+          description={`${DASHBOARD_COPY.recentExamsEmptyHint1}，最近 10 ${DASHBOARD_COPY.recentExamsEmptyHint2}。`}
         />
       ) : (
         <ul className="divide-y divide-line flex-1 overflow-auto">

@@ -11,6 +11,7 @@ import {
   Target,
   User,
 } from 'lucide-react';
+import { HOME_COPY } from '@/lib/ui-copy';
 
 export function MvpCard({
   children,
@@ -120,7 +121,7 @@ export function MvpChip({
   };
 
   return (
-    <span className={cn('inline-flex items-center rounded-pill border px-2.5 py-1 text-tiny font-semibold', toneClass[tone])}>
+    <span className={cn('inline-flex items-center rounded-pill border px-3 py-1 text-tiny font-semibold', toneClass[tone])}>
       {children}
     </span>
   );
@@ -184,7 +185,7 @@ export function MvpProgressRing({
       </div>
       <div>
         <p className="text-body font-semibold text-ink">{label}</p>
-        <p className="text-tiny text-ink-3">已完成进度</p>
+        <p className="text-tiny text-ink-3">{HOME_COPY.completedProgressLabel}</p>
       </div>
     </div>
   );
@@ -304,7 +305,7 @@ export function MvpShell() {
         <Outlet />
       </main>
       <nav
-        aria-label="移动主导航"
+        aria-label={HOME_COPY.mobileNavAriaLabel}
         className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-line bg-paper px-2 py-2 lg:hidden"
       >
         {primaryNav.slice(0, 5).map((item) => {

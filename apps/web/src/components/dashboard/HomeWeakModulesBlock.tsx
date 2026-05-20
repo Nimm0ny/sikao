@@ -15,6 +15,7 @@
  */
 
 import type { WeakModule } from '@sikao/domain/dashboard/useHomeData';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 export interface HomeWeakModulesBlockProps {
   /** 薄弱模块列表 (caller 已按 score 降序排好, top 1-2). */
@@ -48,7 +49,7 @@ export function HomeWeakModulesBlock({
           </span>
         </header>
         <p className="text-sm text-ink-3 leading-relaxed flex-1">
-          暂无薄弱模块。今天的节奏先保持着。
+          {DASHBOARD_COPY.weakEmpty}。{DASHBOARD_COPY.weakEmptyHint}。
         </p>
       </section>
     );

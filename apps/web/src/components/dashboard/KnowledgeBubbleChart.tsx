@@ -1,5 +1,6 @@
 import type { KnowledgeCategory, KnowledgePointEntryV2 } from '@sikao/api-client/types/api';
 import { EmptyState } from '@sikao/ui/ui';
+import { DASHBOARD_COPY } from '@/lib/ui-copy';
 
 // Phase 5.5 —— 知识点气泡图。纯 SVG + 2 行 5 列网格 + 气泡半径映射 total。
 // 颜色按 category（strong=success / ok=warn / weak=danger）。
@@ -38,8 +39,8 @@ export function KnowledgeBubbleChart({ points }: KnowledgeBubbleChartProps) {
   if (points.length === 0) {
     return (
       <EmptyState
-        title="暂无知识点数据"
-        description="答题后系统会按科目自动分析你的强项与弱项。"
+        title={DASHBOARD_COPY.knowledgeBubbleEmpty}
+        description={`${DASHBOARD_COPY.knowledgeBubbleEmptyHint}。`}
       />
     );
   }
@@ -57,10 +58,10 @@ export function KnowledgeBubbleChart({ points }: KnowledgeBubbleChartProps) {
     <section
       className="bg-surface border border-line p-4"
       data-testid="knowledge-bubble-chart"
-      aria-label="知识点掌握气泡图"
+      aria-label={DASHBOARD_COPY.knowledgeBubbleTitle}
     >
       <header className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-ink">知识点掌握</h3>
+        <h3 className="font-semibold text-ink">{DASHBOARD_COPY.knowledgeBubbleHeader}</h3>
         <span className="text-tiny font-mono text-ink-4 tracking-wide">
           {visible.length} / {points.length} 项
         </span>

@@ -1,5 +1,6 @@
 import { Button } from '@sikao/ui/ui';
 import { HomeHero } from './HomeHero';
+import { HOME_COPY } from '@/lib/ui-copy';
 
 // HeroSection — Home 页顶部 Hero 卡 wrapper. 当前是 PoC 文案 ("每天 60 分钟,
 // 把考点想清楚"); 学习中心 V1 (Phase B) 会被 HomeContinueCard 替换为基于
@@ -19,10 +20,10 @@ export function HeroSection({ startDisabled, onPrimary, onSecondary }: HeroSecti
         <>
           每天 60 分钟，
           <br />
-          把考点想清楚
+          {HOME_COPY.heroTitle}
         </>
       }
-      description="按套卷练习 · 自动判分 · 错题回看。专为公考真题场景设计，不做花哨功能。"
+      description={`${HOME_COPY.heroSubtitle1} · 自动判分 · 错题回看。${HOME_COPY.heroSubtitle2}，${HOME_COPY.heroSubtitle3}。`}
       primaryCta={
         <Button
           variant="primary"
@@ -35,7 +36,7 @@ export function HeroSection({ startDisabled, onPrimary, onSecondary }: HeroSecti
       }
       secondaryCta={
         <Button variant="ghost" onClick={onSecondary} data-testid="home-cta-secondary">
-          查看全部题库
+          {HOME_COPY.heroCtaAll}
         </Button>
       }
     />
