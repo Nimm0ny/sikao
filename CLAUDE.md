@@ -12,11 +12,13 @@
 
 新会话先读（sikao 路径）：
 
-1. `SIKAO_MIGRATION_AGENT_BRIEF.md`（根目录）— 迁移 SSOT
-2. `docs/vault/00-index/Home.md` — 类 Obsidian 文档仓库入口
-3. `docs/vault/03-tech/Architecture.md` — 系统架构
-4. `docs/vault/05-migration/Migration-Status.md` — 当前迁移状态
+1. `docs/vault/00-index/Home.md` — 类 Obsidian 文档仓库入口
+2. `docs/vault/03-tech/Architecture.md` — 系统架构
+3. `docs/vault/05-migration/Migration-Status.md` — 当前迁移状态
+4. 迁移相关任务再读：`docs/vault/05-migration/Migration-Plan.md` / `Legacy-Feature-Inventory.md` / `Data-Migration.md`
 5. 任务所属领域：`docs/vault/02-domain/<Domain>.md`（Question-Bank / Answer-Session / Xingce / Shenlun / Grading / Study-Record）
+
+旧根目录迁移总 brief 已在 2026-05-19 删除；迁移 SSOT 已拆分收敛到 `docs/vault/05-migration/`。
 
 本文后续章节保留硬约束和历史细节；若与 `docs/vault/00-index/Home.md` 的文档优先级冲突，先按 vault index 判断，再回到对应源文档确认。
 
@@ -29,43 +31,6 @@
 - 若 agent 发现 `AGENTS.md` 与 `CLAUDE.md` 冲突，必须 fail-fast 报告 drift，不得自行选择一份继续执行。
 - 本文件只定义工程行为、协作风格、验证纪律、工具约束；产品 PRD / 业务落地计划另建 `docs/vault/01-product/` 或 `docs/plan/`，不得塞进根规范。
 
-### 0.2 Multica 协作账本原则
-
-Multica 是协作账本，不是工程 SSOT，不替代本文件的硬规则。
-
-Multica 负责记录：
-
-- issue 原始需求
-- agent 分工
-- 当前状态
-- 阻塞点
-- 讨论记录
-- 执行过程
-- 测试与验证证据
-- review 结论
-- handoff / completion evidence
-
-本地 docs 只记录稳定知识：
-
-- 架构与服务边界
-- 产品定位与用户旅程
-- 跨服务 API / DB / schema / 状态机契约
-- 已批准的实施计划
-- 工程例外
-- 发布记录
-- 设计系统规则
-
-禁止把以下内容写成本地长期文档：
-
-- 每日流水账
-- 临时任务状态
-- issue 评论转写
-- agent 执行日志
-- 临时 TODO / TASK / STATUS / FOCUS / ROADMAP
-- 已由 Multica issue 承载的进度记录
-
-一句话：**Multica 管过程，本地 docs 管稳定边界。**
-
 ---
 
 ## 1. 我是谁
@@ -74,7 +39,7 @@ Multica 负责记录：
 - 核心产品：**思考**（SIKAO） —— 公考备考工具。
   - 标语：**让备考从刷题变成思考**
   - 调性：备考同伴、克制的陪伴。「图书馆隔壁桌的同学」 —— 安静、靠谱、不打鸡血。
-  - 视觉：ink-first（黑色为主），蓝是 accent 点缀。设计规范见 `design/` + `docs/vault/04-design/Design-System.md`
+  - 视觉：白 + 蓝为主，黑灰做点缀。蓝承担主行动 / 当前状态 / focus / link，黑灰承担正文与结构。设计规范见 `design/` + `docs/vault/04-design/Design-System.md`
 - 核心项目是 **`sikao`** 单仓 monorepo（npm workspaces，前端 `apps/web` + `packages/*` + 后端 `services/api` 同库）；架构详见 `docs/vault/03-tech/Architecture.md`
 - 仓库：<https://github.com/Nimm0ny/sikao>
 - 目标前端栈：React 19 + TypeScript + Vite 8（npm workspaces，8 包：ui / design-system / api-client / domain / answer-engine / editor / shared-utils / config）
@@ -129,13 +94,13 @@ Multica 负责记录：
    - 负责需求理解、计划、subagent 编排、拍板、验收。
    - 默认不直接写大段代码、不跑破坏性命令、不 commit。
    - 可以做 read-only 调研、读文件、读 diff、整理 brief。
-   - 必须维护 Multica issue 的状态与证据闭环。
+   - 任务来自 Multica issue 时，必须维护 Multica issue 的状态与证据闭环。
 
 2. **Runner Mode**
    - 当前任务明确要求该 agent 直接落地代码时使用。
    - 必须先完成需求提取、Define-First、TDD、验证、review gate。
    - Runner 不能跳过 Master 的需求/方案阶段。
-   - Runner 完成后必须回写 Evidence Block 到 Multica issue。
+   - 任务来自 Multica issue 时，Runner 完成后必须回写 Evidence Block。
 
 3. **Reviewer Mode**
    - 只读审查，不改代码。
@@ -143,7 +108,7 @@ Multica 负责记录：
    - Reviewer 不能把建议当成已执行结果。
 
 4. **Verifier Mode**
-   - 只执行验证：lint、typecheck、test、browser smoke、Multica 回写。
+   - 只执行验证：lint、typecheck、test、browser smoke；任务来自 Multica issue 时负责回写验证证据。
    - 不修改业务代码。
    - 发现问题必须退回 Runner / Master。
 
@@ -166,7 +131,11 @@ Multica 负责记录：
 3. **拍板必走双轮讨论**：重大决策（重设计 / brand 改动 / 架构选择 / 跨服务契约）必须 spawn ≥2 个 subagent 评估，且 master+subagent 至少 2 轮讨论后 master 才拍板。subagent 仅评估/排序/推荐，**不决定**。
 4. **>400 行改动必 master review**：单 subagent 净增 >400 行（含新文件 + 修改）时，提交前 master 必须读 diff 决定是否接受 / 让另起 review subagent。
 5. **前端视觉改动必引「前端规范审查官 agent」**：每个涉及前端视觉的 phase 实施完，必须 spawn 一个专门 prompt 的 subagent 走前端规范全审（CLAUDE.md §4 design tokens 三处 SSOT / italic 政策 / 圆角 SSOT / lint:hardcode / lint:radius-token / lint:italic / lint:radius / typecheck / view 纵向预算）。这个审查官跟 fixer 必须是不同 subagent，避免自审。
-6. **每次视觉改造 chrome MCP ≥2 次验收**：fixer 完成后通过 `mcp__Claude_in_Chrome__*` 走 ≥2 轮 user-simulation 验收（默认状态 + 边缘状态如 empty/error/dark mode 等），抓 DOM 断言 + 截图，不接受口嗨"应该好了"。Chrome 扩展未连接时优先要求用户连接，不沉默降级到肉眼判断。
+6. **每次视觉改造 Browser MCP ≥2 次验收**：fixer 完成后必须按当前 agent 的 browser MCP 能力走 ≥2 轮 user-simulation 验收（默认状态 + 边缘状态如 empty/error/dark mode 等），抓 DOM 断言 + 截图，不接受口嗨"应该好了"。
+   - Claude Code：使用 Claude in Chrome MCP（`mcp__Claude_in_Chrome__*`）。
+   - Codex：默认使用 Chrome DevTools MCP（如果当前工具暴露）。
+   - 其他 agent：使用 Tool Capability Preflight 探测到的 browser MCP。
+   - 无 browser MCP 时必须 fail-fast 报告；只有 lhr 明确允许时才可降级为 Playwright / browser smoke，Evidence Block 必须写明 `Browser MCP: not available; fallback authorized by lhr`。
 7. **Subagent 提议违反硬约束的，master 必须亲自确认（2026-05-08 night lhr 授权写死）**：当任何 subagent（评估 / 审查官 / fixer / 反方 round / 验收官）提议或反馈"修改 brand 不变量 / hardcode logo / 端口约束 / radius SSOT / italic 政策 / Fail-Fast 例外 / 其他 CLAUDE.md 或 docs/vault/04-design/Design-System.md 硬规则"时，master 必须：
    - (a) **显式列出**该 subagent 的具体建议 + 它违反的具体硬约束条款（CLAUDE.md / style-guide 章节号）
    - (b) **lhr 显式确认**（聊天里"批准"二字）才能采纳；不接受 silent accept / 只看 commit message 不读建议 / 把"reviewer subagent catch 的内容"当作自动通过
@@ -212,7 +181,9 @@ Multica 负责记录：
 - 当前 agent 类型：Claude Code / Codex / Multica-managed / other
 - 是否在 Multica workspace 内
 - 是否支持 subagent spawn
-- 是否支持 MCP / Chrome MCP
+- 是否支持 MCP
+- 是否支持 browser MCP
+- 当前可用 browser MCP 类型：Claude in Chrome MCP / Chrome DevTools MCP / none
 - 是否允许 shell
 - 是否能访问 git / gh / multica CLI
 - 是否能跑本地 dev server
@@ -222,8 +193,9 @@ Multica 负责记录：
 
 特别说明：
 
-- Claude Code 可以使用 MCP 时，按 MCP 流程验收。
-- Codex / 其他 agent 不得假装有 MCP 能力。
+- Claude Code 可以使用 Claude in Chrome MCP 时，按 Claude in Chrome MCP 流程验收。
+- Codex 不得假装有 Claude in Chrome MCP；Codex 有 Chrome DevTools MCP 时，视觉验收默认走 Chrome DevTools MCP。
+- 其他 agent 不得假装有未暴露的 MCP 能力，按 Tool Capability Preflight 结果执行。
 - 如果当前工具不支持 subagent，涉及高风险任务必须停止并请求 lhr 安排独立 review。
 - 普通任务在 subagent 不可用时可以自检，但最终 Evidence Block 必须明确标注：`Independent subagent review: not available`。
 
@@ -364,16 +336,16 @@ if (!response.ok) {
 
 **改 token 只改 `packages/design-system/src/tokens.css`；apps/web/src/styles/tokens.css 应当 `@import` 该单源，禁止平铺复制。任何漂移都是 bug。**
 
-Brand 是 ink（`--ink-1: #1A1714`），accent 是深编辑蓝（`--accent-1: #2A56C8`），仅
-focus / 链接 / 单一关键 CTA 使用。完整 token 表见 `docs/vault/04-design/Design-System.md`（lhr 2026-05-12 交付），中文工程化补充见 `docs/vault/04-design/Design-System.md`。
+Brand 是白 + 蓝（`--paper-1: #FFFFFF` / `--accent-1: #2563EB`），黑灰 ink 只承担正文、题干、边框和弱状态。
+蓝色用于主 CTA / 当前选中 / active / focus / link；禁止把正文整片刷蓝。完整 token 表见 `docs/vault/04-design/Design-System.md`（lhr 2026-05-19 蓝白主色修订），中文工程化补充见 `docs/vault/04-design/Design-System.md`。
 
 **核心 token 命名（PR1 全量替换到 Frontend Style Guide v1）**：
 
-- paper（surface, 暖象牙）：`--paper-1` (#FAF7EF) / `--paper-2` (#F4F0E6) / `--paper-3` (#ECE6D7)
-- ink（text, 暖墨）：`--ink-1` (#1A1714) / `--ink-2` (#3A352D) / `--ink-3` (#6B6358) / `--ink-4` (#948A7A)
-- line（border）：`--line-1` (#E2DBC7) / `--line-2` (#D9D1BE) / `--line-3` (#BDB29A)
-- accent（唯一蓝）：`--accent-1` (#2A56C8) / `--accent-2` (#245fd6) / `--accent-50` (#eaf2ff)
-- semantic（仅功能）：`--ok` (#1F7A4D) / `--warn` (#9E5D14) / `--err` (#A22A2A)
+- paper（surface, 白 / 浅冷灰）：`--paper-1` (#FFFFFF) / `--paper-2` (#F7F9FC) / `--paper-3` (#EEF2F7)
+- ink（text, 黑灰阅读层）：`--ink-1` (#111827) / `--ink-2` (#374151) / `--ink-3` (#6B7280) / `--ink-4` (#9CA3AF)
+- line（border）：`--line-1` (#E5E7EB) / `--line-2` (#D1D5DB) / `--line-3` (#CBD5E1)
+- accent（主行动蓝）：`--accent-1` (#2563EB) / `--accent-2` (#1D4ED8) / `--accent-50` (#EFF6FF)
+- semantic（仅功能）：`--ok` (#15803D) / `--ok-50` (#F0FDF4) / `--warn` (#D97706) / `--warn-50` (#FFFBEB) / `--err` (#DC2626) / `--err-50` (#FEF2F2)
 - spacing 9 档：`--sp-1..9` = 4 / 8 / 12 / 16 / 24 / 32 / 48 / 64 / 96
 - shadow 2 档：`--shadow-card`（一级 elevated 卡）/ `--shadow-pop`（popover / toast / modal）
 
@@ -464,7 +436,7 @@ PR1-PR5 落地节奏见 `docs/plan/frontend-style-guide-v1-migration.md`；alias
 1. **同一 view 内 ≥2 处卡片类元素必须用同一 radius family**（全 `rounded-card` 或全 `rounded-card-lg`，**不允许直角和圆角混用**）
 2. **禁止** `rounded-[Npx]` 任意值（已在 `lint:hardcode` 巡检）
 3. **禁止** 隐性直角（div + border 没 radius）—— 必须用 Card primitive 或显式 `rounded-card`
-4. ink-first 调性：偏小圆角（4-14px = tiny/card/card-lg），不允许超大圆角（>14px，除 `rounded-pill` 全圆），不允许纯直角（除非设计稿明确点名 ink-first 工具感的"机械网格"场景, 走 `rounded-1`）
+4. blue-white app 调性：偏小圆角（4-14px = tiny/card/card-lg），不允许超大圆角（>14px，除 `rounded-pill` 全圆），不允许纯直角（除非设计稿明确点名工具感的"机械网格"场景, 走 `rounded-1`）
 
 **audit 自动化**：`npm run lint:radius-token`（CI 0 命中）。**反模式列表 + 例外白名单（dot pattern）+ Escape hatch `// radius-allow:`** → `docs/vault/04-design/Design-System.md` §圆角组件 SSOT 反模式与例外。
 
@@ -508,6 +480,29 @@ PR1-PR5 落地节奏见 `docs/plan/frontend-style-guide-v1-migration.md`；alias
 没有方案文档，不写代码。
 没有失败的测试，不写实现。
 ```
+
+### 彻底解决，不走最小化实现
+
+默认目标是**彻底解决问题**，不是做最小可用补丁、临时绕过、局部止血或只让当前测试变绿。
+
+禁止以下做法：
+
+- 只修表象，不追 root cause
+- 为了省事缩小需求边界，把真实问题留给后续
+- 用兼容层 / fallback / TODO / deprecated 注释掩盖未完成实现
+- 只覆盖 happy path，不处理已知边界条件和失败路径
+- 因为实现成本高，就改成“先做最小版本”
+- 把“后续优化”当作当前问题未解决的借口
+
+正确做法：
+
+- 先定义完整交付边界：主路径、边界条件、失败路径、回归风险
+- 方案必须解释 root cause、最终状态、替代方案为何不选
+- 实现必须覆盖问题的真实来源，而不是只消除报错或截图异常
+- 彻底解决不等于擅自扩大产品范围；若完整闭环需要越过原需求 / roadmap / 数据模型 / API 契约，必须先上报并对齐
+- 确实需要分期时，必须明确每期都是可闭环的完整交付，不允许留下隐性债务
+
+一句话：**宁可慢一点一次修对，不接受“先糊上能跑”。**
 
 ### ① 需求制定
 
@@ -615,6 +610,31 @@ multica issue runs <issue-id> --output json
 2. 单元测试 + 关键集成测试通过
 3. UI / 前端改动必须在浏览器自验（工具分级见 §11「UI 自验分级」）
 
+### 验收必须严格，不为节省时间降级
+
+验收目标是证明交付真的完成，不是快速找理由通过。
+
+禁止以下做法：
+
+- 为了节省时间跳过 lint / typecheck / test / build / browser smoke
+- 用“改动很小”作为不跑验证的理由
+- 用截图肉眼判断替代 DOM 断言、测试断言或命令 PASS
+- 只验证 happy path，不验证边界状态、失败状态、空状态、权限 / 数据异常
+- 验证失败后降低验收标准，或把失败项写成 known gap 后继续宣告完成
+- 把“本地看起来可以”当作完成证据
+- 因为时间紧，省略 subagent review / Evidence Block / 回归检查
+
+严格验收要求：
+
+- 所有适用验证项必须跑到 PASS；不能运行时必须 fail-fast 说明阻塞原因
+- UI / 前端改动必须同时有交互验证、DOM 断言和必要截图
+- 后端 / 数据 / API 改动必须覆盖成功路径、失败路径和关键边界条件
+- 修复 bug 必须补回归测试，证明旧问题会失败、新实现会通过
+- 验收记录必须写清楚命令、结果、失败项、未覆盖项和理由
+- 任何未 PASS 项都不能被“节省时间”豁免；只能退回修复或显式标 blocked
+
+一句话：**Truth > Speed；验收不省时间，省时间就不叫验收。**
+
 ### 依赖 / lockfile 变更门禁
 
 - 改 `package.json` / `package-lock.json` / `pyproject.toml` / 构建配置时，必须跑 `npm ci && npm run build` 与（如改后端）`pip install -e ".[dev,postgres]"` 验证。
@@ -649,19 +669,30 @@ multica issue runs <issue-id> --output json
 
 ---
 
-## 7.1 Multica Completion Gate
+## 7.1 Completion Gate（Multica 任务适用）
 
-任务来自 Multica issue，完成前必须回写 Evidence Block。
+任务来自 Multica issue 时，完成前必须回写 Evidence Block。
 
-**Evidence Block 字段**（18 项）：Mode / Multica issue / Branch / Commits / Changed files / Requirement source / Plan doc / Implementation summary / Tests run / Lint / Typecheck / Build / Browser smoke / Subagent review / Security review / Known gaps / Rollback notes / Next owner。
+Evidence Block 至少包含：
 
-**回写**：`multica issue comment add <issue-id> --content "<Evidence Block>"`
+- Mode
+- Issue
+- Branch / commits
+- Changed files
+- Requirement source
+- Implementation summary
+- Tests / lint / typecheck / build
+- Browser smoke（前端改动适用）
+- Subagent review
+- Known gaps
+- Rollback notes
+- Next owner
 
-**状态流转**：`in_progress`（开始）/ `in_review`（等待 review）/ `done`（验证全 PASS）/ `blocked`（阻塞）。CLI 兼容 positional vs `--set`，先 `--help`。
+铁律：
 
-**铁律**：没 PASS 证据不得标 `done`；blocker / 需求不清必须回写并置 `blocked`；CLI 回写失败必须保留本地 Evidence Block 并报告，不得伪造。
-
-完整 Evidence Block 示例 + 状态流转 4 命令完整形式 + 5 条规则详述 → `docs/engineering/multica-workflow.md` §Completion Gate。**必读触发条件**：首次回写 Evidence Block 时。
+- 没 PASS 证据不得标 `done`
+- 验证失败只能修复或标 `blocked`
+- CLI 回写失败必须保留本地 Evidence Block 并报告，不得伪造
 
 ---
 
@@ -834,7 +865,7 @@ archived-at:     # YYYY-MM-DD  (仅 status=archived 才填, 归档动作日期)
 ## 11.5 Quick Commands
 
 > 完整命令清单 + 系统架构速查 → `docs/engineering/quick-commands.md`。本节只留最高频。
-> **必读触发条件**：跑 Multica / Backend / Frontend / 整栈 / 投产 命令不确定参数时。
+> **必读触发条件**：跑 Backend / Frontend / 整栈 / 投产命令不确定参数时。
 
 ```bash
 # Frontend dev (端口 18080 写死, §11 硬约束)
@@ -845,10 +876,6 @@ cd apps/web && npm run lint && npx tsc -b --noEmit && npm run build
 
 # Backend dev
 cd services/api && uvicorn sikao_api.main:app --reload --port 8000 --host 127.0.0.1
-
-# Multica issue 状态查/改 (先 --help 确认 positional vs --set)
-multica issue get <issue-id> --output json
-multica issue status <issue-id> in_progress
 
 # Alembic (仓库根)
 alembic -c database/migrations/alembic.ini upgrade head
@@ -901,15 +928,12 @@ fenbi_scraper/fenbi_output/papers/    backend_data/xingce/papers/      Postgres 
 - 处理外部 URL / 引用他人内容 → 必标注来源，无法验证必警告
 - 关键代码 → 从攻击者视角列 3 个风险点
 
-### Multica Auth / Token 安全
+### Multica Token 安全（任务来自 Multica 时适用）
 
 - 允许执行 `multica auth status` 检查认证。
-- 允许在 lhr 授权下执行 `multica login` 触发浏览器 OAuth。
-- 禁止 agent 读取、保存、打印、提交 Multica token。
+- 禁止读取、打印、保存、提交 Multica token。
 - 禁止把 token 写入 shell history、日志、文档、commit message、issue comment。
-- 禁止在命令中明文传入 token；若必须 token 登录，只能使用交互式 prompt。
 - `~/.multica/` 视为本机敏感目录，不得复制、压缩、上传、commit。
-- Multica daemon logs 中若出现 token / key / secret，必须视为泄漏风险并停止继续传播。
 - Multica issue comment 不得包含 API key、JWT、cookie、数据库密码、OAuth token、用户隐私数据。
 
 ---
@@ -922,6 +946,8 @@ fenbi_scraper/fenbi_output/papers/    backend_data/xingce/papers/      Postgres 
 4. **TDD** —— 先测试后实现
 5. **文档+代码写完交 subagent 检视** —— 宁可慢不接受反复修复
 6. **Truth > Speed** —— 没验证就不说完成
+7. **Fix Completely > Minimal Patch** —— 不走最小化实现，必须追 root cause 并彻底闭环
+8. **Strict Acceptance > Saved Time** —— 验收不为节省时间降级，没 PASS 证据就不算完成
 
 ---
 
