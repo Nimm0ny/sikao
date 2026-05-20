@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import DOMPurify from 'dompurify';
 import { OptionRow } from '@sikao/ui/ui';
 import type { QuestionDetailV2 } from '@sikao/api-client/types/api';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // v0.2 Phase 6.3b — Multiple-choice / 不定项 renderer.
 //
@@ -52,7 +53,7 @@ const MultipleChoiceRenderer: React.FC<Props> = ({
       {/* hint 跟 design ResultC「不定项·多选」调性 — 提示用户可多选, 提交才结束.
           只显示, 不影响 logic; 单元测试不依赖. */}
       <div className="text-xs text-ink-3 mb-4" data-testid="multiple-choice-hint">
-        多选题 · 选择全部正确选项
+        多选题 · {PRACTICE_COPY.multipleChoiceHint}
       </div>
       <div>
         {options.map((opt, idx) => {

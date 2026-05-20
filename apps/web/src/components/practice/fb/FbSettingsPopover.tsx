@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { cn } from '@sikao/shared-utils';
 import { useFbSettings, type FbDensity, type FbOptStyle } from '@sikao/domain/xingce/useFbSettings';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // SIKAO Phase 3 P2 (2026-05-11): fb 答题考场态独立 density 偏好 popover.
 // SIKAO Phase 3 P3a (2026-05-11): 扩 OptStyleSection (圆形 / 方形 letter).
@@ -158,7 +159,7 @@ function DensitySection({ value, onChange }: DensitySectionProps) {
         })}
       </div>
       <p className="mt-3 text-xs text-ink-3">
-        紧凑省屏; 舒适更呼吸. 仅本场答题生效.
+        紧凑省屏; {PRACTICE_COPY.fbSettingsBreath}. {PRACTICE_COPY.fbSettingsCurrentOnly}.
       </p>
     </div>
   );
@@ -226,7 +227,7 @@ function OptStyleSection({ value, onChange }: OptStyleSectionProps) {
         })}
       </div>
       <p className="mt-3 text-xs text-ink-3">
-        圆形更柔和; 方形更工具感. 仅本场答题生效.
+        {PRACTICE_COPY.fbSettingsRoundSoft}; {PRACTICE_COPY.fbSettingsSquareTool}. {PRACTICE_COPY.fbSettingsCurrentOnly}.
       </p>
     </div>
   );

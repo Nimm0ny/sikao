@@ -5,6 +5,7 @@ import { ActionUndoIcon, TrashIcon } from '@sikao/ui/icons';
 import { useHighlightStore, type HighlightColorKey, type Mark } from '@sikao/domain/xingce/useHighlightStore';
 import { serializeSelection } from './lib/highlightRange';
 import './fb-highlight.css';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // P5b/1 划线浮工具条 (SIKAO 答题系统行测).
 //
@@ -223,7 +224,7 @@ export function SelectionToolbar({
     <div
       ref={toolbarRef}
       role="toolbar"
-      aria-label="划线工具条"
+      aria-label={PRACTICE_COPY.selectionAriaLabel}
       className={cn(
         'fixed z-40 flex items-center gap-1 px-2 py-1',
         'rounded-card border border-line-3 bg-surface shadow-pop',
@@ -263,7 +264,7 @@ export function SelectionToolbar({
         }}
         type="button"
         onClick={handleClear}
-        aria-label="清除选区划线"
+        aria-label={PRACTICE_COPY.selectionClear}
         className={cn(
           'shrink-0 inline-flex items-center justify-center rounded-tiny',
           'border border-line bg-transparent text-ink-3 w-8 h-8',

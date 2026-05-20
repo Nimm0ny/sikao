@@ -4,6 +4,7 @@ import { cn } from '@sikao/shared-utils';
 import { Button, IconBtn, Tooltip } from '@sikao/ui/ui';
 import { NavSubmitIcon, XCloseIcon } from '@sikao/ui/icons';
 import { MOTION_SPRING_SOFT } from '@sikao/shared-utils';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // SIKAO Phase 3 (2026-05-09) → Wave 4 Phase 2A (2026-05-12) 改名:
 // answer-card right sheet drawer (原 FbDock 命名).
@@ -56,7 +57,7 @@ export function FbDrawer({
           <motion.button
             key="fb-dock-scrim"
             type="button"
-            aria-label="关闭答题卡"
+            aria-label={PRACTICE_COPY.fbDrawerClose}
             onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -102,7 +103,7 @@ function FbDrawerHeader({ title, onClose }: FbDrawerHeaderProps) {
       <Tooltip label="关闭" side="left">
         <IconBtn
           size="sm"
-          aria-label="关闭答题卡"
+          aria-label={PRACTICE_COPY.fbDrawerClose}
           onClick={onClose}
           data-testid="fb-dock-close"
         >

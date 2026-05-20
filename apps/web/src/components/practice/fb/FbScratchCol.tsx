@@ -4,6 +4,7 @@ import { IconBtn, Tooltip } from '@sikao/ui/ui';
 import { ActionPlusIcon } from '@sikao/ui/icons';
 import { FbScratchClip } from './FbScratchClip';
 import type { ScratchClip } from '@sikao/domain/answer-session/usePracticeStore';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // SIKAO Phase 3 (2026-05-09): right-rail scratch area.
 //
@@ -102,7 +103,7 @@ function FbScratchEmpty({ currentQuestionLabel }: FbScratchEmptyProps) {
     >
       {label} 暂无便签。
       <br />
-      可拖入题干文字或数字。
+      {PRACTICE_COPY.fbScratchHint}。
     </div>
   );
 }
@@ -143,8 +144,8 @@ function FbScratchAddForm({
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         rows={2}
-        placeholder="写一条便签…"
-        aria-label="新便签内容"
+        placeholder={`${PRACTICE_COPY.fbScratchAdd}…`}
+        aria-label={PRACTICE_COPY.fbScratchAriaLabel}
         className={cn(
           'w-full px-3 py-2 bg-surface border border-line rounded-tiny',
           'font-sans text-sm leading-relaxed text-ink placeholder:text-ink-4 resize-none',

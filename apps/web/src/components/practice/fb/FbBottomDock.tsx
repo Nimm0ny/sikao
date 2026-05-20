@@ -6,6 +6,7 @@ import {
   NavPrevIcon,
   NavSubmitIcon,
 } from '@sikao/ui/icons';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // SIKAO Wave 4 Phase 2A (2026-05-12): 行测答题 sticky 底部 dock — 集中放置
 // "上一题 / 题号 / 下一题 / 答题卡 / 提交" 5 个核心 nav 入口.
@@ -101,7 +102,7 @@ export function FbBottomDock({
       <Tooltip label="答题卡 · A">
         <IconBtn
           size="sm"
-          aria-label="打开答题卡"
+          aria-label={PRACTICE_COPY.fbBottomDockOpenCard}
           onClick={onOpenDrawer}
           data-testid="practice-bottom-dock-open-drawer"
         >

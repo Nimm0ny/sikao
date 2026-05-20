@@ -3,6 +3,7 @@ import { NoteIcon, StarFilledIcon, StarIcon } from '@sikao/ui/icons';
 import { NoteCaptureLauncher } from '@/components/notes';
 import { FbMarkIcon } from './icons/FbMarkIcon';
 import { cn } from '@sikao/shared-utils';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // SIKAO Phase 3 (2026-05-09): 单题操作条 (收藏 / 标记 / 笔记 / 划线).
 //
@@ -135,7 +136,7 @@ export function FbActions({
         <NoteCaptureLauncher
           target={captureTarget}
           sourceQuote={captureSourceQuote}
-          tooltip="添加到笔记本"
+          tooltip={PRACTICE_COPY.fbActionsAddNote}
           testId={`fb-action-capture-${questionId}`}
         />
       ) : null}

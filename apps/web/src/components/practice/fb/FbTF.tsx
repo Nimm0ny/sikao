@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { cn } from '@sikao/shared-utils';
 import { StatusDoneIcon, StatusWrongIcon } from '@sikao/ui/icons';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // SIKAO Phase 3 P3b (2026-05-11): fb 行测考场态判断题 (TF) 渲染.
 //
@@ -68,7 +69,7 @@ export function FbTF({ questionId, selected, onChange, disabled = false }: FbTFP
   return (
     <div
       role="radiogroup"
-      aria-label={`第 ${questionId} 题判断选项`}
+      aria-label={`第 ${questionId} ${PRACTICE_COPY.fbTfAriaLabel}`}
       className="grid grid-cols-2 gap-4"
       data-testid={`fb-tf-${questionId}`}
     >

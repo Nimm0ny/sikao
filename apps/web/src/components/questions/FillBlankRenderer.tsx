@@ -2,6 +2,7 @@ import { useMemo, useState, type ChangeEvent } from 'react';
 import DOMPurify from 'dompurify';
 import { FormField } from '@sikao/ui/ui';
 import type { QuestionDetailV2 } from '@sikao/api-client/types/api';
+import { PRACTICE_COPY } from '@/lib/ui-copy';
 
 // Phase 6.5 — Fill-in-the-blank / 数字填空 renderer.
 //
@@ -56,14 +57,14 @@ const FillBlankRenderer: React.FC<Props> = ({ question, selectedAnswer, onAnswer
         dangerouslySetInnerHTML={sanitizedStem}
       />
       <div className="text-xs text-ink-3 mb-4" data-testid="fill-blank-hint">
-        填空题 · 输入答案后提交
+        填空题 · {PRACTICE_COPY.fillBlankHint}
       </div>
       <FormField
         label="答案"
         type="text"
         value={text}
         onChange={handleChange}
-        placeholder="在此输入答案"
+        placeholder={PRACTICE_COPY.fillBlankPlaceholder}
         rootClassName="max-w-md"
         data-testid="fill-blank-input"
         autoComplete="off"
