@@ -10,8 +10,8 @@ from sikao_api.db.schemas_v2 import (
     PlanEventUpdateRequestV2,
 )
 from sikao_api.modules.plans.application.event_service import EventServiceSupport
-from sikao_api.modules.plans.application.helpers import append_change_log, serialize_event
-from sikao_api.modules.plans.domain.rrule_subset import validate_rrule_subset
+from sikao_api.modules.plans.application.helpers import append_change_log, serialize_event, to_naive_utc
+from sikao_api.modules.plans.domain.rrule_subset import build_future_rule, validate_rrule_subset
 from sikao_api.modules.system.application.audit_v2 import add_audit_log
 from sikao_api.modules.system.application.errors import ValidationError
 
@@ -35,8 +35,8 @@ class EventCommandServiceV2(EventServiceSupport):
             title=payload.title,
             category=payload.category,
             notes=payload.notes,
-            start_at=payload.start_at.replace(tzinfo=None),
-            end_at=payload.end_at.replace(tzinfo=None),
+            start_at=to_naive_utc(payload.start_at),
+            end_at=to_naive_utc(payload.end_at),
             timezone=payload.timezone,
             recurring_rule=payload.recurring_rule,
             recurring_exception_dates=[],
@@ -255,7 +255,11 @@ class EventCommandServiceV2(EventServiceSupport):
             start_at=occurrence_start,
             end_at=occurrence_start + duration,
             timezone=parent.timezone,
-            recurring_rule=previous_rule,
+            recurring_rule=build_future_rule(
+                rule=previous_rule,
+                dtstart=parent.start_at,
+                split_start=occurrence_start,
+            ),
             recurring_parent_id=None,
             recurring_exception_dates=[],
             status=parent.status,

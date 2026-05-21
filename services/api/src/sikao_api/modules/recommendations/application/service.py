@@ -207,7 +207,10 @@ class RecommendationServiceV2:
         recommendation = self._get_recommendation_row(user_id=user.id, recommendation_id=recommendation_id)
         self._ensure_pending(recommendation)
         if payload.action == "session":
-            session_row = self._create_session_from_recommendation(user=user, recommendation=recommendation)
+            session_row = self._create_session_from_recommendation(
+                user=user,
+                recommendation=recommendation,
+            )
             recommendation.status = "accepted_session"
             recommendation.accepted_at = now_utc()
             self.session.add_all([recommendation, session_row])
@@ -233,6 +236,8 @@ class RecommendationServiceV2:
             user=user,
             recommendation=recommendation,
             target_date=payload.target_date,
+            request_id=request_id,
+            ip=ip,
         )
         recommendation.status = "accepted_plan"
         recommendation.accepted_at = now_utc()
@@ -304,6 +309,22 @@ class RecommendationServiceV2:
     def _create_session_from_recommendation(self, *, user: UserV2, recommendation: RecommendationV2) -> PracticeSessionV2:
         if recommendation.action_type == "rest":
             raise ValidationError("rest recommendation cannot open a practice session", code="invalid_recommendation_accept")
+        if recommendation.action_type == "continue":
+            existing_session_id = recommendation.source_signals.get("in_progress_session_id")
+            if not isinstance(existing_session_id, int):
+                raise ConflictError("continue recommendation source session is missing", code="recommendation_source_session_missing")
+            existing_session = self.session.scalar(
+                select(PracticeSessionV2).where(
+                    PracticeSessionV2.id == existing_session_id,
+                    PracticeSessionV2.user_id == user.id,
+                    PracticeSessionV2.status.in_(("draft", "in_progress")),
+                )
+            )
+            if existing_session is None:
+                raise ConflictError("continue recommendation source session is unavailable", code="recommendation_source_session_unavailable")
+            existing_session.linked_recommendation_id = recommendation.id
+            self.session.add(existing_session)
+            return existing_session
         template = recommendation.payload.get("session_template", {})
         track = template.get("track") or ("essay" if template.get("category") == "essay" else "xingce")
         entry_kind = template.get("entry_kind") or recommendation.action_type
@@ -325,6 +346,8 @@ class RecommendationServiceV2:
         user: UserV2,
         recommendation: RecommendationV2,
         target_date: date | None,
+        request_id: str | None,
+        ip: str | None,
     ) -> PlanEventV2:
         if target_date is None:
             raise ValidationError("target_date is required for plan acceptance", code="recommendation_target_date_required")
@@ -362,6 +385,38 @@ class RecommendationServiceV2:
         )
         self.session.add(event)
         self.session.flush()
+        event.change_log = [
+            {
+                "at": now_utc().replace(tzinfo=UTC).isoformat().replace("+00:00", "Z"),
+                "actor": "ai",
+                "type": "create",
+                "before": None,
+                "after": {
+                    "title": event.title,
+                    "start_at": event.start_at.replace(tzinfo=UTC).isoformat().replace("+00:00", "Z"),
+                    "end_at": event.end_at.replace(tzinfo=UTC).isoformat().replace("+00:00", "Z"),
+                },
+                "reason": "recommendation_accept_plan",
+            }
+        ]
+        self.session.add(event)
+        add_audit_log(
+            self.session,
+            user_id=user.id,
+            actor_type="user",
+            actor_id=str(user.id),
+            action="plan_event.create_from_recommendation",
+            target_type="plan_event_v2",
+            target_id=event.id,
+            after={
+                "title": event.title,
+                "start_at": event.start_at.replace(tzinfo=UTC).isoformat().replace("+00:00", "Z"),
+                "end_at": event.end_at.replace(tzinfo=UTC).isoformat().replace("+00:00", "Z"),
+            },
+            metadata={"recommendation_id": recommendation.id},
+            request_id=request_id,
+            ip=ip,
+        )
         return event
 
     def _validate_idempotency_key(self, key: str) -> None:

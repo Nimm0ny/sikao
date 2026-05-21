@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import PlanAdjustmentV2, PlanEventV2, UserV2
 from sikao_api.db.schemas_v2 import PlanAdjustmentListResponseV2, PlanAdjustmentReadV2
-from sikao_api.modules.plans.application.helpers import append_change_log, now_utc, serialize_event
+from sikao_api.modules.plans.application.helpers import append_change_log, now_utc, serialize_event, to_naive_utc
 from sikao_api.modules.system.application.audit_v2 import add_audit_log
 from sikao_api.modules.system.application.errors import NotFoundError, ValidationError
 
@@ -43,7 +43,13 @@ class AdjustmentServiceV2:
         if adjustment.status != "pending":
             raise ValidationError("adjustment is not pending", code="adjustment_not_pending")
         for change in adjustment.changes:
-            self._apply_change(user=user, adjustment=adjustment, change=change)
+            self._apply_change(
+                user=user,
+                adjustment=adjustment,
+                change=change,
+                request_id=request_id,
+                ip=ip,
+            )
         adjustment.status = "accepted"
         adjustment.decided_at = now_utc()
         self.session.add(adjustment)
@@ -96,6 +102,8 @@ class AdjustmentServiceV2:
         user: UserV2,
         adjustment: PlanAdjustmentV2,
         change: dict[str, Any],
+        request_id: str | None,
+        ip: str | None,
     ) -> None:
         action = change.get("action")
         after_payload = change.get("after") or {}
@@ -108,8 +116,8 @@ class AdjustmentServiceV2:
                 title=str(after_payload.get("title", "Adjusted event")),
                 category=str(after_payload.get("category", "custom")),
                 notes=str(after_payload.get("notes", "")),
-                start_at=after_payload["start_at"],
-                end_at=after_payload["end_at"],
+                start_at=to_naive_utc(after_payload["start_at"]),
+                end_at=to_naive_utc(after_payload["end_at"]),
                 timezone=str(after_payload.get("timezone", "Asia/Shanghai")),
                 recurring_rule=after_payload.get("recurring_rule"),
                 recurring_exception_dates=list(after_payload.get("recurring_exception_dates", [])),
@@ -131,6 +139,20 @@ class AdjustmentServiceV2:
                 actor="ai",
             )
             self.session.add(event)
+            self.session.flush()
+            add_audit_log(
+                self.session,
+                user_id=user.id,
+                actor_type="user",
+                actor_id=str(user.id),
+                action="plan_event.adjustment_add",
+                target_type="plan_event_v2",
+                target_id=event.id,
+                after=serialize_event(event),
+                metadata={"adjustment_id": adjustment.id},
+                request_id=request_id,
+                ip=ip,
+            )
             return
         if not isinstance(event_id, int):
             raise ValidationError("adjustment change event_id is required", code="invalid_adjustment_change")
@@ -139,6 +161,7 @@ class AdjustmentServiceV2:
         )
         if existing_event is None:
             raise NotFoundError("adjustment target event not found", code="event_not_found")
+        snapshot_before = serialize_event(existing_event)
         if action == "edit":
             if "title" in after_payload:
                 existing_event.title = str(after_payload["title"])
@@ -147,34 +170,64 @@ class AdjustmentServiceV2:
             if "notes" in after_payload:
                 existing_event.notes = str(after_payload["notes"])
             if "start_at" in after_payload:
-                existing_event.start_at = after_payload["start_at"]
+                existing_event.start_at = to_naive_utc(after_payload["start_at"])
             if "end_at" in after_payload:
-                existing_event.end_at = after_payload["end_at"]
+                existing_event.end_at = to_naive_utc(after_payload["end_at"])
             if "timezone" in after_payload:
                 existing_event.timezone = str(after_payload["timezone"])
             if "status" in after_payload:
                 existing_event.status = str(after_payload["status"])
+            before_event = before_payload or snapshot_before
             existing_event.change_log = append_change_log(
                 existing_event.change_log,
                 change_type="update",
-                before=before_payload or serialize_event(existing_event),
+                before=before_event,
                 after=serialize_event(existing_event),
                 reason="adjustment_accept_edit",
                 actor="ai",
             )
             self.session.add(existing_event)
+            add_audit_log(
+                self.session,
+                user_id=user.id,
+                actor_type="user",
+                actor_id=str(user.id),
+                action="plan_event.adjustment_edit",
+                target_type="plan_event_v2",
+                target_id=existing_event.id,
+                before=before_event,
+                after=serialize_event(existing_event),
+                metadata={"adjustment_id": adjustment.id},
+                request_id=request_id,
+                ip=ip,
+            )
             return
         if action == "delete":
+            before_event = before_payload or snapshot_before
             existing_event.deleted_at = now_utc()
             existing_event.change_log = append_change_log(
                 existing_event.change_log,
                 change_type="delete",
-                before=before_payload or serialize_event(existing_event),
+                before=before_event,
                 after=serialize_event(existing_event),
                 reason="adjustment_accept_delete",
                 actor="ai",
             )
             self.session.add(existing_event)
+            add_audit_log(
+                self.session,
+                user_id=user.id,
+                actor_type="user",
+                actor_id=str(user.id),
+                action="plan_event.adjustment_delete",
+                target_type="plan_event_v2",
+                target_id=existing_event.id,
+                before=before_event,
+                after=serialize_event(existing_event),
+                metadata={"adjustment_id": adjustment.id},
+                request_id=request_id,
+                ip=ip,
+            )
             return
         raise ValidationError("unsupported adjustment action", code="invalid_adjustment_change")
 

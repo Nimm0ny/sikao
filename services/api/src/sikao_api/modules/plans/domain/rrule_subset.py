@@ -88,6 +88,21 @@ def truncate_rule_until(*, rule: str, cutoff: datetime) -> str:
     return ";".join(f"{key}={parts[key]}" for key in ordered_keys if key in parts)
 
 
+def build_future_rule(*, rule: str, dtstart: datetime, split_start: datetime) -> str:
+    parts = _parse_rule_parts(rule)
+    if "COUNT" not in parts:
+        return rule
+    schedule = rrulestr(rule, dtstart=dtstart)
+    requested = _parse_int(parts["COUNT"], key="COUNT")
+    remaining_occurrences = list(schedule.xafter(split_start, count=requested, inc=True))
+    remaining_count = len(remaining_occurrences)
+    if remaining_count < 1:
+        raise ValidationError("future split produced no remaining recurring occurrences", code="invalid_event_scope")
+    parts["COUNT"] = str(remaining_count)
+    ordered_keys = ["FREQ", "INTERVAL", "COUNT", "UNTIL", "BYDAY", "BYMONTHDAY"]
+    return ";".join(f"{key}={parts[key]}" for key in ordered_keys if key in parts)
+
+
 def _parse_rule_parts(rule: str) -> dict[str, str]:
     parts: dict[str, str] = {}
     for raw_part in rule.split(";"):

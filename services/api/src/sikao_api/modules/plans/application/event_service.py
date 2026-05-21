@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import PlanEventV2, PlanV2, PracticeSessionV2
 from sikao_api.db.schemas_v2 import PlanEventReadV2, PlanEventUpdateRequestV2
-from sikao_api.modules.plans.application.helpers import now_utc
+from sikao_api.modules.plans.application.helpers import now_utc, to_naive_utc
 from sikao_api.modules.plans.domain.rrule_subset import (
     build_occurrence_ref,
     end_of_local_day,
@@ -32,6 +32,11 @@ class EventServiceSupport:
             occurrence_start=occurrence_start,
             timezone=parent.timezone,
         )
+        linked_session_id, status = self._resolve_runtime_status(
+            stored_status=parent.status,
+            event_end=occurrence_start + duration,
+            linked_sessions=self._list_linked_sessions(parent_id=parent.id, occurrence_ref=occurrence_ref),
+        )
         return PlanEventReadV2(
             id=occurrence_ref,
             plan_id=parent.plan_id,
@@ -41,22 +46,27 @@ class EventServiceSupport:
             start_at=occurrence_start,
             end_at=occurrence_start + duration,
             timezone=parent.timezone,
-            status=parent.status,
+            status=status,
             source=parent.source,
             parent_id=parent.id,
             recurring_rule=parent.recurring_rule,
             recurring_parent_id=parent.recurring_parent_id,
             recurring_exception_dates=parent.recurring_exception_dates,
-            linked_session_id=self._lookup_occurrence_session_id(
-                parent_id=parent.id,
-                occurrence_ref=occurrence_ref,
-            ),
+            linked_session_id=linked_session_id,
             target_id=parent.target_id,
             deleted_at=parent.deleted_at,
             is_recurring_instance=True,
         )
 
     def _build_concrete_event_model(self, event: PlanEventV2) -> PlanEventReadV2:
+        linked_session_id, status = self._resolve_runtime_status(
+            stored_status=event.status,
+            event_end=event.end_at,
+            linked_sessions=self._list_linked_sessions(
+                parent_id=event.id,
+                occurrence_ref=None,
+            ),
+        )
         return PlanEventReadV2(
             id=str(event.id),
             plan_id=event.plan_id,
@@ -66,13 +76,13 @@ class EventServiceSupport:
             start_at=event.start_at,
             end_at=event.end_at,
             timezone=event.timezone,
-            status=event.status,
+            status=status,
             source=event.source,
             parent_id=event.recurring_parent_id,
             recurring_rule=event.recurring_rule,
             recurring_parent_id=event.recurring_parent_id,
             recurring_exception_dates=event.recurring_exception_dates,
-            linked_session_id=event.linked_session_id,
+            linked_session_id=linked_session_id,
             target_id=event.target_id,
             deleted_at=event.deleted_at,
             is_recurring_instance=False,
@@ -92,9 +102,9 @@ class EventServiceSupport:
         if payload.notes is not None:
             event.notes = payload.notes
         if payload.start_at is not None:
-            event.start_at = payload.start_at.replace(tzinfo=None)
+            event.start_at = to_naive_utc(payload.start_at)
         if payload.end_at is not None:
-            event.end_at = payload.end_at.replace(tzinfo=None)
+            event.end_at = to_naive_utc(payload.end_at)
         if payload.timezone is not None:
             event.timezone = payload.timezone
         if payload.status is not None:
@@ -202,6 +212,43 @@ class EventServiceSupport:
             .order_by(PracticeSessionV2.started_at.desc(), PracticeSessionV2.id.desc())
         )
         return session_row.id if session_row is not None else None
+
+    def _list_linked_sessions(
+        self,
+        *,
+        parent_id: int,
+        occurrence_ref: str | None,
+    ) -> list[PracticeSessionV2]:
+        query = select(PracticeSessionV2).where(PracticeSessionV2.linked_plan_event_id == parent_id)
+        if occurrence_ref is None:
+            query = query.where(PracticeSessionV2.linked_plan_event_occurrence_ref.is_(None))
+        else:
+            query = query.where(PracticeSessionV2.linked_plan_event_occurrence_ref == occurrence_ref)
+        return list(self.session.scalars(query.order_by(PracticeSessionV2.started_at.desc(), PracticeSessionV2.id.desc())))
+
+    def _resolve_runtime_status(
+        self,
+        *,
+        stored_status: str,
+        event_end: datetime,
+        linked_sessions: list[PracticeSessionV2],
+    ) -> tuple[int | None, str]:
+        linked_session_id = linked_sessions[0].id if linked_sessions else None
+        has_submitted_session = any(
+            row.status == "submitted" or row.submitted_at is not None for row in linked_sessions
+        )
+        current_time = now_utc()
+        if stored_status == "done":
+            return linked_session_id, "done"
+        if stored_status == "skipped" and not linked_sessions:
+            return linked_session_id, "skipped"
+        if has_submitted_session and current_time >= event_end:
+            return linked_session_id, "done"
+        if linked_sessions:
+            return linked_session_id, "in_progress"
+        if current_time >= event_end:
+            return linked_session_id, "skipped"
+        return linked_session_id, "planned"
 
     def _build_utc_window(self, *, from_date: date, to_date: date, timezone: str) -> tuple[datetime, datetime]:
         if to_date < from_date:

@@ -15,6 +15,7 @@ from sikao_api.db.schemas_v2 import (
     PracticeBlockV2,
 )
 from sikao_api.modules.plans.application.event_service import EventServiceSupport
+from sikao_api.modules.plans.application.helpers import to_naive_utc
 from sikao_api.modules.plans.domain.rrule_subset import build_occurrence_ref, expand_occurrences
 
 
@@ -82,8 +83,8 @@ class EventQueryServiceV2(EventServiceSupport):
         else:
             starts = [item.start_at for item in payload.events]
             ends = [item.end_at for item in payload.events]
-            range_start = min(starts).replace(tzinfo=None)
-            range_end = max(ends).replace(tzinfo=None)
+            range_start = min(to_naive_utc(item) for item in starts)
+            range_end = max(to_naive_utc(item) for item in ends)
         existing = self._expand_events(
             rows=list(
                 self.session.scalars(
@@ -102,8 +103,8 @@ class EventQueryServiceV2(EventServiceSupport):
             windows = self._expand_proposed_event(
                 title=proposed.title,
                 category=proposed.category,
-                start_at=proposed.start_at.replace(tzinfo=None),
-                end_at=proposed.end_at.replace(tzinfo=None),
+                start_at=to_naive_utc(proposed.start_at),
+                end_at=to_naive_utc(proposed.end_at),
                 recurring_rule=proposed.recurring_rule,
                 range_start=range_start,
                 range_end=range_end,

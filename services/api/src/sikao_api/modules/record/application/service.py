@@ -4,10 +4,10 @@ from dataclasses import dataclass
 from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
-from sikao_api.db.models_v2 import EssayReportV2, EssaySubmissionV2, PracticeSessionV2, UserV2
+from sikao_api.db.models_v2 import EssayReportV2, EssaySubmissionV2, PracticeSessionAnswerV2, PracticeSessionV2, UserV2
 from sikao_api.db.schemas_v2 import (
     ActionLinkV2,
     DashboardRecordsResponseV2,
@@ -46,6 +46,7 @@ class LearningRecordAggregate:
     xingce_attempts: int
     essay_attempts: int
     completed_attempts: int
+    avg_xingce_accuracy: Decimal | None
     avg_essay_score: Decimal | None
 
 
@@ -56,7 +57,7 @@ def build_learning_record_summary(session: Session, *, user: UserV2) -> Learning
         xingce_attempts=aggregate.xingce_attempts,
         essay_attempts=aggregate.essay_attempts,
         completed_attempts=aggregate.completed_attempts,
-        avg_xingce_accuracy=Decimal("0.00"),
+        avg_xingce_accuracy=aggregate.avg_xingce_accuracy,
         avg_essay_score=aggregate.avg_essay_score,
     )
 
@@ -115,7 +116,7 @@ def build_dashboard_records(session: Session, *, user: UserV2) -> DashboardRecor
             xingce_attempts=aggregate.xingce_attempts,
             essay_attempts=aggregate.essay_attempts,
             completed_attempts=aggregate.completed_attempts,
-            avg_xingce_accuracy=Decimal("0.00"),
+            avg_xingce_accuracy=aggregate.avg_xingce_accuracy,
             avg_essay_score=aggregate.avg_essay_score,
         ),
         sections=[
@@ -151,6 +152,7 @@ def collect_learning_record_aggregate(session: Session, *, user: UserV2) -> Lear
         xingce_attempts=len(xingce_records),
         essay_attempts=len(essay_records),
         completed_attempts=completed_attempts,
+        avg_xingce_accuracy=calculate_xingce_accuracy(session, user_id=user.id),
         avg_essay_score=calculate_average_score(scored_essay_values),
     )
 
@@ -272,6 +274,27 @@ def calculate_average_score(scores: list[Decimal]) -> Decimal | None:
     if not scores:
         return None
     return (sum(scores) / Decimal(len(scores))).quantize(Decimal("0.01"))
+
+
+def calculate_xingce_accuracy(session: Session, *, user_id: int) -> Decimal | None:
+    rows = session.execute(
+        select(
+            func.count(PracticeSessionAnswerV2.id),
+            func.sum(case((PracticeSessionAnswerV2.is_correct.is_(True), 1), else_=0)),
+        )
+        .join(PracticeSessionV2, PracticeSessionV2.id == PracticeSessionAnswerV2.session_id)
+        .where(
+            PracticeSessionV2.user_id == user_id,
+            PracticeSessionV2.track == "xingce",
+            PracticeSessionV2.status == "submitted",
+            PracticeSessionAnswerV2.is_correct.is_not(None),
+        )
+    ).one()
+    total = int(rows[0] or 0)
+    correct = int(rows[1] or 0)
+    if total == 0:
+        return None
+    return (Decimal(correct) / Decimal(total)).quantize(Decimal("0.01"))
 
 
 def to_learning_record_items(items: list[LearningRecordAggregateItem]) -> list[LearningRecordItemV2]:

@@ -138,6 +138,18 @@ class SessionServiceV2:
                 "practice session already submitted",
                 code="practice_session_submitted",
             )
+        if practice_session.linked_plan_event_id is not None and practice_session.linked_plan_event_occurrence_ref is None:
+            linked_event = self.session.scalar(
+                select(PlanEventV2).where(
+                    PlanEventV2.id == practice_session.linked_plan_event_id,
+                    PlanEventV2.user_id == practice_session.user_id,
+                    PlanEventV2.deleted_at.is_(None),
+                )
+            )
+            if linked_event is not None:
+                linked_event.status = "done" if submitted_at >= linked_event.end_at else "in_progress"
+                linked_event.linked_session_id = practice_session.id
+                self.session.add(linked_event)
 
     def build_session_response(self, *, practice_session: PracticeSessionV2) -> PracticeSessionEnvelopeV2:
         answers = list(

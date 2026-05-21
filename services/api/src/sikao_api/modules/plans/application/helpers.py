@@ -10,6 +10,10 @@ def now_utc() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
 
 
+def to_naive_utc(value: datetime) -> datetime:
+    return value.astimezone(UTC).replace(tzinfo=None) if value.tzinfo is not None else value
+
+
 def today_cn() -> date:
     return (datetime.now(UTC) + timedelta(hours=8)).date()
 
