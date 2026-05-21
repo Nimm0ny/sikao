@@ -1,65 +1,164 @@
 # Phase · Notes（笔记 tab）
 
-> **Status**: TBD（占位）
+> **Status**: ACCEPTED · 详细规格完成
 > **IA 位置**：Main App Layer · Tab 4
 > **Phase 父目录**：[../README.md](../README.md)
 > **Last Updated**: 2026-05-21
 
 ---
 
-## 0. 范围预览
+## 0. 范围总述
 
-笔记 tab 是用户主动整理与沉淀的知识库。落地内容初步覆盖：
+笔记 tab 是用户主动整理与沉淀的知识库，承担"学 → 记 → 复 → 分享"闭环中"记"的核心角色。
 
-- 笔记 CRUD（富文本 + Markdown，含图片 / 公式）
-- 标签 / 文件夹 / 全文搜索
-- 与题目 / 错题 / 课程 / AI 推荐的关联（双向链接）
-- AI 笔记摘要 / 自动卡片生成（输入笔记，输出复盘卡）
-- 笔记导出（Markdown / PDF）
+**P1 范围（本 Phase）**：
+- TipTap WYSIWYG 编辑器（全屏脱壳）
+- 笔记 CRUD + 3 segment（全部 / 我的笔记 / 收藏夹）+ 筛选器
+- 自由标签 + 预置分类系统
+- Meilisearch 全文搜索
+- AI 摘要拆复盘卡（手动触发）
+- 周回顾笔记生成（Gamma 方案：结构化模板 + 可编辑）
+- 社区笔记 P1（公开/私有 + 只读浏览）
+- 收藏夹 segment（QuestionCard 列表）
+- 跨 Tab 联动（Practice / Review / Q-Hub 完整 wiring）
+- 图片上传 + 笔记导出（Markdown / HTML）
+
+**不在范围**（推后续迭代）：
+- 社区笔记 P2/P3（互动 + 精选）
+- 协作编辑 / 版本历史
+- TipTap P2 扩展（Table / Math / CodeBlock）
+- 知识图谱 / AI 自动标签
 
 ---
 
 ## 1. 启动前置
 
-- ✅ [Phase/Home](../Home/README.md) 完工：依赖基础设施（audit / LLM / observability）
-- ⏳ 富文本编辑器选型（TipTap / Lexical / Slate，待定）
-- ⏳ 全文搜索方案（PostgreSQL FTS / 文件系统索引 / Meilisearch，按 Stage 选）
+| 前置 | 状态 | 说明 |
+|---|---|---|
+| Phase-Home 完工 | ⏳ | 依赖 LLM 模块 / audit / cron / AppShell 5-tab |
+| Phase-Practice NoteV2 schema 升级 | ✅ | linked_question_id + visibility 已就位 |
+| Phase-Review Cross-Tab 定义 | ✅ | Cross-2~4 / ReviewItemV2(note_card) 接口就绪 |
+| TipTap 选型 | ✅ | N-Ed-1 拍板 TipTap Headless WYSIWYG |
+| Meilisearch 选型 | ✅ | N-Search-1 拍板直接上 Meilisearch |
 
 ---
 
-## 2. 关联 IA 决策
+## 2. 关键决策速查
 
-- D-Layer / D7 / D15 沿用
-- 笔记不进推荐流的输入信号（避免污染 LLM context）
+| ID | 决策 | 拍板 |
+|---|---|---|
+| N-D1 | Segment 划分 | 3 segment + 筛选器（不再区分自由/题级/错题） |
+| N-D2 | 收藏夹形态 | 题目卡片列表（复用 Q-Hub QuestionCard） |
+| N-D3 | AI 摘要触发 | 手动（避免烧配额） |
+| N-D4 | 社区笔记 | 分 3 期（P1 只读 → P2 互动 → P3 精选） |
+| N-D5 | 编辑器 | TipTap Headless WYSIWYG |
+| N-D6 | 首页联动 | 不主动推笔记 + Weekly Review Gamma |
+| N-D7 | 搜索 | Meilisearch（裸 binary，不走 PG FTS） |
+| N-D8 | 标签 | 自由标签 + 预置分类混合 |
+| N-D9 | 归档生命周期 | 双轴：status(active/archived) + deleted_at 独立 |
+
+详见 [00-Decisions.md](./00-Decisions.md) §2。
 
 ---
 
-## 3. 预期文档结构
+## 3. 文档索引
+
+| 编号 | 文件 | 内容 | 行数 |
+|---|---|---|---|
+| 00 | [00-Decisions.md](./00-Decisions.md) | 全部决策 SSOT（9 条 N-D + N-Ed/Search/Tag/Community/Weekly/AI/Cross） | ~540 |
+| 01 | [01-Data-Model.md](./01-Data-Model.md) | NoteV2 扩展 + 5 张新表 + Meilisearch shape + Pydantic + 迁移 | ~500 |
+| 02 | [02-Backend-WU.md](./02-Backend-WU.md) | 8 后端 WU（16 API 端点，~2200 行预估） | ~910 |
+| 03 | [03-Frontend-WU.md](./03-Frontend-WU.md) | 10 前端 WU（路由/编辑器/筛选/搜索/AI/社区/跨Tab） | ~700 |
+| 04 | [04-Editor-Integration.md](./04-Editor-Integration.md) | TipTap P1 配置 + body_json 转换 + 图片上传 + 性能 + 移动端 | ~390 |
+| 05 | [05-AI-Summary.md](./05-AI-Summary.md) | AI 摘要拆卡 + 周回顾 prompt + 缓存 + 限流 + MD→JSON | ~375 |
+| 06 | [06-Testing.md](./06-Testing.md) | 70 后端用例 + 7 前端组件 + 6 E2E + 7 不变量 + CI | ~354 |
+
+**合计**：~3,770 行规格文档。
+
+---
+
+## 4. 数据模型概览
 
 ```
-Phase/Notes/
-├── README.md
-├── 00-Decisions.md          编辑器 / 搜索 / 导出格式决策
-├── 01-Data-Model.md         NoteV2 / NoteTagV2 / NoteLinkV2
-├── 02-Backend-WU.md         CRUD / 搜索 / 关联 / 导出
-├── 03-Frontend-WU.md        Notes tab 视图 + 编辑器 + 双向链接 UI
-├── 04-Editor-Integration.md 编辑器接入与扩展
-├── 05-AI-Summary.md         AI 摘要 / 卡片生成
-└── 06-Testing.md
+NoteV2 (扩展)
+├── type: free | question_level | ai_cause_analysis | weekly_review | community_bookmark
+├── visibility: private | public
+├── body_json (TipTap JSON AST) + body_text (纯文本) + content_hash
+├── linked_question_id (FK)
+├── reaction_count / comment_count / bookmark_count (冗余计数)
+└── deleted_at (soft delete)
+
+新表：
+├── NoteTagV2 (多对多标签)
+├── NoteImageV2 (图片元数据)
+├── NoteReactionV2 (P2 点赞)
+├── NoteCommentV2 (P2 评论，树状 3 层)
+└── NoteBookmarkV2 (P2 收藏)
 ```
 
----
-
-## 4. 待解的设计问题
-
-- 富文本数据格式（HTML vs JSON AST vs Markdown，影响搜索与版本）
-- 协作 / 分享（Stage 2 多用户）
-- 图片存储（本地 / 对象存储，Stage 1 单机）
+详见 [01-Data-Model.md](./01-Data-Model.md)。
 
 ---
 
-## 5. 关联文档
+## 5. 后端端点总览（16 个）
 
-- [../Home/README.md](../Home/README.md)
-- [../Review/README.md](../Review/README.md)
-- [../../Frontend-IA-V2.md](../../Frontend-IA-V2.md)
+```
+Notes CRUD:     POST/GET/PUT/DELETE /api/v2/notes, GET /notes/{id}
+Tags:           GET /notes/tags, POST/DELETE /notes/{id}/tags, PATCH rename, POST merge
+Search:         GET /notes/search
+Images:         POST /notes/images
+Weekly Review:  POST /notes/weekly-review/generate (SSE)
+AI Summary:     POST /notes/{id}/ai-summary, POST /notes/{id}/ai-summary/confirm
+Export:         GET /notes/{id}/export?format=markdown|html
+Community P1:   PATCH /notes/{id}/visibility, GET /notes/community
+```
+
+详见 [02-Backend-WU.md](./02-Backend-WU.md) §12。
+
+---
+
+## 6. 前端实施顺序
+
+| Phase | WU | 说明 |
+|---|---|---|
+| 1 | WU-FN1 | 路由 + Tab 基础设施 |
+| 2 | WU-FN4 | TipTap 编辑器（核心） |
+| 3 | WU-FN2 | 主视图列表 |
+| 4 | WU-FN3 + FN5 + FN6 | 筛选 + 标签 + 搜索（可并行） |
+| 5 | WU-FN7 + FN8 | AI 摘要 + 周回顾（可并行） |
+| 6 | WU-FN9 + FN10 | 社区 + 跨 Tab wiring（可并行） |
+
+详见 [03-Frontend-WU.md](./03-Frontend-WU.md) §13。
+
+---
+
+## 7. 跨 Phase 依赖
+
+| 依赖方向 | 说明 |
+|---|---|
+| Notes ← Home | LLM 模块 / audit / cron / AppShell 5-tab |
+| Notes ← Practice | NoteV2 schema（linked_question_id + visibility 已加） |
+| Notes ← Review | ReviewItemV2(source_kind=note_card) 写入接口 |
+| Notes → Review | AI 摘要确认 → 写入 ReviewItemV2 |
+| Notes → Home | 周回顾 banner 提醒（不推笔记到首页 Rec） |
+| Notes ↔ Q-Hub | /q/:id?ctx=note 双向跳转 |
+
+---
+
+## 8. 技术栈新增
+
+| 技术 | 用途 | 引入方 |
+|---|---|---|
+| TipTap (@tiptap/react + extensions) | WYSIWYG 编辑器 | N-Ed-1 |
+| Meilisearch (binary) | 全文搜索 | N-Search-1 |
+| tiptap-markdown | Markdown 互操作 | N-Ed-2 |
+| markdown-it-py | 后端 MD→JSON | 05-AI-Summary §8 |
+
+---
+
+## 9. 关联文档
+
+- [../Home/README.md](../Home/README.md) — Phase-Home（LLM / audit / cron 基础设施）
+- [../Practice/README.md](../Practice/README.md) — Phase-Practice（NoteV2 schema 升级）
+- [../Review/README.md](../Review/README.md) — Phase-Review（Cross-Tab Wiring）
+- [../../Frontend-IA-V2.md](../../Frontend-IA-V2.md) — IA 决策 SSOT（§2.4 Tab 4）
