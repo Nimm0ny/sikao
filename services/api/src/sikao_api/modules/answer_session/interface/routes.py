@@ -4,7 +4,6 @@ from typing import Annotated
 
 from fastapi import APIRouter, Depends, Header, Query, Response, status
 from fastapi.responses import Response as RawResponse
-from pydantic import Field
 from sqlalchemy.orm import Session
 
 from sikao_api.db.session import get_db_session
@@ -236,35 +235,6 @@ def retry_wrong_question(
 
 
 # ── Slice 3b · 学习计划 task 跳转 entry ──────────────────────────────────
-
-
-class StudyPlanStartPayload(schemas.CamelModel):
-    """学习计划 task → practice session 创建入参.
-
-    paperCode 可选 (review_wrong 跨卷场景没 paperCode); questionIds 必填,
-    至少 1 个. 跟 retry-batch 区别见 ExamPaperService.start_study_plan_session.
-    """
-
-    paper_code: str | None = None
-    question_ids: list[int] = Field(..., min_length=1)
-
-
-@router.post(
-    "/study-plan/start",
-    response_model=schemas.PracticeSessionStartV2,
-    response_model_exclude_none=True,
-    dependencies=[Depends(verify_csrf_token)],
-)
-def start_study_plan_session(
-    payload: StudyPlanStartPayload,
-    user: Annotated[User, Depends(get_current_user)],
-    session: Annotated[Session, Depends(get_db_session)],
-) -> schemas.PracticeSessionStartV2:
-    return ExamPaperService(session).start_study_plan_session(
-        paper_code=payload.paper_code,
-        question_ids=payload.question_ids,
-        user=user,
-    )
 
 
 # ── Phase 5.5 Dashboard stats ────────────────────────────────────────────────

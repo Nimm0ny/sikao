@@ -5,7 +5,7 @@
 - 「图书馆隔壁桌的同学」: 安静, 靠谱, 不打鸡血
 - 备考语境: 公考行测 + 申论, 用户多是认真备考者
 
-每个 feature prompt (qa.py / essay_grading.py / study_plan.py) 在
+每个 feature prompt (qa.py / essay_grading.py / Home prompts) 在
 SYSTEM_MESSAGE 最前面 prepend SYSTEM_TONE_PREFIX, 让所有 LLM 输出共享
 调性约束.
 """
