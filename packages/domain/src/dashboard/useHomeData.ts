@@ -3,7 +3,7 @@
  *
  * 替代 Phase C 的 useHomeMocks.ts (已删). 4 hook 1:1 wrap BE endpoint:
  *   - useContinueLastSession → GET /api/v2/practice/last-session
- *   - useTodayStudyPlan      → GET /api/v2/study-plan/today (Wave 8 Phase A 已扩 3 quota)
+ *   - useTodayStudyPlan      → GET /api/v2/dashboard/today（legacy block shim）
  *   - useUpcomingExams       → GET /api/v2/user-exams
  *   - useWeakModules         → GET /api/v2/practice/wrong-questions/weakness
  *
@@ -21,19 +21,73 @@ import {
   type UseMutationResult,
 } from '@tanstack/react-query';
 import { api } from '@sikao/api-client/request';
-import type { components } from '@sikao/api-client/types/api.generated';
+import type { StudyPlanResponse } from '@sikao/api-client/types/study-plan';
+export type { StudyPlanResponse } from '@sikao/api-client/types/study-plan';
 
 // ── BE schema types (api.generated.ts) ─────────────────────────────────────
 
-export type PracticeSessionSummary =
-  components['schemas']['PracticeSessionSummary'];
-export type StudyPlanResponse = components['schemas']['StudyPlanResponse'];
-export type UserExamRead = components['schemas']['UserExamRead'];
-export type UserExamList = components['schemas']['UserExamList'];
-export type UserExamCreate = components['schemas']['UserExamCreate'];
-export type WeakModule = components['schemas']['WeakModule'];
-export type WeakModuleListResponse =
-  components['schemas']['WeakModuleListResponse'];
+export interface PracticeSessionSummary {
+  readonly id: number;
+  readonly paperTitle: string;
+  readonly answeredCount: number;
+  readonly total: number;
+}
+
+export interface UserExamRead {
+  readonly id: number;
+  readonly name: string;
+  readonly examDate: string;
+  readonly daysUntil: number;
+  readonly notes?: string | null;
+}
+
+export interface UserExamList {
+  readonly exams: readonly UserExamRead[];
+}
+
+export interface UserExamCreate {
+  readonly name: string;
+  readonly examDate: string;
+  readonly notes?: string;
+}
+
+export interface WeakModule {
+  readonly subject: '言语' | '数量' | '判断' | '资料' | '常识';
+  readonly score: number;
+  readonly wrongRate: number;
+  readonly completionRate: number;
+  readonly suggestedAction: string;
+}
+
+export interface WeakModuleListResponse {
+  readonly modules: readonly WeakModule[];
+}
+
+interface DashboardTodayCompat {
+  readonly date: string;
+  readonly planId: number | null;
+  readonly events: readonly {
+    id: string;
+    title: string;
+    category: string;
+    startAt: string;
+    endAt: string;
+    status: string;
+    isRecurringInstance?: boolean;
+  }[];
+}
+
+function mapEventTaskKind(category: string): 'practice' | 'review_wrong' | 'essay_writing' {
+  if (category === 'review') return 'review_wrong';
+  if (category === 'essay') return 'essay_writing';
+  return 'practice';
+}
+
+function mapEventStatus(status: string): 'pending' | 'completed' | 'skipped' {
+  if (status === 'done') return 'completed';
+  if (status === 'skipped') return 'skipped';
+  return 'pending';
+}
 
 // ── Query keys (集中管理便于 invalidate) ────────────────────────────────────
 
@@ -68,13 +122,36 @@ export function useContinueLastSession() {
 /**
  * useTodayStudyPlan — Home block 2 数据源.
  *
- * BE: GET /api/v2/study-plan/today → StudyPlanResponse (Wave 8 Phase A 扩 3 quota).
+ * BE: GET /api/v2/dashboard/today → legacy-compatible StudyPlanResponse shim.
  * staleTime 5min (今日 plan 不会高频变).
  */
 export function useTodayStudyPlan() {
   return useQuery<StudyPlanResponse | null>({
     queryKey: homeKeys.studyPlanToday(),
-    queryFn: () => api.get<StudyPlanResponse | null>('/study-plan/today'),
+    queryFn: () =>
+      api.get<DashboardTodayCompat>('/dashboard/today').then((payload) => {
+        const tasks: StudyPlanResponse['tasks'] = payload.events
+          .filter((event) => !event.isRecurringInstance && Number.isFinite(Number(event.id)))
+          .map((event, index) => ({
+            id: Number(event.id),
+            taskKind: mapEventTaskKind(event.category),
+            displayOrder: index,
+            status: mapEventStatus(event.status),
+            completedAt: event.status === 'done' ? event.endAt : null,
+            payload: {
+              title: event.title,
+              subtitle: `${event.startAt} - ${event.endAt}`,
+            },
+          }));
+        return {
+          id: payload.planId ?? 0,
+          planDate: payload.date,
+          generationStatus: 'legacy_compat',
+          dailyQuota: null,
+          dailyAccuracyTarget: null,
+          tasks,
+        } satisfies StudyPlanResponse;
+      }),
     staleTime: 5 * 60_000,
   });
 }
