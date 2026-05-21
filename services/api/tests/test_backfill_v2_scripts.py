@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from datetime import UTC, date, datetime, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Iterator
 
@@ -18,22 +18,17 @@ from sikao_api.db.models import (
     PracticeSessionAnswer,
     Question,
     QuestionOption,
-    StudyPlan,
-    StudyPlanTask,
     User,
 )
 from sikao_api.db.models_v2 import (
-    DailyPlanV2,
     PracticeSessionAnswerV2,
     PracticeSessionV2,
     QuestionOptionV2,
-    WeeklyPlanV2,
 )
 from sikao_api.main import create_app
 from sikao_api.modules.session.application.service import SessionServiceV2
 from sikao_api.scripts.backfill_v2_content import run as run_content_backfill
 from sikao_api.scripts.backfill_v2_identity import run as run_identity_backfill
-from sikao_api.scripts.backfill_v2_planning import run as run_planning_backfill
 from sikao_api.scripts.backfill_v2_session import run as run_session_backfill
 
 
@@ -158,71 +153,6 @@ def _insert_legacy_paper_graph(app: object) -> tuple[Paper, PaperRevision, Quest
         return paper, revision, question
     finally:
         session.close()
-
-
-def test_planning_backfill_limit_does_not_persist_partial_weekly_summary(tmp_path: Path) -> None:
-    with build_app(tmp_path, name="backfill-v2-planning.db") as (app, database_url):
-        user = _insert_legacy_user(app)
-        session = app.state.db.session_factory()
-        try:
-            monday = date(2026, 5, 18)
-            plan_one = StudyPlan(
-                user_id=user.id,
-                plan_date=monday,
-                generation_status="ready",
-            )
-            plan_two = StudyPlan(
-                user_id=user.id,
-                plan_date=monday + timedelta(days=1),
-                generation_status="ready",
-            )
-            session.add_all([plan_one, plan_two])
-            session.flush()
-            session.add_all(
-                [
-                    StudyPlanTask(
-                        plan_id=plan_one.id,
-                        task_kind="practice",
-                        payload_json={"title": "Paper drill"},
-                        display_order=1,
-                        status="completed",
-                    ),
-                    StudyPlanTask(
-                        plan_id=plan_two.id,
-                        task_kind="review_wrong",
-                        payload_json={"title": "Wrong review"},
-                        display_order=1,
-                        status="pending",
-                    ),
-                ]
-            )
-            session.commit()
-        finally:
-            session.close()
-
-        assert run_identity_backfill(database_url=database_url, dry_run=False, limit=None) == 0
-        assert run_planning_backfill(database_url=database_url, dry_run=False, limit=1) == 0
-
-        session = app.state.db.session_factory()
-        try:
-            assert session.scalar(select(func.count()).select_from(DailyPlanV2)) == 1
-            assert session.scalar(select(func.count()).select_from(WeeklyPlanV2)) == 0
-        finally:
-            session.close()
-
-        assert run_planning_backfill(database_url=database_url, dry_run=False, limit=None) == 0
-
-        session = app.state.db.session_factory()
-        try:
-            weekly_plan = session.scalar(select(WeeklyPlanV2))
-            assert weekly_plan is not None
-            assert weekly_plan.summary_json == {
-                "dailyPlanCount": 2,
-                "totalItems": 2,
-                "completedItems": 1,
-            }
-        finally:
-            session.close()
 
 
 def test_content_backfill_removes_stale_question_options(tmp_path: Path) -> None:

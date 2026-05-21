@@ -178,15 +178,14 @@ def test_dashboard_progress_review_and_record_routes_require_auth(tmp_path: Path
     protected_paths = [
         "/api/v2/dashboard/overview",
         "/api/v2/dashboard/today",
-        "/api/v2/dashboard/today/must-do",
         "/api/v2/dashboard/today/continue",
         "/api/v2/dashboard/today/review",
         "/api/v2/dashboard/weekly-plan",
         "/api/v2/dashboard/weekly-plan/goal",
         "/api/v2/dashboard/weekly-plan/today-completion",
-        "/api/v2/dashboard/weekly-plan/adjust",
+        "/api/v2/dashboard/full-plan",
         "/api/v2/dashboard/progress",
-        "/api/v2/dashboard/progress/trend",
+        "/api/v2/dashboard/progress/timeseries?from=2026-05-21&to=2026-05-21&granularity=day",
         "/api/v2/dashboard/progress/weakness",
         "/api/v2/dashboard/progress/diagnosis",
         "/api/v2/dashboard/records",
@@ -199,6 +198,9 @@ def test_dashboard_progress_review_and_record_routes_require_auth(tmp_path: Path
             response = client.get(path)
             assert response.status_code == 401, (path, response.text)
             assert response.json()["code"] == "auth_required"
+        adjust = client.put("/api/v2/dashboard/weekly-plan/adjust", json={"dailyMinutesTarget": 120})
+        assert adjust.status_code == 401, adjust.text
+        assert adjust.json()["code"] == "auth_required"
 
 
 def test_review_redo_requires_auth_when_not_logged_in(tmp_path: Path) -> None:
@@ -336,12 +338,10 @@ def test_dashboard_today_continue_reads_latest_in_progress_session(tmp_path: Pat
 
         assert response.status_code == 200, response.text
         payload = response.json()
-        assert payload["summary"] == [{"key": "count", "label": "Continue", "value": "1", "tone": "neutral"}]
-        assert len(payload["sections"]) == 1
-        assert payload["sections"][0]["key"] == "continue"
-        assert payload["sections"][0]["status"] == "ready"
-        assert payload["sections"][0]["href"].startswith("/practice/sessions/")
-        assert payload["actions"][0]["key"] == "continue"
+        assert payload["hasActiveSession"] is True
+        assert payload["status"] == "in_progress"
+        assert payload["track"] == "xingce"
+        assert payload["href"].startswith("/practice/sessions/")
 
 
 def test_dashboard_records_empty_contract_is_consistent(tmp_path: Path) -> None:

@@ -240,24 +240,39 @@ def test_phase1_contract_smoke_covers_all_new_endpoints(tmp_path: Path) -> None:
             client.headers["X-CSRF-Token"] = relogin.cookies["csrf_token_v2"]
 
         # dashboard
+        created_plan = client.post(
+            "/api/v2/plans",
+            json={
+                "name": "Skeleton plan",
+                "targetExamId": "guokao-2027",
+                "targetExamDate": "2027-11-26",
+                "dailyMinutesTarget": 180,
+                "style": "balanced",
+            },
+        )
+        assert created_plan.status_code == 200, created_plan.text
         for path in [
             "/api/v2/dashboard/overview",
             "/api/v2/dashboard/today",
-            "/api/v2/dashboard/today/must-do",
             "/api/v2/dashboard/today/continue",
             "/api/v2/dashboard/today/review",
             "/api/v2/dashboard/weekly-plan",
             "/api/v2/dashboard/weekly-plan/goal",
             "/api/v2/dashboard/weekly-plan/today-completion",
-            "/api/v2/dashboard/weekly-plan/adjust",
             "/api/v2/dashboard/progress",
-            "/api/v2/dashboard/progress/trend",
+            "/api/v2/dashboard/progress/timeseries?from=2026-05-21&to=2026-05-21&granularity=day",
             "/api/v2/dashboard/progress/weakness",
             "/api/v2/dashboard/progress/diagnosis",
+            "/api/v2/dashboard/full-plan",
             "/api/v2/dashboard/records",
         ]:
             response = client.get(path)
             assert response.status_code == 200, (path, response.text)
+        adjust_response = client.put(
+            "/api/v2/dashboard/weekly-plan/adjust",
+            json={"dailyMinutesTarget": 210},
+        )
+        assert adjust_response.status_code == 200, adjust_response.text
 
         # practice + session
         for path in [
