@@ -178,7 +178,11 @@ def get_current_auth_context(
     if auth_session.expires_at <= now:
         raise UnauthorizedError("session expired", code="session_expired")
     user = session.get(UserV2, auth_session.user_id)
-    if user is None or not user.is_active:
+    if user is None:
+        raise UnauthorizedError("user not available", code="user_not_available")
+    if user.deleted_at is not None:
+        raise ForbiddenError("account has been deactivated", code="account_deleted")
+    if not user.is_active:
         raise UnauthorizedError("user not available", code="user_not_available")
     return AuthContextV2(user=user, auth_session=auth_session)
 
