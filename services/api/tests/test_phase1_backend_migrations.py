@@ -69,3 +69,6 @@ def test_phase1_migrations_create_new_tables_without_dropping_legacy(tmp_path: P
     assert "llm_call_v2" in tables
     assert "audit_log_v2" in tables
     assert "linked_plan_event_occurrence_ref" in practice_session_columns
+    assert "daily_plans_v2" not in tables
+    assert "daily_plan_items_v2" not in tables
+    assert "weekly_plans_v2" not in tables
