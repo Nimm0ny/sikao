@@ -132,7 +132,7 @@ class PlanEventV2(Base):
 **字段语义**：
 - `recurring_rule` 非空 = "母规则行"，UI 上显示为虚拟实例集合。
 - `recurring_parent_id` 非空 + `recurring_rule` 空 = "单次例外"（detached），覆盖父规则在某个日期的展开（"仅此次"编辑落地）。
-- `recurring_parent_id` 非空 + `recurring_rule` 非空 = "后续所有"分裂出的新规则（截断父规则的 UNTIL，从分裂日开始新规则）。
+- `recurring_parent_id` 为空 + `recurring_rule` 非空 = "后续所有"分裂出的新母规则（截断旧规则的 UNTIL，从分裂日开始由新母规则承接）。
 - `target_id` 是 `ProfileGoal.exam_targets[]` 的索引。Stage 2 多用户时，考虑改成单独 ExamTargetV2 表 + FK。
 
 ---
@@ -262,13 +262,23 @@ linked_plan_event_id: Mapped[int | None] = mapped_column(
     ForeignKey("plan_event_v2.id", ondelete="SET NULL"),
     index=True,
 )
+linked_plan_event_occurrence_ref: Mapped[str | None] = mapped_column(
+    String(64),
+    nullable=True,
+)
 linked_recommendation_id: Mapped[int | None] = mapped_column(
     ForeignKey("recommendation_v2.id", ondelete="SET NULL"),
     index=True,
 )
 ```
 
-注：FK on_delete = SET NULL（事件软删时不会触发，但物理清理 30 天后会）。
+语义：
+- 普通单次事件：只写 `linked_plan_event_id`，`linked_plan_event_occurrence_ref = null`
+- recurring 母规则展开实例：`linked_plan_event_id = parent event id`，`linked_plan_event_occurrence_ref = "<parent_id>:<YYYY-MM-DD>"`
+- detached 单次例外：`linked_plan_event_id = detached event id`，`linked_plan_event_occurrence_ref = null`
+- recurring 虚拟实例的 `linked_session_id` 不落在母规则行上；API 读模型需根据 `(linked_plan_event_id, linked_plan_event_occurrence_ref)` 从 `PracticeSessionV2` 动态推导。
+
+注：FK on_delete = SET NULL（事件软删时不会触发，但物理清理 30 天后会）；`linked_plan_event_occurrence_ref` 不参与 FK，作为 recurring 实例级历史 ref 保留。
 
 ---
 

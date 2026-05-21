@@ -241,7 +241,7 @@ POST   /api/v2/plans/adjustments/{id}/reject             body: {reason?}
 - `tests/modules/plans/test_plan_routes.py`
 
 业务规则：
-- create 时如果用户已有 active plan，新 plan status 默认 `paused`（除非 body 显式 `make_active=true`，此时把旧的 active 转 paused 并加 audit）
+- create 时如果用户已有 active plan，直接 fail-fast 返回 `409 active_plan_exists`；不隐式创建 paused plan，不引入 `make_active` 分支
 - get/list 默认过滤 soft-deleted plan
 
 PR 行数：~210
@@ -318,7 +318,7 @@ PR 行数：~390（含测试）
 业务规则：
 - `scope=this` 编辑 → 创建 detached X 行；母规则 `recurring_exception_dates` 加该日
 - `scope=this` 删除 → 仅在母规则 `recurring_exception_dates` 加该日，不创建 detached
-- `scope=future` → 截断 M.UNTIL = 该日 -1；创建 M2 从该日开始；旧的 detached 在该日之前的保留，之后的失效（标 deleted）
+- `scope=future` → 截断 M.UNTIL = 该日 -1；创建 M2 从该日开始，并作为新的母规则独立承接后续实例；旧的 detached 在该日之前的保留，之后的失效（标 deleted）
 - `scope=all` → 直接改 M（含 RRULE 改写时，已有 detached 必须保留 + 警告）
 
 PR 行数：~300
@@ -616,6 +616,8 @@ PR 行数：~140
 - `tests/modules/profile/test_records.py`
 
 业务规则：
+- `PUT /api/v2/profile/info` 采用 partial merge：`display_name` 不再必传；未传字段保持原值，只更新 body 中显式给出的字段。
+- `GET /api/v2/profile/info` / `PUT /api/v2/profile/info` 必须暴露并持久化 `ai_adjust_enabled / dashboard_preferences / recommender_preferences`。
 - `GET /api/v2/profile/records` 是唯一 canonical records API。
 - 现有 `GET /api/v2/dashboard/records` 作为兼容 shim 暂保留到 `B9.5` 前；返回中的 `href/actions` 一律改为 `/profile/records`。
 - records 继续复用 `modules/record` 聚合，不把 records 语义绑回 `/dashboard`。

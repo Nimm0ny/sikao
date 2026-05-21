@@ -247,12 +247,17 @@ in_progress ──[time window ends + 0 linked session]──→ skipped
 ### 5.5 重复事件展开后的 session 绑定语义
 
 - RRULE 序列里的每一次实例都有独立 `recurring_parent_id`，但**它们不是 DB 里的独立行**（虚拟实例）。
-- 用户从某次实例的 CTA 进入 session 时，linked_plan_event_id 写**该次实例的展开 ID**（格式 `<parent_id>:<occurrence_iso_date>`）。
+- 用户从某次实例的 CTA 进入 session 时：
+  - `linked_plan_event_id` 写母规则 event 的整数 FK（`PlanEventV2.id`）
+  - `linked_plan_event_occurrence_ref` 写该次实例的展开 ID（格式 `<parent_id>:<occurrence_iso_date>`）
+- 虚拟实例的 session 关联以 `PracticeSessionV2(linked_plan_event_id, linked_plan_event_occurrence_ref)` 为权威来源；`plans/events` 响应里的 `linked_session_id` 应按这对键动态推导，不复用父规则行上的单值 shortcut。
+- detached 单次例外进入 session 时，不写 `linked_plan_event_occurrence_ref`；`linked_plan_event_id` 直接指向 detached event 行。
 - 数据模型上，DB 只存 `parent` 与 `exception_dates[]` 与 `single_overrides[event_id_list]`。详见 `02-Data-Model.md` §3.4。
 
 ### 5.6 软删除事件后，已 linked 的 session 怎么办
 
 - session 不删（hard），保留 `linked_plan_event_id` 指向已软删的事件。
+- 若该 session 来自 recurring 虚拟实例，`linked_plan_event_occurrence_ref` 也继续保留，作为历史定位信息。
 - 查询 session 详情时如果引用的事件已软删，返回 event 字段时附 `is_deleted: true`。
 - 进度聚合不受影响（实绩层独立）。
 
