@@ -31,7 +31,6 @@ import { FbSettingsPopover } from '@/components/practice/fb/FbSettingsPopover';
 import { useFbSettings } from '@sikao/domain/xingce/useFbSettings';
 import { trackEvent } from '@/lib/analytics';
 import { fetchQuestionNote, noteKeys } from '@sikao/api-client/apiQueries';
-import { usePatchStudyTask } from '@sikao/api-client/queries/studyPlanQueries';
 import { useApplyExamTheme } from '@/styles/useThemeStore';
 import { usePracticeStore } from '@sikao/domain/answer-session/usePracticeStore';
 import { api } from '@sikao/api-client/request';
@@ -197,10 +196,8 @@ function PracticeSessionBody({
   const timerSeconds = defaultExamSeconds(totalQuestions);
   const remaining = Math.max(0, timerSeconds - elapsed);
   const timerDisplay = formatTimerDisplay(remaining);
-  const patchStudyTask = usePatchStudyTask();
   // 答题数 >= 5 时 scratch col fade in (master 渐进披露阈值).
   const answers = usePracticeStore((s) => s.answers);
-  const currentStudyTaskId = usePracticeStore((s) => s.currentStudyTaskId);
   const flagged = usePracticeStore((s) => s.flaggedQuestions);
   const scratchClips = usePracticeStore((s) => s.scratchClips);
   const currentVisibleQid = usePracticeStore((s) => s.currentVisibleQuestionId);
@@ -294,25 +291,9 @@ function PracticeSessionBody({
         sessionId: String(sessionId),
         properties: {
           answeredCount: String(Object.keys(latestAnswers).length),
-          studyTaskId:
-            currentStudyTaskId === null ? 'none' : String(currentStudyTaskId),
+          studyTaskId: 'none',
         },
       });
-      if (currentStudyTaskId !== null) {
-        try {
-          await patchStudyTask.mutateAsync({
-            id: currentStudyTaskId,
-            status: 'completed',
-          });
-        } catch (err) {
-          logger.error('study_plan.task.complete_failed', {
-            taskId: currentStudyTaskId,
-            sessionId,
-            err: String(err),
-          });
-          toast.warn('练习已提交，但今日任务状态同步失败');
-        }
-      }
       clearSession();
       onNavigate(`/practice/result/${sessionId}`);
     } catch (err) {
@@ -326,8 +307,6 @@ function PracticeSessionBody({
       ui.setIsSubmitting(false);
     }
   }, [
-    currentStudyTaskId,
-    patchStudyTask,
     sessionId,
     sessionData.sections,
     clearSession,

@@ -338,49 +338,4 @@ describe('EssayExamResults', () => {
     );
   });
 
-  it('marks the originating study-plan task completed only after all grading records are completed', async () => {
-    let patchBody: { status: string } | null = null;
-    server.use(
-      http.get('/api/v2/essay/grades/:id', ({ params }) =>
-        HttpResponse.json(
-          RECORD('completed', {
-            id: Number(params.id),
-            questionId: Number(params.id) === 1 ? 101 : 102,
-            score: 80,
-          }),
-        ),
-      ),
-      http.get('/api/v2/papers/:code/questions', () =>
-        HttpResponse.json(makePaperQuestionsResponse()),
-      ),
-      http.patch('/api/v2/study-plan/tasks/:taskId', async ({ request }) => {
-        patchBody = (await request.json()) as { status: string };
-        return HttpResponse.json({
-          id: 9,
-          taskKind: 'essay_writing',
-          payload: {
-            paperCode: 'AIPTA-2024-01',
-            questionId: 101,
-            title: '申论任务',
-            subtitle: null,
-          },
-          displayOrder: 0,
-          status: 'completed',
-          completedAt: '2026-05-14T00:00:00Z',
-          createdAt: '2026-05-14T00:00:00Z',
-        });
-      }),
-    );
-
-    renderAt('?paperCode=AIPTA-2024-01&ids=1,2&total=2&studyTaskId=9');
-
-    await waitFor(() =>
-      expect(
-        screen.getByTestId('essay-exam-results-completed-1'),
-      ).toBeInTheDocument(),
-    );
-    await waitFor(() => {
-      expect(patchBody).toEqual({ status: 'completed' });
-    });
-  });
 });
