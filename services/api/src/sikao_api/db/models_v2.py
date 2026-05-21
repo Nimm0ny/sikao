@@ -284,6 +284,8 @@ class PracticeSessionV2(Base):
     __tablename__ = "practice_sessions_v2"
     __table_args__ = (
         Index("ix_practice_sessions_v2_user_started", "user_id", "started_at"),
+        Index("ix_practice_sessions_v2_linked_plan_event", "linked_plan_event_id"),
+        Index("ix_practice_sessions_v2_linked_recommendation", "linked_recommendation_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -300,6 +302,14 @@ class PracticeSessionV2(Base):
     submitted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
+    linked_plan_event_id: Mapped[int | None] = mapped_column(
+        ForeignKey("plan_event_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    linked_recommendation_id: Mapped[int | None] = mapped_column(
+        ForeignKey("recommendation_v2.id", ondelete="SET NULL"),
+        nullable=True,
     )
 
 
@@ -556,6 +566,17 @@ class ProfileInfoV2(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
+    ai_adjust_enabled: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    dashboard_preferences: Mapped[dict[str, Any]] = mapped_column(
+        JSONB_COMPAT,
+        default=dict,
+        nullable=False,
+    )
+    recommender_preferences: Mapped[dict[str, Any]] = mapped_column(
+        JSONB_COMPAT,
+        default=dict,
+        nullable=False,
+    )
 
 
 class ProfileGoalV2(Base):
@@ -573,6 +594,7 @@ class ProfileGoalV2(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
+    exam_targets: Mapped[list[dict[str, Any]]] = mapped_column(JSONB_COMPAT, default=list, nullable=False)
 
 
 class PlanV2(Base):
@@ -683,6 +705,10 @@ class PlanAdjustmentV2(Base):
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
     source: Mapped[str] = mapped_column(String(32), nullable=False)
     user_reject_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+    llm_call_id: Mapped[int | None] = mapped_column(
+        ForeignKey("llm_call_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
 
 class RecommendationV2(Base):
@@ -713,6 +739,10 @@ class RecommendationV2(Base):
     accepted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     rejected_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     source_signals: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    llm_call_id: Mapped[int | None] = mapped_column(
+        ForeignKey("llm_call_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
 
 
 class RecommendationFeedbackV2(Base):
@@ -725,4 +755,82 @@ class RecommendationFeedbackV2(Base):
     )
     reason: Mapped[str] = mapped_column(String(40), nullable=False)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+
+class IdempotencyKeyV2(Base):
+    __tablename__ = "idempotency_key_v2"
+    __table_args__ = (
+        UniqueConstraint("key", "user_id", "endpoint", name="uq_idem_key"),
+        Index("ix_idem_expires", "expires_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    key: Mapped[str] = mapped_column(String(64), nullable=False)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    endpoint: Mapped[str] = mapped_column(String(120), nullable=False)
+    request_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    response_status: Mapped[int] = mapped_column(Integer, nullable=False)
+    response_body: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class LlmCallV2(Base):
+    __tablename__ = "llm_call_v2"
+    __table_args__ = (
+        Index("ix_llm_user_purpose", "user_id", "purpose", "created_at"),
+        Index(
+            "ix_llm_parse_failed",
+            "parse_status",
+            sqlite_where=text("parse_status != 'ok'"),
+            postgresql_where=text("parse_status != 'ok'"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False)
+    purpose: Mapped[str] = mapped_column(String(40), nullable=False)
+    prompt_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    provider: Mapped[str] = mapped_column(String(40), nullable=False)
+    model: Mapped[str] = mapped_column(String(80), nullable=False)
+    input_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    output_tokens: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    cost_cny: Mapped[Decimal | None] = mapped_column(Numeric(10, 4), nullable=True)
+    latency_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    request_payload: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    response_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB_COMPAT, nullable=True)
+    parsed_output: Mapped[dict[str, Any] | None] = mapped_column(JSONB_COMPAT, nullable=True)
+    parse_status: Mapped[str] = mapped_column(String(32), nullable=False)
+    error_class: Mapped[str | None] = mapped_column(String(80), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    retry_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+
+class AuditLogV2(Base):
+    __tablename__ = "audit_log_v2"
+    __table_args__ = (
+        Index("ix_audit_user_action_at", "user_id", "action", "created_at"),
+        Index("ix_audit_target", "target_type", "target_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(Integer, nullable=False)
+    actor_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    actor_id: Mapped[str] = mapped_column(String(40), nullable=False)
+    action: Mapped[str] = mapped_column(String(60), nullable=False)
+    target_type: Mapped[str] = mapped_column(String(40), nullable=False)
+    target_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    before: Mapped[dict[str, Any] | None] = mapped_column(JSONB_COMPAT, nullable=True)
+    after: Mapped[dict[str, Any] | None] = mapped_column(JSONB_COMPAT, nullable=True)
+    diff: Mapped[dict[str, Any] | None] = mapped_column(JSONB_COMPAT, nullable=True)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(
+        "metadata",
+        JSONB_COMPAT,
+        default=dict,
+        nullable=False,
+    )
+    request_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    ip: Mapped[str | None] = mapped_column(String(45), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
