@@ -104,12 +104,25 @@ def test_worker_skips_jobs_not_yet_due(tmp_path: Path) -> None:
 def test_worker_marks_job_failed_when_execute_raises(
     tmp_path: Path, monkeypatch
 ) -> None:
-    """v2-#2 regression: failed jobs must persist as 'failed' with error_message."""
+    """v2-#2 regression: failed jobs must persist as 'failed' with error_message.
+
+    Critically, boom stages session.delete(user) + flush BEFORE raising,
+    so removing session.rollback() from the worker would observably
+    destroy the user. This is the actual regression scenario that bug
+    v2-#2 described.
+    """
     db = _make_db(tmp_path)
     past = datetime.now(UTC).replace(tzinfo=None) - timedelta(hours=1)
     user_id, job_id, _ = _seed_pending_job(db, hard_delete_at=past)
 
     def boom(session, *, job, now):
+        # Reproduce v2-#2: stage destructive operation, flush, then raise.
+        # Without rollback in the worker's except branch, the staged delete
+        # would commit silently and destroy the user.
+        user = session.get(UserV2, job.user_id)
+        if user is not None:
+            session.delete(user)
+            session.flush()
         raise RuntimeError("simulated failure")
 
     monkeypatch.setattr(deletion_worker, "_execute_hard_delete", boom)
@@ -128,7 +141,7 @@ def test_worker_marks_job_failed_when_execute_raises(
         assert failed is not None
         assert failed.status == "failed"
         assert failed.error_message == "simulated failure"
-        # User must still exist (failure handler must rollback the staged delete).
+        # User must still exist — proves session.rollback() unwound the staged delete.
         assert verify.get(UserV2, user_id) is not None
     finally:
         verify.close()
