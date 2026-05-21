@@ -71,7 +71,7 @@ Practice 继承：
 
 | # | 决策 | 拍板 | 理由 |
 |---|---|---|---|
-| **SRS-1** | 算法选型 | 简化版（correct_streak + 三档间隔 1d/3d/7d → graduated）；schema 预留 SM-2 字段 | MVP 最快上线；接口预留避免重构 |
+| **SRS-1** | 算法选型 | 简化版（correct_streak + 二档间隔 1d/3d → graduated at streak=2）；schema 预留 SM-2 字段 | MVP 最快上线；接口预留避免重构 |
 | **SRS-2** | state 字段 | correct_streak / next_review_at / status 为主逻辑字段；ease_factor / interval_days / repetitions 三个 nullable 字段预留 SM-2 | Schema 一次到位避免 migration |
 | **SRS-3** | 答错回退 | 回到上一档（不回 new） | A 太严苛；C 用户感知不到惩罚 |
 | **SRS-4** | next_review_at 时区 | 用户本地时区（profile_v2.info.timezone） | 公考备考强本地节奏 |
@@ -107,7 +107,7 @@ else:
 | **AI-Cause-4** | 长度限制 | summary ≤ 200 字；dimensions ≤ 5；suggested_actions ≤ 3 |
 | **AI-Cause-5** | 限流 | 每用户每日 N=20 次（与 AI 出题分桶，共享 daily_llm_quota） |
 | **AI-Cause-6** | 幂等 | POST 必带 Idempotency-Key（继承 Phase-Home IdempotencyKeyV2） |
-| **AI-Cause-7** | 缓存策略 | 键=(user_id, question_id, last_answer_hash)；TTL=30d；快照变化即失效 |
+| **AI-Cause-7** | 缓存策略 | **单题**：键=(user_id, question_id, last_answer_hash)；TTL=30d；快照变化即失效。**多题聚合**：键=(user_id, sorted_question_ids_hash)；不含 per-question last_answer_hash（已知 trade-off：组内某题重做后组分析可能略滞后，但避免 N 次 hash 查询的性能开销） |
 | **AI-Cause-8** | 失败兜底 | 503 + 文案"AI 分析暂时不可用，请稍后再试"；不影响列表正常使用（PR-R6） |
 | **AI-Cause-9** | 反馈机制 | 👍/👎 → RecommendationFeedbackV2(type=cause_analysis_single|cause_analysis_group) |
 | **AI-Cause-10** | "保存为笔记" | 用户点击 → NoteV2(type=ai_cause_analysis, linked_question_id, body=result_json.summary) |

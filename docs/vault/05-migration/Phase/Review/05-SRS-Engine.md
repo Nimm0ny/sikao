@@ -29,8 +29,9 @@
 ```
 if used_recall:
     interval *= 2
-    # streak=0: 1d → 2d
-    # streak=1: 3d → 6d
+    # 注意：interval 基于递增后的 streak 查表
+    # 初始 streak=0 → 递增后 streak=1 → INTERVALS[1]=3 → ×2 = 6d
+    # 初始 streak=1 → 递增后 streak=2 → 直接 graduated（interval 不适用）
 ```
 
 ---
@@ -45,7 +46,7 @@ from sikao_api.modules.review.application.srs_constants import (
     INTERVALS, GRADUATION_THRESHOLD, RECALL_BONUS_MULTIPLIER,
 )
 
-INTERVALS = [1, 3, 7]  # days; index = correct_streak
+INTERVALS = [1, 3]  # days; index = correct_streak (graduation fires at streak=2, so only index 0 and 1 are reachable)
 GRADUATION_THRESHOLD = 2  # correct_streak >= this → graduated
 RECALL_BONUS_MULTIPLIER = 2
 
@@ -140,6 +141,10 @@ def is_due_today(item: ReviewItemV2, user_timezone: str) -> bool:
 
 ## 5. 边缘情况
 
+### 5.0 设计规则：pending 是瞬态
+
+> **pending 是瞬态状态**：任何首次交互（无论答对还是答错）都将 status 从 pending 推进到 in_progress。pending 仅表示"已入队但用户尚未做过"，不表示"SRS 未开始"。这与 SRS-3"答错回退一档（不回 new）"不冲突——SRS-3 控制的是 correct_streak 的回退，不控制 status 字段。
+
 ### 5.1 首次复盘（首答）
 
 - 新入队的 ReviewItemV2：`status=pending, correct_streak=0, next_review_at=NULL`
@@ -168,7 +173,7 @@ def is_due_today(item: ReviewItemV2, user_timezone: str) -> bool:
 ### 5.5 费曼复述场景
 
 - 用户答对后填写 recall_text → `advance_on_correct(used_recall=True)`
-- interval 翻倍（streak=0: +2d, streak=1: +6d）
+- interval 翻倍（基于递增后的 streak 查表：streak 0→1 查 INTERVALS[1]=3, ×2=6d；streak 1→2 直接 graduated 不受 interval 影响）
 - 跳过 recall → `advance_on_correct(used_recall=False)` 正常间隔
 - 答错后不展示 recall 输入框
 
@@ -216,7 +221,7 @@ def advance_sm2(item: ReviewItemV2, quality: int) -> None:
 ```python
 # services/api/src/sikao_api/modules/review/application/srs_constants.py
 
-INTERVALS = [1, 3, 7]                    # days per streak level
+INTERVALS = [1, 3]                        # days per streak level (only index 0 and 1 reachable; graduation at streak=2)
 GRADUATION_THRESHOLD = 2                  # streak >= this → graduated
 RECALL_BONUS_MULTIPLIER = 2              # interval multiplier when recall filled
 ALGORITHM_VERSION_SIMPLE = "simple_v1"
@@ -237,11 +242,13 @@ DEFAULT_TIMEZONE = "Asia/Shanghai"
 | T5 | 毕业确认 | in_progress, streak=1 | advance + check_graduation | graduated=True |
 | T6 | re_failed 后重新SRS | pending(re_failed), streak=0 | advance_on_correct | streak=1, next=+3d |
 | T7 | re_failed 连续答对毕业 | pending(re_failed), streak=0 | advance × 2 | graduated |
-| T8 | 费曼加成 streak=0 | pending, streak=0 | advance(recall=True) | streak=1, next=+6d (3×2) |
+| T8 | 费曼加成 streak=0 | pending, streak=0 | advance(recall=True) | streak=1, next=+6d (INTERVALS[1]=3 × 2) ※ |
 | T9 | 费曼加成 streak=1 | in_progress, streak=1 | advance(recall=True) | graduated (不受 interval 影响) |
 | T10 | 时区 UTC+8 | — | compute_next_review(tz=Asia/Shanghai) | next 基于 CST today_end |
 | T11 | 时区空值 fallback | — | compute_next_review(tz=None) | fallback Asia/Shanghai |
 | T12 | 答错不低于 0 | in_progress, streak=0 | regress_on_incorrect | streak=0 (不变), next=+1d |
+
+> ※ **注意**：`advance_on_correct` 先递增 streak（0→1），再用递增后的 streak 值查 INTERVALS 表。因此 T8 初始 streak=0 → 递增后 streak=1 → INTERVALS[1]=3 → ×2 = 6d。T1 同理：初始 streak=0 → 递增后 streak=1 → INTERVALS[1]=3d。
 
 ---
 

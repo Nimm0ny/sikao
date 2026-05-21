@@ -174,23 +174,32 @@
 
 ---
 
-## WU-R7 · Weekly Cron
+## WU-R7 · Weekly Cron + Weekly Summary Endpoint
 
-**描述**：APScheduler job，每周一 02:00（用户本地时区）预计算上周数据快照写入 metadata_json。
+**描述**：APScheduler job，每周一 02:00（用户本地时区）预计算上周数据快照写入 metadata_json；同时实现 `GET /review/weekly-summary` HTTP 端点供前端消费。
 
-| 端点 | 无（cron job） |
+| 端点 | 方法 | 路由 | 说明 |
+|---|---|---|---|
+| weekly_summary | GET | `/api/v2/review/weekly-summary?week=YYYY-WW` | 返回周回顾摘要（优先读 cron 预生成快照，fallback 实时聚合） |
+
+| 预计行数 | ~180 |
 |---|---|
-| **预计行数** | ~130 |
 | **依赖** | WU-R2, Phase-Home WU-B8（APScheduler 框架） |
 | **文件改动** | |
 
 | 文件 | 变更 |
 |---|---|
+| `services/api/src/sikao_api/modules/review/interface/routes.py` | 追加 weekly_summary 端点 |
+| `services/api/src/sikao_api/modules/review/application/weekly_service.py` | 周回顾聚合逻辑 + cron 预生成 |
 | `services/api/src/sikao_api/cron/weekly_review_snapshot.py` | job 函数：聚合 + 写入 metadata |
 | `services/api/src/sikao_api/cron/__init__.py` | 注册新 job |
+| `services/api/src/sikao_api/db/schemas_v2.py` | WeeklySummaryResponseV2 |
+| `tests/api/modules/review/test_weekly_summary.py` | 覆盖：有数据 / 无数据 / cron 预生成 / fallback 实时聚合 |
 | `tests/api/cron/test_weekly_review_snapshot.py` | 覆盖：有数据 / 无数据 / 重复执行幂等 |
 
 **测试要求**：
+- GET weekly-summary 有 cron 快照 → 返回快照数据
+- GET weekly-summary 无快照（首次 / cron 未跑）→ fallback 实时聚合
 - 有上周数据 → 正确聚合写入
 - 无数据 → 不报错，写空快照
 - 重复执行 → 幂等（覆盖旧值）
@@ -330,14 +339,12 @@
 
 ```
 WU-R1 ────────────────┐
-                      ├─→ WU-R2 ─┬─→ WU-R5 ──┐
-                      │          │           │
-                      │          └─→ WU-R6 ──┤
-                      ├─→ WU-R3 ─────────────┤─→ WU-R10 ─→ WU-R11 ─→ WU-R12
-                      ├─→ WU-R4 ─────────────┤
-                      ├─→ WU-R7 ─────────────┤
-                      ├─→ WU-R8 ─────────────┤
-                      └─→ WU-R9 ─────────────┘
+                      ├─→ WU-R2 ─→ WU-R6 ─→ WU-R5 ──┐
+                      ├─→ WU-R3 ─────────────────────┤─→ WU-R10 ─→ WU-R11 ─→ WU-R12
+                      ├─→ WU-R4 ─────────────────────┤
+                      ├─→ WU-R7 ─────────────────────┤
+                      ├─→ WU-R8 ─────────────────────┤
+                      └─→ WU-R9 ─────────────────────┘
 ```
 
 ---

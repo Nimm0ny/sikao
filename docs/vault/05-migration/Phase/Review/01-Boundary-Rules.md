@@ -94,19 +94,30 @@ AI 错因分析相关端点返回 5xx 时：
 
 ---
 
-## PR-R7 · question_id 与 source_note_id 互斥
+## PR-R7 · source_note_id 必填约束（note_card 行）
 
-ReviewItemV2 行满足：
+ReviewItemV2 行满足以下规则：
+
+**非 note_card 行**（source_kind IN wrong_answer / flagged_persistent / re_failed / manual_add）：
+- `question_id` 必填（NOT NULL）
+- `metadata_json.source_note_id` 必须为 NULL
+
+**note_card 行**（source_kind = note_card）：
+- `metadata_json.source_note_id` 必填（NOT NULL）
+- `question_id` 可选（NULL = 纯知识卡；非 NULL = 题关联卡）
+
+等效 CHECK（仅 PostgreSQL 生产环境加，SQLite 依赖 application-layer）：
 ```sql
 CHECK (
-    (question_id IS NOT NULL AND metadata_json->>'source_note_id' IS NULL)
-    OR
-    (question_id IS NULL AND metadata_json->>'source_note_id' IS NOT NULL)
+    CASE
+        WHEN source_kind != 'note_card' THEN
+            question_id IS NOT NULL AND metadata_json->>'source_note_id' IS NULL
+        ELSE  -- note_card
+            metadata_json->>'source_note_id' IS NOT NULL
+            -- question_id 可 NULL 也可非 NULL
+    END
 )
 ```
-
-- source_kind IN (wrong_answer, flagged_persistent, re_failed, manual_add) → question_id 必填
-- source_kind = note_card → question_id 可 NULL（纯知识卡）或非 NULL（题关联卡），但 metadata_json.source_note_id 必填
 
 > 实际落地用 application-layer 校验（SQLite 不支持 JSONB CHECK），不依赖 DB CHECK。PostgreSQL 环境可额外加 DB CHECK 作为双保险。
 

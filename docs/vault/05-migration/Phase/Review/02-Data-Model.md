@@ -532,7 +532,9 @@ class WeeklySummaryResponseV2(CamelModel):
 
 def validate_review_item_source_constraint(item: ReviewItemV2) -> None:
     """
-    PR-R7: question_id 与 source_note_id 互斥校验。
+    PR-R7: source_note_id 必填约束。
+    - 非 note_card 行：question_id 必填，source_note_id 禁填
+    - note_card 行：source_note_id 必填，question_id 可选（NULL=纯知识卡，非 NULL=题关联卡）
     PostgreSQL 可加 DB CHECK 双保险；SQLite 仅依赖此函数。
     """
     source_note_id = item.metadata_json.get("source_note_id")
@@ -540,6 +542,7 @@ def validate_review_item_source_constraint(item: ReviewItemV2) -> None:
     if item.source_kind == ReviewSourceKind.NOTE_CARD:
         if source_note_id is None:
             raise ValidationError("note_card 行必须提供 metadata_json.source_note_id")
+        # question_id 可 NULL 也可非 NULL（题关联卡），不校验
     else:
         # wrong_answer / flagged_persistent / re_failed / manual_add
         if item.question_id is None:
