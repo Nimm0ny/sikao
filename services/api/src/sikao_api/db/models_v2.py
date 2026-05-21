@@ -658,3 +658,28 @@ class PlanEventV2(Base):
         onupdate=utc_now,
         nullable=False,
     )
+
+
+class PlanAdjustmentV2(Base):
+    __tablename__ = "plan_adjustment_v2"
+    __table_args__ = (
+        Index("ix_adj_v2_user_status", "user_id", "status"),
+        Index(
+            "ix_adj_v2_pending_expires",
+            "expires_at",
+            sqlite_where=text("status = 'pending'"),
+            postgresql_where=text("status = 'pending'"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    plan_id: Mapped[int] = mapped_column(ForeignKey("plan_v2.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False)
+    proposed_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    decided_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    changes: Mapped[list[dict[str, Any]]] = mapped_column(JSONB_COMPAT, default=list, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    source: Mapped[str] = mapped_column(String(32), nullable=False)
+    user_reject_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
