@@ -11,7 +11,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from sikao_api.core.config import Settings
-from sikao_api.db.models_v2 import EssayReportV2, EssaySubmissionV2, PracticeSessionV2, UserV2
+from sikao_api.db.models_v2 import EssayReportV2, EssaySubmissionV2, PracticeSessionAnswerV2, PracticeSessionV2, UserV2
 from sikao_api.main import create_app
 
 
@@ -120,6 +120,25 @@ def test_profile_extensions_and_records_canonicalization(tmp_path: Path) -> None
                     payload_json={"subject": "shuliang"},
                 )
             )
+            session.flush()
+            session.add_all(
+                [
+                    PracticeSessionAnswerV2(
+                        session_id=1,
+                        question_key="1",
+                        display_order=1,
+                        response_json={},
+                        is_correct=True,
+                    ),
+                    PracticeSessionAnswerV2(
+                        session_id=1,
+                        question_key="2",
+                        display_order=2,
+                        response_json={},
+                        is_correct=False,
+                    ),
+                ]
+            )
             submission = EssaySubmissionV2(
                 user_id=user.id,
                 content="essay content",
@@ -160,6 +179,7 @@ def test_profile_extensions_and_records_canonicalization(tmp_path: Path) -> None
         assert dashboard_records.status_code == 200, dashboard_records.text
         assert dashboard_records.json()["sections"][0]["href"] == "/profile/records"
         assert dashboard_records.json()["actions"][0]["href"] == "/profile/records"
+        assert dashboard_records.json()["summary"]["avgXingceAccuracy"] == "0.50"
 
         openapi = client.get("/openapi.json")
         assert openapi.status_code == 200

@@ -10,7 +10,7 @@ from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from sikao_api.core.config import Settings
-from sikao_api.db.models_v2 import PlanAdjustmentV2, PlanEventV2, PlanV2, PracticeSessionV2, UserV2
+from sikao_api.db.models_v2 import AuditLogV2, PlanAdjustmentV2, PlanEventV2, PlanV2, PracticeSessionV2, UserV2
 from sikao_api.main import create_app
 
 
@@ -157,22 +157,36 @@ def test_events_recurring_scope_practice_blocks_conflicts_and_adjustments(tmp_pa
                 "planId": plan_id,
                 "title": "Morning drills",
                 "category": "xingce",
-                "startAt": "2026-06-15T01:00:00Z",
-                "endAt": "2026-06-15T02:00:00Z",
+                "startAt": "2026-05-15T01:00:00Z",
+                "endAt": "2026-05-15T02:00:00Z",
                 "timezone": "Asia/Shanghai",
-                "recurringRule": "FREQ=DAILY;COUNT=3",
+                "recurringRule": "FREQ=DAILY;COUNT=5",
             },
         )
         assert create_event.status_code == 200, create_event.text
         parent_id = create_event.json()["id"]
 
-        listed = client.get("/api/v2/plans/events", params={"from": "2026-06-15", "to": "2026-06-17"})
+        listed = client.get("/api/v2/plans/events", params={"from": "2026-05-15", "to": "2026-05-17"})
         assert listed.status_code == 200, listed.text
         event_ids = [item["id"] for item in listed.json()["data"]["events"]]
-        assert event_ids == [f"{parent_id}:2026-06-15", f"{parent_id}:2026-06-16", f"{parent_id}:2026-06-17"]
+        assert event_ids == [f"{parent_id}:2026-05-15", f"{parent_id}:2026-05-16", f"{parent_id}:2026-05-17"]
+
+        timezone_event = client.post(
+            "/api/v2/plans/events",
+            json={
+                "planId": plan_id,
+                "title": "Timezone event",
+                "category": "custom",
+                "startAt": "2026-05-15T10:00:00+08:00",
+                "endAt": "2026-05-15T11:30:00+08:00",
+                "timezone": "Asia/Shanghai",
+            },
+        )
+        assert timezone_event.status_code == 200, timezone_event.text
+        timezone_event_id = timezone_event.json()["id"]
 
         scoped_this = client.patch(
-            f"/api/v2/plans/events/{parent_id}:2026-06-16",
+            f"/api/v2/plans/events/{parent_id}:2026-05-16",
             params={"scope": "this"},
             json={"title": "Detached review block", "category": "review"},
         )
@@ -180,15 +194,15 @@ def test_events_recurring_scope_practice_blocks_conflicts_and_adjustments(tmp_pa
         assert scoped_this.json()["isRecurringInstance"] is False
         detached_id = scoped_this.json()["id"]
 
-        listed_after_this = client.get("/api/v2/plans/events", params={"from": "2026-06-15", "to": "2026-06-17"})
+        listed_after_this = client.get("/api/v2/plans/events", params={"from": "2026-05-15", "to": "2026-05-17"})
         assert listed_after_this.status_code == 200
         titles = {item["id"]: item["title"] for item in listed_after_this.json()["data"]["events"]}
-        assert titles[f"{parent_id}:2026-06-15"] == "Morning drills"
+        assert titles[f"{parent_id}:2026-05-15"] == "Morning drills"
         assert titles[detached_id] == "Detached review block"
-        assert f"{parent_id}:2026-06-16" not in titles
+        assert f"{parent_id}:2026-05-16" not in titles
 
         scoped_future = client.patch(
-            f"/api/v2/plans/events/{parent_id}:2026-06-17",
+            f"/api/v2/plans/events/{parent_id}:2026-05-17",
             params={"scope": "future"},
             json={"title": "Future evening block", "category": "essay"},
         )
@@ -197,12 +211,20 @@ def test_events_recurring_scope_practice_blocks_conflicts_and_adjustments(tmp_pa
         assert scoped_future.json()["recurringParentId"] is None
 
         rebased_future = client.patch(
-            f"/api/v2/plans/events/{future_id}:2026-06-18",
+            f"/api/v2/plans/events/{future_id}:2026-05-18",
             params={"scope": "all"},
             json={"title": "Rebased future block"},
         )
         assert rebased_future.status_code == 200, rebased_future.text
         assert rebased_future.json()["title"] == "Rebased future block"
+
+        future_window = client.get(
+            "/api/v2/plans/events",
+            params={"from": "2026-05-17", "to": "2026-05-21"},
+        )
+        assert future_window.status_code == 200, future_window.text
+        future_ids = [item["id"] for item in future_window.json()["data"]["events"] if item["id"].startswith(f"{future_id}:")]
+        assert future_ids == [f"{future_id}:2026-05-17", f"{future_id}:2026-05-18", f"{future_id}:2026-05-19"]
 
         session_link = client.post(
             "/api/v2/practice/sessions",
@@ -211,10 +233,15 @@ def test_events_recurring_scope_practice_blocks_conflicts_and_adjustments(tmp_pa
                 "entryKind": "manual",
                 "payload": {},
                 "linkedPlanEventId": int(parent_id),
-                "linkedPlanEventOccurrenceRef": f"{parent_id}:2026-06-15",
+                "linkedPlanEventOccurrenceRef": f"{parent_id}:2026-05-15",
             },
         )
         assert session_link.status_code == 200, session_link.text
+
+        linked_progress = client.get("/api/v2/plans/events", params={"from": "2026-05-15", "to": "2026-05-15"})
+        assert linked_progress.status_code == 200
+        linked_event = {item["id"]: item for item in linked_progress.json()["data"]["events"]}[f"{parent_id}:2026-05-15"]
+        assert linked_event["status"] == "in_progress"
 
         invalid_session_link = client.post(
             "/api/v2/practice/sessions",
@@ -223,7 +250,7 @@ def test_events_recurring_scope_practice_blocks_conflicts_and_adjustments(tmp_pa
                 "entryKind": "manual",
                 "payload": {},
                 "linkedPlanEventId": int(parent_id),
-                "linkedPlanEventOccurrenceRef": f"{parent_id}:2026-06-30",
+                "linkedPlanEventOccurrenceRef": f"{parent_id}:2026-05-30",
             },
         )
         assert invalid_session_link.status_code == 422
@@ -237,15 +264,15 @@ def test_events_recurring_scope_practice_blocks_conflicts_and_adjustments(tmp_pa
                     track="xingce",
                     entry_kind="manual",
                     status="submitted",
-                    started_at=datetime(2026, 6, 15, 2, 30),
-                    submitted_at=datetime(2026, 6, 15, 2, 55),
+                    started_at=datetime(2026, 5, 15, 2, 30),
+                    submitted_at=datetime(2026, 5, 15, 2, 55),
                     payload_json={"subject": "yanyu"},
                 )
             )
             adjustment = PlanAdjustmentV2(
                 plan_id=plan_id,
                 user_id=user.id,
-                expires_at=datetime(2026, 6, 16, 0, 0),
+                expires_at=datetime(2026, 5, 16, 0, 0),
                 reason="Need a later block.",
                 changes=[
                     {
@@ -263,7 +290,7 @@ def test_events_recurring_scope_practice_blocks_conflicts_and_adjustments(tmp_pa
             adjustment_reject = PlanAdjustmentV2(
                 plan_id=plan_id,
                 user_id=user.id,
-                expires_at=datetime(2026, 6, 16, 0, 0),
+                expires_at=datetime(2026, 5, 16, 0, 0),
                 reason="Skip this one.",
                 changes=[],
                 source="cron_daily",
@@ -277,26 +304,26 @@ def test_events_recurring_scope_practice_blocks_conflicts_and_adjustments(tmp_pa
 
         with_blocks = client.get(
             "/api/v2/plans/events",
-            params={"from": "2026-06-15", "to": "2026-06-17", "include_practice_blocks": True},
+            params={"from": "2026-05-15", "to": "2026-05-17", "include_practice_blocks": True},
         )
         assert with_blocks.status_code == 200
         assert len(with_blocks.json()["data"]["practiceBlocks"]) == 1
         assert with_blocks.json()["data"]["practiceBlocks"][0]["sessionId"] > 0
         event_by_id = {item["id"]: item for item in with_blocks.json()["data"]["events"]}
-        assert event_by_id[f"{parent_id}:2026-06-15"]["linkedSessionId"] == session_link.json()["id"]
+        assert event_by_id[f"{parent_id}:2026-05-15"]["linkedSessionId"] == session_link.json()["id"]
 
         conflicts = client.post(
             "/api/v2/plans/events/conflicts",
             json={
                 "events": [
-                    {
-                        "title": "Overlap probe",
-                        "category": "xingce",
-                        "startAt": "2026-06-15T01:30:00Z",
-                        "endAt": "2026-06-15T02:10:00Z",
-                    }
-                ],
-                "existingWindow": {"from": "2026-06-15", "to": "2026-06-15"},
+                        {
+                            "title": "Overlap probe",
+                            "category": "xingce",
+                            "startAt": "2026-05-15T01:30:00Z",
+                            "endAt": "2026-05-15T02:10:00Z",
+                        }
+                    ],
+                "existingWindow": {"from": "2026-05-15", "to": "2026-05-15"},
             },
         )
         assert conflicts.status_code == 200, conflicts.text
@@ -305,18 +332,26 @@ def test_events_recurring_scope_practice_blocks_conflicts_and_adjustments(tmp_pa
 
         invalid_bulk_delete = client.post(
             "/api/v2/plans/events/bulk-delete",
-            json={"planId": plan_id, "from": "2026-06-15"},
+            json={"planId": plan_id, "from": "2026-05-15"},
         )
         assert invalid_bulk_delete.status_code == 422
         assert invalid_bulk_delete.json()["code"] == "invalid_event_window"
 
         dry_run = client.post(
             "/api/v2/plans/events/bulk-delete",
-            json={"planId": plan_id, "from": "2026-06-15", "to": "2026-06-17", "dryRun": True},
+            json={"planId": plan_id, "from": "2026-05-15", "to": "2026-05-17", "dryRun": True},
         )
         assert dry_run.status_code == 200, dry_run.text
         assert dry_run.json()["status"] == "dry_run"
         assert dry_run.json()["matchedIds"]
+
+        submitted_link = client.post(f"/api/v2/practice/sessions/{session_link.json()['id']}/submit")
+        assert submitted_link.status_code == 200, submitted_link.text
+
+        linked_done = client.get("/api/v2/plans/events", params={"from": "2026-05-15", "to": "2026-05-15"})
+        assert linked_done.status_code == 200
+        linked_done_event = {item["id"]: item for item in linked_done.json()["data"]["events"]}[f"{parent_id}:2026-05-15"]
+        assert linked_done_event["status"] == "done"
 
         accept = client.post(f"/api/v2/plans/adjustments/{adjustment_id}/accept")
         assert accept.status_code == 200, accept.text
@@ -331,14 +366,35 @@ def test_events_recurring_scope_practice_blocks_conflicts_and_adjustments(tmp_pa
             accepted_adjustment = session.get(PlanAdjustmentV2, adjustment_id)
             rejected_adjustment = session.get(PlanAdjustmentV2, adjustment_reject_id)
             old_parent = session.get(PlanEventV2, int(parent_id))
+            timezone_event_row = session.get(PlanEventV2, int(timezone_event_id))
             future_event = session.get(PlanEventV2, int(future_id))
             linked_session = session.get(PracticeSessionV2, session_link.json()["id"])
+            audit_actions = {
+                row.action
+                for row in session.scalars(
+                    select(AuditLogV2).where(AuditLogV2.target_type == "plan_event_v2")
+                )
+            }
+            adjustment_edit_audit = session.scalar(
+                select(AuditLogV2).where(
+                    AuditLogV2.action == "plan_event.adjustment_edit",
+                    AuditLogV2.target_id == int(future_id),
+                )
+            )
             assert accepted_adjustment is not None and accepted_adjustment.status == "accepted"
             assert rejected_adjustment is not None and rejected_adjustment.status == "rejected"
             assert old_parent is not None and old_parent.title == "Morning drills"
+            assert timezone_event_row is not None
+            assert timezone_event_row.start_at.isoformat() == "2026-05-15T02:00:00"
+            assert timezone_event_row.end_at.isoformat() == "2026-05-15T03:30:00"
             assert future_event is not None and future_event.title == "Adjusted future block"
+            assert future_event.change_log
             assert linked_session is not None
             assert linked_session.linked_plan_event_id == int(parent_id)
-            assert linked_session.linked_plan_event_occurrence_ref == f"{parent_id}:2026-06-15"
+            assert linked_session.linked_plan_event_occurrence_ref == f"{parent_id}:2026-05-15"
+            assert "plan_event.adjustment_edit" in audit_actions
+            assert adjustment_edit_audit is not None
+            assert adjustment_edit_audit.before["title"] == "Rebased future block"
+            assert adjustment_edit_audit.after["title"] == "Adjusted future block"
         finally:
             session.close()
