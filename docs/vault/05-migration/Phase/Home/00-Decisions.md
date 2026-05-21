@@ -30,6 +30,7 @@
 |---|---|---|---|
 | D-Layer | Gate ④ 优先于 Main App ③ | 是 | 现有 OnboardingGate 行为保持 |
 | D1 | 一级导航 = 5 tab（首页 / 练习 / 复盘 / 笔记 / 我的） | **5 tab，桌面 + 移动均不升 6** | 用户 2026-05-21 拍板 |
+| D-Root-Route | `"/"` 双态：未登录看 marketing，已登录直接进入 Home Dashboard | **采用双态，不引入 `/home`** | 用户 2026-05-21 拍板 + A0 §8 |
 | D7 | 答题/结果脱壳 | 是 | 全屏，隐藏 RailMini/TabBar |
 | D12 | envelope 3 组件（GenericSection/SkeletonCard/EmptyCard） | 是 | 仅 stub 期占位用 |
 | D14 | 空状态统一组件 | 是 | 全站共用一个 EmptyState |
@@ -49,6 +50,13 @@
 - `/profile/learning`（详细学情，本 plan 范围）
 - `/profile/records`（学习记录，本 plan 范围）
 - `/profile/settings`（账号绑定 / 通知开关 / AI 调整开关 / 推荐策略偏好等）
+
+### D-Root-Route 修订说明（关键，影响路由壳）
+
+- `"/"` 是 Home Phase 的**canonical 登录态首页路由**。
+- 未登录用户访问 `"/"`：继续渲染 marketing/public landing。
+- 已登录用户访问 `"/"`：直接渲染 Home Dashboard，不再跳 `/app`，也不新建 `/home` 过渡路由。
+- 现有 `/app -> /dashboard` 语义属于 legacy；Home Phase 在 F7 路由收敛后移除这条旧首页语义。
 
 ---
 
@@ -154,6 +162,7 @@
 | Infra-Plan-must-do | `/today/must-do` 端点 | **去除**（用 source 字段区分即可） |
 | Infra-DailyPlan-drop | DailyPlanV2/WeeklyPlanV2 | drop table（无真实数据，零迁移） |
 | Infra-Profile-Bind | BindEmail/Phone/Complete | 留给 `/profile/settings` plan，不在本 plan 范围 |
+| Infra-Records-API | 学习记录 canonical API | **`GET /api/v2/profile/records` 为唯一 canonical 端点；`/api/v2/dashboard/records` 仅临时 shim，保留到 `B9.5` 收口前移除** |
 | Infra-Rec-Policy | 复盘/继续/休息阈值表 | 详见 `01-Boundary-Rules.md` §2 |
 | Infra-Link-Session | session 绑定时机 | 用户从计划事件 CTA 进入 → `linked_plan_event_id`；从推荐 CTA 进入 → `linked_recommendation_id`（Rec-9） |
 | Infra-SoftDelete | 软删除 | events 与 plans 全部走软删；session 与 recommendation 不软删（hard delete + audit） |
@@ -230,10 +239,10 @@
 
 | 决策 | 被以下文档使用 |
 |---|---|
-| D1 / H-Plan-* | `04-Frontend-WU.md`（路由 / AppShell / Section 划分） |
+| D1 / D-Root-Route / H-Plan-* | `04-Frontend-WU.md`（路由 / AppShell / Section 划分） |
 | Cal-* | `07-Calendar-Engine.md` / `04-Frontend-WU.md` WU-F4 |
 | Cust-* | `04-Frontend-WU.md` WU-F4 / `02-Data-Model.md` PlanEventV2 |
 | AI-* / ADJ-* / Rec-* | `05-LLM-Module.md` / `06-LLM-Prompts.md` / `03-Backend-WU.md` WU-B3/B7 |
-| Infra-Cron / Infra-Deploy-* | `08-NonFunctional.md` §5 |
+| Infra-Cron / Infra-Deploy-* / Infra-Records-API | `03-Backend-WU.md` / `08-NonFunctional.md` / `10-Testing.md` |
 | NF-* | `08-NonFunctional.md` 全文 |
 | Infra-PII / Infra-Prompt-Versioning | `05-LLM-Module.md` §6 / `09-Observability-Audit.md` |

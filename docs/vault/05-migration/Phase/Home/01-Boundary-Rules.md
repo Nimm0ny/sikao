@@ -52,7 +52,7 @@
 
 ## 2. 推荐策略阈值表（Infra-Rec-Policy）
 
-存放路径：`services/api/src/sikao_api/modules/llm_v2/application/recommender_policy.py`
+存放路径：`services/api/src/sikao_api/modules/llm/application/llm/recommender_policy.py`
 
 ### 2.1 信号 → 推荐映射
 

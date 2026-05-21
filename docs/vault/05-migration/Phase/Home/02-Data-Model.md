@@ -41,6 +41,8 @@ System tables:
 
 ## 2. 核心表
 
+> 实现现实（A0 修订）：本 Phase 新增/扩展的 ORM class **不拆分到 `db/models/*.py`**，统一追加到 `services/api/src/sikao_api/db/models_v2.py`；本文以下 class block 是逻辑定义，不代表文件拆分方式。
+
 ### 2.1 PlanV2
 
 ```python
@@ -555,7 +557,47 @@ API 层细节：
 
 `/dashboard/progress/timeseries`、`/weakness`（全量）、`/diagnosis` 单独端点见 `03-Backend-WU.md` WU-B4。
 
-### 6.3 通用 error envelope
+### 6.3 GET /profile/records（canonical）
+
+```json
+{
+  "items": [
+    {
+      "id": "practice-5023",
+      "kind": "xingce_practice",
+      "title": "Xingce practice",
+      "status": "completed",
+      "score": null,
+      "occurred_at": "2026-06-15T19:30:00Z"
+    },
+    {
+      "id": "essay-submission-88",
+      "kind": "essay_submission",
+      "title": "Essay submission",
+      "status": "pending",
+      "score": null,
+      "occurred_at": "2026-06-15T21:10:00Z"
+    }
+  ],
+  "total": 42,
+  "page": 1,
+  "page_size": 20
+}
+```
+
+请求参数：
+- `page`, `size`
+- `kind`
+- `status`
+- `from`, `to`
+- `session_id`
+
+约束：
+- canonical 端点为 `GET /api/v2/profile/records`
+- 现有 `GET /api/v2/dashboard/records` 仅作为兼容 shim 暂留到 `B9.5` OpenAPI 收口前
+- 响应固定使用 `LearningRecordListResponseV2`，按日分组由前端完成，不新增 grouped response
+
+### 6.4 通用 error envelope
 
 ```json
 {
@@ -584,7 +626,7 @@ def downgrade():
     pass  # 不可逆（用户拍板）
 ```
 
-风险：若文档/测试代码还引用了这两个表，B1.5 之前必须有一个 cleanup PR 把所有引用删干净。grep 范围 = 整个 services/api。
+风险：若文档/测试代码还引用了这两个表，B1.5 之前必须先完成 `B5.1` 旧 planning 引用清理与 `B5.1a legacy study_plan cleanup`。grep 范围 = 整个 services/api。
 
 ---
 

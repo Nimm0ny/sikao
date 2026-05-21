@@ -90,6 +90,7 @@ services/api/tests/
     test_progress_full.py
     test_dashboard_today_weekly_full.py
     test_profile_extension.py
+    test_profile_records.py
   contract/                        # OpenAPI / 契约
     test_openapi_drift.py
     test_event_response_shape.py
@@ -146,6 +147,7 @@ def test_openapi_no_drift(app):
 | test_progress_full.py | session 写入 → snapshot → progress 端点 → P2 验证 |
 | test_dashboard_today_weekly_full.py | today / weekly / full-plan 一致性 |
 | test_profile_extension.py | exam_targets 多目标 + ai_adjust 开关 + dashboard_preferences |
+| test_profile_records.py | `GET /api/v2/profile/records` 分页 / 过滤 / `session_id` deep-link；legacy `/dashboard/records` shim 保留到 `B9.5` 删除前 |
 
 ### 2.6 LLM 测试矩阵（详见 `06-LLM-Prompts.md` §7）
 
@@ -230,6 +232,7 @@ tests/
       progress-handlers.ts
       dashboard-handlers.ts
       profile-handlers.ts
+      records-handlers.ts
     fixtures/
       plans/
       events/
