@@ -50,17 +50,21 @@ def test_home_b1_runtime_metadata_exposes_new_plan_tables_and_indexes(tmp_path: 
         assert "plan_v2" in tables
         assert "plan_event_v2" in tables
         assert "plan_adjustment_v2" in tables
+        assert "recommendation_v2" in tables
+        assert "recommendation_feedback_v2" in tables
     finally:
         engine.dispose()
 
     plan_indexes = _read_sqlite_indexes(database_file, "plan_v2")
     event_indexes = _read_sqlite_indexes(database_file, "plan_event_v2")
     adjustment_indexes = _read_sqlite_indexes(database_file, "plan_adjustment_v2")
+    recommendation_indexes = _read_sqlite_indexes(database_file, "recommendation_v2")
 
     assert plan_indexes["ix_plan_v2_user_active"] == (True, True, ("user_id",))
     assert plan_indexes["ix_plan_v2_user_status"] == (False, False, ("user_id", "status"))
     assert event_indexes["ix_event_v2_user_alive"] == (False, True, ("user_id",))
     assert adjustment_indexes["ix_adj_v2_pending_expires"] == (False, True, ("expires_at",))
+    assert recommendation_indexes["ix_rec_v2_active"] == (False, True, ("user_id", "expires_at"))
 
 
 def test_home_b1_active_plan_partial_unique_index_honors_soft_delete(tmp_path: Path) -> None:

@@ -683,3 +683,46 @@ class PlanAdjustmentV2(Base):
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
     source: Mapped[str] = mapped_column(String(32), nullable=False)
     user_reject_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+
+class RecommendationV2(Base):
+    __tablename__ = "recommendation_v2"
+    __table_args__ = (
+        Index("ix_rec_v2_user_status", "user_id", "status"),
+        Index(
+            "ix_rec_v2_active",
+            "user_id",
+            "expires_at",
+            sqlite_where=text("status = 'pending'"),
+            postgresql_where=text("status = 'pending'"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    reason: Mapped[str] = mapped_column(Text, nullable=False)
+    estimated_minutes: Mapped[int] = mapped_column(Integer, nullable=False)
+    cta: Mapped[str] = mapped_column(String(40), nullable=False)
+    action_type: Mapped[str] = mapped_column(String(32), nullable=False)
+    payload: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    generated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    served_count: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    accepted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    rejected_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    source_signals: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+
+
+class RecommendationFeedbackV2(Base):
+    __tablename__ = "recommendation_feedback_v2"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    recommendation_id: Mapped[int] = mapped_column(
+        ForeignKey("recommendation_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    reason: Mapped[str] = mapped_column(String(40), nullable=False)
+    note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
