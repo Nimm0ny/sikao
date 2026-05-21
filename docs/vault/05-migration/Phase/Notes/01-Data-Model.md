@@ -60,7 +60,7 @@ QuestionFavoriteV2 (Practice 已建)
 
 ```python
 class NoteType(StrEnum):
-    """NoteV2.type — 笔记类型（N-D1 §12 最终版）"""
+    """NoteV2.type — 笔记类型（00-Decisions §12 最终版）"""
     FREE = "free"                           # 用户自由创建（无关联题目）
     QUESTION_LEVEL = "question_level"       # 题级笔记（linked_question_id 非空）
     AI_CAUSE_ANALYSIS = "ai_cause_analysis" # AI 错因分析保存（from Review Cross-4）
@@ -81,9 +81,15 @@ class NoteVisibility(StrEnum):
 
 ```python
 class NoteStatus(StrEnum):
-    """NoteV2.status — 生命周期状态"""
+    """NoteV2.status — 生命周期状态（补充决策 N-D9）
+    
+    与 deleted_at 软删除的边界：
+    - status=archived: 用户主动归档，可恢复，不触发 30 天清理
+    - deleted_at 非空: 用户删除，30 天后物理清理
+    - 两者独立维度：归档的笔记不会被自动删除
+    """
     ACTIVE = "active"       # 正常（默认）
-    ARCHIVED = "archived"   # 用户归档（不删除，列表默认不展示）
+    ARCHIVED = "archived"   # 用户归档（不删除，列表默认不展示，可通过"显示已归档"toggle 查看）
 ```
 
 ---
@@ -109,6 +115,10 @@ class NoteV2(Base):
     user_id: Mapped[int] = mapped_column(ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     body: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    # ⚠️ 已废弃字段（deprecated）：新笔记不再写入 body，仅保留兼容旧数据读取。
+    # 新笔记写入 body_json（TipTap AST）+ body_text（提取的纯文本）。
+    # 远期迁移：当所有旧笔记均已通过编辑器打开并保存（触发 body_json 填充）后，
+    # 可考虑 ALTER COLUMN body SET DEFAULT '' + 停止读取。
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="active")
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
@@ -355,6 +365,9 @@ class NoteBookmarkV2(Base):
 - 拼接所有 `type=text` 节点的 `.text` 字段
 - 图片/代码块用 alt text / 代码内容替代
 - heading 后加换行
+
+`has_linked_question` 派生规则（sync 时计算）：
+- `has_linked_question = (linked_question_id IS NOT NULL)` — 布尔字段在 Meilisearch 文档中由同步 handler 计算，NoteV2 表中无对应列
 
 ---
 
