@@ -24,7 +24,6 @@ const pages = {
   wrongQuestionDetail: lazy(() => import('@/views/WrongQuestionDetailView')),
   wrongQuestionRedo: lazy(() => import('@/views/WrongQuestionRedoView')),
   smartReview: lazy(() => import('@/views/SmartReviewView')),
-  dashboard: lazy(() => import('@/views/Dashboard')),
   profile: lazy(() => import('@/views/Profile')),
   examCalendar: lazy(() => import('@/views/ExamCalendar')),
   conversationsHistory: lazy(() => import('@/views/ConversationsHistory')),
@@ -51,7 +50,6 @@ const pages = {
   // /study-plan/history + /study-plan/history/:planId 两路由. 数据流方案 A
   // (0 BE 改): 复用 useStudyPlanToday + useStudyPlanHistory infinite query,
   // 客户端按周聚合.
-  plan: lazy(() => import('@/views/Plan')),
   // SIKAO Wave 4 Phase 2D (2026-05-12): /notes 跨领域笔记本主页 + /notes/:noteId
   // 编辑器. 跟 ac87f2f Z1 BE 9 endpoint (/api/v2/notebook/*) 配对. 集成入口
   // (xingce-exam 浮条 / essay 抽屉 / wrong-book 双向链接) 推 Phase 5.
@@ -63,9 +61,6 @@ const pages = {
   shenlunSession: lazy(() => import('@/views/ShenlunSession/ShenlunSession')),
   // MVP AI 公考提分闭环 (PR-1/2/6): study onboarding, diagnosis result, today page, progress
   studyOnboarding: lazy(() => import('@/views/study/Onboarding')),
-  diagnosisResult: lazy(() => import('@/views/study/DiagnosisResult')),
-  studyToday: lazy(() => import('@/views/study/StudyToday')),
-  progress: lazy(() => import('@/views/Progress')),
   marketing: lazy(() => import('@/views/marketing').then((mod) => ({ default: mod.Marketing }))),
   // 2026-05-21 PR-M1: 法律页 v1 草稿. 公开访问 (无 RedirectGuard, 已登录用户也能看),
   // 复用 MarketingNav + MarketingFooter chrome.
@@ -207,7 +202,7 @@ export const router = createBrowserRouter([
     children: [
       // PR-2 MVP (2026-05-14): /app canonical 到今日提分任务首页.
       // /dashboard 仍保留为学情数据页, 老书签 / 外链自动跳转, 0 页面 404.
-      { path: '/app', element: <Navigate to="/dashboard" replace /> },
+      { path: '/app', element: <Navigate to="/practice/center" replace /> },
       // PR16 (2026-05-13, lhr 用户价值 supreme): 行测/申论 4 入口合并为
       // /practice/center 单一 hub. 顶层 view 行测/申论 tab + 2 大入口 (分类/套卷),
       // sub-route 复用现有 Papers/CategoryTree/EssayPapers/EssaySpecialty 4 view
@@ -267,7 +262,7 @@ export const router = createBrowserRouter([
       { path: '/wrong-book/smart-review', element: routeElement(<pages.smartReview />) },
       { path: '/wrong-book/:questionId', element: routeElement(<pages.wrongQuestionDetail />) },
       { path: '/wrong-book/:questionId/redo', element: routeElement(<pages.wrongQuestionRedo />) },
-      { path: '/dashboard', element: routeElement(<pages.dashboard />) },
+      { path: '/dashboard', element: <Navigate to="/practice/center" replace /> },
       { path: '/profile', element: routeElement(<pages.profile />) },
       // Identity v2 (commit #6n): bind email (登录后绑定/换邮箱). path 跟
       // backend `frontend_base_url + /bind-email?token=...` 对齐 (中划线非斜线).
@@ -319,14 +314,14 @@ export const router = createBrowserRouter([
       { path: '/essay/categories', element: <Navigate to="/practice/center/essay/categories" replace /> },
       // SIKAO Wave 3 PR0 (2026-05-11): /plan 周视图 view (07 hifi). 旧
       // /study-plan/history* 路由 redirect 到 /plan 兼容老书签 / 外链.
-      { path: '/plan', element: routeElement(<pages.plan />) },
-      { path: '/study-plan/history', element: <Navigate to="/plan" replace /> },
-      { path: '/study-plan/history/:planId', element: <Navigate to="/plan" replace /> },
+      { path: '/plan', element: <Navigate to="/practice/center" replace /> },
+      { path: '/study-plan/history', element: <Navigate to="/practice/center" replace /> },
+      { path: '/study-plan/history/:planId', element: <Navigate to="/practice/center" replace /> },
       // MVP AI 公考提分闭环 (PR-1/2/6): 用户引导 + 今日任务 + 进度看板
       { path: '/study/onboarding', element: routeElement(<pages.studyOnboarding />) },
-      { path: '/study/diagnosis-result', element: routeElement(<pages.diagnosisResult />) },
-      { path: '/study/today', element: <Navigate to="/dashboard" replace /> },
-      { path: '/progress', element: routeElement(<pages.progress />) },
+      { path: '/study/diagnosis-result', element: <Navigate to="/practice/center" replace /> },
+      { path: '/study/today', element: <Navigate to="/practice/center" replace /> },
+      { path: '/progress', element: <Navigate to="/practice/center" replace /> },
       // SIKAO Wave 4 Phase 2D (2026-05-12): /notes 主页 + /notes/:noteId 编辑器.
       // /notes/new 走同一 NoteEditor 组件 (内部 isNew = (noteId === 'new')). 集成
       // 入口推 Phase 5.
