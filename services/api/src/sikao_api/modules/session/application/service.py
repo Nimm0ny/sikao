@@ -7,8 +7,9 @@ from typing import Any
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionV2, UserV2
-from sikao_api.db.schemas_v2 import ActionLinkV2, OperationAckV2, PracticeAnswerPayloadV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionItemV2, PracticeSessionResultResponseV2, SectionCardV2, SummaryMetricV2
+from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionV2, UserV2
+from sikao_api.db.schemas_v2 import ActionLinkV2, PracticeAnswerPayloadV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionItemV2, PracticeSessionResultResponseV2, SectionCardV2, SummaryMetricV2
+from sikao_api.modules.plans.domain.rrule_subset import build_occurrence_ref, end_of_local_day, expand_occurrences, parse_occurrence_ref, start_of_local_day
 from sikao_api.modules.system.application.errors import ConflictError, NotFoundError, ValidationError
 
 
@@ -19,6 +20,21 @@ class SessionServiceV2:
     def create_session(
         self, *, user: UserV2, payload: PracticeSessionCreateRequestV2
     ) -> PracticeSessionV2:
+        if payload.linked_plan_event_occurrence_ref and payload.linked_plan_event_id is None:
+            raise ValidationError(
+                "linked_plan_event_occurrence_ref requires linked_plan_event_id",
+                code="practice_session_occurrence_link_requires_event",
+            )
+        if payload.linked_recommendation_id is not None and payload.linked_plan_event_id is not None:
+            raise ValidationError(
+                "linked_recommendation_id cannot be combined with linked_plan_event_id",
+                code="practice_session_link_conflict",
+            )
+        linked_event, is_virtual_occurrence = self._resolve_linked_event(
+            user=user,
+            linked_plan_event_id=payload.linked_plan_event_id,
+            linked_plan_event_occurrence_ref=payload.linked_plan_event_occurrence_ref,
+        )
         paper_id, revision_id = self._resolve_paper_binding(payload.paper_code)
         selected_questions = self._resolve_questions(
             question_ids=payload.question_ids,
@@ -32,9 +48,17 @@ class SessionServiceV2:
             paper_id=paper_id,
             revision_id=revision_id,
             payload_json=payload.payload,
+            linked_plan_event_id=payload.linked_plan_event_id,
+            linked_plan_event_occurrence_ref=payload.linked_plan_event_occurrence_ref,
+            linked_recommendation_id=payload.linked_recommendation_id,
         )
         self.session.add(practice_session)
         self.session.flush()
+        if linked_event is not None and not is_virtual_occurrence:
+            linked_event.linked_session_id = practice_session.id
+            if linked_event.status == "planned":
+                linked_event.status = "in_progress"
+            self.session.add(linked_event)
         for display_order, question in enumerate(selected_questions, start=1):
             self.session.add(
                 PracticeSessionAnswerV2(
@@ -109,7 +133,7 @@ class SessionServiceV2:
             .values(status="submitted", submitted_at=submitted_at)
             .execution_options(synchronize_session=False)
         )
-        if result.rowcount != 1:
+        if getattr(result, "rowcount", None) != 1:
             raise ConflictError(
                 "practice session already submitted",
                 code="practice_session_submitted",
@@ -130,17 +154,7 @@ class SessionServiceV2:
             entry_kind=practice_session.entry_kind,
             status=practice_session.status,
             items=[
-                PracticeSessionItemV2(
-                    id=str(answer.id),
-                    question_key=answer.question_key,
-                    prompt=questions_by_id.get(answer.question_id).prompt
-                    if answer.question_id in questions_by_id
-                    else "Phase 1 skeleton session item",
-                    answer_kind=questions_by_id.get(answer.question_id).answer_kind
-                    if answer.question_id in questions_by_id
-                    else "placeholder",
-                    status="answered" if self._has_meaningful_answer(answer.response_json) else "pending",
-                )
+                self._build_session_item(answer=answer, questions_by_id=questions_by_id)
                 for answer in answers
             ],
             actions=[
@@ -283,7 +297,7 @@ class SessionServiceV2:
             .values(status="in_progress")
             .execution_options(synchronize_session=False)
         )
-        if result.rowcount == 1:
+        if getattr(result, "rowcount", None) == 1:
             return
 
         status = self.session.scalar(
@@ -309,7 +323,7 @@ class SessionServiceV2:
             .values(status="in_progress")
             .execution_options(synchronize_session=False)
         )
-        if result.rowcount != 1:
+        if getattr(result, "rowcount", None) != 1:
             raise ConflictError(
                 "practice session already submitted",
                 code="practice_session_submitted",
@@ -344,6 +358,90 @@ class SessionServiceV2:
                     "question key is outside this session scope",
                     code="practice_session_question_key_not_allowed",
                 )
+
+    def _resolve_linked_event(
+        self,
+        *,
+        user: UserV2,
+        linked_plan_event_id: int | None,
+        linked_plan_event_occurrence_ref: str | None,
+    ) -> tuple[PlanEventV2 | None, bool]:
+        if linked_plan_event_id is None:
+            return None, False
+        event = self.session.scalar(
+            select(PlanEventV2).where(
+                PlanEventV2.id == linked_plan_event_id,
+                PlanEventV2.user_id == user.id,
+                PlanEventV2.deleted_at.is_(None),
+            )
+        )
+        if event is None:
+            raise NotFoundError("linked plan event not found", code="plan_event_not_found")
+        if linked_plan_event_occurrence_ref is None:
+            if event.recurring_rule is not None:
+                raise ValidationError(
+                    "recurring event links require linked_plan_event_occurrence_ref",
+                    code="practice_session_occurrence_ref_required",
+                )
+            return event, False
+        if event.recurring_parent_id is not None:
+            raise ValidationError(
+                "detached events cannot use linked_plan_event_occurrence_ref",
+                code="practice_session_occurrence_ref_invalid",
+            )
+        if event.recurring_rule is None:
+            raise ValidationError(
+                "non-recurring events cannot use linked_plan_event_occurrence_ref",
+                code="practice_session_occurrence_ref_invalid",
+            )
+        parent_id, occurrence_day = parse_occurrence_ref(linked_plan_event_occurrence_ref)
+        if parent_id != event.id:
+            raise ValidationError(
+                "linked_plan_event_occurrence_ref does not match linked_plan_event_id",
+                code="practice_session_occurrence_ref_invalid",
+            )
+        occurrences = expand_occurrences(
+            rule=event.recurring_rule,
+            dtstart=event.start_at,
+            range_start=start_of_local_day(occurrence_day, timezone=event.timezone),
+            range_end=end_of_local_day(occurrence_day, timezone=event.timezone),
+        )
+        occurrence_refs = {
+            build_occurrence_ref(parent_id=event.id, occurrence_start=occurrence_start, timezone=event.timezone)
+            for occurrence_start in occurrences
+        }
+        if linked_plan_event_occurrence_ref not in occurrence_refs:
+            raise ValidationError(
+                "linked_plan_event_occurrence_ref is not a valid occurrence for this event",
+                code="practice_session_occurrence_ref_invalid",
+            )
+        if occurrence_day.isoformat() in event.recurring_exception_dates:
+            raise ValidationError(
+                "linked_plan_event_occurrence_ref points to an excepted occurrence",
+                code="practice_session_occurrence_ref_invalid",
+            )
+        return event, True
+
+    def _build_session_item(
+        self,
+        *,
+        answer: PracticeSessionAnswerV2,
+        questions_by_id: dict[int, QuestionV2],
+    ) -> PracticeSessionItemV2:
+        question = questions_by_id.get(answer.question_id) if answer.question_id is not None else None
+        if question is None:
+            prompt = "Phase 1 skeleton session item"
+            answer_kind = "placeholder"
+        else:
+            prompt = question.prompt
+            answer_kind = question.answer_kind
+        return PracticeSessionItemV2(
+            id=str(answer.id),
+            question_key=answer.question_key,
+            prompt=prompt,
+            answer_kind=answer_kind,
+            status="answered" if self._has_meaningful_answer(answer.response_json) else "pending",
+        )
 
     def _resolve_new_answer_question_id(
         self,
