@@ -68,8 +68,10 @@ const pages = {
   progress: lazy(() => import('@/views/Progress')),
   marketing: lazy(() => import('@/views/marketing').then((mod) => ({ default: mod.Marketing }))),
   // 2026-05-21 PR-M1: 法律页 v1 草稿. 公开访问 (无 RedirectGuard, 已登录用户也能看),
-  // 复用 MarketingNav + MarketingFooter chrome. Privacy 先行, Terms / Cookies 在后续 commit.
+  // 复用 MarketingNav + MarketingFooter chrome.
   legalPrivacy: lazy(() => import('@/views/marketing').then((mod) => ({ default: mod.Privacy }))),
+  legalTerms: lazy(() => import('@/views/marketing').then((mod) => ({ default: mod.Terms }))),
+  legalCookies: lazy(() => import('@/views/marketing').then((mod) => ({ default: mod.Cookies }))),
   login: lazy(() => import('@/views/auth/Login')),
   registerEmail: lazy(() => import('@/views/auth/RegisterEmail')),
   registerPhone: lazy(() => import('@/views/auth/RegisterPhone')),
@@ -174,10 +176,17 @@ export const router = createBrowserRouter([
   },
   // 2026-05-21 PR-M1: 法律页 — 完全公开 (无 RedirectGuard), 不进 AppShell.
   // 已登录 / 未登录用户均可访问 (注册流程中需阅读, 已登录用户也可能想查看).
-  // Privacy 先行, Terms / Cookies 在后续 commit.
   {
     path: '/legal/privacy',
     element: routeElement(<pages.legalPrivacy />),
+  },
+  {
+    path: '/legal/terms',
+    element: routeElement(<pages.legalTerms />),
+  },
+  {
+    path: '/legal/cookies',
+    element: routeElement(<pages.legalCookies />),
   },
   {
     // Figma Make full migration: the essay exam is a destination workspace, not

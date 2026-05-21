@@ -161,7 +161,21 @@ export default function RegisterEmail() {
         </form>
 
         <p className="mt-5 text-xs text-ink-3 text-center leading-relaxed">
-          创建账号即视为同意《用户协议》与《隐私政策》。
+          创建账号即视为同意
+          <Link
+            to="/legal/terms"
+            className="text-accent hover:underline underline-offset-2"
+          >
+            《用户协议》
+          </Link>
+          与
+          <Link
+            to="/legal/privacy"
+            className="text-accent hover:underline underline-offset-2"
+          >
+            《隐私政策》
+          </Link>
+          。
         </p>
 
         {/* Wave 5C P2-2: footer link 区在 mobile (≤640px) 纵排避免在 375 viewport

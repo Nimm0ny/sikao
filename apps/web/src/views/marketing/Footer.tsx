@@ -1,7 +1,12 @@
+import { Link } from 'react-router-dom';
 import { LogoMark } from '@sikao/ui/brand/LogoMark';
 
 // Marketing V1 Footer — 4 列(品牌 / 功能 / 资源 / 关于) + 联系邮箱 + ICP placeholder.
 // 对齐 element/ui_kits/marketing/index.html (V1 落地版) 的 .v1-footer.
+//
+// 2026-05-21 PR-M1: 法律页落地. 隐私政策 / 服务条款 改 Link 到 /legal/*, 新增
+// Cookie 声明; ICP 备案因主体未备案, 显示"备案中"占位文本 (无链接). 资源 / 关于
+// 两列其它链接保留 anchor placeholder, 待 P1 帮助中心 / 公众号 / About 落地.
 
 const COLS = [
   {
@@ -64,18 +69,27 @@ export function MarketingFooter() {
       </div>
       <div className="pt-6 border-t border-line flex justify-between flex-wrap gap-3 text-xs">
         <span>
-          © 2026 思考科技. 保留所有权利. ·{' '}
-          <a className="hover:text-ink transition-colors duration-fast ease-motion" href="#">
-            京 ICP 备 XXXXXXXX 号
-          </a>
+          © 2026 思考科技. 保留所有权利. · <span className="text-ink-3">ICP 备案中</span>
         </span>
-        <span>
-          <a className="inline mr-4 hover:text-ink transition-colors duration-fast ease-motion" href="#">
+        <span className="flex flex-wrap gap-x-4 gap-y-1">
+          <Link
+            className="hover:text-ink transition-colors duration-fast ease-motion"
+            to="/legal/privacy"
+          >
             隐私政策
-          </a>
-          <a className="inline hover:text-ink transition-colors duration-fast ease-motion" href="#">
+          </Link>
+          <Link
+            className="hover:text-ink transition-colors duration-fast ease-motion"
+            to="/legal/terms"
+          >
             服务条款
-          </a>
+          </Link>
+          <Link
+            className="hover:text-ink transition-colors duration-fast ease-motion"
+            to="/legal/cookies"
+          >
+            Cookie 声明
+          </Link>
         </span>
       </div>
     </footer>
