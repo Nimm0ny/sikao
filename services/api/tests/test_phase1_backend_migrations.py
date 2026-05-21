@@ -57,3 +57,11 @@ def test_phase1_migrations_create_new_tables_without_dropping_legacy(tmp_path: P
     assert "practice_sessions_v2" in tables
     assert "essay_reports_v2" in tables
     assert "profile_goals_v2" in tables
+    assert "plan_v2" in tables
+    assert "plan_event_v2" in tables
+    assert "plan_adjustment_v2" in tables
+    assert "recommendation_v2" in tables
+    assert "recommendation_feedback_v2" in tables
+    assert "idempotency_key_v2" in tables
+    assert "llm_call_v2" in tables
+    assert "audit_log_v2" in tables
