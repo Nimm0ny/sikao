@@ -147,6 +147,7 @@ def test_home_b1_runtime_metadata_exposes_new_plan_tables_and_indexes(tmp_path: 
         }
 
         assert "linked_plan_event_id" in practice_session_columns
+        assert "linked_plan_event_occurrence_ref" in practice_session_columns
         assert "linked_recommendation_id" in practice_session_columns
         assert "exam_targets" in profile_goal_columns
         assert "ai_adjust_enabled" in profile_info_columns
@@ -302,6 +303,7 @@ def test_home_b1_practice_session_links_set_null_when_targets_deleted(tmp_path: 
                 entry_kind="manual",
                 status="draft",
                 linked_plan_event_id=event_row.id,
+                linked_plan_event_occurrence_ref="1:2026-06-15",
                 linked_recommendation_id=recommendation.id,
                 payload_json={},
             )
@@ -314,6 +316,7 @@ def test_home_b1_practice_session_links_set_null_when_targets_deleted(tmp_path: 
             session.refresh(practice_session)
 
             assert practice_session.linked_plan_event_id is None
+            assert practice_session.linked_plan_event_occurrence_ref == "1:2026-06-15"
             assert practice_session.linked_recommendation_id is None
     finally:
         engine.dispose()
@@ -362,6 +365,7 @@ def test_home_b1_alembic_upgrade_downgrade_cycle_preserves_home_tables(tmp_path:
     assert "idempotency_key_v2" in tables
     assert "audit_log_v2" in tables
     assert "linked_plan_event_id" in practice_session_columns
+    assert "linked_plan_event_occurrence_ref" in practice_session_columns
     assert "linked_recommendation_id" in practice_session_columns
     assert "exam_targets" in profile_goal_columns
     assert adjustment_indexes["ix_adj_v2_pending_expires"] == (False, True, ("expires_at",))

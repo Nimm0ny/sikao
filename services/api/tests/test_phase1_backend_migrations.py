@@ -49,6 +49,9 @@ def test_phase1_migrations_create_new_tables_without_dropping_legacy(tmp_path: P
                 "SELECT name FROM sqlite_master WHERE type = 'table'"
             ).fetchall()
         }
+        practice_session_columns = {
+            row[1] for row in conn.execute("PRAGMA table_info('practice_sessions_v2')").fetchall()
+        }
 
     assert "users" in tables
     assert "papers" in tables
@@ -65,3 +68,4 @@ def test_phase1_migrations_create_new_tables_without_dropping_legacy(tmp_path: P
     assert "idempotency_key_v2" in tables
     assert "llm_call_v2" in tables
     assert "audit_log_v2" in tables
+    assert "linked_plan_event_occurrence_ref" in practice_session_columns

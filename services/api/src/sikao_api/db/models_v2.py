@@ -307,6 +307,10 @@ class PracticeSessionV2(Base):
         ForeignKey("plan_event_v2.id", ondelete="SET NULL"),
         nullable=True,
     )
+    linked_plan_event_occurrence_ref: Mapped[str | None] = mapped_column(
+        String(64),
+        nullable=True,
+    )
     linked_recommendation_id: Mapped[int | None] = mapped_column(
         ForeignKey("recommendation_v2.id", ondelete="SET NULL"),
         nullable=True,
