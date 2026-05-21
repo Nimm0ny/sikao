@@ -1,15 +1,26 @@
 from __future__ import annotations
 
+from datetime import date
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import UserV2
-from sikao_api.db.schemas_v2 import ProfileGoalsResponseV2, ProfileGoalsUpdateRequestV2, ProfileInfoResponseV2, ProfileInfoUpdateRequestV2, ProfileOverviewResponseV2, ProfileSecurityResponseV2, ProfileSecurityUpdateRequestV2
+from sikao_api.db.schemas_v2 import (
+    LearningRecordListResponseV2,
+    ProfileGoalsResponseV2,
+    ProfileGoalsUpdateRequestV2,
+    ProfileInfoResponseV2,
+    ProfileInfoUpdateRequestV2,
+    ProfileOverviewResponseV2,
+    ProfileSecurityResponseV2,
+    ProfileSecurityUpdateRequestV2,
+)
 from sikao_api.db.session import get_db_session
 from sikao_api.modules.identity.application.security_v2 import get_current_user_v2, verify_csrf_v2
 from sikao_api.modules.profile_v2.application.service import ProfileServiceV2
+from sikao_api.modules.record.application.service import build_learning_record_list
 
 router = APIRouter(prefix="/api/v2/profile", tags=["profile-v2"])
 
@@ -77,3 +88,28 @@ def put_profile_info(
     result = ProfileServiceV2(session).update_info(user=user, payload=payload)
     session.commit()
     return result
+
+
+@router.get("/records", response_model=LearningRecordListResponseV2)
+def get_profile_records(
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+    page: int = 1,
+    size: int = 20,
+    kind: str | None = None,
+    status: str | None = None,
+    from_date: Annotated[date | None, Query(alias="from")] = None,
+    to_date: date | None = None,
+    session_id: int | None = None,
+) -> LearningRecordListResponseV2:
+    return build_learning_record_list(
+        session,
+        user=user,
+        page=page,
+        size=size,
+        kind=kind,
+        status=status,
+        from_date=from_date,
+        to_date=to_date,
+        session_id=session_id,
+    )

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, date, datetime, timedelta
 from decimal import Decimal
 
 from sqlalchemy import select
@@ -12,9 +12,11 @@ from sikao_api.db.schemas_v2 import (
     ActionLinkV2,
     DashboardRecordsResponseV2,
     LearningRecordItemV2,
+    LearningRecordListResponseV2,
     LearningRecordSummaryV2,
     SectionCardV2,
 )
+from sikao_api.modules.system.application.errors import ValidationError
 
 XINGCE_RECORD_KIND = "xingce_practice"
 XINGCE_RECORD_TITLE = "Xingce practice"
@@ -34,6 +36,7 @@ class LearningRecordAggregateItem:
     occurred_at: datetime
     score: Decimal | None = None
     is_completed: bool = False
+    session_id: int | None = None
 
 
 @dataclass(frozen=True)
@@ -58,14 +61,54 @@ def build_learning_record_summary(session: Session, *, user: UserV2) -> Learning
     )
 
 
-def list_learning_records(session: Session, *, user: UserV2) -> list[LearningRecordItemV2]:
-    aggregate = collect_learning_record_aggregate(session, user=user)
-    return to_learning_record_items(aggregate.items)
+def build_learning_record_list(
+    session: Session,
+    *,
+    user: UserV2,
+    page: int,
+    size: int,
+    kind: str | None,
+    status: str | None,
+    from_date: date | None,
+    to_date: date | None,
+    session_id: int | None,
+) -> LearningRecordListResponseV2:
+    if page < 1:
+        raise ValidationError("page must be >= 1", code="invalid_page")
+    if size < 1 or size > 100:
+        raise ValidationError("size must be between 1 and 100", code="invalid_page_size")
+    items = filter_learning_record_items(
+        collect_learning_record_aggregate(session, user=user).items,
+        kind=kind,
+        status=status,
+        from_date=from_date,
+        to_date=to_date,
+        session_id=session_id,
+    )
+    total = len(items)
+    offset = (page - 1) * size
+    paged = items[offset : offset + size]
+    return LearningRecordListResponseV2(
+        items=to_learning_record_items(paged),
+        total=total,
+        page=page,
+        page_size=size,
+    )
 
 
 def build_dashboard_records(session: Session, *, user: UserV2) -> DashboardRecordsResponseV2:
     aggregate = collect_learning_record_aggregate(session, user=user)
-    items = to_learning_record_items(aggregate.items)
+    list_payload = build_learning_record_list(
+        session,
+        user=user,
+        page=1,
+        size=20,
+        kind=None,
+        status=None,
+        from_date=None,
+        to_date=None,
+        session_id=None,
+    )
     return DashboardRecordsResponseV2(
         summary=LearningRecordSummaryV2(
             total_attempts=aggregate.total_attempts,
@@ -79,16 +122,16 @@ def build_dashboard_records(session: Session, *, user: UserV2) -> DashboardRecor
             SectionCardV2(
                 key="records",
                 title="学习记录",
-                description="Phase 1 learning records skeleton.",
+                description="Learning history summary.",
                 status="empty" if aggregate.total_attempts == 0 else "partial",
-                href="/dashboard/records",
+                href="/profile/records",
             )
         ],
-        actions=[ActionLinkV2(key="records", label="学习记录", href="/dashboard/records")],
-        items=items,
-        total=aggregate.total_attempts,
-        page=1,
-        page_size=20,
+        actions=[ActionLinkV2(key="records", label="学习记录", href="/profile/records")],
+        items=list_payload.items,
+        total=list_payload.total,
+        page=list_payload.page,
+        page_size=list_payload.page_size,
     )
 
 
@@ -103,13 +146,36 @@ def collect_learning_record_aggregate(session: Session, *, user: UserV2) -> Lear
     total_attempts = len(combined_records)
     completed_attempts = sum(1 for item in combined_records if item.is_completed)
     return LearningRecordAggregate(
-        items=combined_records[:20],
+        items=combined_records,
         total_attempts=total_attempts,
         xingce_attempts=len(xingce_records),
         essay_attempts=len(essay_records),
         completed_attempts=completed_attempts,
         avg_essay_score=calculate_average_score(scored_essay_values),
     )
+
+
+def filter_learning_record_items(
+    items: list[LearningRecordAggregateItem],
+    *,
+    kind: str | None,
+    status: str | None,
+    from_date: date | None,
+    to_date: date | None,
+    session_id: int | None,
+) -> list[LearningRecordAggregateItem]:
+    filtered = items
+    if kind is not None:
+        filtered = [item for item in filtered if item.kind == kind]
+    if status is not None:
+        filtered = [item for item in filtered if item.status == status]
+    if from_date is not None:
+        filtered = [item for item in filtered if to_cn_date(item.occurred_at) >= from_date]
+    if to_date is not None:
+        filtered = [item for item in filtered if to_cn_date(item.occurred_at) <= to_date]
+    if session_id is not None:
+        filtered = [item for item in filtered if item.session_id == session_id]
+    return filtered
 
 
 def load_xingce_records(session: Session, *, user_id: int) -> list[LearningRecordAggregateItem]:
@@ -123,10 +189,7 @@ def load_xingce_records(session: Session, *, user_id: int) -> list[LearningRecor
             .order_by(PracticeSessionV2.started_at.desc())
         )
     )
-    return [
-        build_xingce_record(item)
-        for item in practice_sessions
-    ]
+    return [build_xingce_record(item) for item in practice_sessions]
 
 
 def load_essay_records(
@@ -157,6 +220,7 @@ def build_xingce_record(practice_session: PracticeSessionV2) -> LearningRecordAg
         status=normalized_status,
         occurred_at=practice_session.started_at,
         is_completed=normalized_status == RECORD_STATUS_COMPLETED,
+        session_id=practice_session.id,
     )
 
 
@@ -182,6 +246,7 @@ def build_essay_record(
         occurred_at=submission.submitted_at,
         score=report.score if report is not None else None,
         is_completed=normalized_status == RECORD_STATUS_COMPLETED,
+        session_id=None,
     )
 
 
@@ -221,3 +286,7 @@ def to_learning_record_items(items: list[LearningRecordAggregateItem]) -> list[L
         )
         for item in items
     ]
+
+
+def to_cn_date(value: datetime) -> date:
+    return (value.replace(tzinfo=UTC) + timedelta(hours=8)).date()
