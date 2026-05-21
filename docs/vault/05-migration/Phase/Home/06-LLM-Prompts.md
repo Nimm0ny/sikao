@@ -9,7 +9,7 @@
 
 ## 0. Prompt 文件规范（Infra-Prompt-Versioning）
 
-每个 prompt 文件存放在 `services/api/src/sikao_api/modules/llm_v2/application/prompts/`，必须导出三个常量 + 一个渲染函数：
+每个 Home Phase prompt 文件存放在 `services/api/src/sikao_api/modules/llm/application/llm/prompts/`，必须导出三个常量 + 一个渲染函数：
 
 ```python
 PROMPT_VERSION = "v1"                 # 版本号，写入 LlmCallV2.prompt_version
@@ -28,6 +28,10 @@ def render_messages(*, ...) -> list[ChatMessage]: ...
 ```
 
 修改 prompt 必须 bump `PROMPT_VERSION`。版本号写入 LlmCallV2，便于 A/B 与回溯。
+
+说明：
+- 现有 `study_plan.py` 属于 legacy DailyPlan/WeeklyPlan prompt，保留到 `B5.1a legacy study_plan cleanup` 再删。
+- Home Phase 新 prompt 为 `plan_generate.py / plan_regenerate_range.py / plan_adjust.py / recommend_today.py`，与 legacy prompt 并存开发，但不并存上线。
 
 ---
 

@@ -11,12 +11,12 @@
 
 ### 1.1 前端 Web Vitals（NF-Perf-LCP / NF-Perf-INP）
 
-| 指标 | 首页（已登录） | `/profile/learning` | 会话页 |
+| 指标 | 首页（已登录） | `/profile/learning` | `/profile/records` |
 |---|---|---|---|
-| LCP | ≤ 2.5s | ≤ 3.0s | ≤ 2.5s |
+| LCP | ≤ 2.5s | ≤ 3.0s | ≤ 2.2s |
 | FCP | ≤ 1.5s | ≤ 1.8s | ≤ 1.5s |
-| INP | ≤ 200ms | ≤ 250ms | ≤ 100ms |
-| CLS | ≤ 0.05 | ≤ 0.05 | ≤ 0.02 |
+| INP | ≤ 200ms | ≤ 250ms | ≤ 150ms |
+| CLS | ≤ 0.05 | ≤ 0.05 | ≤ 0.03 |
 | TTFB | ≤ 600ms | ≤ 600ms | ≤ 600ms |
 
 测量条件：
@@ -222,6 +222,7 @@ class RedisCacheProvider: ...
 | 操作 | 离线行为 |
 |---|---|
 | 读首页（events / progress / today / recommendations） | 走 react-query persistQueryClient（IndexedDB） |
+| 读 `/profile/records` | 允许离线读最近一次列表缓存；筛选变化时若离线则提示数据可能过期 |
 | 写事件（CRUD） | **禁离线**（在线 fail 立即提示） |
 | 答题 session | 已有方案（不在 Phase-Home 范围） |
 | AI 生成 / 调整 | **禁离线** |
