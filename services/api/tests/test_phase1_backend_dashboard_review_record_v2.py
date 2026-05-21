@@ -238,7 +238,7 @@ def test_review_redo_accepts_cookie_auth_with_matching_csrf(tmp_path: Path) -> N
         response = client.post("/api/v2/review/items/1/redo")
 
         assert response.status_code == 200, response.text
-        assert response.json() == {"ok": True, "status": "accepted"}
+        assert response.json() == {"ok": False, "status": "unavailable"}
 
 
 def test_review_redo_accepts_bearer_auth_without_csrf_cookie(tmp_path: Path) -> None:
@@ -253,7 +253,7 @@ def test_review_redo_accepts_bearer_auth_without_csrf_cookie(tmp_path: Path) -> 
         )
 
         assert response.status_code == 200, response.text
-        assert response.json() == {"ok": True, "status": "accepted"}
+        assert response.json() == {"ok": False, "status": "unavailable"}
 
 
 def test_review_redo_rejects_mixed_credentials_without_csrf_when_cookie_present(tmp_path: Path) -> None:
@@ -316,8 +316,32 @@ def test_review_item_detail_returns_placeholder_skeleton_payload(tmp_path: Path)
         assert len(payload["actions"]) == 1
         assert payload["actions"][0]["key"] == "redo"
         assert payload["actions"][0]["href"] == "/wrong-book/7/redo"
-        assert payload["actions"][0]["enabled"] is True
+        assert payload["actions"][0]["enabled"] is False
         assert isinstance(payload["actions"][0]["label"], str)
+
+
+def test_dashboard_today_continue_reads_latest_in_progress_session(tmp_path: Path) -> None:
+    with build_client(tmp_path) as (client, app):
+        _register_email(client)
+        user = _load_user(app)
+        now = datetime.now(UTC).replace(tzinfo=None)
+        _insert_practice_session(
+            app,
+            user_id=user.id,
+            started_at=now - timedelta(minutes=30),
+            status="in_progress",
+        )
+
+        response = client.get("/api/v2/dashboard/today/continue")
+
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["summary"] == [{"key": "count", "label": "Continue", "value": "1", "tone": "neutral"}]
+        assert len(payload["sections"]) == 1
+        assert payload["sections"][0]["key"] == "continue"
+        assert payload["sections"][0]["status"] == "ready"
+        assert payload["sections"][0]["href"].startswith("/practice/sessions/")
+        assert payload["actions"][0]["key"] == "continue"
 
 
 def test_dashboard_records_empty_contract_is_consistent(tmp_path: Path) -> None:

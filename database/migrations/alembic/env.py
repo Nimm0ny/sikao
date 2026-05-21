@@ -17,12 +17,10 @@ _API_SRC = _REPO_ROOT / "services" / "api" / "src"
 if str(_API_SRC) not in sys.path:
     sys.path.insert(0, str(_API_SRC))
 
-from sikao_api.core.config import get_settings
-from sikao_api.db.session import (
-    build_alembic_compare_options,
-    build_alembic_include_name,
-    build_alembic_target_metadata,
-)
+from sikao_api.core.config import get_settings  # noqa: E402
+from sikao_api.db.session import build_alembic_compare_options  # noqa: E402
+from sikao_api.db.session import build_alembic_include_name  # noqa: E402
+from sikao_api.db.session import build_alembic_target_metadata  # noqa: E402
 
 
 config = context.config
@@ -31,7 +29,9 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 settings = get_settings()
-config.set_main_option("sqlalchemy.url", settings.database_url)
+configured_url = config.get_main_option("sqlalchemy.url")
+database_url = os.environ.get("DATABASE_URL") or configured_url or settings.database_url
+config.set_main_option("sqlalchemy.url", database_url.replace("%", "%%"))
 scope = os.environ.get("SIKAO_ALEMBIC_TARGET_SCOPE")
 target_metadata = build_alembic_target_metadata(scope=scope)
 include_name = build_alembic_include_name(scope)
