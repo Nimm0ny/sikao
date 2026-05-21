@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from datetime import date
 from decimal import Decimal
 from typing import Any, Literal
@@ -592,7 +593,6 @@ class ProfilePreferencesUpdateRequestV2(CamelModel):
     @field_validator("dashboard_preferences")
     @classmethod
     def validate_preferences_size(cls, v: dict[str, Any]) -> dict[str, Any]:
-        import json
         serialized = json.dumps(v)
         if len(serialized) > 65536:
             raise ValueError("dashboard_preferences must be <= 64KB when serialized")

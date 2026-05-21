@@ -137,11 +137,25 @@ def test_delete_account_blocks_subsequent_auth(tmp_path: Path) -> None:
         )
         assert resp.status_code == 200
 
-        # Subsequent API call should be blocked.
-        # Sessions are revoked on deletion, so auth fails with 401 (session_revoked).
-        # If user somehow gets past session check, the guard returns 403 (account_deleted).
+        # Subsequent API call: deleted_at check fires before session check,
+        # so deleted users get 403 account_deleted (not 401 session_revoked).
         resp2 = c.get("/api/v2/profile/overview")
-        assert resp2.status_code == 401
+        assert resp2.status_code == 403
+
+
+# --- PR-P2: Preferences size cap ---
+
+
+def test_preferences_rejects_oversized_payload(tmp_path: Path) -> None:
+    with _client(tmp_path) as c:
+        _auth(c)
+        # Build a payload >64KB
+        big_value = "x" * 70_000
+        resp = c.put(
+            "/api/v2/profile/preferences",
+            json={"dashboardPreferences": {"big": big_value}},
+        )
+        assert resp.status_code == 422
 
 
 # --- PR-P4: Bind Phone stub ---

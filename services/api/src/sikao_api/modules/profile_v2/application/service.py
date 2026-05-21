@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import AccountDeletionJobV2, AuthSessionV2, EmailContactV2, PasswordCredentialV2, PhoneContactV2, ProfileGoalV2, ProfileInfoV2, UserV2
@@ -256,8 +256,6 @@ class ProfileServiceV2:
         user.is_active = False
         self.session.add(user)
 
-        from sqlalchemy import update
-
         self.session.execute(
             update(AuthSessionV2)
             .where(
@@ -269,6 +267,7 @@ class ProfileServiceV2:
 
         job = AccountDeletionJobV2(
             user_id=user.id,
+            user_public_id=user.public_id,
             requested_at=now,
             hard_delete_at=hard_delete_at,
             status="pending",

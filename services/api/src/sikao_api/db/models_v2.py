@@ -604,12 +604,16 @@ class ProfileGoalV2(Base):
 
 
 class AccountDeletionJobV2(Base):
+    """Audit record for account deletion. user_id is SET NULL on hard-delete
+    so the job survives as an audit trail of who was deleted and when."""
+
     __tablename__ = "account_deletion_jobs_v2"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False, unique=True,
+    user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="SET NULL"), nullable=True, unique=True,
     )
+    user_public_id: Mapped[str | None] = mapped_column(String(36), nullable=True)
     requested_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=utc_now)
     hard_delete_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")

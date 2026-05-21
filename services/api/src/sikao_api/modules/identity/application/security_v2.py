@@ -172,11 +172,9 @@ def get_current_auth_context(
     )
     if auth_session is None:
         raise UnauthorizedError("session not found", code="session_not_found")
-    if auth_session.revoked_at is not None:
-        raise UnauthorizedError("session revoked", code="session_revoked")
-    now = datetime.now(UTC).replace(tzinfo=None)
-    if auth_session.expires_at <= now:
-        raise UnauthorizedError("session expired", code="session_expired")
+    # Check user state BEFORE session state so deleted users get a clear 403
+    # signal even when their sessions have been revoked (revocation always
+    # accompanies soft-delete; without this order, the 403 branch is dead code).
     user = session.get(UserV2, auth_session.user_id)
     if user is None:
         raise UnauthorizedError("user not available", code="user_not_available")
@@ -184,6 +182,11 @@ def get_current_auth_context(
         raise ForbiddenError("account has been deactivated", code="account_deleted")
     if not user.is_active:
         raise UnauthorizedError("user not available", code="user_not_available")
+    if auth_session.revoked_at is not None:
+        raise UnauthorizedError("session revoked", code="session_revoked")
+    now = datetime.now(UTC).replace(tzinfo=None)
+    if auth_session.expires_at <= now:
+        raise UnauthorizedError("session expired", code="session_expired")
     return AuthContextV2(user=user, auth_session=auth_session)
 
 
