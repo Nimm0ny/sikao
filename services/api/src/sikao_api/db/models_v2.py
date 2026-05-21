@@ -402,52 +402,6 @@ class EssayReportV2(Base):
     )
 
 
-class DailyPlanV2(Base):
-    __tablename__ = "daily_plans_v2"
-    __table_args__ = (
-        UniqueConstraint("user_id", "plan_date", name="uq_daily_plans_v2_user_date"),
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False)
-    plan_date: Mapped[date] = mapped_column(Date, nullable=False)
-    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=utc_now, onupdate=utc_now, nullable=False
-    )
-
-
-class DailyPlanItemV2(Base):
-    __tablename__ = "daily_plan_items_v2"
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    daily_plan_id: Mapped[int] = mapped_column(ForeignKey("daily_plans_v2.id", ondelete="CASCADE"), nullable=False)
-    item_kind: Mapped[str] = mapped_column(String(32), nullable=False)
-    title: Mapped[str] = mapped_column(String(255), nullable=False)
-    summary: Mapped[str] = mapped_column(Text, nullable=False, default="")
-    state: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
-    display_order: Mapped[int] = mapped_column(Integer, nullable=False)
-    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
-
-
-class WeeklyPlanV2(Base):
-    __tablename__ = "weekly_plans_v2"
-    __table_args__ = (
-        UniqueConstraint("user_id", "week_start", name="uq_weekly_plans_v2_user_week"),
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    user_id: Mapped[int] = mapped_column(ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False)
-    week_start: Mapped[date] = mapped_column(Date, nullable=False)
-    status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
-    summary_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=utc_now, onupdate=utc_now, nullable=False
-    )
-
-
 class DiagnosisReportV2(Base):
     __tablename__ = "diagnosis_reports_v2"
     __table_args__ = (Index("ix_diagnosis_reports_v2_user_created", "user_id", "created_at"),)
