@@ -26,8 +26,8 @@
 | [00-Decisions](./00-Decisions.md) | 任何 PR 开工前；决策冲突时以本文档为准（路径冲突时以 A0 为准） |
 | [01-Boundary-Rules](./01-Boundary-Rules.md) | 写 plan / event / progress / recommender 任何业务逻辑前 |
 | [02-Data-Model](./02-Data-Model.md) | WU-B1~B5 / WU-F1 类型生成 |
-| [03-Backend-WU](./03-Backend-WU.md) | 后端 38 个 PR 的总盘 |
-| [04-Frontend-WU](./04-Frontend-WU.md) | 前端 42 个 PR 的总盘 |
+| [03-Backend-WU](./03-Backend-WU.md) | 后端 40 个 PR 的总盘 |
+| [04-Frontend-WU](./04-Frontend-WU.md) | 前端 44 个 PR 的总盘 |
 | [05-LLM-Module](./05-LLM-Module.md) | WU-B7 |
 | [06-LLM-Prompts](./06-LLM-Prompts.md) | WU-B7 + 任何调 prompt 的代码 |
 | [07-Calendar-Engine](./07-Calendar-Engine.md) | WU-F3 / WU-F4 |
@@ -74,6 +74,7 @@
 | 决策 | 拍板 |
 |---|---|
 | D1 一级导航 | **5 tab**（首页 / 练习 / 复盘 / 笔记 / 我的），桌面 + 移动均不升 6 |
+| D-Root-Route | `"/"` 双态：未登录看 marketing，已登录直接进入 Home Dashboard |
 | H-Plan-1 | 学习计划 = 日历画廊（Today/Week/Month）+ 多 target |
 | H-Plan-7 | 详细学情进 `/profile/learning`；首页 Section B 仅 6 数值卡 + sparkline + top3 弱项 |
 | Cal-1 / Cal-7 | 严格小时；15 分钟吸附；拖拽支持（含跨日） |
@@ -109,7 +110,7 @@ P6 任何「改计划」行为需审计 + 提案制
 |---|---|
 | 总行数（新增 + 删除） | ~24,000 |
 | Backend / Frontend | 11,250 / 12,700 |
-| PR 总数 | 80（B 38 + F 42） |
+| PR 总数 | 84（B 40 + F 44） |
 | Backend 阶段 | 6-8 周 |
 | Frontend 阶段 | 5-6 周 |
 | 全程 | 11-14 周 |
@@ -124,11 +125,11 @@ WU-B1 ────────────────┐
                       │          │           │
                       │          └─→ WU-B7 ──┤
                       ├─→ WU-B3 ─────────────┤
-                      ├─→ WU-B4 ─────────────┤─→ WU-B8 ─→ WU-B9 ─→ WU-F1
-                      ├─→ WU-B6 ─────────────┘
-                                                                  │
-                                                                  ↓
-WU-F1 ─→ WU-F2 ──┐
+                      ├─→ WU-B4 ─────────────┤─→ WU-B8 ─→ WU-B9 ─┬─→ M0.5 Frontend Typecheck Blocker ─→ WU-F1
+                      ├─→ WU-B6 ─────────────┘                     │
+                                                                   │
+                                                                   ↓
+WU-F1 ─→ WU-F2 ──┐                                                 scoped to frontend runtime start
        └─→ WU-F3 ┼─→ WU-F4 ─┐
                  └─→ WU-F5 ─┤
                  └─→ WU-F6 ─┴─→ WU-F7 ─→ WU-F8
@@ -143,7 +144,8 @@ WU 详细：
 ## 7. 阶段里程碑
 
 ```
-M0   week 0          启动；本 plan 与子文档全部 review 通过
+M0   week 0          docs-only 收敛；A0 修订同步进 README + 00-10，并通过 review
+M0.5 week 0-1        独立任务解决前端 full typecheck blocker；未完成前不启动 F1-F8 运行时代码
 M1   week 1          WU-B1 完工：DB schema 全部就位
 M2   week 2-3        WU-B2 + WU-B3 + WU-B6：核心 CRUD 端点
 M3   week 4-5        WU-B4 + WU-B5：进度 + planning 真实化

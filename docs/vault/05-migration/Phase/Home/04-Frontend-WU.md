@@ -17,9 +17,9 @@
 | WU-F4 | Section A · 学习计划 | 4,200 | 12 | F1 / F2 / F3 |
 | WU-F5 | Section B · 学习进度 + `/profile/learning` 钻取 | 1,800 | 5 | F1 |
 | WU-F6 | Section C · 今日推荐 | 1,000 | 4 | F1 |
-| WU-F7 | 首页整合 + 路由 + 老 view 删除 + `/profile/records` | 1,100 | 5 | F4 / F5 / F6 |
+| WU-F7 | 首页整合 + 路由 + 老 view 删除 + `/profile/records` | 1,100 | 7 | F4 / F5 / F6 |
 | WU-F8 | E2E + MSW + a11y test | 1,200 | 4 | F7 |
-| **合计** | | **12,700** | **42** | |
+| **合计** | | **12,700** | **44** | |
 
 > 前端总量上调（原 8,500），原因：补 loading/empty/error/skeleton 状态、a11y、`/profile/learning` 完整页面、stores 拆分、错误边界。
 
@@ -58,6 +58,8 @@ packages/shared-utils/                ← cn / logger / hooks / motion
 
 ### 1.4 路由清单（5 tab，未变更）
 
+> 实现前置（A0 修订）：当前代码现实仍是 4 tab + `/` public marketing。任何 F7 路由实现都必须先完成 A0 §1.3 的 4→5 升级，再收口到以下目标态。
+
 ```
 公开层（保留）：marketing/* / Health / NotFound / auth/*
 私有层（5 tab）：
@@ -74,6 +76,11 @@ packages/shared-utils/                ← cn / logger / hooks / motion
   /onboarding                 Onboarding（脱壳）
   /diagnosis                  DiagnosisResult（脱壳）
 ```
+
+`D-Root-Route` 约束：
+- `"/"` 未登录继续显示 marketing
+- `"/"` 已登录直接渲染 Home Dashboard
+- 不引入 `/home` 过渡路由
 
 ### 1.5 暗色 / 主题
 
@@ -95,6 +102,13 @@ packages/shared-utils/                ← cn / logger / hooks / motion
 | 拖拽替代 | 拖拽必须有键盘等价：选中事件后用方向键移动 + Enter 确认 |
 
 a11y 测试：每个新组件配 `@testing-library/jest-dom` + `axe-core/react` 自动化检查（详见 `10-Testing.md` §5）。
+
+### 1.7 Review / Validation Gate（适用于所有 F*.x PR）
+
+- 每个前端 runtime PR 必须先过独立 review；`F4-F8` 额外做前端规范审查。
+- `F4-F8` 属于前端视觉 phase，必须做 `Chrome MCP` browser smoke；工具不可用时 fail-fast，不静默改用别的浏览器方案。
+- `F1-F8` 运行时代码启动前，必须先确认前端 full typecheck blocker 已由独立任务解除。
+- 默认验证命令：相关范围的 `npm run typecheck`, `npm run lint`, `vitest --run`；`F8` 再补 desktop/mobile e2e、axe、dark mode smoke。
 
 ---
 
@@ -137,11 +151,12 @@ PR 行数：~360
 
 PR 行数：~380
 
-#### F1.4 progressQueries(V2) + dashboardQueries
+#### F1.4 progressQueries(V2) + dashboardQueries + profileRecordsQuery
 
 文件：
 - `progressQueries.ts`：useProgress / useProgressTimeseries / useProgressWeakness / useProgressDiagnosis
 - `dashboardQueries.ts`：useDashboardToday / useDashboardWeekly / useDashboardFullPlan
+- `profileQueries.ts`：useProfileRecords
 - 对应测试 + MSW handlers
 
 PR 行数：~280
@@ -566,14 +581,41 @@ PR 行数：~210
 
 PR 行数：~260
 
-#### F7.2 AppShell 5 tab 校对 + RailMini 调整
+#### F7.2a `/me` bug 修复 + 5 tab 校对
 
 文件：
+- 修复 `"/me" -> "/profile"` 错路由
 - 校对 `apps/web/src/layouts/AppShell.tsx`：5 tab 不变（首页 / 练习 / 复盘 / 笔记 / 我的）；移除任何 H-Plan-6 残留
-- 校对 `RailMini.tsx` / `TabBar.tsx` 同步 5 tab
+- 校对 `RailMini.tsx` / `TabBar.tsx` 同步 5 tab，并新增 `/notes` 入口
 - 测试
 
 PR 行数：~180
+
+#### F7.2b canonical 路由 rename + legacy redirect
+
+文件：
+- `apps/web/src/router/index.tsx`
+- 相关 redirect 测试
+
+业务规则：
+- `"/study/today" -> "/"`，`"/practice/center*" -> "/practice*"`，`"/wrong-book*" -> "/review*"`
+- 保留 legacy redirect 直到 F8 完整回归通过
+- `"/"` 采用 `D-Root-Route` 双态：未登录 marketing，已登录 Home Dashboard
+
+PR 行数：~220
+
+#### F7.2c view 迁移：Dashboard -> ProfileLearning
+
+文件：
+- `apps/web/src/views/Dashboard.tsx`
+- `apps/web/src/views/ProfileLearning.tsx`
+- 相关测试
+
+业务规则：
+- 现有 `Dashboard.tsx` 的“学情数据”内容迁到 `ProfileLearning.tsx`
+- `Dashboard.tsx` 只保留登录态首页三 Section 编排
+
+PR 行数：~260
 
 #### F7.3 OnboardingGate 接 AiPlanGenerateDialog
 
@@ -588,6 +630,7 @@ PR 行数：~290
 文件：
 - `apps/web/src/views/ProfileRecords.tsx`（按日分组的 session 列表 + 筛选 + 详情链接）
 - 路由注册
+- 接 `GET /api/v2/profile/records`
 - 测试
 
 PR 行数：~280
@@ -656,13 +699,13 @@ PR 行数：~210
 
 ---
 
-## 10. PR 列表（42 个）
+## 10. PR 列表（44 个）
 
 ```
 F1.1  重生成 types + 删 8 个老 query
 F1.2  plansQueries(events)
 F1.3  plansQueries(plan+adjustments) + recommendationsQueries
-F1.4  progressQueries + dashboardQueries
+F1.4  progressQueries + dashboardQueries + profileRecordsQuery
 
 F2.1  usePlanStore
 F2.2  useDashboardPreferenceStore + sync
@@ -699,7 +742,9 @@ F6.3  AcceptOptionMenu 加入计划
 F6.4  RejectFeedbackDialog
 
 F7.1  Dashboard.tsx 重写
-F7.2  AppShell 5 tab 校对
+F7.2a /me bug 修复 + 5 tab 校对
+F7.2b canonical 路由 rename + legacy redirect
+F7.2c Dashboard 内容迁到 ProfileLearning
 F7.3  OnboardingGate 接 AiPlanGenerateDialog
 F7.4  /profile/records 子页
 F7.5  删除老 view + 路由 redirect

@@ -209,7 +209,7 @@ async def context_middleware(request, call_next):
 ### 4.4 输出
 
 - Stage 1：`logs/api.jsonl`（rotated 100MB × 10 file），人工 grep
-- Stage 2：stdout JSON → docker / nginx → log collector（用户切多用户时再选）
+- Stage 2：stdout JSON → process supervisor / reverse proxy / log collector（保持 no-docker 约束）
 
 ### 4.5 前端日志
 
