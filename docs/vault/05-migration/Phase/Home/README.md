@@ -9,6 +9,8 @@
 > ⚠️ **开工前必读**：[A0-Codebase-Reality-Check.md](./A0-Codebase-Reality-Check.md)
 >
 > 本 Phase 的 00-10 文档基于 IA 决策稿编写，描述的是**目标态**。**A0** 记录代码现实与目标的 delta（4→5 tab 升级 / 模块路径修正 / `modules/llm` 已存在 / 缺失依赖清单 / 文件路径错误等）。子文档与 A0 §11 冲突时**以 A0 为准**。
+>
+> **2026-05-21 口径重定基线**：`M3 / SIK-34` 的后端 deliverables 已落到 `origin/main`。`SIK-34` 当前保留 `blocked`，仅反映旧 Home 前端 runtime 触发了既有 full typecheck gate；该阻塞不再卡住后端 `M4-M6`，只继续约束旧 Home 前端 `M7-M12 / F1-F8` 参考轨。
 
 ---
 
@@ -125,11 +127,11 @@ WU-B1 ────────────────┐
                       │          │           │
                       │          └─→ WU-B7 ──┤
                       ├─→ WU-B3 ─────────────┤
-                      ├─→ WU-B4 ─────────────┤─→ WU-B8 ─→ WU-B9 ─┬─→ M0.5 Frontend Typecheck Blocker ─→ WU-F1
-                      ├─→ WU-B6 ─────────────┘                     │
-                                                                   │
-                                                                   ↓
-WU-F1 ─→ WU-F2 ──┐                                                 scoped to frontend runtime start
+                      ├─→ WU-B4 ─────────────┤─→ WU-B8 ─→ WU-B9 ─┐
+                      ├─→ WU-B6 ─────────────┘                     ├─→ WU-F1
+M0.5 Legacy Frontend Typecheck Blocker ────────────────────────────┘
+
+WU-F1 ─→ WU-F2 ──┐                                                 legacy frontend starts only when both M0.5 and M6 are satisfied
        └─→ WU-F3 ┼─→ WU-F4 ─┐
                  └─→ WU-F5 ─┤
                  └─→ WU-F6 ─┴─→ WU-F7 ─→ WU-F8
@@ -138,6 +140,8 @@ WU-F1 ─→ WU-F2 ──┐                                                 sco
 WU 详细：
 - 后端：[03-Backend-WU](./03-Backend-WU.md)
 - 前端：[04-Frontend-WU](./04-Frontend-WU.md)
+- 当前执行主线：`M4 → M5 → M6` 后端链按 `M3` 已落地主干的输出继续推进，不等待 `SIK-34` 关单。
+- `M7-M12` 保留为暂停中的 legacy Home 前端参考轨，待新的前端全量重构计划落档后再决定是否接管或替代。
 
 ---
 
@@ -145,20 +149,20 @@ WU 详细：
 
 ```
 M0   week 0          docs-only 收敛；A0 修订同步进 README + 00-10，并通过 review
-M0.5 week 0-1        独立任务解决前端 full typecheck blocker；未完成前不启动 F1-F8 运行时代码
+M0.5 week 0-1        独立任务解决旧 Home 前端 full typecheck blocker；未完成前不启动 legacy F1-F8 运行时代码
 M1   week 1          WU-B1 完工：DB schema 全部就位
 M2   week 2-3        WU-B2 + WU-B3 + WU-B6：核心 CRUD 端点
-M3   week 4-5        WU-B4 + WU-B5：进度 + planning 真实化
+M3   week 4-5        WU-B4 + WU-B5：进度 + planning 真实化（后端 deliverables 已于 2026-05-21 落地主干）
 M4   week 5-6        WU-B7：LLM 模块（用户配 API key 后联调）
 M5   week 6-7        WU-B8：Cron + 实时 hook + audit/observability
 M6   week 7-8        WU-B9：e2e + OpenAPI 锁定
 ─────────────────────────────────────────────
-M7   week 8-9        WU-F1：API client 切换 V2
-M8   week 9          WU-F2 + WU-F3：stores + calendar-engine（并行）
-M9   week 9-11       WU-F4：Section A（最重）
-M10  week 11-12      WU-F5 + WU-F6：Section B/C（并行）+ /profile/learning + /profile/records
-M11  week 12-13      WU-F7：整合 + 路由收口
-M12  week 13-14      WU-F8：e2e + a11y + 浏览器矩阵验收
+M7   week 8-9        legacy WU-F1：API client 切换 V2（当前暂停，仅作参考）
+M8   week 9          legacy WU-F2 + WU-F3：stores + calendar-engine（当前暂停，仅作参考）
+M9   week 9-11       legacy WU-F4：Section A（当前暂停，仅作参考）
+M10  week 11-12      legacy WU-F5 + WU-F6：Section B/C（当前暂停，仅作参考）
+M11  week 12-13      legacy WU-F7：整合 + 路由收口（当前暂停，仅作参考）
+M12  week 13-14      legacy WU-F8：e2e + a11y + 浏览器矩阵验收（当前暂停，仅作参考）
 ```
 
 ---
@@ -174,7 +178,7 @@ M12  week 13-14      WU-F8：e2e + a11y + 浏览器矩阵验收
 - [ ] LLM mock provider 跑通所有 prompt
 - [ ] 真 provider 手动跑通 plan_generate / recommend_today
 
-### 8.2 前端 M12
+### 8.2 legacy 前端 M12（暂停中的参考 gate）
 - [ ] vitest 全绿（含 e2e + a11y）
 - [ ] tsc strict 0 errors
 - [ ] 9 lint:* 全过

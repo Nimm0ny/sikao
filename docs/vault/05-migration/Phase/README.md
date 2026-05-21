@@ -32,7 +32,7 @@
 | Phase | 路径 | Status | 索引文档 | 备注 |
 |---|---|---|---|---|
 | **Home**（首页 tab） | [Home/](./Home/) | ACCEPTED · 详细规格完成 | [Home/README.md](./Home/README.md) | 12 子文档 / ~6,500 行 / 80 PR；含 [A0 现实校验](./Home/A0-Codebase-Reality-Check.md) |
-| Practice（练习 tab） | [Practice/](./Practice/) | TBD（占位） | [Practice/README.md](./Practice/README.md) | 等 Home 完工后启动 |
+| Practice（练习 tab） | [Practice/](./Practice/) | TBD（占位） | [Practice/README.md](./Practice/README.md) | 等 Home 后端关键里程碑与契约锁定后启动 |
 | Review（复盘 tab） | [Review/](./Review/) | TBD（占位） | [Review/README.md](./Review/README.md) | |
 | Notes（笔记 tab） | [Notes/](./Notes/) | TBD（占位） | [Notes/README.md](./Notes/README.md) | |
 | Profile（我的 tab） | [Profile/](./Profile/) | TBD（占位） | [Profile/README.md](./Profile/README.md) | 含 BindEmail/Phone/CompleteProfile |
@@ -52,7 +52,7 @@
 
 ```
 M1 ── Home（当前阶段，11-14 周）
-   ├─ Practice（依赖 Home 完成 events / session 模型）
+   ├─ Practice（依赖 Home 后端关键输出：events/session 模型、LLM、cron、OpenAPI 锁定）
    └─ Review  （依赖 Home 的 weakness / review item 数据层）
 M2 ── Notes / Profile（与 Practice/Review 并行）
 M3 ── Onboarding / Auth（基础设施迭代）

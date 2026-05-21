@@ -9,6 +9,8 @@
 > ⚠️ **开工前必读**：[A0-Codebase-Reality-Check.md](./A0-Codebase-Reality-Check.md)
 >
 > 本 Phase 的 00-10 文档基于 IA 决策稿编写，描述的是**目标态**。**A0** 记录代码现实与目标的 delta（题库 schema / session 现状 / `modules/llm` 已存在 / 申论 V2 模型已建表但路由没暴露 等）。子文档与 A0 §11 冲突时**以 A0 为准**。
+>
+> **2026-05-21 口径重定基线**：Practice 当前只消费 Phase-Home 的后端关键输出（`B1 / B7 / B8 / B9 / M6`）与相应契约锁定；旧 Home 前端 `F1-F8` 不再视为本 Phase 的前置。
 
 ---
 
@@ -193,7 +195,7 @@ WU 详细：
 ## 7. 阶段里程碑
 
 ```
-M0   week 0          启动；Phase-Home 完成 + 本 plan review 通过
+M0   week 0          启动；本 plan review 通过，后续按 Phase-Home 后端门槛逐段解锁
 M1   week 1          WU-B10：QuestionV2 字段扩展完工
 M2   week 2-3        WU-B11 + WU-B12 + WU-B13：所有新表/字段就位
 M3   week 3          WU-B21：真题数据 import 脚本就绪（用户本机执行实际导入）
@@ -222,7 +224,10 @@ M19  week 14-15      WU-F18：e2e 验收
 |---|---|
 | Phase-Home WU-B1 完成 | Tab 2 WU-B10 可启动 |
 | Phase-Home WU-B7 完成 | Tab 2 WU-B22 可启动（同一 modules/llm/ 内扩展） |
+| Phase-Home WU-B8 完成 | Tab 2 WU-B23 可启动（追加 4 个 cron + 1 hook） |
 | Phase-Home WU-B9 完成 | Tab 2 WU-F9 启动 |
+
+旧 Home 前端 `F1-F8` 仅属于 Home 自身的 legacy runtime 轨，不作为本 Phase 后端或规划推进的前置。
 
 **保守串行估算**：Phase-Home 11-14 周 + Phase-Practice 12-15 周 = 23-29 周
 **理想并行估算**：约 18-22 周

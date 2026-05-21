@@ -4,6 +4,8 @@
 > **Last Updated**: 2026-05-21
 > **Index**: see `./README.md`
 > **Convention**: 每个 WU 对应一组 PR；PR 按 AGENTS-H9 ≤15 文件 / ≤400 行；前端视觉 PR 必须经 browser smoke
+>
+> **2026-05-21 口径重定基线**：本文档当前仅作 legacy Home 前端轨参考。旧 Home 前端 `F1-F8` 在新的前端全量重构计划落档前不作为当前执行主线；`M0.5` 也仅继续约束这条 legacy 轨。
 
 ---
 
@@ -107,7 +109,7 @@ a11y 测试：每个新组件配 `@testing-library/jest-dom` + `axe-core/react` 
 
 - 每个前端 runtime PR 必须先过独立 review；`F4-F8` 额外做前端规范审查。
 - `F4-F8` 属于前端视觉 phase，必须做 `Chrome MCP` browser smoke；工具不可用时 fail-fast，不静默改用别的浏览器方案。
-- `F1-F8` 运行时代码启动前，必须先确认前端 full typecheck blocker 已由独立任务解除。
+- 旧 Home 前端 `F1-F8` 运行时代码启动前，必须先确认前端 full typecheck blocker 已由独立任务解除。
 - 默认验证命令：相关范围的 `npm run typecheck`, `npm run lint`, `vitest --run`；`F8` 再补 desktop/mobile e2e、axe、dark mode smoke。
 
 ---
