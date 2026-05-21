@@ -38,7 +38,7 @@
 | Profile（我的 tab） | [Profile/](./Profile/) | TBD（占位） | [Profile/README.md](./Profile/README.md) | 含 BindEmail/Phone/CompleteProfile |
 | Onboarding（Gate 层） | [Onboarding/](./Onboarding/) | TBD（占位） | [Onboarding/README.md](./Onboarding/README.md) | 含 DiagnosisResult |
 | Auth（鉴权层） | [Auth/](./Auth/) | TBD（占位） | [Auth/README.md](./Auth/README.md) | |
-| Marketing（公开层） | [Marketing/](./Marketing/) | TBD（占位） | [Marketing/README.md](./Marketing/README.md) | |
+| Marketing（公开层） | [Marketing/](./Marketing/) | **DONE** — v1 上线就绪 | [Marketing/README.md](./Marketing/README.md) | Landing + 法律 3 页 + Footer + 路由；P1 follow-up: SEO / ICP 真号 / About |
 
 ---
 
