@@ -67,6 +67,9 @@ const pages = {
   studyToday: lazy(() => import('@/views/study/StudyToday')),
   progress: lazy(() => import('@/views/Progress')),
   marketing: lazy(() => import('@/views/marketing').then((mod) => ({ default: mod.Marketing }))),
+  // 2026-05-21 PR-M1: 法律页 v1 草稿. 公开访问 (无 RedirectGuard, 已登录用户也能看),
+  // 复用 MarketingNav + MarketingFooter chrome. Privacy 先行, Terms / Cookies 在后续 commit.
+  legalPrivacy: lazy(() => import('@/views/marketing').then((mod) => ({ default: mod.Privacy }))),
   login: lazy(() => import('@/views/auth/Login')),
   registerEmail: lazy(() => import('@/views/auth/RegisterEmail')),
   registerPhone: lazy(() => import('@/views/auth/RegisterPhone')),
@@ -168,6 +171,13 @@ export const router = createBrowserRouter([
   {
     path: '/health',
     element: routeElement(<pages.health />),
+  },
+  // 2026-05-21 PR-M1: 法律页 — 完全公开 (无 RedirectGuard), 不进 AppShell.
+  // 已登录 / 未登录用户均可访问 (注册流程中需阅读, 已登录用户也可能想查看).
+  // Privacy 先行, Terms / Cookies 在后续 commit.
+  {
+    path: '/legal/privacy',
+    element: routeElement(<pages.legalPrivacy />),
   },
   {
     // Figma Make full migration: the essay exam is a destination workspace, not
