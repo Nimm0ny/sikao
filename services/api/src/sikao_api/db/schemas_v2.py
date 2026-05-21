@@ -4,7 +4,7 @@ from datetime import date
 from decimal import Decimal
 from typing import Any, Literal
 
-from pydantic import Field
+from pydantic import Field, field_validator
 
 from sikao_api.core.schemas import CamelModel, UtcDatetime
 
@@ -571,6 +571,60 @@ class DashboardRecordsResponseV2(CamelModel):
     total: int
     page: int
     page_size: int
+
+
+class ProfileSettingsResponseV2(CamelModel):
+    ai_adjust_enabled: bool
+    llm_enabled: bool
+
+
+class ProfileSettingsUpdateRequestV2(CamelModel):
+    ai_adjust_enabled: bool
+
+
+class ProfilePreferencesResponseV2(CamelModel):
+    dashboard_preferences: dict[str, Any]
+
+
+class ProfilePreferencesUpdateRequestV2(CamelModel):
+    dashboard_preferences: dict[str, Any]
+
+    @field_validator("dashboard_preferences")
+    @classmethod
+    def validate_preferences_size(cls, v: dict[str, Any]) -> dict[str, Any]:
+        import json
+        serialized = json.dumps(v)
+        if len(serialized) > 65536:
+            raise ValueError("dashboard_preferences must be <= 64KB when serialized")
+        return v
+
+
+class DeletionReason(str):
+    NOT_USEFUL = "not_useful"
+    FOUND_ALTERNATIVE = "alternative"
+    PRIVACY_CONCERN = "privacy"
+    TOO_EXPENSIVE = "too_expensive"
+    OTHER = "other"
+
+
+class AccountDeletionRequestV2(CamelModel):
+    reason: str = Field(default="other", max_length=32)
+    confirmation: str = Field(min_length=1, max_length=20)
+
+
+class AccountDeletionResponseV2(CamelModel):
+    message: str
+    hard_delete_at: UtcDatetime
+
+
+class BindPhoneRequestV2(CamelModel):
+    phone: str = Field(pattern=r"^1[3-9]\d{9}$")
+    verification_code: str = Field(min_length=4, max_length=6)
+
+
+class BindPhoneResponseV2(CamelModel):
+    phone_bound: bool
+    masked_phone: str
 
 
 class DashboardTodayResponseV2(OverviewResponseV2):

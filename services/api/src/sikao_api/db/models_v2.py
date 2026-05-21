@@ -40,6 +40,8 @@ class UserV2(Base):
     public_id: Mapped[str] = mapped_column(String(36), unique=True, nullable=False, default=lambda: str(uuid4()))
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    deletion_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
@@ -599,6 +601,22 @@ class ProfileGoalV2(Base):
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
     exam_targets: Mapped[list[dict[str, Any]]] = mapped_column(JSONB_COMPAT, default=list, nullable=False)
+
+
+class AccountDeletionJobV2(Base):
+    __tablename__ = "account_deletion_jobs_v2"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False, unique=True,
+    )
+    requested_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=utc_now)
+    hard_delete_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class PlanV2(Base):

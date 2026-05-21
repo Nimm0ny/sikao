@@ -5,22 +5,29 @@ from datetime import UTC, datetime, timedelta
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from sikao_api.db.models_v2 import AuthSessionV2, EmailContactV2, PasswordCredentialV2, PhoneContactV2, ProfileGoalV2, ProfileInfoV2, UserV2
+from sikao_api.db.models_v2 import AccountDeletionJobV2, AuthSessionV2, EmailContactV2, PasswordCredentialV2, PhoneContactV2, ProfileGoalV2, ProfileInfoV2, UserV2
 from sikao_api.db.schemas_v2 import (
+    AccountDeletionRequestV2,
+    AccountDeletionResponseV2,
     ActionLinkV2,
+    BindPhoneRequestV2,
     ExamTargetV2,
     ProfileGoalsResponseV2,
     ProfileGoalsUpdateRequestV2,
     ProfileInfoResponseV2,
     ProfileInfoUpdateRequestV2,
     ProfileOverviewResponseV2,
+    ProfilePreferencesResponseV2,
+    ProfilePreferencesUpdateRequestV2,
     ProfileSecurityResponseV2,
     ProfileSecurityUpdateRequestV2,
+    ProfileSettingsResponseV2,
+    ProfileSettingsUpdateRequestV2,
     SectionCardV2,
     SummaryMetricV2,
 )
 from sikao_api.modules.identity.application.security_v2 import hash_password, verify_password
-from sikao_api.modules.system.application.errors import UnauthorizedError, ValidationError
+from sikao_api.modules.system.application.errors import ConflictError, UnauthorizedError, ValidationError
 
 
 class ProfileServiceV2:
@@ -181,3 +188,102 @@ class ProfileServiceV2:
             seen_ids.add(item.exam_id)
             if item.exam_date < today:
                 raise ValidationError("exam_targets exam_date must be today or later", code="invalid_exam_targets")
+
+    # --- PR-P1: Settings ---
+
+    def _get_or_create_info(self, user: UserV2) -> ProfileInfoV2:
+        info = self.session.scalar(
+            select(ProfileInfoV2).where(ProfileInfoV2.user_id == user.id)
+        )
+        if info is None:
+            info = ProfileInfoV2(user_id=user.id)
+            self.session.add(info)
+            self.session.flush()
+        return info
+
+    def get_settings(self, *, user: UserV2) -> ProfileSettingsResponseV2:
+        info = self._get_or_create_info(user)
+        return ProfileSettingsResponseV2(
+            ai_adjust_enabled=info.ai_adjust_enabled,
+            llm_enabled=info.ai_adjust_enabled,
+        )
+
+    def update_settings(
+        self, *, user: UserV2, payload: ProfileSettingsUpdateRequestV2
+    ) -> ProfileSettingsResponseV2:
+        info = self._get_or_create_info(user)
+        info.ai_adjust_enabled = payload.ai_adjust_enabled
+        self.session.add(info)
+        return self.get_settings(user=user)
+
+    # --- PR-P2: Preferences ---
+
+    def get_preferences(self, *, user: UserV2) -> ProfilePreferencesResponseV2:
+        info = self._get_or_create_info(user)
+        return ProfilePreferencesResponseV2(
+            dashboard_preferences=info.dashboard_preferences,
+        )
+
+    def update_preferences(
+        self, *, user: UserV2, payload: ProfilePreferencesUpdateRequestV2
+    ) -> ProfilePreferencesResponseV2:
+        info = self._get_or_create_info(user)
+        info.dashboard_preferences = payload.dashboard_preferences
+        self.session.add(info)
+        return self.get_preferences(user=user)
+
+    # --- PR-P3: Account Deletion ---
+
+    def request_deletion(
+        self, *, user: UserV2, payload: AccountDeletionRequestV2
+    ) -> AccountDeletionResponseV2:
+        if user.deleted_at is not None:
+            raise ConflictError(
+                "account already scheduled for deletion",
+                code="already_deleting",
+            )
+        if payload.confirmation != "确认注销":
+            raise ValidationError(
+                "confirmation text must be '确认注销'",
+                code="invalid_confirmation",
+            )
+
+        now = datetime.now(UTC).replace(tzinfo=None)
+        hard_delete_at = now + timedelta(days=7)
+
+        user.deleted_at = now
+        user.deletion_reason = payload.reason
+        user.is_active = False
+        self.session.add(user)
+
+        from sqlalchemy import update
+
+        self.session.execute(
+            update(AuthSessionV2)
+            .where(
+                AuthSessionV2.user_id == user.id,
+                AuthSessionV2.revoked_at.is_(None),
+            )
+            .values(revoked_at=now)
+        )
+
+        job = AccountDeletionJobV2(
+            user_id=user.id,
+            requested_at=now,
+            hard_delete_at=hard_delete_at,
+            status="pending",
+            reason=payload.reason,
+        )
+        self.session.add(job)
+
+        return AccountDeletionResponseV2(
+            message="账号已注销，将在 7 天后永久删除。",
+            hard_delete_at=hard_delete_at,
+        )
+
+    # --- PR-P4: Bind Phone stub ---
+
+    def bind_phone_stub(
+        self, *, user: UserV2, payload: BindPhoneRequestV2
+    ) -> None:
+        raise NotImplementedError("bind-phone not yet implemented")
