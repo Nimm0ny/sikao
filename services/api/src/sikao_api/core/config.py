@@ -272,6 +272,23 @@ class Settings(BaseSettings):
     # (R8). README + ops checklist 强警告.
     llm_config_enc_key: str | None = None
 
+    # ─── Phase-Profile PR-P6: account-deletion sweep scheduler ───────────────
+    # D-P11 + Del-5/6/7 (Phase/Profile/00-Decisions.md):
+    # - 默认关闭 → pytest / dev 不会启动后台任务,
+    #   prod 通过 DELETION_SWEEP_ENABLED=true 启用.
+    # - 多 worker 部署: 仅 leader / 单独 sweeper worker 设 true,
+    #   其他 worker 保持默认关闭 (run_hard_delete_sweep 多 worker 同时跑有 race).
+    deletion_sweep_enabled: bool = False
+    # 默认 24h: 注销宽限期 7 天, 一日扫一次足够及时.
+    # 可调小到 60 (1min) 用于 staging 烟测.
+    deletion_sweep_interval_seconds: int = 86400
+    # 启动后等 60s 才首次跑 — 防 uvicorn startup 期 metrics / DB pool 还没暖好
+    # 第一次 sweep 就吞 connection error. run_on_startup=True 时此值忽略.
+    deletion_sweep_initial_delay_seconds: int = 60
+    # 启动立即跑一次 (运维兜底重启时清积压). 默认 False — 重启不应改变 sweep
+    # 节奏, 跟 cron 语义对齐.
+    deletion_sweep_run_on_startup: bool = False
+
     @field_validator("cors_allowed_origins", mode="before")
     @classmethod
     def parse_cors_allowed_origins(cls, value: object) -> object:

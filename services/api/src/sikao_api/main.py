@@ -36,6 +36,7 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         from sikao_api.core.limiter import close_limiter, init_limiter
+        from sikao_api.core.scheduler import build_deletion_sweep_scheduler
 
         app.state.settings = app_settings
         app.state.db = db
@@ -44,9 +45,26 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
         if initialize_schema is True or (initialize_schema is None and app_settings.is_sqlite):
             db.create_all()
         await init_limiter(app_settings.redis_url)
+
+        # Phase-Profile PR-P6: hard-delete sweep scheduler (D-P11 / Del-5).
+        # build_* 内部检查 enabled flag, 默认 None → lifespan 不启动 sweep,
+        # pytest / dev 默认无开销.
+        deletion_scheduler = build_deletion_sweep_scheduler(
+            db,
+            enabled=app_settings.deletion_sweep_enabled,
+            interval_seconds=app_settings.deletion_sweep_interval_seconds,
+            initial_delay_seconds=app_settings.deletion_sweep_initial_delay_seconds,
+            run_on_startup=app_settings.deletion_sweep_run_on_startup,
+        )
+        app.state.deletion_scheduler = deletion_scheduler
+        if deletion_scheduler is not None:
+            await deletion_scheduler.start()
         try:
             yield
         finally:
+            # Stop scheduler before limiter — 让后台 sweep 优雅退出, 之后再断 redis.
+            if deletion_scheduler is not None:
+                await deletion_scheduler.stop()
             await close_limiter()
 
     app = FastAPI(title=app_settings.app_name, version=app_settings.app_version, lifespan=lifespan)
