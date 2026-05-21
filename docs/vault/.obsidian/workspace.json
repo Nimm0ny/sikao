@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "05-migration/Phase/Home/A0-Codebase-Reality-Check.md",
+                "file": "05-migration/Phase/Practice/03-Backend-WU.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "A0-Codebase-Reality-Check"
+              "title": "03-Backend-WU"
             }
           }
         ]
@@ -185,6 +185,9 @@
   },
   "active": "474a3d783918fca3",
   "lastOpenFiles": [
+    "05-migration/Phase/Practice/01-Boundary-Rules.md",
+    "05-migration/Phase/Practice/00-Decisions.md",
+    "05-migration/Phase/Home/A0-Codebase-Reality-Check.md",
     "05-migration/Phase/Home/01-Boundary-Rules.md",
     "05-migration/Phase/Home/00-Decisions.md",
     "02-domain/Grading.md",
