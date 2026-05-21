@@ -75,10 +75,10 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
             email = trim_or_none(legacy_user.email)
             if email is not None:
                 normalized_email = normalize_email(email)
-                contact = session.scalar(
+                email_contact = session.scalar(
                     select(EmailContactV2).where(EmailContactV2.email == normalized_email)
                 )
-                if contact is None:
+                if email_contact is None:
                     session.add(
                         EmailContactV2(
                             user_id=user_v2.id,
@@ -89,26 +89,26 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                             updated_at=legacy_user.updated_at,
                         )
                     )
-                elif contact.user_id != user_v2.id:
+                elif email_contact.user_id != user_v2.id:
                     stats.conflicts += 1
                 else:
                     changed = False
-                    if contact.is_verified != legacy_user.email_verified:
-                        contact.is_verified = legacy_user.email_verified
+                    if email_contact.is_verified != legacy_user.email_verified:
+                        email_contact.is_verified = legacy_user.email_verified
                         changed = True
                     if changed:
-                        session.add(contact)
+                        session.add(email_contact)
 
             phone = trim_or_none(legacy_user.phone)
             if phone is not None:
                 normalized_phone = normalize_phone(phone)
                 if normalized_phone:
-                    contact = session.scalar(
+                    phone_contact = session.scalar(
                         select(PhoneContactV2).where(
                             PhoneContactV2.phone == normalized_phone
                         )
                     )
-                    if contact is None:
+                    if phone_contact is None:
                         session.add(
                             PhoneContactV2(
                                 user_id=user_v2.id,
@@ -119,15 +119,15 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                                 updated_at=legacy_user.updated_at,
                             )
                         )
-                    elif contact.user_id != user_v2.id:
+                    elif phone_contact.user_id != user_v2.id:
                         stats.conflicts += 1
                     else:
                         changed = False
-                        if contact.is_verified != legacy_user.phone_verified:
-                            contact.is_verified = legacy_user.phone_verified
+                        if phone_contact.is_verified != legacy_user.phone_verified:
+                            phone_contact.is_verified = legacy_user.phone_verified
                             changed = True
                         if changed:
-                            session.add(contact)
+                            session.add(phone_contact)
 
         commit_or_rollback(session, dry_run=dry_run)
     finally:
