@@ -6,6 +6,14 @@
 > Goal: 在动代码之前，把"几屏、每屏长什么样、卡片去哪/能不能改"全部摊开讨论清楚再实施。
 > 范围限定：本文不涉及任何视觉元素（颜色 / 排版 / 间距 / 图标），只定功能结构与交互边界。
 
+> **落地文档**：本文是 IA 决策 SSOT。具体每个一级导航 / 层的落地实施 plan 见 [`Phase/`](./Phase/README.md) 子目录。
+>
+> | Phase | Status |
+> |---|---|
+> | [Phase/Home](./Phase/Home/README.md)（首页 tab） | ACCEPTED · 详细规格完成（11 子文档 / 80 PR） |
+> | Phase/Practice/Review/Notes/Profile（其他 4 tab） | TBD（占位 README） |
+> | Phase/Auth/Onboarding/Marketing（3 个 layer） | TBD（占位 README） |
+
 ---
 
 ## 0. 用户路径分层（先约定 4 个壳）
