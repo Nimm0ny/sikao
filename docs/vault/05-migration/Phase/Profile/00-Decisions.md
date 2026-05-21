@@ -35,6 +35,7 @@
 | D-P8 | 注销恢复机制 | **不提供恢复 / 撤销注销的显式操作**；7 天宽限期内不可自行恢复，过期自动硬删 | 2026-05-21 |
 | D-P9 | 跨设备同步实现节奏 | **Phase-Profile MVP 不实现同步逻辑**；仅设计好后端 schema，占位 endpoint；具体同步策略后续迭代 | 2026-05-21 |
 | D-P10 | Profile 路由结构 | **M-Multi**（概览 + 子路由），沿用 IA-V2 D11 决策 | 2026-05-21 |
+| D-P11 | 注销 cron 调度选型 | **FastAPI lifespan + asyncio 后台任务**（不引 APScheduler）；默认关闭，prod 通过 env 启用；同步 sweep 用 `asyncio.to_thread` 包裹 | 2026-05-21 |
 
 ---
 
@@ -57,6 +58,9 @@
 | Del-2 | 不提供撤销注销操作 | 宽限期内用户重新登录**不自动恢复**；无"撤销注销"按钮 |
 | Del-3 | 硬删范围 | 用户数据全量清除（CASCADE）；审计日志保留（脱敏后归档） |
 | Del-4 | 注销入口 | `/profile/security` 页底部 danger zone |
+| Del-5 | 硬删 cron 调度实现 | **FastAPI lifespan + asyncio 后台任务**（`core/scheduler.py`），扫描 `AccountDeletionJobV2 WHERE status='pending' AND hard_delete_at <= now()`；默认关闭，prod 通过 `DELETION_SWEEP_ENABLED=true` 启用；多 worker 部署须把 sweep 限制到单 worker（env 注入或专用 worker 进程） |
+| Del-6 | 调度间隔 | 默认 24h（配 `DELETION_SWEEP_INTERVAL_SECONDS`）；首次延迟 60s（配 `DELETION_SWEEP_INITIAL_DELAY_SECONDS`）防 startup 抖动；可选 `DELETION_SWEEP_RUN_ON_STARTUP=true` 启动即跑（运维兜底） |
+| Del-7 | 失败容错 | sweep 内部 worker 已有 v2-#1 / v2-#2 保障；scheduler 层再包一层 try / except 吞 worker 异常 + log error，确保后台 task 不退出（task 退出 = 后续到期 job 永远积压） |
 
 ---
 

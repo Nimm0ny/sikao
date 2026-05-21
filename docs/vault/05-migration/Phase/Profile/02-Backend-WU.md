@@ -168,30 +168,97 @@ Route handler catch `NotImplementedError` → 返回 501 + `{"detail": "bind-pho
 
 ---
 
-### PR-P5：Hard-delete cron job（占位设计）
+### PR-P5：Hard-delete cron worker（已实现）
 
 **范围**：
-- `modules/profile_v2/application/deletion_worker.py`：cron handler 占位
-- 测试（mock 验证调用链）
+- `modules/profile_v2/application/deletion_worker.py`：`run_hard_delete_sweep(session) -> int`
+- 测试：`tests/test_profile_deletion_worker.py`（v2-#1 FK SET NULL 审计保留 + v2-#2 异常 rollback 隔离）
 
-**实现逻辑（占位）**：
+**实现要点**：
+- 同步函数（SQLAlchemy `Session`），逐个 job try-commit，单个 job 异常仅 rollback + 标 `failed` + 写 `error_message`，loop 不退出。
+- `AccountDeletionJobV2.user_id ondelete=SET NULL`：硬删 user 后 job 行作为审计记录长存，`user_public_id` 保留。
+
+---
+
+### PR-P6：Cron 调度接入（lifespan + asyncio）
+
+**范围**：
+- `core/scheduler.py`：`DeletionSweepScheduler` 类（start / stop / 后台 task loop）
+- `core/config.py`：4 个新 Settings 字段
+- `main.py`：在 `lifespan` 启动 scheduler、关闭时优雅 cancel
+- 测试：`tests/test_profile_deletion_scheduler.py`（startup/shutdown、周期触发、worker 异常吞掉）
+
+**调度选型（D-P11）**：
+- ✅ **FastAPI lifespan + `asyncio.create_task` + `asyncio.to_thread`**（同 limiter 模式）
+- ❌ APScheduler：不引新依赖；调度需求单一（一个 sweep 任务）；APScheduler 在 multi-uvicorn-worker 下要 Redis jobstore 协调，复杂度反超自实现
+- ❌ 外部 cron / k8s CronJob：违反「starts with FastAPI 启动周期」需求；也增加运维 surface
+
+**实现骨架**：
 ```python
-async def run_hard_delete_cron():
-    """
-    每日 02:00 UTC+8 运行。
+class DeletionSweepScheduler:
+    def __init__(self, db, *, interval_seconds, initial_delay_seconds,
+                 run_on_startup, sweep_fn=run_hard_delete_sweep):
+        self._db = db
+        self._interval = interval_seconds
+        self._initial_delay = initial_delay_seconds
+        self._run_on_startup = run_on_startup
+        self._sweep_fn = sweep_fn
+        self._task: asyncio.Task | None = None
+        self._stop = asyncio.Event()
 
-    1. 查 AccountDeletionJobV2 WHERE status='pending' AND hard_delete_at <= now()
-    2. 对每个 job:
-       a. 脱敏审计日志（AuditLogV2 actor → "deleted_user:<public_id>"）
-       b. LlmCallV2.user_id → null
-       c. DELETE FROM users_v2 WHERE id = job.user_id（CASCADE 清理全部）
-       d. job.status = 'completed', job.completed_at = now()
-    3. 失败的 job: status = 'failed', error_message = str(e)
-    """
-    pass  # TODO: implement when scheduling infra is ready
+    async def start(self) -> None:
+        self._task = asyncio.create_task(self._run_loop(), name="deletion-sweep")
+
+    async def stop(self) -> None:
+        self._stop.set()
+        if self._task:
+            self._task.cancel()
+            with contextlib.suppress(asyncio.CancelledError):
+                await self._task
+
+    async def _run_loop(self) -> None:
+        try:
+            if not self._run_on_startup:
+                await self._sleep(self._initial_delay)
+            while not self._stop.is_set():
+                await self._run_once_safely()
+                await self._sleep(self._interval)
+        except asyncio.CancelledError:
+            raise
+
+    async def _run_once_safely(self) -> int:
+        try:
+            return await asyncio.to_thread(self._sweep_in_session)
+        except Exception as exc:  # 吞所有异常防 task 退出
+            logger.exception("deletion_sweep.error err=%s", exc)
+            return 0
+
+    def _sweep_in_session(self) -> int:
+        session = self._db.session_factory()
+        try:
+            return self._sweep_fn(session)
+        finally:
+            session.close()
+
+    async def _sleep(self, seconds: float) -> None:
+        # 用 wait + timeout 让 stop() 能立即唤醒
+        try:
+            await asyncio.wait_for(self._stop.wait(), timeout=seconds)
+        except asyncio.TimeoutError:
+            pass
 ```
 
-**文件变更**：~2 文件 / ~60 行
+**Settings 新字段**：
+| 字段 | 默认 | 说明 |
+|---|---|---|
+| `deletion_sweep_enabled` | `False` | 总开关；pytest / dev 默认关 |
+| `deletion_sweep_interval_seconds` | `86400` | 每 24h 跑一次 |
+| `deletion_sweep_initial_delay_seconds` | `60` | 启动后等 60s 才首次跑（防 startup 抖动） |
+| `deletion_sweep_run_on_startup` | `False` | 启动立即跑一次（运维兜底） |
+
+**多 worker 警告**：`run_hard_delete_sweep` 已基本幂等（`status='pending'` filter）但有竞态。MVP 部署文档要求：仅 leader worker 设置 `DELETION_SWEEP_ENABLED=true`，其它 worker 保持默认关闭；或单独跑一个 worker 进程（如 `uvicorn --workers 1 ... + DELETION_SWEEP_ENABLED=true`）。
+
+**文件变更**：~5 文件 / ~250 行（含测试）
 
 ---
 
@@ -206,7 +273,9 @@ PR-P3 (Deletion) ──── 独立（migration 先跑）
 
 PR-P4 (Bind stub) ── 独立
 
-PR-P5 (Cron 占位) ── 依赖 PR-P3（需要 AccountDeletionJobV2 存在）
+PR-P5 (Cron worker) ── 依赖 PR-P3（需要 AccountDeletionJobV2 存在）
+
+PR-P6 (Scheduler 接入) ── 依赖 PR-P5（worker 函数签名稳定）
 ```
 
 ---
