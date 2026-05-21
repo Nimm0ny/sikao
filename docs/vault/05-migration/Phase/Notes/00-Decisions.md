@@ -17,6 +17,7 @@
 | `N-Tag` | 标签 / 分类系统 |
 | `N-Community` | 社区笔记 / 公开分享 |
 | `N-Weekly` | 周回顾笔记生成 |
+| `N-AI` | AI 摘要拆复盘卡 |
 | `N-Cross` | 跨 Tab 联动（继承 + 扩展） |
 
 ---
@@ -68,9 +69,11 @@
 
 | Segment | 数据源 | 说明 |
 |---|---|---|
-| **全部** | NoteV2 WHERE visibility IN (private, public) AND user_id=current | 用户自己所有笔记（含题级/自由/AI生成/周回顾） |
-| **我的笔记** | 同"全部"但可应用筛选器 | 带筛选器的工作视图 |
+| **全部** | NoteV2 WHERE user_id=current | 用户自己所有笔记默认列表（无筛选器，快速浏览） |
+| **我的笔记** | 同"全部"+ 筛选器面板展开 | "全部"的筛选工作态：同一列表，展开筛选器面板时 URL 切到 `?tab=my` |
 | **收藏夹** | QuestionFavoriteV2 WHERE user_id=current | 题目卡片列表（A 方案） |
+
+> 设计说明："全部"与"我的笔记"本质是同一个列表的两种 UI 模式——前者为无筛选快速浏览态，后者为展开筛选器的工作态。路由区分便于保存/分享筛选状态。
 
 > 未来 N-D4 社区笔记上线后新增第 4 个 segment "社区"：`/notes?tab=community`
 
@@ -164,6 +167,7 @@ P2 追加：
 | **N-Search-6** | 同步策略 | 写入 NoteV2 后同步推送 Meilisearch（API handler 内异步 task） |
 | **N-Search-7** | 搜索延迟目标 | < 50ms（Meilisearch 默认满足） |
 | **N-Search-8** | typo 容忍 | 开启（Meilisearch 默认，最大 2 字符编辑距离） |
+| **N-Search-9** | 多用户隔离 | 用 `user_id` filter 隔离（不建独立 tenant index）；Stage 2 多用户时 filter 性能足够（Meilisearch 内部 bitmap） |
 
 ### 5.1 Meilisearch 索引配置
 
@@ -285,8 +289,10 @@ NoteReactionV2:
   UNIQUE(user_id, note_id, type)
 
 NoteCommentV2:
-  id, user_id, note_id, parent_comment_id (nullable), body, created_at, updated_at, deleted_at
-  树状结构：parent_comment_id 引用同表（最大 3 层）
+  id, user_id, note_id, parent_comment_id (nullable), path (materialized path, e.g. "1.5.12"),
+  depth (int, max=3), body, created_at, updated_at, deleted_at
+  树状结构：parent_comment_id 引用同表（最大 3 层嵌套）
+  查询优化：用 path 物化路径字段做 LIKE 'x.%' 前缀查询，避免递归 CTE
 
 NoteBookmarkV2:
   id, user_id, note_id, created_at
@@ -333,7 +339,9 @@ NoteBookmarkV2:
 | **N-Weekly-7** | 限流 | 每用户每周最多生成 2 次（防反复重生成烧 token） |
 | **N-Weekly-8** | 幂等 | Idempotency-Key = `weekly_review_{user_id}_{year}_{week_number}_{attempt}` |
 
-### 8.1 生成模板结构（Gamma 方案）
+#### 8.1 生成模板结构（Gamma 方案）
+
+> 模板中的 emoji heading 由 LLM 输出，最终文案以 `lib/ui-copy/weekly-review.ts` 为 SSOT；下方仅为 prompt 示例。
 
 ```markdown
 # 📊 第 {week_number} 周学习回顾 ({date_range})
