@@ -964,15 +964,8 @@
             "type": "string"
           },
           "questionKey": {
-            "anyOf": [
-              {
-                "type": "string"
-              },
-              {
-                "type": "null"
-              }
-            ],
-            "title": "Questionkey"
+            "title": "Questionkey",
+            "type": "string"
           },
           "status": {
             "title": "Status",
@@ -981,6 +974,7 @@
         },
         "required": [
           "id",
+          "questionKey",
           "prompt",
           "answerKind",
           "status"
@@ -2138,6 +2132,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Dashboard Overview",
         "tags": [
           "planning-v2"
@@ -2159,6 +2158,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Progress Overview",
         "tags": [
           "progress-v2"
@@ -2180,6 +2184,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Progress Diagnosis",
         "tags": [
           "progress-v2"
@@ -2201,6 +2210,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Progress Trend",
         "tags": [
           "progress-v2"
@@ -2222,6 +2236,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Progress Weakness",
         "tags": [
           "progress-v2"
@@ -2269,6 +2288,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Dashboard Today",
         "tags": [
           "planning-v2"
@@ -2290,6 +2314,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Dashboard Today Continue",
         "tags": [
           "planning-v2"
@@ -2311,6 +2340,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Dashboard Today Must Do",
         "tags": [
           "planning-v2"
@@ -2332,6 +2366,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Dashboard Today Review",
         "tags": [
           "planning-v2"
@@ -2353,6 +2392,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Dashboard Weekly Plan",
         "tags": [
           "planning-v2"
@@ -2374,6 +2418,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Dashboard Weekly Adjust",
         "tags": [
           "planning-v2"
@@ -2395,6 +2444,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Dashboard Weekly Goal",
         "tags": [
           "planning-v2"
@@ -2416,6 +2470,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Dashboard Weekly Completion",
         "tags": [
           "planning-v2"
@@ -3194,6 +3253,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "List Review Items",
         "tags": [
           "review-v2"
@@ -3236,6 +3300,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Review Item",
         "tags": [
           "review-v2"
@@ -3278,6 +3347,11 @@
             "description": "Validation Error"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Redo Review Item",
         "tags": [
           "review-v2"
@@ -3299,6 +3373,11 @@
             "description": "Successful Response"
           }
         },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "summary": "Get Smart Review",
         "tags": [
           "review-v2"
