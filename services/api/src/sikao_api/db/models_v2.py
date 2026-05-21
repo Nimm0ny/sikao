@@ -7,6 +7,7 @@ from uuid import uuid4
 
 from sqlalchemy import (
     Boolean,
+    CheckConstraint,
     Date,
     DateTime,
     ForeignKey,
@@ -16,6 +17,7 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -570,4 +572,89 @@ class ProfileGoalV2(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+
+class PlanV2(Base):
+    __tablename__ = "plan_v2"
+    __table_args__ = (
+        Index("ix_plan_v2_user_status", "user_id", "status"),
+        Index(
+            "ix_plan_v2_user_active",
+            "user_id",
+            unique=True,
+            sqlite_where=text("status = 'active' AND deleted_at IS NULL"),
+            postgresql_where=text("status = 'active' AND deleted_at IS NULL"),
+        ),
+        CheckConstraint("daily_minutes_target BETWEEN 60 AND 720", name="ck_plan_v2_minutes"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False)
+    name: Mapped[str] = mapped_column(String(120), nullable=False)
+    target_exam_id: Mapped[str] = mapped_column(String(64), nullable=False)
+    target_exam_date: Mapped[date] = mapped_column(Date, nullable=False)
+    daily_minutes_target: Mapped[int] = mapped_column(Integer, nullable=False)
+    style: Mapped[str] = mapped_column(String(32), nullable=False)
+    baseline: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    focus_subjects: Mapped[list[str]] = mapped_column(JSONB_COMPAT, default=list, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="paused")
+    source: Mapped[str] = mapped_column(String(32), nullable=False)
+    change_log: Mapped[list[dict[str, Any]]] = mapped_column(JSONB_COMPAT, default=list, nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=utc_now,
+        onupdate=utc_now,
+        nullable=False,
+    )
+
+
+class PlanEventV2(Base):
+    __tablename__ = "plan_event_v2"
+    __table_args__ = (
+        Index("ix_event_v2_user_range", "user_id", "start_at", "end_at"),
+        Index("ix_event_v2_plan_range", "plan_id", "start_at"),
+        Index("ix_event_v2_recurring_parent", "recurring_parent_id"),
+        Index(
+            "ix_event_v2_user_alive",
+            "user_id",
+            sqlite_where=text("deleted_at IS NULL"),
+            postgresql_where=text("deleted_at IS NULL"),
+        ),
+        CheckConstraint("end_at > start_at", name="ck_event_v2_time_window"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    plan_id: Mapped[int] = mapped_column(ForeignKey("plan_v2.id", ondelete="CASCADE"), nullable=False)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False)
+    title: Mapped[str] = mapped_column(String(200), nullable=False)
+    category: Mapped[str] = mapped_column(String(32), nullable=False)
+    notes: Mapped[str] = mapped_column(Text, nullable=False, default="")
+    start_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    end_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    timezone: Mapped[str] = mapped_column(String(64), nullable=False, default="Asia/Shanghai")
+    recurring_rule: Mapped[str | None] = mapped_column(Text, nullable=True)
+    recurring_parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("plan_event_v2.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    recurring_exception_dates: Mapped[list[str]] = mapped_column(JSONB_COMPAT, default=list, nullable=False)
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default="planned")
+    source: Mapped[str] = mapped_column(String(32), nullable=False)
+    linked_session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("practice_sessions_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    target_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    change_log: Mapped[list[dict[str, Any]]] = mapped_column(JSONB_COMPAT, default=list, nullable=False)
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=utc_now,
+        onupdate=utc_now,
+        nullable=False,
     )
