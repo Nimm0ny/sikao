@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 
-from sqlalchemy import select
+from sqlalchemy import delete, select
 from sqlalchemy.orm import selectinload
 
 from sikao_api.db.models import (
@@ -112,6 +112,7 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                 session.add(paper_v2)
                 stats.updated += 1
 
+            seen_revision_ids: set[int] = set()
             section_map: dict[int, int] = {}
             block_map: dict[int, int] = {}
             group_map: dict[int, int] = {}
@@ -135,6 +136,12 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                 else:
                     revision_v2.status = "published" if revision.is_published else "draft"
                     session.add(revision_v2)
+                seen_revision_ids.add(revision_v2.id)
+                seen_section_ids: set[int] = set()
+                seen_block_ids: set[int] = set()
+                seen_group_ids: set[int] = set()
+                seen_question_ids: set[int] = set()
+
                 for section in revision.sections:
                     section_v2 = session.scalar(
                         select(PaperSectionV2).where(
@@ -155,6 +162,7 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                         section_v2.title = section.title
                         section_v2.display_order = section.display_order
                         session.add(section_v2)
+                    seen_section_ids.add(section_v2.id)
                     section_map[section.id] = section_v2.id
 
                 for block in revision.blocks:
@@ -177,6 +185,7 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                         block_v2.section_id = section_map[block.section_id]
                         block_v2.block_kind = block.block_type
                         session.add(block_v2)
+                    seen_block_ids.add(block_v2.id)
                     block_map[block.id] = block_v2.id
 
                 for group in revision.material_groups:
@@ -211,6 +220,7 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                         }
                         group_v2.display_order = group.display_order
                         session.add(group_v2)
+                    seen_group_ids.add(group_v2.id)
                     group_map[group.id] = group_v2.id
 
                     existing_assets = {
@@ -221,8 +231,10 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                             )
                         )
                     }
+                    seen_asset_keys: set[tuple[str, int]] = set()
                     for asset in group.assets:
                         key = (asset.file_path, asset.display_order)
+                        seen_asset_keys.add(key)
                         asset_v2 = existing_assets.get(key)
                         if asset_v2 is None:
                             session.add(
@@ -236,6 +248,17 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                         else:
                             asset_v2.mime_type = asset.mime_type
                             session.add(asset_v2)
+                    stale_asset_ids = [
+                        asset.id
+                        for key, asset in existing_assets.items()
+                        if key not in seen_asset_keys
+                    ]
+                    if stale_asset_ids:
+                        session.execute(
+                            delete(MaterialGroupAssetV2).where(
+                                MaterialGroupAssetV2.id.in_(stale_asset_ids)
+                            )
+                        )
 
                 for question in revision.questions:
                     item_no = question.position
@@ -274,6 +297,7 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                         question_v2.content_json = build_question_content(question)
                         question_v2.updated_at = question.updated_at
                         session.add(question_v2)
+                    seen_question_ids.add(question_v2.id)
 
                     existing_options = {
                         option.option_key: option
@@ -283,7 +307,9 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                             )
                         )
                     }
+                    seen_option_keys: set[str] = set()
                     for option in question.options:
+                        seen_option_keys.add(option.option_key)
                         option_v2 = existing_options.get(option.option_key)
                         if option_v2 is None:
                             session.add(
@@ -298,6 +324,17 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                             option_v2.option_text = option.option_text
                             option_v2.display_order = option.display_order
                             session.add(option_v2)
+                    stale_option_ids = [
+                        option.id
+                        for key, option in existing_options.items()
+                        if key not in seen_option_keys
+                    ]
+                    if stale_option_ids:
+                        session.execute(
+                            delete(QuestionOptionV2).where(
+                                QuestionOptionV2.id.in_(stale_option_ids)
+                            )
+                        )
 
                     existing_question_assets = {
                         (asset.file_path, asset.display_order): asset
@@ -307,8 +344,10 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                             )
                         )
                     }
+                    seen_question_asset_keys: set[tuple[str, int]] = set()
                     for asset in question.assets:
                         key = (asset.file_path, asset.display_order)
+                        seen_question_asset_keys.add(key)
                         question_asset_v2 = existing_question_assets.get(key)
                         if question_asset_v2 is None:
                             session.add(
@@ -322,6 +361,72 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                         else:
                             question_asset_v2.mime_type = asset.mime_type
                             session.add(question_asset_v2)
+                    stale_question_asset_ids = [
+                        asset.id
+                        for key, asset in existing_question_assets.items()
+                        if key not in seen_question_asset_keys
+                    ]
+                    if stale_question_asset_ids:
+                        session.execute(
+                            delete(QuestionAssetV2).where(
+                                QuestionAssetV2.id.in_(stale_question_asset_ids)
+                            )
+                        )
+
+                stale_question_ids = list(
+                    session.scalars(
+                        select(QuestionV2.id).where(
+                            QuestionV2.revision_id == revision_v2.id,
+                            QuestionV2.id.notin_(seen_question_ids),
+                        )
+                    )
+                )
+                if stale_question_ids:
+                    session.execute(delete(QuestionV2).where(QuestionV2.id.in_(stale_question_ids)))
+
+                stale_group_ids = list(
+                    session.scalars(
+                        select(MaterialGroupV2.id).where(
+                            MaterialGroupV2.revision_id == revision_v2.id,
+                            MaterialGroupV2.id.notin_(seen_group_ids),
+                        )
+                    )
+                )
+                if stale_group_ids:
+                    session.execute(delete(MaterialGroupV2).where(MaterialGroupV2.id.in_(stale_group_ids)))
+
+                stale_block_ids = list(
+                    session.scalars(
+                        select(PaperBlockV2.id).where(
+                            PaperBlockV2.revision_id == revision_v2.id,
+                            PaperBlockV2.id.notin_(seen_block_ids),
+                        )
+                    )
+                )
+                if stale_block_ids:
+                    session.execute(delete(PaperBlockV2).where(PaperBlockV2.id.in_(stale_block_ids)))
+
+                stale_section_ids = list(
+                    session.scalars(
+                        select(PaperSectionV2.id).where(
+                            PaperSectionV2.revision_id == revision_v2.id,
+                            PaperSectionV2.id.notin_(seen_section_ids),
+                        )
+                    )
+                )
+                if stale_section_ids:
+                    session.execute(delete(PaperSectionV2).where(PaperSectionV2.id.in_(stale_section_ids)))
+
+            stale_revision_ids = list(
+                session.scalars(
+                    select(PaperRevisionV2.id).where(
+                        PaperRevisionV2.paper_id == paper_v2.id,
+                        PaperRevisionV2.id.notin_(seen_revision_ids),
+                    )
+                )
+            )
+            if stale_revision_ids:
+                session.execute(delete(PaperRevisionV2).where(PaperRevisionV2.id.in_(stale_revision_ids)))
 
         commit_or_rollback(session, dry_run=dry_run)
     finally:
