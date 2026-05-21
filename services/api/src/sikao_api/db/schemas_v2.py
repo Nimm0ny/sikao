@@ -630,10 +630,155 @@ class BindPhoneResponseV2(CamelModel):
 class DashboardTodayResponseV2(OverviewResponseV2):
     pass
 
+class SubjectAccuracyV2(CamelModel):
+    subject_key: str
+    subject_label: str
+    answered: int
+    correct: int
+    accuracy: Decimal | None = None
 
-class DashboardWeeklyPlanResponseV2(OverviewResponseV2):
-    pass
+
+class WeaknessItemV2(CamelModel):
+    subject_key: str
+    subject_label: str
+    answered: int
+    correct: int
+    accuracy: Decimal | None = None
+    severity: str
+    trend: str
 
 
-class DashboardProgressResponseV2(OverviewResponseV2):
-    pass
+class ProgressMetricBucketV2(CamelModel):
+    minutes_practiced: int
+    items_answered: int
+    accuracy: Decimal | None = None
+    sessions_count: int
+
+
+class ProgressPlanSliceV2(CamelModel):
+    plan_id: int | None = None
+    range_from: date | None = None
+    range_to: date | None = None
+    events_in_window_total: int
+    events_done: int
+    events_skipped: int
+    minutes_target_in_window: int
+    minutes_practiced_in_window: int
+
+
+class ExamCountdownV2(CamelModel):
+    exam_id: str
+    exam_name: str
+    exam_date: date
+    days_until: int
+
+
+class DashboardProgressSummaryV2(CamelModel):
+    today: ProgressMetricBucketV2
+    week: ProgressMetricBucketV2
+    all_time: ProgressMetricBucketV2
+    plan_slice: ProgressPlanSliceV2
+
+
+class DashboardProgressResponseV2(CamelModel):
+    summary: DashboardProgressSummaryV2
+    weakness_top3: list[WeaknessItemV2] = Field(default_factory=list)
+    subject_accuracies: list[SubjectAccuracyV2] = Field(default_factory=list)
+    nearest_exam_target: ExamCountdownV2 | None = None
+
+
+class ProgressTimeseriesPointV2(CamelModel):
+    bucket_start: date
+    bucket_end: date
+    minutes_practiced: int
+    items_answered: int
+    accuracy: Decimal | None = None
+    sessions_count: int
+
+
+class ProgressTimeseriesResponseV2(CamelModel):
+    from_date: date = Field(alias="from")
+    to: date
+    granularity: Literal["day", "week"]
+    points: list[ProgressTimeseriesPointV2] = Field(default_factory=list)
+
+
+class ProgressWeaknessResponseV2(CamelModel):
+    items: list[WeaknessItemV2] = Field(default_factory=list)
+
+
+class ProgressDiagnosisResponseV2(CamelModel):
+    strengths: list[str] = Field(default_factory=list)
+    weaknesses: list[str] = Field(default_factory=list)
+    suggestions: list[str] = Field(default_factory=list)
+    generated_at: UtcDatetime
+
+
+class DashboardPlanWindowSummaryV2(CamelModel):
+    total_events: int
+    planned_count: int
+    in_progress_count: int
+    done_count: int
+    skipped_count: int
+    event_minutes_total: int
+    practice_minutes_total: int
+    completion_rate: Decimal | None = None
+
+
+class DashboardTodayResponseV2(CamelModel):
+    date: date
+    plan_id: int | None = None
+    summary: DashboardPlanWindowSummaryV2
+    events: list[PlanEventReadV2] = Field(default_factory=list)
+    practice_blocks: list[PracticeBlockV2] = Field(default_factory=list)
+    nearest_exam_target: ExamCountdownV2 | None = None
+
+
+class DashboardContinueResponseV2(CamelModel):
+    has_active_session: bool
+    session_id: int | None = None
+    track: str | None = None
+    entry_kind: str | None = None
+    status: str | None = None
+    started_at: UtcDatetime | None = None
+    href: str | None = None
+
+
+class DashboardReviewResponseV2(CamelModel):
+    items: list[ReviewItemV2] = Field(default_factory=list)
+    total: int
+
+
+class DashboardWeeklyPlanResponseV2(CamelModel):
+    week_start: date
+    week_end: date
+    plan_id: int | None = None
+    summary: DashboardPlanWindowSummaryV2
+    events: list[PlanEventReadV2] = Field(default_factory=list)
+    practice_blocks: list[PracticeBlockV2] = Field(default_factory=list)
+    nearest_exam_target: ExamCountdownV2 | None = None
+
+
+class DashboardTodayCompletionResponseV2(CamelModel):
+    date: date
+    total_events: int
+    done_events: int
+    completion_rate: Decimal | None = None
+
+
+class DashboardWeeklyAdjustRequestV2(CamelModel):
+    daily_minutes_target: int | None = Field(default=None, ge=60, le=720)
+    style: str | None = Field(default=None, min_length=1, max_length=32)
+    focus_subjects: list[str] | None = None
+
+
+class DashboardFullPlanResponseV2(CamelModel):
+    view: Literal["today", "week", "month"]
+    anchor_date: date
+    from_date: date = Field(alias="from")
+    to: date
+    plan_id: int | None = None
+    summary: DashboardPlanWindowSummaryV2
+    events: list[PlanEventReadV2] = Field(default_factory=list)
+    practice_blocks: list[PracticeBlockV2] = Field(default_factory=list)
+    targets: list[ExamCountdownV2] = Field(default_factory=list)
