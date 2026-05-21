@@ -17,6 +17,7 @@ dependencies = [
   "pyjwt>=2.10.1",
   "passlib[bcrypt]>=1.7.4",
   "httpx>=0.28.1",
+  "python-dateutil>=2.9.0",
   "python-multipart>=0.0.20",
   "cryptography>=44.0",
   "fastapi-limiter>=0.1.6,<0.2.0",
