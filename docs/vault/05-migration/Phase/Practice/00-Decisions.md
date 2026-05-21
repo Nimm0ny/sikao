@@ -22,6 +22,11 @@
 | `Daily-` | 每日一练 |
 | `Note-` | 题级笔记联动 |
 | `Fav-` / `Flag-` | 收藏 / 标记 |
+| `Timing-` | 答题计时（11-Timing-Engine.md） |
+| `Session-LC-` | session 生命周期（12-Session-Lifecycle.md） |
+| `MockExam-` | 模考模式（13-Mock-Exam.md） |
+| `Pref-` | 用户偏好（14-Practice-Preferences.md） |
+| `QMeta-` | 题目元数据（15-Question-Metadata.md，Phase 1 仅 schema） |
 | `Infra-` | 基础设施（cron / LLM / 限流 / 审计） |
 | `NF-` | 非功能（性能 / 安全 / 可观测） |
 
@@ -210,6 +215,7 @@
 - 申论批改详情 `/practice/sessions/:id/grading`
 - AI 出题等待页 `/practice/ai-questions/generating`
 - 题目详情页 `/practice/questions/:id`（用于 Tab 4 笔记跳转）
+- 模考创建与详情：`/practice/mock-exam/start`（创建配置）/ `/practice/mock-exam/history`（历次模考列表）
 
 后端：
 - QuestionV2 字段扩展（B10）
@@ -220,6 +226,12 @@
 - LLM 模块扩展 3 能力（B22）
 - cron 扩展（B23）
 - e2e + OpenAPI（B24）
+- **timing 模块**（B25）：QuestionTimingBaselineV2 + 时间事件上报 / 分析端点 / 基线 cron
+- **session_lifecycle 模块**（B26）：状态机 + pause / resume / heartbeat / discard / active query / 超时 cron
+- **mock_exam 模块**（B27）：创建 / 倒计时 / 自动提交 / 历史对比 / cron 兜底
+- **practice_preferences 模块**（B28）：UserPracticePreferencesV2 + GET/PUT/PATCH/RESET 端点 + LRU 缓存
+- **question_metadata schema 预留**（B29）：QuestionV2 5 字段扩展 + KnowledgePointV2 / QuestionKnowledgePointV2 两表（建表，留空）
+- **question_report 模块**（B30）：真题纠错入口 + admin 处理流（属 SHOULD 级补强）
 
 ### 11.2 不在范围内
 
@@ -232,6 +244,11 @@
 - AI 出题"自动评分"（基于答题反推 LLM 改编质量） → 远期
 - 收藏夹分组 → 远期
 - 移动端 5 tab 适配（Phase-Home D1 修订作废了 H-Plan-6 升 tab 方案；由 Phase-Home WU-F7 处理路由迁移）
+- **题目元数据 Phase 2 完整能力**（端点 / cron / LLM 标注 / 数据填充）→ Phase 2（独立 Phase 实施，与 Phase-Review 错因聚类升级配套）
+- **跨用户模考排行榜**（"和你同水平的人这套卷正确率 30%"）→ Stage 2 多用户阶段
+- **答题质量分析**（蒙猜识别 / 答题置信度自评 / 答案变化轨迹聚合）→ 远期（timing 字段 answer_change_count / time_spent_ms 已就绪，作输入）
+- **数据导出 / 学习成就 / 通知中心**：均推远期
+- **session 异常恢复克隆**（recovered_from_session_id 字段已建，但启用流程 Phase 2 实施）
 
 ---
 
@@ -256,3 +273,120 @@
 - 在对应章节用 `~~删除线~~` 保留旧决策
 - 紧跟新决策行 + `（变更日期：YYYY-MM-DD）`
 - 跨文档影响在 [README §10](./README.md#10-变更流程) 注明
+
+
+---
+
+## 14. 答题计时（Timing 系列）
+
+详见 [11-Timing-Engine.md](./11-Timing-Engine.md)。
+
+| # | 决策 | 拍板 |
+|---|---|---|
+| Timing-1 | 是否引入逐题计时 | **是**（公考时间敏感性是核心；缺这块练习产品不完整） |
+| Timing-2 | 计时粒度 | 毫秒级（time_spent_ms），存累计耗时（不含切走切回间隔） |
+| Timing-3 | 上报方式 | 前端事件 batch 上报（buffer ≥ 50 或每 15s flush）；不实时上报每次操作 |
+| Timing-4 | 事件类型 | question_enter / question_leave / answer_change / heartbeat 四类（heartbeat 为减少端点数共用 timing 上报通道，session_pause/resume 走 lifecycle 端点） |
+| Timing-5 | 单区间最大值 | 单次 enter→leave 区间 ≤ 60s（超出截断为 60s，防恶意刷时间） |
+| Timing-6 | 超时判定基线 | 用 QuestionTimingBaselineV2.p95_ms × 1.2；样本不足 30 不参与判定 |
+| Timing-7 | 基线计算频率 | 每周一 03:00 cron 重算（最近 90 天数据） |
+| Timing-8 | answer_change_count 含义 | 首次作答不计；改一次 +1（用于答题质量分析的 Phase 2 输入） |
+| Timing-9 | is_overtime 计算时机 | 仅 session.submit 时计算并写入；session 进行中始终 false |
+| Timing-10 | 暴露给前端的实时数据 | 不实时计算 vs_baseline_ratio；用户看到的"超时警告"由前端用 baseline 客户端比对 |
+| Timing-11 | 时间分析维度 | overall / by_category_l1 / by_difficulty + overtime_questions + pacing_pattern（前/中/后段速率对比） |
+| Timing-12 | 与 paused_total_seconds 的关系 | 暂停时间累加在 session 字段；timing.total_active_seconds = wall_clock - paused_total（约束）|
+| Timing-13 | 客户端时钟漂移 | 端点上报支持 client_clock_skew_ms（可选）；服务端不强校验，超 60s 异常事件拒绝 |
+
+---
+
+## 15. session 生命周期（Session-LC 系列）
+
+详见 [12-Session-Lifecycle.md](./12-Session-Lifecycle.md)。
+
+| # | 决策 | 拍板 |
+|---|---|---|
+| Session-LC-1 | 状态枚举 | DRAFT / IN_PROGRESS / PAUSED / SUBMITTED / ABANDONED / EXPIRED 六态 |
+| Session-LC-2 | DRAFT 用途 | 自定义对话框配置完成 / AI 出题等待页生成完成后的过渡态；首次答题 / start 端点转 IN_PROGRESS（heartbeat **不**触发转换） |
+| Session-LC-3 | 心跳间隔 | 30s（前端定时；用户切走 tab 暂停心跳） |
+| Session-LC-4 | 心跳超时阈值 | 30min 未心跳 → IN_PROGRESS 转 PAUSED（mock_exam 例外） |
+| Session-LC-5 | 无活动放弃阈值 | PAUSED 24h 无任何活动 → ABANDONED |
+| Session-LC-6 | DRAFT 放弃阈值 | DRAFT 2h 无活动 → ABANDONED |
+| Session-LC-7 | Daily session 超时 | 当日 23:59 cron 检查 status != submitted → EXPIRED |
+| Session-LC-8 | 终态不可变 | SUBMITTED / ABANDONED / EXPIRED 不可改 status / completed_at / abandoned_at（DB trigger 拦截 UPDATE） |
+| Session-LC-9 | 多端策略 | last-writer-wins（不强独占）；客户端心跳响应中检测状态变化即 refetch |
+| Session-LC-10 | 心跳到达终态 session | 仅返回当前状态，不写 last_heartbeat_at |
+| Session-LC-11 | force_submit 入口 | mock_exam 倒计时归零（cron 兜底每分钟）/ admin 端点 / 系统恢复（罕见） |
+| Session-LC-12 | DRAFT 不接受 timing 事件 | 仅 question_enter 隐式转 IN_PROGRESS（其他事件拒绝） |
+| Session-LC-13 | 用户主动废弃 | discard 端点直接转 ABANDONED（reason='user_discard'）|
+| Session-LC-14 | active session 数量限制 | 不强限制（同用户可多个 IN_PROGRESS / PAUSED 共存）；daily UNIQUE 约束自然限单 |
+| Session-LC-15 | recovered_from_session_id 字段 | 本 Phase 不启用恢复克隆，留扩展位（Phase 2 异常恢复） |
+
+---
+
+## 16. 模考模式（MockExam 系列）
+
+详见 [13-Mock-Exam.md](./13-Mock-Exam.md)。
+
+| # | 决策 | 拍板 |
+|---|---|---|
+| MockExam-1 | 实现方式 | session 正交维度（exam_mode 字段），不新建独立表 |
+| MockExam-2 | 模考必要前提 | exam_mode=true ⟹ practice_mode=full_set ∧ source_mode=paper ∧ time_limit_minutes 非空（DB CHECK） |
+| MockExam-3 | 时间表示 | 绝对时间 auto_submit_at（immutable）；不存"剩余时间"（避免跨设备 / 刷新偏差） |
+| MockExam-4 | 倒计时启动时机 | DRAFT → IN_PROGRESS 时计算 auto_submit_at = now + time_limit_minutes |
+| MockExam-5 | 自动提交双轨 | 前端归零立即调 submit + cron 每分钟兜底（最多延迟 60s） |
+| MockExam-6 | 心跳超时不进 PAUSED | exam_mode=true 的 session 不被 cleanup_stale_sessions 转 PAUSED；时间继续走 |
+| MockExam-7 | 默认禁暂停 | allow_pause=false 默认；用户创建时不可改（admin 强制例外） |
+| MockExam-8 | 模考期间禁笔记 | 创建题级 NoteV2 端点 422 拒绝（前端隐藏入口 + 后端兜底） |
+| MockExam-9 | 严格闭卷 | 提交前所有看答案 / 看解析端点拒绝（继承 Pace-Closed-Book） |
+| MockExam-10 | 延迟解锁解析 | delayed_review_until 可选字段；提交后 < 该时间仍 403 DELAYED_REVIEW_LOCKED |
+| MockExam-11 | 时间限制范围 | time_limit_minutes ∈ [10, 360]（DB CHECK） |
+| MockExam-12 | 申论模考时间 | 默认 180min（行测默认 120min）；用户可覆盖在范围内 |
+| MockExam-13 | 模考结果保存 | 与普通整组练习共表（PracticeSessionV2 + Answer），按 exam_mode 过滤区分 |
+| MockExam-14 | 模考排行榜 | Stage 1 仅"自己同套卷历次"内部排名；跨用户排行榜推 Stage 2 |
+| MockExam-15 | 历史套卷模考保留 | 不归档（用户可能想多次模拟同套卷）；用 delayed_review_until 隔时长 |
+
+---
+
+## 17. 用户偏好（Pref 系列）
+
+详见 [14-Practice-Preferences.md](./14-Practice-Preferences.md)。
+
+| # | 决策 | 拍板 |
+|---|---|---|
+| Pref-1 | 实现方式 | **新建独立表 UserPracticePreferencesV2**（不复用 ProfileInfoV2.dashboard_preferences） |
+| Pref-2 | 存储格式 | 单 JSON payload + schema_version；按 v1 schema 严格校验（Pydantic）|
+| Pref-3 | schema 演进 | bump schema_version；旧版本 lazy upgrade（读时升 payload，不立即写库） |
+| Pref-4 | schema_version mismatch | PUT 时强制服务端最新版本；不一致 → 422 + 返回最新 payload 让客户端 refetch |
+| Pref-5 | payload 子树 | ui / pacing / auto_save / keyboard / reminders / custom_practice 六个 |
+| Pref-6 | 默认值返回 | 用户从未保存时 GET 返回 isDefault=true + 完整 defaults（前端不区分"未保存"和"默认"）|
+| Pref-7 | KeyBindings 唯一性 | 所有 action 绑定 key 必须唯一（防冲突，root validator）|
+| Pref-8 | 自动保存频率 | interval_seconds 范围 [10, 300] |
+| Pref-9 | localStorage 同步 | 前端即时缓存；TanStack Query staleTime 5min；refetchOnWindowFocus |
+| Pref-10 | useSessionConfigStore 整合 | custom_practice 子树替代 ProfileInfoV2.dashboard_preferences 异步同步目标 |
+| Pref-11 | 后端缓存 | LRU（key=user_id, TTL=60s）；写入立即失效该用户缓存 |
+| Pref-12 | audit 写入策略 | 高频字段（font_size / autosave）不写 audit；关键字段（schema_version / theme）写 |
+| Pref-13 | 多设备冲突 | last-writer-wins（v1 范围）；Stage 2 引入 ETag 乐观锁 |
+| Pref-14 | 移动端 keyboard | 后端不区分平台；前端在移动端隐藏 keyboard 配置 UI |
+
+---
+
+## 18. 题目元数据（QMeta 系列，Phase 1 仅 schema）
+
+详见 [15-Question-Metadata.md](./15-Question-Metadata.md)。
+
+| # | 决策 | 拍板 |
+|---|---|---|
+| QMeta-1 | Phase 1 落地范围 | **仅 schema**（QuestionV2 5 字段 + KnowledgePointV2 + QuestionKnowledgePointV2 两表） |
+| QMeta-2 | Phase 2 推后 | 端点 / cron / LLM 标注 / 数据填充全部 Phase 2（Phase-Review 之后） |
+| QMeta-3 | 双轨设计 | knowledge_tags（字符串数组，灵活）+ KnowledgePointV2 关联（结构化）双轨；Phase 2 决策迁移路径 |
+| QMeta-4 | ability_dimensions 枚举 | comprehension / reasoning / calculation / memory / application 五值（DB CHECK） |
+| QMeta-5 | complexity_level 范围 | 1-5（NULL 允许；表示未标注） |
+| QMeta-6 | discrimination_index | 0.0-1.0（NULL 允许；样本不足或未计算）；Phase 2 cron 写入 |
+| QMeta-7 | heat_score 默认 | 0.0；Phase 2 cron 每日重算 |
+| QMeta-8 | knowledge_tags 格式 | 元素必须 `^[a-z][a-z0-9_]*$`（snake_case）；便于 Phase 2 迁移到 knowledge_point.code 无歧义 |
+| QMeta-9 | Phase 1 表必须留空 | KnowledgePointV2 / QuestionKnowledgePointV2 在 Phase 1 完工时必须为空表（除测试 fixture）|
+| QMeta-10 | Phase 1 service 隐藏 | service 层不导出对这两个表的 CRUD；防止误用 |
+| QMeta-11 | OpenAPI 标注 | Phase 2 端点在 OpenAPI 中以 `x-phase: 2` 标记（spec 定义但不实现） |
+| QMeta-12 | 知识点树初始化 | Phase 2 由 admin 录入（200-500 节点）+ LLM 辅助归类历史题目 |
+| QMeta-13 | LLM 标注成本预估 | 10k 题成本约 $30-50（DeepSeek 价格）；Phase 2 单独审批 |
+| QMeta-14 | 与 Phase-Review 的协同 | Phase-Review 错因聚类 Phase 1 仍用 category；Phase 2 升级到 knowledge_point 维度 |

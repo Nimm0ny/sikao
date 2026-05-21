@@ -27,9 +27,15 @@
 | WU-B22 | LLM 模块扩展（在 modules/llm/ 上追加 3 能力） | 2,000 | 6 | Phase-Home WU-B7 |
 | WU-B23 | cron 扩展（4 新 cron + 1 增量 hook） | 900 | 4 | B17 / B18 / B19 / B20 |
 | WU-B24 | E2E + OpenAPI 验收 | 1,800 | 5 | B10-B23 |
-| **合计** | | **14,700** | **58** | |
+| WU-B25 | timing 模块（新建，含 baseline 表 + cron） | 1,500 | 5 | B11 |
+| WU-B26 | session_lifecycle 模块（新建，含状态机 + cleanup cron） | 1,300 | 4 | B11 |
+| WU-B27 | mock_exam 模块（新建，含倒计时 + auto_submit cron） | 1,200 | 4 | B11 / B26 |
+| WU-B28 | practice_preferences 模块（新建） | 800 | 3 | Phase-Home 用户体系 |
+| WU-B29 | question_metadata schema 预留（仅 schema） | 400 | 2 | B10 |
+| WU-B30 | question_report 模块（新建） | 600 | 2 | B10 |
+| **合计** | | **20,500** | **78** | |
 
-> 后端总量上调（README 估算 11,500），原因：补全 audit / idempotency / observability / 限流 / 完整 invariant test。
+> 新合计较初版 README 的 17k/70 PR 上调，原因：4 个 MUST 模块（B25-B28）完整落地 + B29 schema 预留 + B30 真题纠错入口。
 >
 > 前端总量见 [04-Frontend-WU](./04-Frontend-WU.md)。
 
@@ -49,6 +55,14 @@ app.include_router(practice_stats_router,    prefix="/api/v2")
 app.include_router(ai_questions_router,      prefix="/api/v2")
 app.include_router(daily_practice_router,    prefix="/api/v2")
 app.include_router(essay_grading_router,     prefix="/api/v2")
+# Phase-Practice 4 个 MUST 模块新增：
+app.include_router(timing_router,                prefix="/api/v2")
+app.include_router(session_lifecycle_router,     prefix="/api/v2")
+app.include_router(mock_exam_router,             prefix="/api/v2")
+app.include_router(practice_preferences_router,  prefix="/api/v2")
+# question_report 真题纠错：
+app.include_router(question_reports_router,      prefix="/api/v2")
+# question_metadata Phase 1 不挂 router（仅建表）；Phase 2 才挂载
 # 已存在的 content / session / 其他不变（仅扩展原模块）
 ```
 
@@ -69,6 +83,29 @@ app.include_router(essay_grading_router,     prefix="/api/v2")
 | `ESSAY_GRADING_PENDING` | 200 | 申论批改进行中（不是错误，是状态） |
 | `ESSAY_GRADING_FAILED` | 200 | 批改失败（前端展示重试按钮） |
 | `QUESTION_INACTIVE` | 410 | 题已下线（is_active=false） |
+| **timing 模块新增** | | |
+| `EVENT_ORDER_VIOLATION` | 422 | timing events 内 ts 非升序 |
+| `STALE_EVENT` | 422 | timing event ts 早于 last_modified - 60s |
+| `PAYLOAD_TOO_LARGE` | 400 | events.length > 200 |
+| `BASELINE_INSUFFICIENT` | 404 | 题目 baseline sample_size < MIN_SAMPLES |
+| **session_lifecycle 模块新增** | | |
+| `INVALID_TRANSITION` | 409 | 状态转换非法（如 SUBMITTED → IN_PROGRESS） |
+| `IMMUTABLE_TERMINAL_STATE` | 422 | 修改终态 session 字段 |
+| `SESSION_NOT_WRITABLE` | 409 | 终态 session 调 mutation 端点（含 timing 写入）|
+| `SESSION_NOT_OWNED` | 404 | 越权访问其他用户 session |
+| **mock_exam 模块新增** | | |
+| `NOT_MOCK_EXAM` | 404 | 对非模考 session 调用 countdown 端点 |
+| `PAPER_NOT_MOCK_ELIGIBLE` | 422 | 套卷不支持作为模考（题数 < 阈值等） |
+| `MOCK_PAUSE_FORBIDDEN` | 422 | 模考期间尝试 pause |
+| `MOCK_NOTES_FORBIDDEN` | 422 | 模考期间尝试创建题级笔记 |
+| `DELAYED_REVIEW_LOCKED` | 403 | delayed_review_until 未到，看解析被拒 |
+| `INVALID_TIME_LIMIT` | 422 | time_limit_minutes 超出 [10, 360] |
+| **practice_preferences 模块新增** | | |
+| `SCHEMA_VERSION_MISMATCH` | 422 | 客户端 schemaVersion 与服务端不一致 |
+| `INVALID_PREFERENCE_FIELD` | 422 | 字段校验失败（含 field / message 详情） |
+| `INVALID_PATCH_PATH` | 422 | PATCH 端点 path 不合法 |
+| **question_report 模块新增** | | |
+| `REPORT_DUPLICATE_PENDING` | 409 | 同用户对同题已有 pending 报告 |
 
 ### 1.4 限流
 
@@ -79,6 +116,11 @@ app.include_router(essay_grading_router,     prefix="/api/v2")
 - `POST /essay/reference-answers/generate`：每用户 10 req/day
 - 收藏 / 标记 / 反馈类：每用户 60 req/min
 - 列表读取类：每用户 120 req/min
+- **timing**：`POST /sessions/:id/timing/events` 每用户每 session 20 req/min
+- **session_lifecycle**：`POST /sessions/:id/heartbeat` 每用户每 session 5 req/min；pause/resume 30 req/min；discard 10 req/min；GET /sessions/active 60 req/min
+- **mock_exam**：`POST /practice/mock-exams` 每用户 20 req/day；`GET /sessions/:id/countdown` 每用户每 session 30 req/min
+- **practice_preferences**：GET 120 / PUT 30 / PATCH 60 / RESET 5 req/min
+- **question_report**：`POST /questions/:id/report` 每用户 20 req/day（防滥用）
 
 ### 1.5 幂等中间件（继承 Phase-Home AI-8）
 
@@ -88,9 +130,16 @@ app.include_router(essay_grading_router,     prefix="/api/v2")
 POST /api/v2/practice/ai-questions/generate
 POST /api/v2/practice/essay/submissions/:id/grade
 POST /api/v2/practice/essay/reference-answers/generate
+POST /api/v2/practice/mock-exams                      # 创建模考
 ```
 
 逻辑同 Phase-Home WU-B1.4 的 IdempotencyKeyV2 表。
+
+注意：以下端点**不**走幂等中间件（理由各有）：
+- timing 事件批量上报：每次 batch 内容不同，幂等性由"事件按 ts 顺序累积"保证
+- heartbeat：天然幂等（同一 ts 多次到达只更新 last_heartbeat_at）
+- preferences PUT/PATCH：last-writer-wins，无需幂等
+- pause/resume/discard：状态机转换天然 idempotent（重复调用要么成功要么 INVALID_TRANSITION）
 
 ### 1.6 OpenAPI Tag 约定
 
@@ -104,6 +153,11 @@ POST /api/v2/practice/essay/reference-answers/generate
 | ai-questions | /practice/ai-questions |
 | daily | /practice/daily |
 | essay-grading | /practice/essay |
+| **timing** | /practice/sessions/:id/timing, /practice/stats/timing, /practice/questions/:id/timing-baseline |
+| **session-lifecycle** | /practice/sessions/:id/{pause|resume|heartbeat|discard|start|lifecycle}, /practice/sessions/active |
+| **mock-exam** | /practice/mock-exams, /practice/sessions/:id/countdown |
+| **practice-preferences** | /profile/practice-preferences |
+| **question-reports** | /practice/questions/:id/report, /admin/question-reports |
 
 ---
 
@@ -906,6 +960,12 @@ POST /api/v2/practice/essay/reference-answers/generate
 | B22 | D-Q1 / D-Q9 / Essay-1 / Essay-3 | PR3 / Essay-Reference | - | §10 mock provider |
 | B23 | Stat-Schedule / Essay-5 / Daily-4 | - | - | §10 cron test |
 | B24 | 全部 | 全部 invariant | 全部 | §6-§10 |
+| **B25** | **Timing-* (00 §14)** | **§12 Timing-* (10 条)** | **§2.2-§2.3 / §3.8 / §6.6 / §6.7** | **§3.7 timing invariant** |
+| **B26** | **Session-LC-* (00 §15)** | **§13 Session-LC-* (12 条)** | **§2.2 / §6.8** | **§3.8 lifecycle invariant** |
+| **B27** | **MockExam-* (00 §16)** | **§14 MockExam-* (12 条)** | **§2.2 / §5.3-§5.4 / §6.9** | **§3.9 mock-exam invariant** |
+| **B28** | **Pref-* (00 §17)** | **§15 Pref-* (10 条)** | **§3.9 / §6.10** | **§6 preferences contract** |
+| **B29** | **QMeta-* (00 §18)** | **§16 QMeta-* (9 条)** | **§2.1 / §3.10 / §3.11 / §5.7** | **§3 schema-only invariant** |
+| **B30** | **真题纠错（隐含）** | **PR-Report (待补 §17)** | **§3.12（新表 QuestionReportV2）** | **§6 e2e + admin** |
 
 ---
 

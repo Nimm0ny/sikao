@@ -17,22 +17,50 @@ QuestionV2 (扩展) ──┐
                     ├─ historical_accuracy / answer_count
                     ├─ quality_score / report_count / is_active     (AI 题专属)
                     ├─ ai_source_question_id (self-ref nullable)
-                    └─ ai_self_audit_passed / ai_generated_at        (AI 题专属)
+                    ├─ ai_self_audit_passed / ai_generated_at        (AI 题专属)
+                    ├─ content_hash (UNIQUE)                         (去重)
+                    └─ [Phase-1 Question-Metadata 预留字段]
+                       ability_dimensions / discrimination_index /
+                       heat_score / complexity_level / knowledge_tags
                     │
                     ↓
   ┌─────────────────────────────────────────────────────┐
   │ QuestionFavoriteV2 (NEW)  ─ user-question 收藏关系    │
   │ QuestionFlagV2 (NEW)      ─ user-question 持久标记     │
+  │ QuestionTimingBaselineV2 (NEW) ─ 每题 p50/p90/p95     │
+  │ QuestionKnowledgePointV2 (NEW, schema-only Phase 1)  │
   └─────────────────────────────────────────────────────┘
+
+KnowledgePointV2 (NEW, schema-only Phase 1)
+  ─ code / label / category_l1/l2 / parent_id / weight_in_exam
 
 PracticeSessionV2 (扩展)──┐
                           ├─ practice_mode (per_question | full_set)
                           ├─ source_mode (paper|category|custom|ai_generated|daily|wrong_redo)
-                          └─ config_snapshot (JSON)
+                          ├─ config_snapshot (JSON)
+                          ├─ [session_lifecycle 字段]
+                          │   status (draft|in_progress|paused|submitted|abandoned|expired)
+                          │   paused_at / paused_count / last_heartbeat_at
+                          │   expires_at / abandoned_at / abandoned_reason
+                          │   force_submitted / force_submitted_reason
+                          │   recovered_from_session_id (self-ref)
+                          ├─ [timing 字段]
+                          │   total_active_seconds / paused_total_seconds
+                          │   first_question_at / last_activity_at
+                          └─ [mock_exam 字段]
+                              exam_mode / time_limit_minutes
+                              auto_submit_at (immutable)
+                              allow_review_during / allow_pause
+                              delayed_review_until
 
 PracticeSessionAnswerV2 (扩展)──┐
                                 ├─ flagged                (本次 session 内)
-                                └─ viewed_solution / view_solution_at  (逐题模式)
+                                ├─ viewed_solution / view_solution_at  (逐题模式)
+                                └─ [timing 字段]
+                                    time_spent_ms / first_seen_at
+                                    first_answered_at / last_modified_at
+                                    answer_change_count / visit_count
+                                    is_overtime
 
 NoteV2 (扩展) ──┬─ linked_question_id (FK QuestionV2 nullable)
                └─ visibility (private)
@@ -42,6 +70,8 @@ ReviewItemV2 (扩展) ─ reason 枚举加 flagged_persistent
 PracticeStatsSnapshotV2 (NEW) ─ 用户 × scope × type 聚合快照
                                 ├─ overall / category_l1 / category_l2 三种 scope
                                 └─ percentile_rank (周更新)
+
+UserPracticePreferencesV2 (NEW) ─ user PK + payload(JSON) + schema_version
 
 EssayReferenceAnswerV2 (NEW) ──┐
                                 ├─ source (official|ai_generated|user_contributed)
@@ -102,10 +132,24 @@ class QuestionV2(Base):
     ai_self_audit_passed: Mapped[bool | None]
     ai_generated_at: Mapped[datetime | None]
 
+    # ===== Phase-1 Question-Metadata 预留字段（详见 15-Question-Metadata.md） =====
+    # 仅建字段 + 默认值；端点 / cron / LLM 标注全部推到 Phase 2
+    ability_dimensions: Mapped[list[str]] = mapped_column(JSON, default=list)
+    # 能力维度数组：comprehension / reasoning / calculation / memory / application
+    discrimination_index: Mapped[float | None] = mapped_column(Float, nullable=True)
+    # 区分度（0.0-1.0）；样本不足 = NULL
+    heat_score: Mapped[float] = mapped_column(Float, default=0.0)
+    # 热度分（最近 30d 答题次数 / type 平均次数）
+    complexity_level: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    # 复杂度等级（1-5）；NULL = 未标注
+    knowledge_tags: Mapped[list[str]] = mapped_column(JSON, default=list)
+    # 字符串标签数组（snake_case），与 KnowledgePointV2 的结构化关联双轨
+
     __table_args__ = (
         Index("ix_question_v2_category", "category_l1", "category_l2"),
         Index("ix_question_v2_source_active", "source", "is_active"),
         Index("ix_question_v2_year_region_exam", "year", "region", "exam_type"),
+        Index("ix_question_v2_heat", "heat_score"),
         # content_hash UNIQUE 已通过 unique=True 在字段上声明
         # PR2: source 字段 immutable trigger（详见 §5.1）
     )
@@ -156,10 +200,38 @@ linked_recommendation_id: Mapped[int | None] = mapped_column(
     ForeignKey("recommendation_v2.id"), nullable=True
 )
 
-# ===== Tab 2 新增字段 =====
+# ===== Tab 2 核心字段 =====
 practice_mode: Mapped[PracticeMode]                    # per_question | full_set
 source_mode: Mapped[SessionSourceMode]                 # paper | category | custom | ai_generated | daily | wrong_redo
 config_snapshot: Mapped[dict] = mapped_column(JSON, default=dict)  # 自定义配置快照
+
+# ===== session_lifecycle 字段（详见 12-Session-Lifecycle.md） =====
+status: Mapped[SessionStatus]                          # draft | in_progress | paused | submitted | abandoned | expired
+paused_at: Mapped[datetime | None]
+paused_count: Mapped[int] = mapped_column(default=0)
+last_heartbeat_at: Mapped[datetime | None]
+expires_at: Mapped[datetime | None]                    # 主动失效时间（daily 当日 23:59 / 自定义最长）
+abandoned_at: Mapped[datetime | None]
+abandoned_reason: Mapped[str | None] = mapped_column(String(64))
+force_submitted: Mapped[bool] = mapped_column(default=False)
+force_submitted_reason: Mapped[str | None] = mapped_column(String(64))
+recovered_from_session_id: Mapped[int | None] = mapped_column(
+    ForeignKey("practice_session_v2.id"), nullable=True
+)
+
+# ===== timing 字段（详见 11-Timing-Engine.md） =====
+total_active_seconds: Mapped[int] = mapped_column(default=0)
+paused_total_seconds: Mapped[int] = mapped_column(default=0)
+first_question_at: Mapped[datetime | None]
+last_activity_at: Mapped[datetime | None]
+
+# ===== mock_exam 字段（详见 13-Mock-Exam.md） =====
+exam_mode: Mapped[bool] = mapped_column(default=False)
+time_limit_minutes: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+auto_submit_at: Mapped[datetime | None]                # immutable，详见 §5.3
+allow_review_during: Mapped[bool] = mapped_column(default=False)
+allow_pause: Mapped[bool] = mapped_column(default=True)
+delayed_review_until: Mapped[datetime | None]
 ```
 
 **枚举**：
@@ -176,19 +248,60 @@ class SessionSourceMode(StrEnum):
     AI_GENERATED = "ai_generated"    # AI 出题
     DAILY = "daily"                  # 每日一练
     WRONG_REDO = "wrong_redo"        # 错题重做（来自 review）
+
+class SessionStatus(StrEnum):
+    DRAFT = "draft"
+    IN_PROGRESS = "in_progress"
+    PAUSED = "paused"
+    SUBMITTED = "submitted"          # 终态
+    ABANDONED = "abandoned"          # 终态
+    EXPIRED = "expired"              # 终态
 ```
 
-**Alembic 默认值**：现有 session 全部回填 `practice_mode=full_set, source_mode=paper, config_snapshot={}`（不影响业务）
+**Alembic 默认值**：现有 session 全部回填：
+- `practice_mode=full_set, source_mode=paper, config_snapshot={}`
+- `status=submitted`（旧 session 全部已提交）
+- `total_active_seconds=0, paused_total_seconds=0`
+- `exam_mode=false, allow_pause=true, allow_review_during=false`
+
+**DB CHECK 约束**（详见 §5.4）：
+- `mock_exam_requires_time_limit`：exam_mode=true ⟹ time_limit_minutes IS NOT NULL
+- `mock_exam_requires_full_set`：exam_mode=true ⟹ practice_mode='full_set'
+- `mock_exam_requires_paper_source`：exam_mode=true ⟹ source_mode='paper'
+- `paused_at_status_consistency`：paused_at IS NOT NULL ⟺ status='paused'
 
 ---
 
 ### 2.3 PracticeSessionAnswerV2（扩展）
 
 ```python
-# Tab 2 新增字段
+# Tab 2 核心字段
 flagged: Mapped[bool] = mapped_column(Boolean, default=False)
 viewed_solution: Mapped[bool] = mapped_column(Boolean, default=False)
 view_solution_at: Mapped[datetime | None]
+
+# ===== timing 字段（详见 11-Timing-Engine.md §2.1） =====
+time_spent_ms: Mapped[int] = mapped_column(default=0)
+# 累计作答耗时（不含切走切回的间隔）；session.submit 时单区间被截断为 ≤60s
+
+first_seen_at: Mapped[datetime | None]
+# 首次进入该题的时刻（用户切到这题）
+
+first_answered_at: Mapped[datetime | None]
+# 首次写入 selected_answer 非空的时刻
+
+last_modified_at: Mapped[datetime | None]
+# 最后一次修改答案的时刻
+
+answer_change_count: Mapped[int] = mapped_column(default=0)
+# 答案修改次数（首次作答不计；改一次 +1）
+
+visit_count: Mapped[int] = mapped_column(default=0)
+# 进入该题的次数（切走再切回算多次）
+
+is_overtime: Mapped[bool] = mapped_column(default=False)
+# 是否超时（time_spent_ms > QuestionTimingBaselineV2.p95_ms × 1.2）
+# 在 session.submit 时根据基线计算并写入；session 进行中始终 false
 ```
 
 ---
@@ -509,6 +622,134 @@ class DailyStatus(StrEnum):
 
 ---
 
+### 3.8 QuestionTimingBaselineV2
+
+详见 [11-Timing-Engine §2.3](./11-Timing-Engine.md#23-questiontimingbaselinev2新表)。
+
+```python
+class QuestionTimingBaselineV2(Base):
+    __tablename__ = "question_timing_baseline_v2"
+
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("question_v2.id"), primary_key=True
+    )
+
+    p50_ms: Mapped[int]
+    p90_ms: Mapped[int]
+    p95_ms: Mapped[int]
+    mean_ms: Mapped[int]
+
+    sample_size: Mapped[int]
+    # 用于计算基线的答题样本数；< MIN_SAMPLES (默认 30) 不参与超时判定
+
+    last_recomputed_at: Mapped[datetime] = mapped_column(default=func.now())
+
+    __table_args__ = (
+        Index("ix_timing_baseline_recomputed", "last_recomputed_at"),
+    )
+```
+
+由 cron `recompute_question_timing_baseline` 每周一 03:00 写入。
+
+---
+
+### 3.9 UserPracticePreferencesV2
+
+详见 [14-Practice-Preferences §2.1](./14-Practice-Preferences.md#21-userpracticepreferencesv2)。
+
+```python
+class UserPracticePreferencesV2(Base):
+    __tablename__ = "user_practice_preferences_v2"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user_v2.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+
+    payload: Mapped[dict] = mapped_column(JSON, default=dict)
+    # 主体内容（v1 schema 见 14-Practice-Preferences §3.1）
+
+    schema_version: Mapped[int] = mapped_column(SmallInteger, default=1)
+    # 数据 schema 版本号，演进时 bump
+
+    created_at: Mapped[datetime] = mapped_column(default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(default=func.now(), onupdate=func.now())
+```
+
+`payload` v1 子树（详见 14 文档 §3.1）：
+```
+ui                  # font_size / line_height / theme / panel_position 等
+pacing              # default_practice_mode / auto_advance / confirm 等
+auto_save           # enabled / interval_seconds / save_to_local_storage
+keyboard            # enabled / bindings (a/b/c/d/next/prev/flag/favorite/note/submit)
+reminders           # daily_practice / weekly_summary / overtime_threshold / break_reminder
+custom_practice     # last_used_* （继承 useSessionConfigStore 内容）
+```
+
+---
+
+### 3.10 KnowledgePointV2（Phase-1 schema-only）
+
+详见 [15-Question-Metadata §2.2](./15-Question-Metadata.md#22-knowledgepointv2-表建表无数据)。
+
+```python
+class KnowledgePointV2(Base):
+    __tablename__ = "knowledge_point_v2"
+    __phase__ = "phase_2"   # 提示：Phase 1 仅建表，端点 / cron 在 Phase 2
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    code: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    label: Mapped[str] = mapped_column(String(128))
+    category_l1: Mapped[str] = mapped_column(String(32), index=True)
+    category_l2: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("knowledge_point_v2.id"), nullable=True
+    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    weight_in_exam: Mapped[float | None] = mapped_column(Float, nullable=True)
+    is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    created_at: Mapped[datetime] = mapped_column(default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(default=func.now(), onupdate=func.now())
+```
+
+⚠️ Phase 1 **仅建表**，不写入任何数据。Phase 2 通过 admin 工具或 LLM 辅助批量录入。
+
+---
+
+### 3.11 QuestionKnowledgePointV2（Phase-1 schema-only）
+
+详见 [15-Question-Metadata §2.3](./15-Question-Metadata.md#23-questionknowledgepointv2-关联表建表无数据)。
+
+```python
+class QuestionKnowledgePointV2(Base):
+    __tablename__ = "question_knowledge_point_v2"
+    __phase__ = "phase_2"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("question_v2.id", ondelete="CASCADE"),
+        index=True,
+    )
+    knowledge_point_id: Mapped[int] = mapped_column(
+        ForeignKey("knowledge_point_v2.id"),
+        index=True,
+    )
+
+    weight: Mapped[float] = mapped_column(Float, default=1.0)
+    annotated_by: Mapped[str] = mapped_column(String(32))   # human | llm_auto | llm_assisted
+    annotated_at: Mapped[datetime] = mapped_column(default=func.now())
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+    __table_args__ = (
+        UniqueConstraint("question_id", "knowledge_point_id"),
+    )
+```
+
+⚠️ Phase 1 **仅建表**，不写入任何数据。Phase 2 由 LLM 自动标注 + admin 二次确认。
+
+---
+
 ## 4. 索引策略汇总
 
 | 表 | 索引 | 用途 |
@@ -517,6 +758,7 @@ class DailyStatus(StrEnum):
 | QuestionV2 | (source, is_active) | AI 出题池筛选 |
 | QuestionV2 | (year, region, exam_type) | 套卷 filter |
 | QuestionV2 | content_hash UNIQUE | 防重复入库（AI 改编 + 真题导入共用） |
+| QuestionV2 | heat_score | Phase 2 推荐排序（Phase 1 字段已建） |
 | NoteV2 | (user_id, linked_question_id) | 题目相关笔记查询 |
 | QuestionFavoriteV2 | UNIQUE(user_id, question_id) | 收藏唯一约束 |
 | QuestionFlagV2 | UNIQUE WHERE resolved_at IS NULL | 活跃 flag 唯一约束 |
@@ -524,6 +766,13 @@ class DailyStatus(StrEnum):
 | EssayReferenceFeedbackV2 | UNIQUE(reference_id, user_id, action) | 反馈唯一约束 |
 | DailyPracticeV2 | UNIQUE(user_id, date, type) | 每日一份约束 |
 | AiGeneratedQuestionRequestV2 | (user_id, started_at) | 限流计数 |
+| PracticeSessionV2 | (status, last_heartbeat_at) | session_lifecycle 心跳超时扫描（cleanup_stale_sessions） |
+| PracticeSessionV2 | (status, expires_at) WHERE status IN (in_progress, paused) | mock_exam auto_submit 扫描 + daily expire 扫描 |
+| PracticeSessionV2 | (user_id, status, last_activity_at) | GET /sessions/active |
+| PracticeSessionV2 | (exam_mode, status, auto_submit_at) WHERE exam_mode=true | mock_exam 倒计时归零扫描 |
+| QuestionTimingBaselineV2 | last_recomputed_at | cron 增量重算 |
+| KnowledgePointV2 | code UNIQUE; (category_l1, category_l2) | Phase 2 查询树 |
+| QuestionKnowledgePointV2 | UNIQUE(question_id, knowledge_point_id) | Phase 2 关联唯一 |
 
 ---
 
@@ -562,6 +811,113 @@ END;
 $$ LANGUAGE plpgsql;
 ```
 
+### 5.3 PracticeSessionV2.auto_submit_at immutable trigger
+
+mock_exam 模式下 `auto_submit_at` 一旦写入不可改（防止运维 / 内部代码延长模考时间）。
+
+```sql
+CREATE OR REPLACE FUNCTION protect_auto_submit_at_v2()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF OLD.auto_submit_at IS NOT NULL
+     AND OLD.auto_submit_at IS DISTINCT FROM NEW.auto_submit_at THEN
+    RAISE EXCEPTION 'PracticeSessionV2.auto_submit_at is immutable once set';
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER session_v2_auto_submit_at_protect
+BEFORE UPDATE ON practice_session_v2
+FOR EACH ROW EXECUTE FUNCTION protect_auto_submit_at_v2();
+```
+
+### 5.4 mock_exam DB CHECK 约束
+
+```sql
+ALTER TABLE practice_session_v2
+  ADD CONSTRAINT mock_exam_requires_time_limit CHECK (
+    (exam_mode = false) OR (time_limit_minutes IS NOT NULL)
+  );
+
+ALTER TABLE practice_session_v2
+  ADD CONSTRAINT mock_exam_requires_full_set CHECK (
+    (exam_mode = false) OR (practice_mode = 'full_set')
+  );
+
+ALTER TABLE practice_session_v2
+  ADD CONSTRAINT mock_exam_requires_paper_source CHECK (
+    (exam_mode = false) OR (source_mode = 'paper')
+  );
+
+ALTER TABLE practice_session_v2
+  ADD CONSTRAINT mock_exam_time_limit_range CHECK (
+    time_limit_minutes IS NULL OR (time_limit_minutes >= 10 AND time_limit_minutes <= 360)
+  );
+```
+
+### 5.5 session_lifecycle 状态一致性约束
+
+```sql
+ALTER TABLE practice_session_v2
+  ADD CONSTRAINT paused_at_status_consistency CHECK (
+    (status = 'paused' AND paused_at IS NOT NULL)
+    OR (status != 'paused' AND paused_at IS NULL)
+  );
+
+ALTER TABLE practice_session_v2
+  ADD CONSTRAINT abandoned_reason_required CHECK (
+    (status != 'abandoned') OR (abandoned_reason IS NOT NULL)
+  );
+
+ALTER TABLE practice_session_v2
+  ADD CONSTRAINT force_submit_reason_required CHECK (
+    (force_submitted = false) OR (force_submitted_reason IS NOT NULL)
+  );
+```
+
+### 5.6 终态不可变 trigger（PracticeSessionV2）
+
+```sql
+CREATE OR REPLACE FUNCTION protect_session_terminal_state_v2()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF OLD.status IN ('submitted', 'abandoned', 'expired')
+     AND (
+       OLD.status IS DISTINCT FROM NEW.status
+       OR OLD.completed_at IS DISTINCT FROM NEW.completed_at
+       OR OLD.abandoned_at IS DISTINCT FROM NEW.abandoned_at
+     ) THEN
+    RAISE EXCEPTION 'Terminal session status is immutable (was %)', OLD.status;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER session_v2_terminal_protect
+BEFORE UPDATE ON practice_session_v2
+FOR EACH ROW EXECUTE FUNCTION protect_session_terminal_state_v2();
+```
+
+### 5.7 QuestionV2 元数据 Phase-1 字段 CHECK
+
+```sql
+ALTER TABLE question_v2
+  ADD CONSTRAINT question_complexity_range CHECK (
+    complexity_level IS NULL OR (complexity_level >= 1 AND complexity_level <= 5)
+  );
+
+ALTER TABLE question_v2
+  ADD CONSTRAINT question_heat_non_negative CHECK (heat_score >= 0.0);
+
+-- ability_dimensions 元素枚举 (PostgreSQL 用 jsonb_path_exists 校验)
+ALTER TABLE question_v2
+  ADD CONSTRAINT question_ability_dim_enum CHECK (
+    ability_dimensions IS NULL
+    OR (ability_dimensions::jsonb <@ '["comprehension", "reasoning", "calculation", "memory", "application"]'::jsonb)
+  );
+```
+
 ---
 
 ## 6. 前端需要消费的字段（OpenAPI / Pydantic Schema）
@@ -575,16 +931,41 @@ class PracticeSessionEnvelopeV2(CamelModel):
     # 现有字段
     id, status, items, ...
 
-    # ===== Tab 2 新增 =====
+    # ===== Tab 2 核心 =====
     practice_mode: PracticeMode
     source_mode: SessionSourceMode
     config_snapshot: dict | None
+
+    # ===== session_lifecycle 字段 =====
+    paused_at: datetime | None
+    paused_count: int
+    last_heartbeat_at: datetime | None
+    expires_at: datetime | None
+    force_submitted: bool
+    force_submitted_reason: str | None
+
+    # ===== timing 字段 =====
+    total_active_seconds: int
+    paused_total_seconds: int
+    first_question_at: datetime | None
+    last_activity_at: datetime | None
+
+    # ===== mock_exam 字段 =====
+    exam_mode: bool
+    time_limit_minutes: int | None
+    auto_submit_at: datetime | None
+    delayed_review_until: datetime | None
+
     # items 内每条 PracticeSessionItemV2 加：
     #   flagged: bool
     #   viewed_solution: bool
     #   has_user_notes: bool                # 是否有该用户的题级笔记
     #   is_favorited: bool                  # 是否被该用户收藏
     #   has_persistent_flag: bool           # 是否被该用户持久标记
+    #   time_spent_ms: int                  # 累计耗时
+    #   answer_change_count: int
+    #   visit_count: int
+    #   is_overtime: bool                   # 仅 status=submitted 后有意义
 ```
 
 ### 6.2 PracticeStatsResponseV2
@@ -655,27 +1036,201 @@ class DailyPracticeResponseV2(CamelModel):
     completed_accuracy: float | None  # 完成后填
 ```
 
+### 6.6 SessionTimingReportV2（详见 11-Timing-Engine §4.3）
+
+```python
+class SessionTimingReportV2(CamelModel):
+    total_active_seconds: int
+    total_wall_seconds: int
+    paused_total_seconds: int
+    questions: list[QuestionTimingItemV2]
+    summary: TimingSummaryV2
+
+class QuestionTimingItemV2(CamelModel):
+    answer_id: int
+    question_id: int
+    time_spent_ms: int
+    baseline_p50_ms: int | None
+    baseline_p95_ms: int | None
+    is_overtime: bool
+    answer_change_count: int
+    visit_count: int
+
+class TimingSummaryV2(CamelModel):
+    overtime_count: int
+    fastest_answer_id: int | None
+    slowest_answer_id: int | None
+    most_changed_answer_id: int | None
+```
+
+### 6.7 PracticeStatsTimingResponseV2（详见 11-Timing-Engine §4.1）
+
+```python
+class PracticeStatsTimingResponseV2(CamelModel):
+    overall: TimingOverall
+    by_category_l1: list[TimingByCategory]
+    by_difficulty: list[TimingByDifficulty]
+    overtime_questions: TimingOvertimeBucket
+    pacing_pattern: Literal["steady", "fast_start_slow_end", "slow_start_fast_end", "irregular"]
+
+class TimingOverall(CamelModel):
+    total_minutes: int
+    avg_seconds_per_question: float
+    vs_baseline_ratio: float
+
+class TimingByCategory(CamelModel):
+    category: str
+    avg_seconds: float
+    vs_baseline_ratio: float
+    sample_count: int
+
+class TimingByDifficulty(CamelModel):
+    difficulty_bucket: str
+    avg_seconds: float
+    vs_baseline_ratio: float
+
+class TimingOvertimeBucket(CamelModel):
+    count: int
+    top_5_question_ids: list[int]
+```
+
+### 6.8 SessionLifecycleResponseV2（详见 12-Session-Lifecycle §4.2）
+
+```python
+class SessionLifecycleResponseV2(CamelModel):
+    status: SessionStatus
+    paused_at: datetime | None
+    paused_count: int
+    last_heartbeat_at: datetime | None
+    expires_at: datetime | None
+    abandoned_at: datetime | None
+    abandoned_reason: str | None
+    force_submitted: bool
+    force_submitted_reason: str | None
+    transitions: list[LifecycleTransition]   # 从 audit log 提取
+
+class LifecycleTransition(CamelModel):
+    from_status: SessionStatus
+    to_status: SessionStatus
+    trigger: str
+    actor: Literal["user", "system", "cron", "admin"]
+    ts: datetime
+    reason: str | None
+
+class ActiveSessionsResponseV2(CamelModel):
+    sessions: list[ActiveSessionV2]
+    count: int
+
+class ActiveSessionV2(CamelModel):
+    id: int
+    type: PracticeType
+    source_mode: SessionSourceMode
+    practice_mode: PracticeMode
+    status: SessionStatus
+    started_at: datetime
+    last_activity_at: datetime
+    paused_at: datetime | None
+    progress: ActiveSessionProgress
+    paper_code: str | None
+    category: str | None
+    exam_mode: bool
+
+class ActiveSessionProgress(CamelModel):
+    answered: int
+    total: int
+```
+
+### 6.9 MockExamCountdownResponseV2（详见 13-Mock-Exam §3.3）
+
+```python
+class MockExamCountdownResponseV2(CamelModel):
+    server_now: datetime
+    auto_submit_at: datetime
+    remaining_seconds: int
+    status: SessionStatus
+    elapsed_seconds: int
+
+class MockExamHistoryResponseV2(CamelModel):
+    sessions: list[MockExamHistoryItem]
+    aggregate: MockExamAggregate
+
+class MockExamHistoryItem(CamelModel):
+    session_id: int
+    paper_code: str
+    completed_at: datetime
+    time_limit_minutes: int
+    actual_active_seconds: int
+    accuracy: float
+    total_score: float | None
+    is_force_submitted: bool
+    rank_in_self: int | None
+
+class MockExamAggregate(CamelModel):
+    total_count: int
+    best_accuracy: float
+    best_session_id: int | None
+    avg_accuracy: float
+    improvement_trend: float
+```
+
+### 6.10 PracticePreferencesResponseV2（详见 14-Practice-Preferences §3.1）
+
+```python
+class PracticePreferencesResponseV2(CamelModel):
+    schema_version: int
+    payload: PracticePreferencesPayloadV1
+    is_default: bool
+    updated_at: datetime | None
+
+# PracticePreferencesPayloadV1 完整结构见 14-Practice-Preferences §3.1
+# 此处不重复，避免双源不一致；以 14 文档为唯一规格源
+```
+
 ---
 
 ## 7. Migration 顺序
 
-新增 7 个 Alembic migration（B10-B13 范围）：
+新增 12 个 Alembic migration（B10-B13 + B25-B29 范围）：
 
 ```
-revision_id              | depends_on              | 描述
-─────────────────────────┼─────────────────────────┼──────────────────────────
-20260521_xx_question_v2  | <Phase-Home WU-B1 last> | QuestionV2 字段扩展 + 数据回填
-20260521_xx_session_ext  | <prev>                  | PracticeSessionV2 + Answer 扩展
-20260521_xx_note_q_link  | <prev>                  | NoteV2 加 linked_question_id
-20260521_xx_review_reason | <prev>                 | ReviewItemV2 reason 枚举扩展
-20260521_xx_practice_stats | <prev>                | PracticeStatsSnapshotV2
-20260521_xx_fav_flag     | <prev>                  | QuestionFavoriteV2 + QuestionFlagV2
-20260521_xx_essay_ref    | <prev>                  | EssayReferenceAnswerV2 + Feedback + trigger
-20260521_xx_ai_request   | <prev>                  | AiGeneratedQuestionRequestV2
-20260521_xx_daily        | <prev>                  | DailyPracticeV2
+revision_id                   | depends_on              | 描述
+──────────────────────────────┼─────────────────────────┼──────────────────────────────────
+20260521_xx_question_v2       | <Phase-Home WU-B1 last> | QuestionV2 字段扩展（含 source/category/AI/质量）
+                              |                         | + 数据回填 + content_hash UNIQUE
+20260521_xx_question_meta_p1  | <prev>                  | QuestionV2 加 ability_dimensions /
+                              |                         | discrimination_index / heat_score /
+                              |                         | complexity_level / knowledge_tags
+                              |                         | + KnowledgePointV2 + QuestionKnowledgePointV2
+                              |                         | + CHECK 约束（complexity_range / heat_non_negative
+                              |                         | / ability_dim_enum）
+                              |                         | （schema-only，端点 / cron 在 Phase 2）
+20260521_xx_session_ext       | <prev>                  | PracticeSessionV2 + Answer 基础扩展
+                              |                         | （practice_mode / source_mode /
+                              |                         | flagged / viewed_solution）
+20260521_xx_session_lifecycle | <prev>                  | PracticeSessionV2 加 lifecycle 字段
+                              |                         | + status 枚举扩展 + paused_at_status_consistency
+                              |                         | / abandoned_reason_required
+                              |                         | / force_submit_reason_required CHECK
+                              |                         | + 终态不可变 trigger
+                              |                         | + (user_id, status, last_activity_at) 索引
+20260521_xx_session_timing    | <prev>                  | PracticeSessionV2 + Answer 加 timing 字段
+                              |                         | + QuestionTimingBaselineV2
+20260521_xx_session_mock_exam | <prev>                  | PracticeSessionV2 加 mock_exam 字段
+                              |                         | + 4 个 CHECK 约束 + auto_submit_at trigger
+                              |                         | + (exam_mode, status, auto_submit_at) 索引
+20260521_xx_note_q_link       | <prev>                  | NoteV2 加 linked_question_id
+20260521_xx_review_reason     | <prev>                  | ReviewItemV2 reason 枚举扩展
+20260521_xx_practice_stats    | <prev>                  | PracticeStatsSnapshotV2
+20260521_xx_fav_flag          | <prev>                  | QuestionFavoriteV2 + QuestionFlagV2
+20260521_xx_essay_ref         | <prev>                  | EssayReferenceAnswerV2 + Feedback + trigger
+20260521_xx_ai_request        | <prev>                  | AiGeneratedQuestionRequestV2
+20260521_xx_daily             | <prev>                  | DailyPracticeV2
+20260521_xx_user_pref         | <prev>                  | UserPracticePreferencesV2
 ```
 
 每个 migration 必须支持 `alembic downgrade -1`（CI 必跑往返）。
+
+**注意**：以上 13 个 migration 在物理顺序上需保证 `session_lifecycle` 在 `session_timing` 与 `session_mock_exam` 之前（后两者依赖 lifecycle 字段已就绪）。`question_meta_p1` 可与其他 migration 并行只要 `question_v2` 已建。
 
 ---
 
@@ -696,6 +1251,11 @@ revision_id              | depends_on              | 描述
 | Daily-1 / Q7 | DailyPracticeV2 |
 | AI-G-3 / D-Q13 三段退化 | AiGeneratedQuestionRequestV2.status |
 | Essay-3 / D-Q4 范文优先级 | EssayReferenceAnswerV2.source + status + quality_score |
+| **Timing-* (00-Decisions §14)** | **PracticeSessionAnswerV2 timing 字段 + PracticeSessionV2 timing 字段 + QuestionTimingBaselineV2** |
+| **Session-LC-* (00-Decisions §15)** | **PracticeSessionV2.status / paused_at / last_heartbeat_at / abandoned_at / force_submitted / recovered_from_session_id** |
+| **MockExam-* (00-Decisions §16)** | **PracticeSessionV2.exam_mode / time_limit_minutes / auto_submit_at / allow_pause / delayed_review_until** |
+| **Pref-* (00-Decisions §17)** | **UserPracticePreferencesV2** |
+| **QMeta-* (00-Decisions §18) Phase 1** | **QuestionV2 ability_dimensions / discrimination_index / heat_score / complexity_level / knowledge_tags + KnowledgePointV2（空表） + QuestionKnowledgePointV2（空表）** |
 
 ---
 
@@ -720,6 +1280,25 @@ QuestionFlagV2, QuestionFlagCreateV2, ...
 EssayReferenceAnswerEnvelopeV2, EssayReferenceFeedbackCreateV2
 AiQuestionsGenerateRequestV2, AiQuestionsGenerateResponseV2
 DailyPracticeResponseV2
+
+# Tab 2 新增模块
+SessionTimingReportV2, QuestionTimingItemV2, TimingSummaryV2
+PracticeStatsTimingResponseV2, TimingOverall, TimingByCategory, TimingByDifficulty
+TimingEventV2, TimingEventBatchV2
+
+SessionLifecycleResponseV2, LifecycleTransition
+ActiveSessionsResponseV2, ActiveSessionV2, ActiveSessionProgress
+HeartbeatResponseV2, HeartbeatRequestV2
+
+MockExamCreateRequestV2, MockExamCountdownResponseV2
+MockExamHistoryResponseV2, MockExamHistoryItem, MockExamAggregate
+MockExamComparisonResponseV2
+
+PracticePreferencesResponseV2, PracticePreferencesPayloadV1
+PracticePreferencesPatchV2, PracticePreferencesResetRequestV2
+
+# Phase-1 schema 预留（Phase 2 才用）
+QuestionMetadataPreviewV2  # 暴露给 QuestionEnvelopeV2.metadata_preview 字段
 ```
 
-完整 Pydantic 定义在 [03-Backend-WU §B10-B17](./03-Backend-WU.md) 各 PR 内。
+完整 Pydantic 定义在 [03-Backend-WU §B10-B17 + §B25-B29](./03-Backend-WU.md) 各 PR 内。
