@@ -231,7 +231,7 @@
 - 题库管理后台 → 远期
 - AI 出题"自动评分"（基于答题反推 LLM 改编质量） → 远期
 - 收藏夹分组 → 远期
-- 移动端 4-5 tab 适配（H-Plan-6 改 5 tab 后由 Phase-Home WU-F7 处理）
+- 移动端 5 tab 适配（Phase-Home D1 修订作废了 H-Plan-6 升 tab 方案；由 Phase-Home WU-F7 处理路由迁移）
 
 ---
 

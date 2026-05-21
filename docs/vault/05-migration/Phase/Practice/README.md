@@ -108,42 +108,85 @@ PR8 申论批改异步（submit 立即返回 result pending → cron 写 EssayRe
 
 | 维度 | 估算 |
 |---|---|
-| 总行数（新增 + 删除） | ~22,000 |
-| Backend / Frontend | 11,500 / 10,500 |
-| PR 总数 | ~55（B 38 + F 17，详见 03/04） |
+| 总行数（新增 + 删除） | ~27,200 |
+| Backend / Frontend | 14,700 / 12,500 |
+| PR 总数 | ~97（B 58 + F 39，详见 03 / 04） |
 | Backend 阶段 | 7-9 周 |
 | Frontend 阶段 | 5-6 周 |
 | 全程 | 12-15 周 |
+
+> 估算说明：本数字与 `03-Backend-WU §0` / `04-Frontend-WU §0` 总览表一致。比早期单文件 plan（22,000 / 55 PR）上调，原因：补全 audit / idempotency / observability / 限流 / 完整 invariant test / 前端 4 状态 + a11y + bundle 控制。
 
 ---
 
 ## 6. 依赖图
 
-```
-Phase/Home WU-B1 ────────→ Tab 2 WU-B10（QuestionV2 字段扩展）
-Phase/Home WU-B7 (modules/llm) ──→ Tab 2 WU-B22（在同一模块上扩展 3 能力）
-Phase/Home WU-B9 (OpenAPI 锁定) ──→ Tab 2 WU-F9（前端 types 重生成）
+### 6.1 与 Phase-Home 的强依赖
 
-WU-B10 ─────┐
-            ├─→ WU-B14 ─┐
-WU-B11 ─────┤           │
-            ├─→ WU-B15 ─┤
-WU-B12 ─────┤           ├─→ WU-B23 ─→ WU-B24 ─→ WU-F9
-            ├─→ WU-B17 ─┤
-WU-B13 ─────┤           │
-            ├─→ WU-B18 ─┤  (B18 依赖 B22 LLM)
-WU-B21 ─────┤           │
-            ├─→ WU-B19 ─┤
-WU-B22 ─────┘           │
-            └─→ WU-B20 ─┘  (B20 依赖 B22 LLM)
-                                                        ↓
-WU-F9 ─→ WU-F10 ──┐
-       └─→ ...  ──┴─→ WU-F11~F16 ─→ WU-F17 ─→ WU-F18
+```
+Phase-Home WU-B1 (DB schema 基础)        ──→ Tab 2 WU-B10 / B11（QuestionV2 / Session 字段扩展）
+Phase-Home WU-B7 (modules/llm 框架)      ──→ Tab 2 WU-B22（在同一模块上扩展 3 能力）
+Phase-Home WU-B8 (cron 框架)             ──→ Tab 2 WU-B23（注册 4 新 cron + 1 hook）
+Phase-Home WU-B9 (OpenAPI 锁定)          ──→ Tab 2 WU-F9（前端 types 重生成）
+```
+
+### 6.2 Tab 2 内部依赖图（详）
+
+```
+                                ┌───── B22 (LLM 模块扩展)
+                                │      （依赖 Phase-Home WU-B7）
+                                │
+B10 (QuestionV2) ───┬─→ B14 (content)
+                    │
+                    ├─→ B15 (session 多 mode + 答题中操作)
+                    │   依赖：B10 / B11 / B12
+                    │
+                    ├─→ B17 (practice_stats)
+                    │   依赖：B11 / B12
+                    │
+                    ├─→ B18 (ai_questions)        ◄── B22
+                    │   依赖：B10 / B12 / B22
+                    │
+                    └─→ B21 (真题 import)
+                        依赖：B10
+
+B11 (Session/Note/Review 扩展) ──→ B15 / B16 / B17
+
+B12 (新表 5 个) ──┬─→ B15 / B16 / B17 / B18 / B19
+                  │
+B13 (申论范文 2 表)─┴─→ B20 (essay_grading)  ◄── B22
+                       依赖：B13 / B22
+
+B17 ─→ B19 (daily_practice)
+
+B14 ~ B22 全部完成 ─→ B23 (cron 扩展)
+                     依赖：B17 / B18 / B19 / B20
+
+B23 ─→ B24 (E2E + OpenAPI 锁定)
+       依赖：B10-B23
+
+B24 ─→ F9 (api-client + queries)
+       │
+F9 ─→ F10 (stores) ─┐
+                     │
+                     ├─→ F11 (Section A 历史)
+                     ├─→ F12 (Section B 专项)
+                     ├─→ F13 (Section C 套卷)
+                     ├─→ F14 (自定义刷题)
+                     ├─→ F15 (AI 等待 + 答题扩展)
+                     └─→ F16 (申论批改)
+                            │
+                            ↓
+                          F17 (整合 + 老 view 删除)
+                            │
+                            ↓
+                          F18 (E2E + a11y)
 ```
 
 WU 详细：
 - 后端：[03-Backend-WU](./03-Backend-WU.md)
 - 前端：[04-Frontend-WU](./04-Frontend-WU.md)
+- 后端依赖详细矩阵：[03-Backend-WU §18](./03-Backend-WU.md#18-与-phase-home-wu-的依赖图详)
 
 ---
 

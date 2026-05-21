@@ -85,7 +85,7 @@ Tab 2 特殊鉴权：
 
 ### 2.2 限流（NF-RateLimit）
 
-详见 [03-Backend-WU §1.4](./03-Backend-WU.md#14-限流)。
+详见 [03-Backend-WU §1.4](./03-Backend-WU.md#14-限流nf-ratelimit)。
 
 | 端点 | 限流 |
 |---|---|

@@ -258,7 +258,7 @@ async def save_with_dedupe(questions: list[GeneratedQuestion]) -> list[int]:
     return saved_ids
 ```
 
-⚠️ `content_hash` 字段需要在 [02-Data-Model §2.1](./02-Data-Model.md#21-questionv2最重要的扩展) 加上（之前漏了，B10.2 PR 时补）。
+⚠️ ~~`content_hash` 字段需要在 [02-Data-Model §2.1](./02-Data-Model.md#21-questionv2最重要的扩展) 加上（之前漏了，B10.2 PR 时补）~~。**已补**：见 02-Data-Model §2.1 字段定义 + §4 索引策略。
 
 ---
 

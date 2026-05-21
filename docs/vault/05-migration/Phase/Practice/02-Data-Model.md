@@ -91,6 +91,10 @@ class QuestionV2(Base):
     report_count: Mapped[int] = mapped_column(Integer, default=0)     # 仅 AI 题有效
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
 
+    # 去重（用于 AI 题改编后命中已有题；真题导入时也用同一字段防重复入库）
+    content_hash: Mapped[str | None] = mapped_column(String(32), unique=True, index=True, nullable=True)
+    # 计算公式见 07-AI-Question-Engine §4.1：BLAKE2b(stem + 排序后 options + correct_answer)
+
     # AI 题专属
     ai_source_question_id: Mapped[int | None] = mapped_column(
         ForeignKey("question_v2.id"), nullable=True
@@ -102,6 +106,7 @@ class QuestionV2(Base):
         Index("ix_question_v2_category", "category_l1", "category_l2"),
         Index("ix_question_v2_source_active", "source", "is_active"),
         Index("ix_question_v2_year_region_exam", "year", "region", "exam_type"),
+        # content_hash UNIQUE 已通过 unique=True 在字段上声明
         # PR2: source 字段 immutable trigger（详见 §5.1）
     )
 ```
@@ -129,7 +134,14 @@ class ExamType(StrEnum):
 op.execute("UPDATE question_v2 SET source = 'real_exam' WHERE source IS NULL")
 op.execute("UPDATE question_v2 SET is_active = TRUE WHERE is_active IS NULL")
 op.execute("UPDATE question_v2 SET historical_accuracy = 0.5 WHERE historical_accuracy IS NULL")  # 中位数兜底
+# content_hash 回填：现有真题需要扫表批量计算 hash 后写回
+# 由 B10.3 中独立 data migration step 完成（避免长事务）
 ```
+
+⚠️ **content_hash 回填注意**：
+- 真题数量可能数千到数万，回填用 batched UPDATE（每批 500-1000 行）
+- 回填中如果发现重复 hash（同题多次入库的脏数据）：保留最早记录，其余 is_active=false
+- 回填完成后再加 UNIQUE 约束（避免约束失败）
 
 ---
 
@@ -504,6 +516,7 @@ class DailyStatus(StrEnum):
 | QuestionV2 | (category_l1, category_l2) | 二级分类查询 |
 | QuestionV2 | (source, is_active) | AI 出题池筛选 |
 | QuestionV2 | (year, region, exam_type) | 套卷 filter |
+| QuestionV2 | content_hash UNIQUE | 防重复入库（AI 改编 + 真题导入共用） |
 | NoteV2 | (user_id, linked_question_id) | 题目相关笔记查询 |
 | QuestionFavoriteV2 | UNIQUE(user_id, question_id) | 收藏唯一约束 |
 | QuestionFlagV2 | UNIQUE WHERE resolved_at IS NULL | 活跃 flag 唯一约束 |
