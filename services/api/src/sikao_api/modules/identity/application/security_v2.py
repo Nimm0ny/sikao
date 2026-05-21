@@ -7,6 +7,8 @@ import hmac
 import secrets
 from typing import Annotated
 
+from argon2 import PasswordHasher
+from argon2.exceptions import VerifyMismatchError
 from fastapi import Depends, Request, Response
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy import select
@@ -22,6 +24,7 @@ AUTH_SESSION_COOKIE_NAME = "auth_session_v2"
 CSRF_COOKIE_NAME = "csrf_token_v2"
 CSRF_HEADER_NAME = "X-CSRF-Token"
 SESSION_LIFETIME = timedelta(days=7)
+_LEGACY_ARGON2 = PasswordHasher()
 
 
 @dataclass(frozen=True)
@@ -37,19 +40,26 @@ def hash_password(password: str) -> str:
 
 
 def verify_password(password: str, password_hash: str) -> bool:
+    if password_hash.startswith("pbkdf2_sha256$"):
+        try:
+            algorithm, salt_hex, digest_hex = password_hash.split("$", 2)
+        except ValueError:
+            return False
+        if algorithm != "pbkdf2_sha256":
+            return False
+        digest = pbkdf2_hmac(
+            "sha256",
+            password.encode("utf-8"),
+            bytes.fromhex(salt_hex),
+            600_000,
+        )
+        return hmac.compare_digest(digest.hex(), digest_hex)
     try:
-        algorithm, salt_hex, digest_hex = password_hash.split("$", 2)
-    except ValueError:
+        return _LEGACY_ARGON2.verify(password_hash, password)
+    except VerifyMismatchError:
         return False
-    if algorithm != "pbkdf2_sha256":
+    except Exception:
         return False
-    digest = pbkdf2_hmac(
-        "sha256",
-        password.encode("utf-8"),
-        bytes.fromhex(salt_hex),
-        600_000,
-    )
-    return hmac.compare_digest(digest.hex(), digest_hex)
 
 
 def normalize_email(value: str) -> str:
