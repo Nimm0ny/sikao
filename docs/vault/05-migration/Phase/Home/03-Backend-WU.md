@@ -12,15 +12,15 @@
 | # | WU | 估算 | PR 数 | 依赖 |
 |---|---|---|---|---|
 | WU-B1 | 数据建模 + Alembic | 800 | 5 | - |
-| WU-B2 | plans 模块（事件 CRUD + recurring + conflict） | 2,400 | 6 | B1.1 / B1.2 / B1.4 |
+| WU-B2 | plans 模块（事件 CRUD + recurring + conflict） | 2,400 | 7 | B1.1 / B1.2 / B1.4 |
 | WU-B3 | recommendations 模块 | 900 | 3 | B1.3 / B2.2 |
 | WU-B4 | progress 真实化 + snapshot 写入 | 1,400 | 4 | B2.2 |
-| WU-B5 | planning 重写（dashboard 入口） | 1,100 | 3 | B2.2 / B4.1 |
+| WU-B5 | planning 重写（dashboard 入口） | 1,100 | 4 | B2.2 / B4.1 |
 | WU-B6 | profile 扩展 | 250 | 2 | B1.4 |
 | WU-B7 | LLM 模块 | 2,000 | 6 | B1.1 / B1.3 / B1.4 |
 | WU-B8 | Cron + 实时 hook | 1,000 | 4 | B7 / B4 |
 | WU-B9 | E2E + OpenAPI 验收 | 1,400 | 5 | B2-B8 |
-| **合计** | | **11,250** | **38** | |
+| **合计** | | **11,250** | **40** | |
 
 > 后端总量上调（原 7,500），原因：补全 audit / idempotency / observability / 完整鉴权层。
 
@@ -102,6 +102,13 @@ async def idempotency_middleware(request, call_next):
 | dashboard-planning | /dashboard/today*, /weekly-plan*, /full-plan |
 | profile | /profile/* |
 
+### 1.7 Review / Validation Gate（适用于所有 B*.x PR）
+
+- 每个后端 runtime PR 必须先过独立 review；单 tranche diff 超过 400 行时再加 master diff review。
+- 涉及 DB migration、API 契约、鉴权、LLM、限流、幂等等高风险改动时，不允许只贴单测结果；必须附 targeted integration evidence。
+- 默认验证命令：相关范围的 `ruff`, `mypy`, `pytest`；涉及 route/schema 的 PR 额外跑 OpenAPI drift。
+- `B9` 之前允许按 tranche 跑 targeted validation；Home 后端整体验收仍以 `B9` 的 full validation 为准。
+
 ---
 
 ## 2. WU-B1 · 数据建模
@@ -109,8 +116,7 @@ async def idempotency_middleware(request, call_next):
 ### B1.1 PlanV2 + PlanEventV2 模型 + Alembic
 
 **文件**：
-- `db/models/plan_v2.py` (PlanV2)
-- `db/models/plan_event_v2.py` (PlanEventV2)
+- `services/api/src/sikao_api/db/models_v2.py`（追加 `PlanV2` / `PlanEventV2`）
 - `db/enums.py` (PlanStyle/PlanStatus/PlanSource/EventCategory/EventStatus/EventSource)
 - `database/migrations/versions/2026XXXX_b1_1_*.py`
 - `tests/db/test_plan_v2_model.py`
@@ -124,32 +130,31 @@ async def idempotency_middleware(request, call_next):
 
 ### B1.2 PlanAdjustmentV2
 
-**文件**：`db/models/plan_adjustment_v2.py` + 迁移 + 测试
+**文件**：`services/api/src/sikao_api/db/models_v2.py`（追加 `PlanAdjustmentV2`） + 迁移 + 测试
 
 **验收**：partial index `WHERE status='pending'` 命中；status enum 完整。
 
 ### B1.3 RecommendationV2 + Feedback
 
-**文件**：`db/models/recommendation_v2.py` / `recommendation_feedback_v2.py` + 迁移 + 测试
+**文件**：`services/api/src/sikao_api/db/models_v2.py`（追加 `RecommendationV2` / `RecommendationFeedbackV2`） + 迁移 + 测试
 
 ### B1.4 Profile 扩展 + 链接 + 系统表
 
 **文件**：
-- 扩展 `db/models/profile_v2.py`：`exam_targets / ai_adjust_enabled / dashboard_preferences / recommender_preferences`
-- 扩展 `db/models/practice_session_v2.py`：`linked_plan_event_id` / `linked_recommendation_id`
-- 新增 `db/models/idempotency_key_v2.py` (IdempotencyKeyV2)
-- 新增 `db/models/audit_log_v2.py` (AuditLogV2)
-- 新增 `db/models/llm_call_v2.py` (LlmCallV2)
+- 扩展 `services/api/src/sikao_api/db/models_v2.py`：`ProfileGoalV2.exam_targets`
+- 扩展 `services/api/src/sikao_api/db/models_v2.py`：`ProfileInfoV2.ai_adjust_enabled / dashboard_preferences / recommender_preferences`
+- 扩展 `services/api/src/sikao_api/db/models_v2.py`：`PracticeSessionV2.linked_plan_event_id / linked_recommendation_id`
+- 追加 `IdempotencyKeyV2 / AuditLogV2 / LlmCallV2`
 - 迁移 + 测试
 
 **验收**：所有新字段默认值正确；FK on_delete=SET NULL；audit_log 多态 metadata schema 测试。
 
 ### B1.5 Drop DailyPlanV2 / WeeklyPlanV2
 
-**前置**：本 PR 之前必须先有一个 cleanup PR（计入 B5.1 范围）把所有引用这两个表的代码删干净。grep 关键字 = `daily_plan_v2`, `weekly_plan_v2`, `DailyPlanV2`, `WeeklyPlanV2`。
+**前置**：本 PR 之前必须先完成 `B5.1` 旧 planning cleanup 与 `B5.1a legacy study_plan cleanup`。grep 关键字 = `daily_plan_v2`, `weekly_plan_v2`, `DailyPlanV2`, `WeeklyPlanV2`。
 
 **文件**：
-- 删除 `db/models/daily_plan_v2.py` / `weekly_plan_v2.py`
+- 从 `services/api/src/sikao_api/db/models_v2.py` 删除 `DailyPlanV2 / DailyPlanItemV2 / WeeklyPlanV2` class 定义
 - `database/migrations/versions/2026XXXX_b1_5_drop_*.py`：`op.drop_table('daily_plan_v2'); op.drop_table('weekly_plan_v2')`
 - downgrade 留空（用户拍板：项目未上线，不需回滚）
 
@@ -185,8 +190,11 @@ services/api/src/sikao_api/modules/plans/
     routes_plans.py
     routes_events.py
     routes_adjustments.py
-    schemas.py              # Pydantic request/response
 ```
+
+请求/响应 schema 现实收敛：
+- 所有对外 API schema 统一追加到 `services/api/src/sikao_api/db/schemas_v2.py`
+- `modules/plans/interface/*` 只负责 route wiring，不再新建独立 `interface/schemas.py`
 
 ### 3.2 端点全集
 
@@ -222,22 +230,37 @@ POST   /api/v2/plans/adjustments/{id}/reject             body: {reason?}
 
 ### 3.3 PR 拆分
 
-#### B2.1 plans 主表 CRUD
+#### B2.1a plans 主表 list/create/get
 
 文件：
-- `domain/entities.py`（PlanCreate/Update/Read schema）
-- `application/plan_service.py`（list/create/get/update/archive/activate/pause/soft_delete）
+- `domain/entities.py`（PlanCreate/Read schema）
+- `application/plan_service.py`（list/create/get）
 - `infrastructure/repos.py`（PlanRepo）
 - `interface/routes_plans.py`
-- `interface/schemas.py`
+- `db/schemas_v2.py`
 - `tests/modules/plans/test_plan_routes.py`
 
 业务规则：
 - create 时如果用户已有 active plan，新 plan status 默认 `paused`（除非 body 显式 `make_active=true`，此时把旧的 active 转 paused 并加 audit）
+- get/list 默认过滤 soft-deleted plan
+
+PR 行数：~210
+
+#### B2.1b plans 主表 update/archive/activate/pause/delete
+
+文件：
+- `domain/entities.py`（PlanUpdate schema 增量）
+- `application/plan_service.py`（update/archive/activate/pause/soft_delete）
+- `infrastructure/repos.py`（PlanRepo 增量）
+- `interface/routes_plans.py`
+- `db/schemas_v2.py`
+- `tests/modules/plans/test_plan_routes.py`
+
+业务规则：
 - activate 同理
 - update 限定字段：`name / daily_minutes_target / style / focus_subjects / target_exam_date`；改其他字段返回 422
 
-PR 行数：~420（接近 H9 上限）
+PR 行数：~190
 
 #### B2.2 events 基础 CRUD
 
@@ -246,7 +269,7 @@ PR 行数：~420（接近 H9 上限）
 - `application/event_service.py`（list/create/get/single-update/single-delete）
 - `infrastructure/repos.py`（EventRepo 增量）
 - `interface/routes_events.py`（不含 bulk / conflicts / regenerate / scope）
-- `interface/schemas.py`（增量）
+- `db/schemas_v2.py`（增量）
 - `tests/modules/plans/test_event_routes.py`
 
 业务规则：
@@ -494,12 +517,11 @@ GET /api/v2/dashboard/today/must-do               (Infra-Plan-must-do = 删除)
 
 ### 6.2 PR 拆分
 
-#### B5.1 today + continue + review 重写 + must-do 删除 + cleanup
+#### B5.1 today + continue + review 重写 + must-do 删除
 
 文件：
 - 重写 `modules/planning/application/planning_service.py`（today / continue / review）
 - 删除 `must-do` 路由 + service 方法
-- **B1.5 前置 cleanup**：grep 删除所有 `daily_plan_v2 / weekly_plan_v2 / DailyPlanV2 / WeeklyPlanV2` 引用
 - `tests/modules/planning/test_today.py` 重写
 
 业务规则：
@@ -507,7 +529,20 @@ GET /api/v2/dashboard/today/must-do               (Infra-Plan-must-do = 删除)
 - continue 端点取 user 最近的 in_progress session（即未提交）
 - review 端点从 review.items 选近 7 天高优先（错题密度高 + 距上次复盘 > 3 天）
 
-PR 行数：~380（含 cleanup）
+PR 行数：~320
+
+#### B5.1a legacy study_plan cleanup
+
+文件：
+- grep 删除所有 `daily_plan_v2 / weekly_plan_v2 / DailyPlanV2 / WeeklyPlanV2` 引用
+- 删除 `services/api/src/sikao_api/modules/llm/application/llm/prompts/study_plan.py`
+- 清理引用该 prompt 的 legacy wiring / 测试
+
+业务规则：
+- 这是 `B1.5` 的明确前置 cleanup PR，不再使用含糊的 `B1.6` 叫法。
+- Home 新一代 `plan_generate.py` / `plan_adjust.py` / `recommend_today.py` 与 legacy `study_plan.py` 不并存上线。
+
+PR 行数：~120
 
 #### B5.2 weekly-plan 4 端点重写 + adjust
 
@@ -547,6 +582,7 @@ PR 行数：~340
 ```
 PUT /api/v2/profile/goals                  body: {exam_targets: [...], ...}
 PUT /api/v2/profile/info                   body: {ai_adjust_enabled?, dashboard_preferences?, recommender_preferences?}
+GET /api/v2/profile/records                query: {page,size,kind,status,from,to,session_id}
 ```
 
 ### 7.2 PR 拆分
@@ -554,32 +590,45 @@ PUT /api/v2/profile/info                   body: {ai_adjust_enabled?, dashboard_
 #### B6.1 goals 扩展（exam_targets）
 
 文件：
-- `modules/profile_v2/application/profile_service.py`（增量：goals.exam_targets 校验 + 写入）
-- `interface/schemas.py`（增量）
+- `modules/profile_v2/application/service.py`（增量：goals.exam_targets 校验 + 写入）
+- `db/schemas_v2.py`（增量）
 - `tests/modules/profile/test_goals.py`
 
 业务规则：
 - exam_targets 数组长度 ≤ 5
 - 每条 exam_id 唯一
 - exam_date 必须 ≥ today（前后端双校验）
-- 旧字段（exam_id / exam_date 单值）向后兼容：写入时若 body 没传 exam_targets 但传了单值，自动包成 1 元素数组
+- 旧字段向后兼容基于仓库现实：读取时保留 `target_exam / target_score / weekly_target_hours`，写入 `exam_targets` 后不删除旧字段
+- 迁移期间：
+  - 若 body 只传 legacy `target_exam / target_score / weekly_target_hours`，继续按旧语义写入
+  - 若 body 传 `exam_targets`，则新字段优先；legacy 字段可作为兼容展示或默认值来源，但不能假设存在 `exam_id / exam_date`
 
 PR 行数：~140
 
-#### B6.2 info 扩展
+#### B6.2 info 扩展 + records canonicalization
 
 文件：
-- `modules/profile_v2/application/profile_service.py`（增量：info）
-- `interface/schemas.py`（增量）
+- `modules/profile_v2/application/service.py`（增量：info）
+- `modules/profile_v2/interface/routes.py`（增量：`GET /profile/records`）
+- `modules/record/application/service.py`（复用现有聚合逻辑，输出 canonical `LearningRecordListResponseV2`）
+- `db/schemas_v2.py`（增量）
 - `tests/modules/profile/test_info.py`
+- `tests/modules/profile/test_records.py`
 
-PR 行数：~110
+业务规则：
+- `GET /api/v2/profile/records` 是唯一 canonical records API。
+- 现有 `GET /api/v2/dashboard/records` 作为兼容 shim 暂保留到 `B9.5` 前；返回中的 `href/actions` 一律改为 `/profile/records`。
+- records 继续复用 `modules/record` 聚合，不把 records 语义绑回 `/dashboard`。
+
+PR 行数：~180
 
 ---
 
 ## 8. WU-B7 · LLM 模块
 
 详见 `05-LLM-Module.md` 与 `06-LLM-Prompts.md`。本节只列 PR 拆分摘要。
+
+> 实现现实（A0 修订）：WU-B7 全程**扩展现有 `services/api/src/sikao_api/modules/llm/`**，沿用当前 `httpx` OpenAI-compatible provider 与 BYOM 结构，不新建 `modules/llm_v2/`。
 
 ### 8.1 PR 拆分（与 LLM 模块文档对齐）
 
@@ -644,11 +693,11 @@ PR 行数：~280
 - `scheduler/jobs/plan_adjustor_daily.py`
 - `scheduler/jobs/cleanup_expired.py`
 - `scheduler/jobs/cleanup_soft_deleted.py`
-- `modules/auth/application/login_hook.py`（增量：触发 adjustor）
+- `modules/identity/application/service.py`（增量：登录后触发 adjustor 检查）
 - 接入 event-status-tick：标 skipped 后 enqueue adjustor
 - `tests/scheduler/test_plan_adjustor_cron.py`
 - `tests/scheduler/test_cleanup_jobs.py`
-- `tests/modules/auth/test_login_hook.py`
+- `tests/modules/identity/test_login_hook.py`
 
 业务规则（ADJ-6 限流）：
 - adjustor 入口先查近 24h 同 user_id 是否已生成同类 adjustment（按 changes diff 哈希），命中则跳过
@@ -712,6 +761,10 @@ PR 行数：~280
 - `tests/e2e/test_dashboard_today_weekly_full.py`
 - `tests/e2e/test_profile_extension.py`
 
+主链路补充：
+- `GET /api/v2/profile/records` 分页 / 过滤 / `session_id` deep-link 查询
+- `GET /api/v2/dashboard/records` shim 在前端切换前仍返回兼容 payload
+
 PR 行数：~280
 
 #### B9.5 OpenAPI 重生成 + drift 测试
@@ -721,6 +774,10 @@ PR 行数：~280
 - `services/api/spec/openapi.json`（重生成）
 - `tests/contract/test_openapi_drift.py`：跑时实时 generate vs file，diff 必须为空
 - `packages/api-client/src/types/api.generated.ts`（基于 openapi.json 重生成 ts types，本 PR 仅生成不消费）
+
+收口要求：
+- 删除 legacy `GET /api/v2/dashboard/records` shim，只保留 canonical `GET /api/v2/profile/records`
+- 锁定后的 `openapi.json` 不再包含 `/dashboard/records`
 
 PR 行数：~280（其中 openapi.json 自动生成不计入手写）
 
@@ -734,7 +791,7 @@ PR 行数：~280（其中 openapi.json 自动生成不计入手写）
 
 ---
 
-## 11. PR 列表（38 个）
+## 11. PR 列表（40 个）
 
 ```
 B1.1  PlanV2 + PlanEventV2 + Alembic
@@ -743,7 +800,8 @@ B1.3  RecommendationV2 + Feedback + Alembic
 B1.4  Profile + Session links + Idempotency + Audit + LlmCall + Alembic
 B1.5  Drop DailyPlanV2 / WeeklyPlanV2
 
-B2.1  plans 主表 CRUD
+B2.1a plans 主表 list/create/get
+B2.1b plans 主表 update/archive/activate/pause/delete
 B2.2  events 基础 CRUD + state machine
 B2.3  events bulk + conflicts + practice_blocks
 B2.4  RRULE subset + recurring_expander
@@ -759,12 +817,13 @@ B4.2  progress timeseries
 B4.3  progress weakness
 B4.4  snapshot writer + session.submit hook
 
-B5.1  dashboard today + continue + review + must-do 删除 + cleanup
+B5.1  dashboard today + continue + review + must-do 删除
+B5.1a legacy study_plan cleanup
 B5.2  weekly-plan 4 端点 + adjust
 B5.3  full-plan + 倒数 + 多 target
 
 B6.1  profile goals exam_targets
-B6.2  profile info ai_adjust + dashboard_prefs + recommender_prefs
+B6.2  profile info ai_adjust + dashboard_prefs + recommender_prefs + records canonicalization
 
 B7.1  LLM service 框架 + provider 抽象 + config + cache + cost
 B7.2  OpenAI 兼容 client + DeepSeek + 百炼 + mock + SSE
