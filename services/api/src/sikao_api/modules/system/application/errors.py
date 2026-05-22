@@ -57,3 +57,21 @@ class LLMServiceError(ServiceError):
         self, message: str = "llm service unavailable", *, code: str = "llm_service_unavailable"
     ) -> None:
         super().__init__(message, status_code=503, code=code)
+
+
+class LLMParseError(ServiceError):
+    """502: upstream LLM returned text that cannot be parsed into the expected schema."""
+
+    def __init__(
+        self, message: str = "llm parse failed", *, code: str = "llm_parse_failed"
+    ) -> None:
+        super().__init__(message, status_code=502, code=code)
+
+
+class QuotaExceededError(ServiceError):
+    """429: per-user quota/cost budget exceeded."""
+
+    def __init__(
+        self, message: str = "quota exceeded", *, code: str = "quota_exceeded"
+    ) -> None:
+        super().__init__(message, status_code=429, code=code)

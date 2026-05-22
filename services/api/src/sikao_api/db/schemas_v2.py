@@ -354,6 +354,24 @@ class PlanUpdateRequestV2(CamelModel):
     focus_subjects: list[str] | None = None
 
 
+class PlanAutoGenerateRequestV2(CamelModel):
+    name: str = Field(min_length=1, max_length=120)
+    target_exam_id: str = Field(min_length=1, max_length=64)
+    target_exam_date: date
+    daily_minutes_target: int = Field(ge=60, le=720)
+    style: str = Field(min_length=1, max_length=32)
+    baseline: dict[str, Any] = Field(default_factory=dict)
+    focus_subjects: list[str] = Field(default_factory=list)
+    user_notes: str = Field(default="", max_length=4000)
+
+
+class PlanRegenerateRangeRequestV2(CamelModel):
+    plan_id: int
+    from_date: date = Field(alias="from")
+    to: date
+    user_notes: str = Field(default="", max_length=4000)
+
+
 class PlanEventReadV2(CamelModel):
     id: str
     plan_id: int
@@ -626,9 +644,6 @@ class BindPhoneResponseV2(CamelModel):
     phone_bound: bool
     masked_phone: str
 
-
-class DashboardTodayResponseV2(OverviewResponseV2):
-    pass
 
 class SubjectAccuracyV2(CamelModel):
     subject_key: str
