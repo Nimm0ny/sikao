@@ -136,7 +136,12 @@ def test_upgrade_seeds_legacy_rows_with_quality_defaults(tmp_path: Path) -> None
         ).fetchone()
     accuracy, answers, quality, reports, active, *nullable_vals = row
     assert (accuracy, answers, quality, reports, active) == (0.0, 0, 5.0, 0, 1)
-    assert all(v is None for v in nullable_vals)
+    # AI provenance fields stay NULL for legacy real-exam rows. content_hash
+    # was nullable at 1013 but the 1014 backfill populates it; that field is
+    # asserted in the WU-B10.3 test bench, not here.
+    chash, ai_src, ai_audit, ai_gen = nullable_vals
+    assert (ai_src, ai_audit, ai_gen) == (None, None, None)
+    assert chash is None or len(chash) == 32  # NULL pre-1014, 32-hex post-1014
 
 
 def test_self_fk_set_null_on_source_delete(tmp_path: Path) -> None:

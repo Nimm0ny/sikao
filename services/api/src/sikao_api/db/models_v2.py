@@ -251,6 +251,14 @@ class QuestionV2(Base):
             "region",
             "exam_type",
         ),
+        # Phase-Practice WU-B10.3: (source, is_active) is the picker's hottest
+        # filter; the single-col is_active index from B10.2 still serves the
+        # source-agnostic queries.
+        Index("ix_questions_v2_source_active", "source", "is_active"),
+        # WU-B10.3: content_hash UNIQUE for cross-source dedup. Multiple NULLs
+        # are allowed by both PG and SQLite, so dedup losers can keep their
+        # row by NULLing this field.
+        UniqueConstraint("content_hash", name="uq_questions_v2_content_hash"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
