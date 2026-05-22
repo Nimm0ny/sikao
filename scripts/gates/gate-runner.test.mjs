@@ -1,5 +1,7 @@
 import assert from "node:assert/strict";
+import { dirname, resolve } from "node:path";
 import test from "node:test";
+import { fileURLToPath } from "node:url";
 
 import {
   buildValidationCommands,
@@ -11,6 +13,9 @@ import {
   parseCliArgs,
   resolveExecutable,
 } from "./gate-runner.mjs";
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), "..", "..");
+const servicesApiDir = resolve(repoRoot, "services", "api");
 
 test("parseCliArgs parses gate flags", () => {
   const args = parseCliArgs([
@@ -156,15 +161,31 @@ test("evaluateBatchGate enforces file and net-add limits", () => {
 
 test("buildValidationCommands returns explicit profiles", () => {
   assert.deepEqual(buildValidationCommands("docs"), [
-    ["node", ["--test", "scripts/gates/*.test.mjs"]],
+    { command: "node", args: ["--test", "scripts/gates/*.test.mjs"], cwd: repoRoot },
+  ]);
+
+  assert.deepEqual(buildValidationCommands("backend-first"), [
+    { command: "python", args: ["-m", "ruff", "check", "src", "tests"], cwd: servicesApiDir },
+    { command: "python", args: ["-m", "mypy", "src"], cwd: servicesApiDir },
+    { command: "python", args: ["-m", "pytest"], cwd: servicesApiDir },
+    { command: "node", args: ["--test", "scripts/gates/*.test.mjs"], cwd: repoRoot },
   ]);
 
   assert.deepEqual(buildValidationCommands("full"), [
-    ["npm", ["run", "typecheck"]],
-    ["npm", ["run", "lint"]],
-    ["npm", ["test"]],
-    ["node", ["--test", "scripts/gates/*.test.mjs"]],
+    { command: "npm", args: ["run", "typecheck"], cwd: repoRoot },
+    { command: "npm", args: ["run", "lint"], cwd: repoRoot },
+    { command: "npm", args: ["test"], cwd: repoRoot },
+    { command: "node", args: ["--test", "scripts/gates/*.test.mjs"], cwd: repoRoot },
   ]);
+});
+
+test("buildValidationCommands anchors backend-first cwd to repo paths", () => {
+  const commands = buildValidationCommands("backend-first");
+
+  for (const command of commands.slice(0, 3)) {
+    assert.equal(command.cwd, servicesApiDir);
+  }
+  assert.equal(commands.at(-1)?.cwd, repoRoot);
 });
 
 test("buildSpawnSpec wraps npm through cmd.exe on Windows", () => {

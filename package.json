@@ -15,6 +15,7 @@
     "bootstrap:mvp-demo": "bash scripts/dev-python.sh -m scripts.import.import_mvp_demo",
     "seed:mvp-demo": "bash scripts/dev-python.sh -m scripts.import.import_mvp_demo --skip-migrations",
     "gate:preflight": "node scripts/gates/gate-runner.mjs preflight",
+    "gate:validation:backend": "node scripts/gates/gate-runner.mjs validation --profile backend-first",
     "gate:validation": "node scripts/gates/gate-runner.mjs validation --profile full",
     "lint": "npm run lint --workspaces --if-present",
     "test:gates": "node --test scripts/gates/*.test.mjs",

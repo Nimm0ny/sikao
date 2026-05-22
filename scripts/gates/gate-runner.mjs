@@ -3,12 +3,12 @@
 import { spawnSync } from "node:child_process";
 import { createHash } from "node:crypto";
 import { existsSync, readFileSync } from "node:fs";
-import { extname } from "node:path";
+import { dirname, extname, resolve } from "node:path";
 import { argv, exit, platform, stdout, stderr } from "node:process";
-import { pathToFileURL } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const GATES = new Set(["all", "git", "multica-intake", "preflight", "review", "validation"]);
-const PROFILES = new Set(["docs", "full"]);
+const PROFILES = new Set(["backend-first", "docs", "full"]);
 const CODE_EXTENSIONS = new Set([
   ".css",
   ".js",
@@ -31,6 +31,13 @@ const UI_PATTERNS = [
   /^packages\/editor\/src\/.*\.tsx$/i,
   /^packages\/ui\/src\//i,
 ];
+const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
+const REPO_ROOT = resolve(SCRIPT_DIR, "..", "..");
+const SERVICES_API_DIR = resolve(REPO_ROOT, "services", "api");
+
+function repoPath(...segments) {
+  return resolve(REPO_ROOT, ...segments);
+}
 
 function writeLine(message) {
   stdout.write(`${message}\n`);
@@ -212,14 +219,22 @@ export function evaluateBatchGate(stats) {
 
 export function buildValidationCommands(profile) {
   if (profile === "docs") {
-    return [["node", ["--test", "scripts/gates/*.test.mjs"]]];
+    return [{ command: "node", args: ["--test", "scripts/gates/*.test.mjs"], cwd: REPO_ROOT }];
+  }
+  if (profile === "backend-first") {
+    return [
+      { command: "python", args: ["-m", "ruff", "check", "src", "tests"], cwd: SERVICES_API_DIR },
+      { command: "python", args: ["-m", "mypy", "src"], cwd: SERVICES_API_DIR },
+      { command: "python", args: ["-m", "pytest"], cwd: SERVICES_API_DIR },
+      { command: "node", args: ["--test", "scripts/gates/*.test.mjs"], cwd: REPO_ROOT },
+    ];
   }
   if (profile === "full") {
     return [
-      ["npm", ["run", "typecheck"]],
-      ["npm", ["run", "lint"]],
-      ["npm", ["test"]],
-      ["node", ["--test", "scripts/gates/*.test.mjs"]],
+      { command: "npm", args: ["run", "typecheck"], cwd: REPO_ROOT },
+      { command: "npm", args: ["run", "lint"], cwd: REPO_ROOT },
+      { command: "npm", args: ["test"], cwd: REPO_ROOT },
+      { command: "node", args: ["--test", "scripts/gates/*.test.mjs"], cwd: REPO_ROOT },
     ];
   }
   throw new Error(`Unknown validation profile "${profile}".`);
@@ -228,13 +243,15 @@ export function buildValidationCommands(profile) {
 function runCommand(command, args, options = {}) {
   const spawnSpec = buildSpawnSpec(command, args);
   const rendered = [command, ...args].join(" ");
+  const display = options.cwd ? `${rendered} (cwd: ${options.cwd})` : rendered;
   if (options.dryRun) {
-    writeLine(`[dry-run] ${rendered}`);
+    writeLine(`[dry-run] ${display}`);
     return "";
   }
 
   const result = spawnSync(spawnSpec.command, spawnSpec.args, {
     encoding: "utf8",
+    cwd: options.cwd,
     shell: false,
     stdio: options.capture ? ["ignore", "pipe", "pipe"] : "inherit",
   });
@@ -244,7 +261,7 @@ function runCommand(command, args, options = {}) {
   }
   if (result.status !== 0) {
     const suffix = result.stderr ? `\n${result.stderr.trim()}` : "";
-    throw new Error(`Command failed: ${rendered}${suffix}`);
+    throw new Error(`Command failed: ${display}${suffix}`);
   }
   return result.stdout ?? "";
 }
@@ -296,23 +313,28 @@ function fileHash(path) {
 }
 
 function assertMirrorSync() {
-  if (!existsSync("AGENTS.md") || !existsSync("CLAUDE.md")) {
+  const agentsPath = repoPath("AGENTS.md");
+  const claudePath = repoPath("CLAUDE.md");
+  if (!existsSync(agentsPath) || !existsSync(claudePath)) {
     throw new Error("AGENTS.md and CLAUDE.md must both exist.");
   }
-  if (fileHash("AGENTS.md") !== fileHash("CLAUDE.md")) {
+  if (fileHash(agentsPath) !== fileHash(claudePath)) {
     throw new Error("AGENTS.md / CLAUDE.md drift detected.");
   }
 }
 
 function untrackedNumstatRows() {
-  const output = runCommand("git", ["ls-files", "--others", "--exclude-standard"], { capture: true });
+  const output = runCommand("git", ["ls-files", "--others", "--exclude-standard"], {
+    capture: true,
+    cwd: REPO_ROOT,
+  });
   const rows = [];
   for (const rawPath of output.split(/\r?\n/)) {
     if (!rawPath.trim()) {
       continue;
     }
     const path = normalizePath(rawPath);
-    const content = readFileSync(rawPath);
+    const content = readFileSync(repoPath(rawPath));
     if (content.includes(0)) {
       rows.push(`-\t-\t${path}`);
       continue;
@@ -332,7 +354,10 @@ export function countTextLinesForNumstat(text) {
 }
 
 function collectWorktreeStats() {
-  const tracked = runCommand("git", ["diff", "--numstat", "HEAD", "--", "."], { capture: true });
+  const tracked = runCommand("git", ["diff", "--numstat", "HEAD", "--", "."], {
+    capture: true,
+    cwd: REPO_ROOT,
+  });
   const untracked = untrackedNumstatRows();
   return collectDiffStatsFromNumstat([tracked.trim(), untracked.trim()].filter(Boolean).join("\n"));
 }
@@ -397,8 +422,8 @@ function runGitGate() {
 
 function runValidation(args) {
   const commands = buildValidationCommands(args.profile);
-  for (const [command, commandArgs] of commands) {
-    runCommand(command, commandArgs, { dryRun: args.dryRun });
+  for (const spec of commands) {
+    runCommand(spec.command, spec.args, { cwd: spec.cwd, dryRun: args.dryRun });
   }
   writeLine(args.dryRun ? "validation: DRY-RUN (not evidence)" : "validation: PASS");
 }
