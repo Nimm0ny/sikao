@@ -61,8 +61,8 @@ packages/shared-utils/                ← cn / logger / hooks / motion
 | Path | Router line | View | 本 Phase 改动 |
 |---|---|---|---|
 | `/practice/center` | L222 | `pages.practiceCenter` | Section A 历史记录元素扩展 (WU-F11) |
-| `/practice/center/xingce/categories` | L224 | `pages.practiceCenter` (segment=xingce, view=categories) | F12 行测专项 |
-| `/practice/center/xingce/papers` | L228 | `pages.practiceCenter` (segment=xingce, view=papers) | F13 行测套卷 |
+| `/practice/center/xingce/categories` | L224 | `pages.categoryTree` | F12 行测专项 |
+| `/practice/center/xingce/papers` | L228 | `pages.papers` | F13 行测套卷 |
 | `/practice/center/essay/categories` | L232 | `pages.essaySpecialty` | F12 申论专项 |
 | `/practice/center/essay/papers` | L236 | `pages.essayPapers` | F13 申论套卷 |
 | `/practice/custom/start` | L252 | `pages.customPracticeStart` | F14 自定义刷题对话框 |
