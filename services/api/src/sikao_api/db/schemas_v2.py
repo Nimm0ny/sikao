@@ -280,6 +280,15 @@ class PracticeAnswerUpsertRequestV2(CamelModel):
     answers: list[PracticeAnswerPayloadV2] = Field(default_factory=list)
 
 
+class PracticeAnswerFlagRequestV2(CamelModel):
+    flagged: bool
+
+
+class PracticePersistentFlagRequestV2(CamelModel):
+    question_id: int
+    reason: Literal["uncertain", "revisit_later", "needs_review"]
+
+
 class OperationAckV2(CamelModel):
     ok: bool
     status: str
