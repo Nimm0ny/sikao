@@ -513,6 +513,6 @@ practice_preferences.cache_miss_total
 - [01-Boundary-Rules §15](./01-Boundary-Rules.md#15-用户偏好边界pref-) - Pref-* invariant
 - [02-Data-Model §3.9](./02-Data-Model.md#39-userpracticepreferencesv2) - schema
 - [03-Backend-WU §22](./03-Backend-WU.md#22-wu-b28-practice_preferences-模块新建) - WU-B28 PR 拆分
-- [04-Frontend-WU §18](./04-Frontend-WU.md#18-wu-f22-practice-preferences-ui) - 前端集成
+- [04-Frontend-WU §15](./04-Frontend-WU.md#15-wu-f22-practice-preferences-ui) - 前端集成
 - [11-Timing-Engine §1](./11-Timing-Engine.md) - reminders 相关
 - [13-Mock-Exam §3.1](./13-Mock-Exam.md) - 模考默认值来源

@@ -311,12 +311,15 @@ async def receive_heartbeat(
     if session.status in TERMINAL_STATUSES:
         return HeartbeatResponse(server_ts=server_ts, status=session.status)
 
-    # PAUSED → IN_PROGRESS：心跳到达视为隐式 resume
-    # 决策点：如果用户从 paused 状态发心跳（说明前端刷新了页面），自动恢复
+    # PAUSED → IN_PROGRESS：心跳到达视为隐式 resume（决策 LC-3a）
+    # 用户从 paused 状态发心跳（说明前端刷新了页面 / 切回了 tab），自动恢复
+    # 客户端应在心跳响应中比对 status 字段决定是否切换 UI 状态（不需要二次手动 resume）
     if session.status == SessionStatus.PAUSED:
         await transition_to_in_progress(session, trigger='new_heartbeat')
 
-    # DRAFT 不被心跳唤醒（必须显式 start）
+    # DRAFT 不被心跳唤醒（决策 LC-2）：必须显式 POST /sessions/:id/start
+    # 或第一次写 answer 隐式触发；heartbeat 仅记录 last_heartbeat_at 不切状态
+    # （但 DRAFT session 通常用户都还在配置页，不会有客户端发心跳）
 
     session.last_heartbeat_at = server_ts
     if current_question_id:
@@ -558,6 +561,8 @@ await session_lifecycle.transition(
 | **Session-LC-Resume-Adds-Pause-Time** | resume 时必须把 (now - paused_at) 累加到 paused_total_seconds，paused_at 清空 |
 | **Session-LC-Pause-Single-Active** | paused_at 非空 ⟺ status=PAUSED；status=IN_PROGRESS 时 paused_at 必为 null |
 | **Session-LC-Heartbeat-No-Terminal** | 心跳到达终态 session：仅返回当前状态，不写 last_heartbeat_at |
+| **Session-LC-Heartbeat-Wakes-Paused** | 心跳到达 PAUSED session：隐式 resume（trigger='new_heartbeat'）；累加 paused_total_seconds 并清空 paused_at（决策 LC-3a） |
+| **Session-LC-Heartbeat-No-Draft-Wake** | 心跳到达 DRAFT session：仅记录 last_heartbeat_at，**不**转 IN_PROGRESS（决策 LC-2） |
 | **Session-LC-Force-Submit-Audit** | force_submitted=true 必有 audit log + force_submitted_reason 非空 |
 | **Session-LC-Daily-Expire-Type** | EXPIRED 状态仅可能出现在 source_mode=daily 的 session 上 |
 | **Session-LC-Draft-No-Answers** | DRAFT 状态的 session 不应有 PracticeSessionAnswerV2.selected_answer 非空 |
@@ -661,6 +666,6 @@ Daily expire cron（§7.2）同步设置 `DailyPracticeV2.status = expired`。
 - [01-Boundary-Rules §13](./01-Boundary-Rules.md#13-session-生命周期边界session-lc-) - Session-LC-* invariant
 - [02-Data-Model §2.2](./02-Data-Model.md#22-practicesessionv2扩展) - schema
 - [03-Backend-WU §20](./03-Backend-WU.md#20-wu-b26-session_lifecycle-模块新建) - WU-B26 PR 拆分
-- [04-Frontend-WU §16](./04-Frontend-WU.md#16-wu-f20-session-lifecycle-与-active-session) - 前端集成
+- [04-Frontend-WU §13](./04-Frontend-WU.md#13-wu-f20-session-lifecycle-与-active-session) - 前端集成
 - [11-Timing-Engine §3.4 / §6.3](./11-Timing-Engine.md) - 与 timing 协同
 - [13-Mock-Exam §5](./13-Mock-Exam.md) - force_submit 触发

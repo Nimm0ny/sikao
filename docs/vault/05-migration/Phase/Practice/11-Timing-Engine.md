@@ -24,7 +24,7 @@
 
 | 模块 | 包含 | 不包含 |
 |---|---|---|
-| **timing**（本模块） | 时间事件接收 / 时间分析端点 / 基线计算 cron / 时间字段写入 | 时间在 UI 上的展示（前端职责） / 模考全局倒计时（在 mock_exam 模块） / session 暂停状态机（在 session_lifecycle 模块） |
+| **timing**（本模块） | 时间事件接收（question_enter / leave / answer_change 三类）/ 时间分析端点 / 基线计算 cron / answer 与 session 上 timing 字段写入 | heartbeat（在 session_lifecycle）/ session_pause/resume（在 session_lifecycle）/ 时间在 UI 上的展示（前端职责）/ 模考全局倒计时（在 mock_exam 模块）/ session 暂停状态机（在 session_lifecycle 模块） |
 | `session` | 答题闭环（创建 / 作答 / 提交） | 时间事件批量上报 |
 | `practice_stats` | 综合实绩 snapshot（含 total_minutes 但不含逐题耗时分析） | timing-specific 分析端点 |
 
@@ -141,13 +141,14 @@ class QuestionTimingBaselineV2(Base):
 type TimingEvent =
   | { type: "question_enter"; answer_id: number; ts: ISOString }
   | { type: "question_leave"; answer_id: number; ts: ISOString }
-  | { type: "answer_change"; answer_id: number; ts: ISOString; from: string|null; to: string|null }
-  | { type: "session_pause"; ts: ISOString }
-  | { type: "session_resume"; ts: ISOString }
-  | { type: "heartbeat"; ts: ISOString };
+  | { type: "answer_change"; answer_id: number; ts: ISOString; from: string|null; to: string|null };
 ```
 
-⚠️ session_pause / session_resume 由 session_lifecycle 模块的端点单独处理，**不通过 timing 端点上报**。timing 端点仅接受 question_enter / question_leave / answer_change / heartbeat 四类。
+⚠️ **heartbeat 与 session_pause/resume 不在 timing 端点处理**（00-Decisions Timing-4 修订后）：
+- heartbeat：走 `POST /api/v2/practice/sessions/:id/heartbeat`（lifecycle 模块端点，详见 [12-Session-Lifecycle §4.1 / §5.2](./12-Session-Lifecycle.md#41-用户主动操作)）
+- session_pause / session_resume：走 lifecycle 模块对应端点
+
+timing 端点仅接受 question_enter / question_leave / answer_change 三类事件。
 
 ### 3.2 上报端点
 
@@ -173,7 +174,7 @@ body: {
 | 距上次 flush > 15s | 定时 flush |
 | 用户切换到下一题 | 立即 flush（保证 question_leave 写入） |
 | 用户点提交 | submit 前先 flush |
-| session 暂停 | 先 flush 再调 pause 端点 |
+| session 暂停 | 先 flush 再调 pause 端点（pause 不在 timing batch 里） |
 | 网络失败 | 内存重试 3 次（指数退避）；3 次后写 IndexedDB，下次连上时补传 |
 
 ### 3.4 服务端处理
@@ -418,6 +419,7 @@ total_minutes = sum(submitted_sessions.total_active_seconds) / 60
 | **Timing-Overtime-Has-Baseline** | is_overtime=true 必有 sample_size >= MIN_SAMPLES 的 baseline |
 | **Timing-No-Stale-Event** | 不接受 ts < (last_modified_at - 60s) 的事件（防回放） |
 | **Timing-Status-Writable** | 仅 session.status ∈ {in_progress, paused} 时可写时间事件 |
+| **Timing-Heartbeat-Out-Of-Scope** | timing 端点不接受 heartbeat / session_pause / session_resume 事件类型；这些走 lifecycle 端点（00-Decisions Timing-4 修订后） |
 
 ---
 
@@ -488,6 +490,6 @@ timing.baseline.questions_skipped_total{reason}
 - [01-Boundary-Rules §12](./01-Boundary-Rules.md#12-时间维度边界timing-) - Timing-* invariant
 - [02-Data-Model §2.3 / §3.8](./02-Data-Model.md#23-practicesessionanswerv2扩展) - schema
 - [03-Backend-WU §19](./03-Backend-WU.md#19-wu-b25-timing-模块新建) - WU-B25 PR 拆分
-- [04-Frontend-WU §15](./04-Frontend-WU.md#15-wu-f19-timing-上报与展示) - 前端集成
+- [04-Frontend-WU §12](./04-Frontend-WU.md#12-wu-f19-timing-上报与展示) - 前端集成
 - [12-Session-Lifecycle](./12-Session-Lifecycle.md) - pause/resume 协同
 - [13-Mock-Exam](./13-Mock-Exam.md) - 模考超时 force_submit 协同

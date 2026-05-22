@@ -531,6 +531,6 @@ mock_exam.cron.auto_submitted_total
 - [01-Boundary-Rules §14](./01-Boundary-Rules.md#14-模考边界mockexam-) - MockExam-* invariant
 - [02-Data-Model §2.2](./02-Data-Model.md#22-practicesessionv2扩展) - schema
 - [03-Backend-WU §21](./03-Backend-WU.md#21-wu-b27-mock_exam-模块新建) - WU-B27 PR 拆分
-- [04-Frontend-WU §17](./04-Frontend-WU.md#17-wu-f21-mock-exam-模考-ui) - 前端集成
+- [04-Frontend-WU §14](./04-Frontend-WU.md#14-wu-f21-mock-exam-模考-ui) - 前端集成
 - [11-Timing-Engine §6](./11-Timing-Engine.md) - timing 协同
 - [12-Session-Lifecycle §5.2 / §9](./12-Session-Lifecycle.md) - session_lifecycle 协同

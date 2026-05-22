@@ -76,7 +76,43 @@ services/api/tests/
 │       ├── test_mode_custom.py
 │       ├── test_mode_daily_redo.py
 │       ├── test_mode_ai_generated.py
-│       └── test_answer_ops.py
+│       ├── test_answer_ops.py
+│       └── test_submit_timing_hook.py        # B25.5 与 timing 集成
+│   ├── timing/                                # B25
+│   │   ├── test_event_recorder.py             # 6 条事件 invariant + 配对算法
+│   │   ├── test_baseline_computer.py          # MIN_SAMPLES + 脏数据剔除 + 百分位精度
+│   │   ├── test_analyzer.py                   # overall / by_category / by_difficulty / pacing_pattern
+│   │   ├── test_routes.py                     # 4 个端点 happy + 限流 + 错误矩阵
+│   │   └── test_endpoint_separation.py        # heartbeat 不被 timing 端点接受
+│   ├── session_lifecycle/                     # B26
+│   │   ├── test_state_machine.py              # 完整 truth table（所有 §2.3 规则 + 终态自循环 + 跨状态非法）
+│   │   ├── test_pause_resume.py
+│   │   ├── test_heartbeat.py                  # 含 Wakes-Paused / No-Draft-Wake / No-Terminal
+│   │   ├── test_active_session_query.py
+│   │   ├── test_lifecycle_query.py            # 从 audit log 还原 transitions 链
+│   │   ├── test_discard.py
+│   │   └── test_admin_force.py
+│   ├── mock_exam/                             # B27
+│   │   ├── test_create_and_start.py           # Schema-Coupling / Time-Limit-Range / AutoSubmit-Immutable
+│   │   ├── test_countdown.py                  # 端点权威 + 5min 校准
+│   │   ├── test_enforcer.py                   # pause / notes / delayed_review 三处禁止
+│   │   ├── test_auto_submitter.py             # force_submit + Submit-Includes-Unanswered
+│   │   ├── test_history.py
+│   │   └── test_comparison.py                 # paper_baseline Stage 1 空对象
+│   ├── practice_preferences/                  # B28
+│   │   ├── test_defaults.py                   # Default-Idempotent
+│   │   ├── test_get_put.py                    # User-Scope / Schema-Version-Strict / Field-Range / KeyBinding-Unique
+│   │   ├── test_patch_reset.py                # PATCH-Atomic / Reset-Audit / Lazy-Upgrade / No-Audit-High-Frequency
+│   │   ├── test_cache.py                      # Cache-Invalidate-On-Write
+│   │   └── test_keybinding_unique.py          # KeyBindings root_validator
+│   ├── question_metadata/                     # B29 schema-only
+│   │   ├── test_phase1_empty.py               # 表为空 / 端点不暴露 / service 隐藏
+│   │   ├── test_field_default_backfill.py     # alembic upgrade 后默认值正确
+│   │   └── test_lint_tag_format.py            # knowledge_tags 蛇形
+│   └── question_reports/                      # B30
+│       ├── test_user_crud.py                  # Active-Unique / Description-Length / Owner-Read + 限流 20/day
+│       ├── test_admin.py                      # Resolved-Requires-Admin / Terminal-Immutable / Fix-Only-When-Fixed / Dup-Only-When-Duplicate / Audit-Required / Real-Exam-No-AutoDeactivate
+│       └── test_apply_fix_dual_audit.py       # PR-Report-Fix-Audit-Question-Mutation
 ├── invariant/
 │   ├── test_question_source_immutable.py     # PR2
 │   ├── test_strict_closed_book.py            # Pace-Closed-Book
@@ -84,7 +120,13 @@ services/api/tests/
 │   ├── test_inactive_question_excluded.py    # PR4
 │   ├── test_stat_independent_of_source.py    # Stat-Source-Independence
 │   ├── test_note_visibility.py               # Note-Visibility
-│   └── test_flag_basic_vs_persistent.py      # Flag-Basic-vs-Persistent
+│   ├── test_flag_basic_vs_persistent.py      # Flag-Basic-vs-Persistent
+│   ├── test_timing_invariant.py              # §3.7 7 条 Timing-* 集合
+│   ├── test_session_lifecycle_invariant.py   # §3.8 12 条 Session-LC-* 集合
+│   ├── test_mock_exam_invariant.py           # §3.9 12 条 MockExam-* 集合
+│   ├── test_pref_invariant.py                # 10 条 Pref-* 集合
+│   ├── test_qmeta_phase1_invariant.py        # 9 条 QMeta-* 集合
+│   └── test_question_report_invariant.py     # §3.10 13 条 PR-Report-* 集合
 ├── e2e/practice/
 │   ├── test_content_endpoints.py
 │   ├── test_session_modes.py
@@ -93,12 +135,22 @@ services/api/tests/
 │   ├── test_ai_questions_flow.py
 │   ├── test_daily_practice.py
 │   ├── test_essay_grading_async.py
-│   └── test_essay_reference.py
+│   ├── test_essay_reference.py
+│   ├── test_timing_buffer_to_report.py        # B25 e2e：buffer flush → report
+│   ├── test_lifecycle_full_flow.py            # B26 e2e：DRAFT → IN_PROGRESS → PAUSED（cron）→ 心跳 resume → SUBMITTED
+│   ├── test_mock_exam_force_submit.py         # B27 e2e：倒计时归零（cron 兜底 60s 内）
+│   ├── test_preferences_schema_mismatch.py    # B28 e2e：schema 升级 → 422 → refetch
+│   └── test_question_report_admin_loop.py     # B30 e2e：用户提报 → admin acknowledge → resolved_fixed + question 字段更新
 ├── cron/
 │   ├── test_question_accuracy_cron.py
 │   ├── test_ai_cleanup_cron.py
 │   ├── test_reference_quality_cron.py
-│   └── test_daily_practice_cron.py
+│   ├── test_daily_practice_cron.py
+│   ├── test_timing_baseline_cron.py           # B25.3
+│   ├── test_session_cleanup_cron.py           # B26.4（含 MockExam-Heartbeat-Bypass）
+│   ├── test_daily_session_expire_cron.py      # B26.4
+│   ├── test_mock_exam_auto_submit_cron.py     # B27.3
+│   └── test_ai_cleanup_with_reports.py        # B23.1 + B30.2 联合（AI 题 vs 真题不同处理）
 ├── scripts/
 │   └── test_import_real_exams.py
 └── fixtures/
@@ -263,6 +315,181 @@ async def test_submit_creates_persistent_flag_for_flagged_answers():
     assert len(review) >= 1
     assert any(r.reason == 'flagged_persistent' for r in review)
 ```
+
+### 3.7 timing invariant（B25 / 11 §7）
+
+#### test_timing_invariant.py
+
+7 条 Timing-* invariant 各一个测试 case + heartbeat-out-of-scope：
+
+```python
+# Timing-Monotonic
+async def test_event_order_violation_returns_422(): ...
+
+# Timing-Bounded-Per-Visit
+async def test_single_visit_clamped_to_60s(): ...
+
+# Timing-Sum-Lte-Wall
+async def test_total_active_seconds_lte_wall_clock(): ...
+
+# Timing-Active-Plus-Pause-Lte-Wall
+async def test_active_plus_pause_within_5s_tolerance(): ...
+
+# Timing-Overtime-Has-Baseline
+async def test_overtime_requires_min_samples_baseline(): ...
+
+# Timing-No-Stale-Event
+async def test_stale_event_rejected_422(): ...
+
+# Timing-Status-Writable
+async def test_terminal_session_rejects_timing_events(): ...
+
+# Timing-Heartbeat-Out-Of-Scope（00 Timing-4 修订）
+async def test_timing_endpoint_rejects_heartbeat_event_type(): ...
+```
+
+### 3.8 session_lifecycle invariant（B26 / 12 §10）
+
+#### test_session_lifecycle_invariant.py
+
+12 条 Session-LC-* invariant 各一个测试 case：
+
+```python
+# Session-LC-Status-Closed（用 evaluate_transition truth table 单测覆盖）
+async def test_evaluate_transition_truth_table(): ...
+
+# Session-LC-Terminal-Immutable
+async def test_terminal_session_status_change_blocked_by_trigger(): ...
+
+# Session-LC-Terminal-Writes-Forbidden
+async def test_terminal_session_rejects_mutation_endpoints(): ...
+
+# Session-LC-Resume-Adds-Pause-Time
+async def test_resume_accumulates_paused_total_seconds(): ...
+
+# Session-LC-Pause-Single-Active（DB CHECK paused_at_status_consistency）
+async def test_paused_at_consistent_with_status(): ...
+
+# Session-LC-Heartbeat-No-Terminal
+async def test_heartbeat_to_terminal_does_not_write(): ...
+
+# Session-LC-Heartbeat-Wakes-Paused（决策 LC-3a）
+async def test_heartbeat_to_paused_implicitly_resumes(): ...
+
+# Session-LC-Heartbeat-No-Draft-Wake（决策 LC-2）
+async def test_heartbeat_to_draft_does_not_transition(): ...
+
+# Session-LC-Force-Submit-Audit
+async def test_force_submit_writes_audit_with_reason(): ...
+
+# Session-LC-Daily-Expire-Type
+async def test_expired_only_for_daily_source_mode(): ...
+
+# Session-LC-Draft-No-Answers
+async def test_draft_session_has_no_answer_writes(): ...
+
+# Session-LC-Recovery-Chain
+async def test_recovered_from_must_point_to_abandoned(): ...
+```
+
+### 3.9 mock_exam invariant（B27 / 13 §8）
+
+#### test_mock_exam_invariant.py
+
+12 条 MockExam-* invariant 各一个测试 case：
+
+```python
+# MockExam-Schema-Coupling（4 条 DB CHECK）
+async def test_schema_coupling_check_constraints(): ...
+
+# MockExam-AutoSubmit-Immutable
+async def test_auto_submit_at_immutable_after_set(): ...
+
+# MockExam-No-Pause-By-Default
+async def test_pause_blocked_when_allow_pause_false(): ...
+
+# MockExam-No-Heartbeat-Pause
+async def test_exam_mode_session_not_paused_by_cleanup_cron(): ...
+
+# MockExam-Force-Submit-On-Timeout
+async def test_force_submit_within_60s_after_auto_submit_at(): ...
+
+# MockExam-Closed-Book-Strict
+async def test_view_solution_blocked_before_submit(): ...
+
+# MockExam-Delayed-Review
+async def test_delayed_review_blocks_explanation_after_submit(): ...
+
+# MockExam-Notes-Forbidden
+async def test_question_note_creation_blocked_during_mock(): ...
+
+# MockExam-Force-Submit-Audit
+async def test_force_submit_audit_with_reason_mock_exam_timeout(): ...
+
+# MockExam-Time-Limit-Range
+async def test_time_limit_minutes_range_10_to_360(): ...
+
+# MockExam-Paper-Eligibility
+async def test_paper_under_min_questions_rejected(): ...
+
+# MockExam-Submit-Includes-Unanswered
+async def test_force_submit_keeps_unanswered_as_null(): ...
+```
+
+### 3.10 question_report invariant（B30 / 01 §17）
+
+#### test_question_report_invariant.py
+
+13 条 PR-Report-* invariant 各一个测试 case：
+
+```python
+# PR-Report-Active-Unique
+async def test_active_report_unique_per_user_question_category(): ...
+
+# PR-Report-Description-Length
+async def test_description_length_10_to_1000(): ...
+
+# PR-Report-Owner-Read
+async def test_user_only_reads_own_reports(): ...
+
+# PR-Report-Resolved-Requires-Admin
+async def test_resolved_requires_handled_by_admin_id_at_response(): ...
+
+# PR-Report-Terminal-Immutable
+async def test_resolved_status_cannot_change(): ...
+
+# PR-Report-Fix-Only-When-Fixed
+async def test_applied_fix_iff_resolved_fixed(): ...
+
+# PR-Report-Dup-Only-When-Duplicate
+async def test_duplicate_of_iff_resolved_duplicate(): ...
+
+# PR-Report-AutoDeactivate
+async def test_ai_question_auto_deactivate_at_5_reports(): ...
+
+# PR-Report-Real-Exam-No-AutoDeactivate
+async def test_real_exam_never_deactivated_by_reports(): ...
+
+# PR-Report-Audit-Required
+async def test_status_change_writes_audit(): ...
+
+# PR-Report-Fix-Audit-Question-Mutation
+async def test_apply_fix_writes_two_audits(): ...
+
+# PR-Report-Rate-Limit-Per-User
+async def test_rate_limit_20_per_day_per_user(): ...
+
+# PR-Report-Rate-Limit-Per-Question（仅 metric，不强拒绝）
+async def test_high_pending_count_writes_metric_not_429(): ...
+```
+
+### 3.11 practice_preferences invariant（B28 / 14 §8）
+
+详见 14 §8 Pref-* 共 10 条；测试集中在 `tests/modules/practice_preferences/test_*.py`，不单独建 invariant 文件（与 module test 重合度高，统一 module 内）。Gate 时按 Pref-* 全过 + KeyBindings root_validator 11 binding 完整 truth table。
+
+### 3.12 question_metadata Phase 1 invariant（B29 / 15 §6）
+
+详见 15 §6 QMeta-* 共 9 条；测试集中在 `tests/modules/question_metadata/test_phase1_empty.py`、`test_field_default_backfill.py`、`test_lint_tag_format.py`，不单独建 invariant 文件。Gate 时按 QMeta-* 全过 + 两表 alembic 后空 + service 层 import 失败（lint 检查捕获）。
 
 ---
 
@@ -442,6 +669,25 @@ WU-B24 PR 全部合并后：
 - [ ] AuditLogV2 写入正确（每个变更事件都有记录）
 - [ ] 配额 / 限流测试通过
 - [ ] 整组模式严格闭卷 invariant 0 失败
+- [ ] **B25-B30 invariant 全过**：
+  - [ ] 7 条 Timing-* invariant 0 失败（§3.7）
+  - [ ] 12 条 Session-LC-* invariant 0 失败（§3.8）
+  - [ ] 12 条 MockExam-* invariant 0 失败（§3.9）
+  - [ ] 13 条 PR-Report-* invariant 0 失败（§3.10）
+  - [ ] 10 条 Pref-* invariant 0 失败（§3.11，集中在 module test 内）
+  - [ ] 9 条 QMeta-Phase1-* invariant 0 失败（§3.12，集中在 module test 内）
+- [ ] **B25-B30 cron 在 dev 环境按时跑**：
+  - [ ] recompute_question_timing_baseline（周一 03:00）
+  - [ ] cleanup_stale_sessions（每 5min）+ MockExam-Heartbeat-Bypass 联合测试
+  - [ ] expire_daily_sessions（每日 23:55）
+  - [ ] mock_exam_auto_submit_cron（每分钟，最大延迟 60s 兜底）
+  - [ ] B23.1 ai_cleanup_cron 中 question_report 同步 hook 正确
+- [ ] **B25-B30 模块 e2e**（详见 §2 e2e/practice/test_*.py）：
+  - [ ] timing_buffer_to_report（buffer flush → report 完整链路）
+  - [ ] lifecycle_full_flow（DRAFT → IN_PROGRESS → PAUSED（cron）→ 心跳 resume → SUBMITTED）
+  - [ ] mock_exam_force_submit（倒计时归零 cron 兜底 60s 内）
+  - [ ] preferences_schema_mismatch（422 → refetch 自恢复）
+  - [ ] question_report_admin_loop（用户提报 → admin acknowledge → resolved_fixed + question 字段更新双 audit）
 
 ### 6.2 前端完工（M19）
 
@@ -458,6 +704,12 @@ WU-F18 PR 全部合并后：
 - [ ] 题级笔记跨 tab 联动 e2e 通过
 - [ ] AI 出题三种路径 e2e 全覆盖（成功 / 失败 / 限流）
 - [ ] 申论异步批改 polling e2e 通过
+- [ ] **F19-F22 模块 e2e**（详见 04-Frontend-WU §15 F18 增量 + 各模块 unit）：
+  - [ ] F19 timing buffer flush + IndexedDB 兜底（断网重连）
+  - [ ] F19 timing 端点不接受 heartbeat 类型（前端 lint 保证）
+  - [ ] F20 心跳唤醒 PAUSED + DRAFT 不被唤醒（决策 LC-3a / LC-2 客户端对齐）
+  - [ ] F21 倒计时 drift 修正（客户端时钟 ±60s）+ 前端归零自动 submit
+  - [ ] F22 schema_version mismatch 自动恢复 + KeyBinding 客户端唯一性校验
 
 ### 6.3 联调完工（合并 M10 + M19 之后）
 
@@ -523,5 +775,5 @@ jobs:
 
 - [Phase-Home 10-Testing](../Home/10-Testing.md) - 通用测试规范
 - [01-Boundary-Rules §11](./01-Boundary-Rules.md#11-invariant-测试要求) - 每条边界规则的 invariant 测试要求
-- [03-Backend-WU §16](./03-Backend-WU.md#16-wu-b24-e2e--openapi-验收) - WU-B24 详细
-- [04-Frontend-WU §11](./04-Frontend-WU.md#11-wu-f18-e2e-msw-a11y-test) - WU-F18 详细
+- [03-Backend-WU §16 / §19-§24](./03-Backend-WU.md) - WU-B24（基础 e2e）+ B25-B30 各模块 PR 拆分
+- [04-Frontend-WU §11 / §12-§15](./04-Frontend-WU.md) - WU-F18 + F19-F22 各模块前端 WU

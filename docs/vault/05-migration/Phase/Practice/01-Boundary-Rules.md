@@ -276,12 +276,15 @@ Timing-Active+Pause-Lte-Wall  active+paused ≤ wall clock + 5s 容差
 Timing-Overtime-Has-Baseline  is_overtime=true 必有 sample_size>=30 baseline
 Timing-No-Stale-Event         拒绝早于 last_modified - 60s 的事件
 Timing-Status-Writable        仅 status∈{in_progress, paused} 可写
+Timing-Heartbeat-Out-Of-Scope timing 端点不接 heartbeat/pause/resume
 
 Session-LC-Status-Closed      所有转换走 evaluate_transition 函数
 Session-LC-Terminal-Immutable submitted/abandoned/expired 不可改
 Session-LC-Resume-Adds-Pause  resume 必须累加 (now-paused_at) 到 paused_total
 Session-LC-Pause-Single-Active paused_at 非空 ⟺ status=paused
 Session-LC-Heartbeat-No-Term  心跳到达终态仅返回状态不写库
+Session-LC-Heartbeat-Wakes-Paused 心跳到达 PAUSED 隐式 resume（LC-3a）
+Session-LC-Heartbeat-No-Draft-Wake 心跳到达 DRAFT 不转 IN_PROGRESS（LC-2）
 Session-LC-Force-Submit-Audit force_submitted=true 必有 audit + reason
 Session-LC-Daily-Expire-Type  EXPIRED 仅 source_mode=daily
 Session-LC-Draft-No-Answers   DRAFT 不应有 selected_answer 非空
@@ -314,6 +317,17 @@ QMeta-Lint-Tag-Format         knowledge_tags 元素 snake_case
 QMeta-AbilityDim-Enum         元素 ∈ {comprehension/reasoning/calculation/memory/application}
 QMeta-Complexity-Range        [1,5] ∪ {NULL}
 QMeta-Heat-NonNegative        heat_score >= 0.0
+
+PR-Report-Active-Unique       同一用户同题同 category 活跃 report 唯一
+PR-Report-Description-Length  [10, 1000]
+PR-Report-Owner-Read          用户仅读自己；admin 全可读
+PR-Report-Resolved-Requires-Admin  resolved_* 必有 admin 三字段
+PR-Report-Terminal-Immutable  resolved_* 状态不可改
+PR-Report-Fix-Only-When-Fixed applied_fix ⟺ resolved_fixed
+PR-Report-Dup-Only-When-Duplicate duplicate_of ⟺ resolved_duplicate
+PR-Report-AutoDeactivate      AI 题 report_count>=5 → is_active=false（real_exam 不下线）
+PR-Report-Audit-Required      status 切换必写 audit
+PR-Report-Rate-Limit-Per-User 每用户每日 ≤ 20 reports
 ```
 
 ---
@@ -339,7 +353,7 @@ QMeta-Heat-NonNegative        heat_score >= 0.0
 | **Timing-Overtime-Has-Baseline** | answer.is_overtime=true ⟹ baseline.sample_size >= MIN_SAMPLES | session.submit 计算时 |
 | **Timing-No-Stale-Event** | 拒绝 event.ts < (answer.last_modified_at - 60s) 的事件 | timing.event_recorder（防回放攻击） |
 | **Timing-Status-Writable** | timing 端点仅接受 session.status ∈ {in_progress, paused}；其他 → 409 SESSION_NOT_WRITABLE | timing.event_recorder |
-| **Timing-Heartbeat-Channel** | heartbeat 事件由 timing 端点接收，但 session_pause/resume 必须走 lifecycle 端点（不走 timing 上报） | 端点路由分离 |
+| **Timing-Heartbeat-Out-Of-Scope** | timing 端点**不**接受 heartbeat / session_pause / session_resume 事件类型（00-Decisions Timing-4 修订后）；这些走 lifecycle 端点 | 端点路由分离 |
 | **Timing-Baseline-Sample-Cutoff** | 计算 baseline 仅取最近 90 天 + time_spent_ms ∈ (0, 600_000) 的样本 | cron baseline_computer |
 | **Timing-Stat-Excludes-Daily** | 时间分析端点 (stats/timing) 计算时排除 source_mode=daily 的 session（避免 5-10 题样本污染按 category 维度） | timing.analyzer 选项可调 |
 
@@ -357,6 +371,8 @@ QMeta-Heat-NonNegative        heat_score >= 0.0
 | **Session-LC-Resume-Adds-Pause-Time** | resume 时必须把 (now - paused_at) 累加到 paused_total_seconds，paused_at 清空 | pause_resume.py |
 | **Session-LC-Pause-Single-Active** | paused_at 非空 ⟺ status=PAUSED；status=IN_PROGRESS 时 paused_at 必为 null | DB CHECK paused_at_status_consistency |
 | **Session-LC-Heartbeat-No-Terminal** | 心跳到达终态 session：仅返回当前状态，不写 last_heartbeat_at | heartbeat.py |
+| **Session-LC-Heartbeat-Wakes-Paused** | 心跳到达 PAUSED session：隐式 resume（trigger='new_heartbeat'）；累加 paused_total_seconds 并清空 paused_at（00-Decisions LC-3a） | heartbeat.py + transition_to_in_progress |
+| **Session-LC-Heartbeat-No-Draft-Wake** | 心跳到达 DRAFT session：仅记录 last_heartbeat_at，**不**转 IN_PROGRESS（必须显式 start 端点或第一次写 answer 才转）（00-Decisions LC-2） | heartbeat.py |
 | **Session-LC-Force-Submit-Audit** | force_submitted=true 必有 audit log + force_submitted_reason 非空 | DB CHECK force_submit_reason_required |
 | **Session-LC-Daily-Expire-Type** | EXPIRED 状态仅可能出现在 source_mode=daily 的 session 上 | expire_daily_sessions cron + invariant test |
 | **Session-LC-Draft-No-Answers** | DRAFT 状态的 session 不应有 PracticeSessionAnswerV2.selected_answer 非空 | session.commit_answer 写入前校验 |
@@ -421,3 +437,94 @@ QMeta-Heat-NonNegative        heat_score >= 0.0
 | **QMeta-Complexity-Range** | complexity_level ∈ [1, 5] ∪ {NULL} | DB CHECK |
 | **QMeta-Heat-NonNegative** | heat_score >= 0.0 | DB CHECK |
 | **QMeta-Phase2-Migration-Path** | knowledge_tags → KnowledgePointV2.code 的映射在 Phase 2 实施时必须保持元素一一对应（无歧义） | Phase 2 文档（蓝图） |
+
+
+---
+
+## 17. 题目纠错边界（PR-Report-*）
+
+详见 [03-Backend-WU §24（WU-B30）](./03-Backend-WU.md#24-wu-b30-question_report-模块新建)、[02-Data-Model §3.12](./02-Data-Model.md#312-questionreportv2)、[10-Testing §3.10](./10-Testing.md#310-question-report-invariant)。
+
+| 规则 | 描述 | 实施位置 |
+|---|---|---|
+| **PR-Report-Active-Unique** | 同一用户对同一题同一 category 的活跃 report（status ∈ pending / acknowledged）只能有一条；resolved 后允许新建 | DB 部分唯一索引 + service 层先查后写 |
+| **PR-Report-Description-Length** | description 长度 ∈ [10, 1000]；< 10 视为信息不足 422 REPORT_TOO_SHORT | DB CHECK + Pydantic field validator |
+| **PR-Report-Owner-Read** | 普通用户仅能读自己提交的 report；admin 可读全部 | service 层 assert_owner / assert_admin |
+| **PR-Report-Resolved-Requires-Admin** | status ∈ resolved_* 必有 handled_by_admin_id ∧ handled_at ∧ admin_response 三字段非空 | DB CHECK report_resolved_requires_admin |
+| **PR-Report-Terminal-Immutable** | status ∈ resolved_* 不可再变（status / handled_at / admin_response 全部锁住） | DB trigger protect_report_terminal_state_v2 |
+| **PR-Report-Fix-Only-When-Fixed** | applied_fix 仅在 status=resolved_fixed 时非空；其他 status 必为 NULL | DB CHECK report_fix_only_when_fixed |
+| **PR-Report-Dup-Only-When-Duplicate** | duplicate_of_report_id 仅在 status=resolved_duplicate 时非空；其他 status 必为 NULL；且必须指向 status ∈ pending / acknowledged 或同一终态的另一条 report | DB CHECK + service 层 |
+| **PR-Report-AutoDeactivate** | AI 题（source ∈ ai_generated / ai_modified） report_count >= MAX_REPORTS（默认 5）→ cron 同步 QuestionV2.is_active=false（继承 PR4） | cron compute_ai_question_quality（B23.1 hook，详见 03 §15.1） |
+| **PR-Report-Audit-Required** | 每次 status 切换必有 audit log（actor=admin，action=question_report.status_changed，before/after status 全记录） | service 层 update_status |
+| **PR-Report-Fix-Audit-Question-Mutation** | status=resolved_fixed 时 admin 对 QuestionV2 字段的修改必须同时写两条 audit（一条 question_report.resolved_fixed 一条 question.field_updated） | service 层事务内同写 |
+| **PR-Report-Rate-Limit-Per-User** | 单用户每日 report 数 ≤ 20（防灌水）；超出 429 RATE_LIMITED | rate limiter + audit |
+| **PR-Report-Rate-Limit-Per-Question** | 同一题 24h 内 pending 报告数 > 50 时 admin 后台显示风险标记，但端点仍接受（不主动拒绝用户） | metric 上报，不影响业务流 |
+| **PR-Report-Real-Exam-No-AutoDeactivate** | 真题（source=real_exam） report_count 仅作 admin 后台排序参考，**永不自动下线**；真题修复必须 admin 手动 status=resolved_fixed | cron 排除 source=real_exam 的自动下线分支 |
+
+### 17.1 状态机
+
+```
+              user.create_report
+                     │
+                     ↓
+                ┌──────────┐
+                │ PENDING  │
+                └────┬─────┘
+                     │ admin.acknowledge
+                     ↓
+                ┌──────────────┐
+                │ ACKNOWLEDGED │
+                └──┬───┬────┬──┘
+                   │   │    │
+        admin      │   │    │  admin
+        .resolve   │   │    │  .resolve
+        _fixed     │   │    │  _duplicate
+                   │   │    │
+       admin       │   │    │
+       .resolve    │   │    │
+       _invalid    │   │    │
+                   ↓   ↓    ↓
+            ┌────────┐┌────────┐┌──────────┐
+            │ FIXED  ││INVALID ││DUPLICATE │ (终态)
+            └────────┘└────────┘└──────────┘
+```
+
+**直接转换**（admin 跳过 ACKNOWLEDGED 直接 resolve）允许；trigger 与 audit 一并记录。
+
+### 17.2 端点速查（详见 03-Backend-WU §24）
+
+```
+POST   /api/v2/practice/questions/:qid/reports          (用户)
+GET    /api/v2/practice/questions/:qid/reports          (用户：返回自己的)
+PATCH  /api/v2/practice/reports/:rid                    (用户：仅 pending 状态可改 description)
+DELETE /api/v2/practice/reports/:rid                    (用户：仅 pending 可撤回 → 软删)
+
+GET    /api/v2/admin/practice/reports                   (admin：列表 + 过滤)
+PATCH  /api/v2/admin/practice/reports/:rid              (admin：转 acknowledged / resolved_*)
+POST   /api/v2/admin/practice/reports/:rid/apply-fix    (admin：resolved_fixed 时应用 question 字段修改)
+```
+
+### 17.3 与 AI 题质量信号的协同
+
+```
+QuestionReportV2.status='pending' 或 'acknowledged' 的活跃报告数
+       ↓
+cron compute_ai_question_quality（每日 04:30，详见 09 §2.1 / 03 §15.1）
+       ↓
+读取 QuestionV2.report_count（aggregated by cron）
+       ↓
+对 source ∈ {ai_generated, ai_modified} 应用 PR4 阈值（MAX_REPORTS=5）→ is_active=false
+对 source = real_exam 不下线，仅写 metric 给 admin
+       ↓
+admin 后台按 report_count DESC 排序待处理列表
+```
+
+### 17.4 与 PR4（AI 题自动下线）的关系
+
+PR4 已声明"`report_count > MAX_REPORTS` → is_active=false"。本节细化：
+
+- 旧 `report_count` 字段 = "用户简单点击举报"（在 EssayReferenceFeedbackV2 模式上的延伸） → **B30 起淘汰**
+- 新 `report_count` 由 cron 从 `QuestionReportV2` 聚合 → **替代旧语义**
+- 因此 PR4 阈值不变（5），但实际计数语义升级为"实质性纠错报告"，要求 description ≥ 10 字符
+
+`report_count` 字段在 `QuestionV2` 上保留（不重命名），由 B30 的 cron hook 维护。

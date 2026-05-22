@@ -849,13 +849,21 @@ POST /api/v2/practice/essay/reference-answers/generate
 
 ### 15.1 Cron 任务
 
-| 任务 | 时机 | 文件 |
-|---|---|---|
-| `recompute_question_accuracy` | 每日 04:00 | `cron/question_accuracy_cron.py` |
-| `cleanup_low_quality_ai_questions` | 每日 04:30 | `cron/ai_cleanup_cron.py` |
-| `compute_reference_quality` | 每日 05:00 | `cron/reference_quality_cron.py` |
-| `generate_daily_practice` | 每日 04:00 | `cron/daily_practice_cron.py` |
-| `recompute_user_stats` 增量 hook | session.submit 后 | `modules/session/application/hooks.py` |
+本 §15 描述的是 B23 范围内（基础能力闭环）的 cron。**B25/B26/B27 各自带的 cron 在自己 WU 内实现**（详见 §19.2 / §20.2 / §21.2），不计入 B23 范围。完整 8 个新 cron 汇总：
+
+| 任务 | 时机 | 文件 | 所属 WU |
+|---|---|---|---|
+| `recompute_question_accuracy` | 每日 04:00 | `cron/question_accuracy_cron.py` | B23.1 |
+| `cleanup_low_quality_ai_questions` | 每日 04:30 | `cron/ai_cleanup_cron.py` | B23.1（B30.2 加 hook 同步 question_report.report_count） |
+| `compute_reference_quality` | 每日 05:00 | `cron/reference_quality_cron.py` | B23.2 |
+| `generate_daily_practice` | 每日 04:00 | `cron/daily_practice_cron.py` | B23.3 |
+| `recompute_user_stats` 增量 hook | session.submit 后 | `modules/session/application/hooks.py` | B23.4 |
+| `recompute_question_timing_baseline` | 每周一 03:00 | `cron/timing_baseline_cron.py` | B25.3 |
+| `cleanup_stale_sessions` | 每 5 分钟 | `cron/session_cleanup_cron.py` | B26.4 |
+| `expire_daily_sessions` | 每日 23:55 | `cron/daily_session_expire_cron.py` | B26.4 |
+| `mock_exam_auto_submit_cron` | 每分钟 | `cron/mock_exam_auto_submit_cron.py` | B27.3 |
+
+⚠️ **B23 估算保持 900 行 / 4 PR 不变**（仅含 B23.1-B23.4 的基础 cron）。新模块 cron（baseline/cleanup/expire/auto_submit）在各自 WU 估算内已计入。
 
 ### 15.2 PR 拆分
 
@@ -941,7 +949,419 @@ POST /api/v2/practice/essay/reference-answers/generate
 
 ---
 
-## 17. 引用矩阵
+## 19. WU-B25 · timing 模块（新建）
+
+**目标**：实装答题计时核心能力（事件批量上报 / 题目耗时基线 / 分析端点 / cron 重算），覆盖 [11-Timing-Engine](./11-Timing-Engine.md) 全部规格。
+
+### 19.1 端点（详见 11 §3-§4）
+
+```
+POST /api/v2/practice/sessions/:id/timing/events
+GET  /api/v2/practice/stats/timing?type=&period=&category=
+GET  /api/v2/practice/questions/:id/timing-baseline
+GET  /api/v2/practice/sessions/:id/timing-report
+```
+
+### 19.2 PR 拆分
+
+#### B25.1 模块骨架 + QuestionTimingBaselineV2 表 + alembic
+
+文件：
+- `db/models_v2.py`：QuestionTimingBaselineV2 定义（02 §3.8）
+- `db/models_v2.py`：PracticeSessionV2 / PracticeSessionAnswerV2 timing 字段（02 §2.2-§2.3）
+- `migrations/versions/xxx_session_timing.py`（新 migration，按 02 §7 顺序排在 session_lifecycle 之后）
+- `modules/timing/__init__.py` + `domain/types.py` + `domain/errors.py`：TimingEvent / TimingAnalysis / 错误类型
+- `tests/db/test_question_timing_baseline.py`
+
+行数 ~280。
+
+#### B25.2 event_recorder 端点 + invariant 校验
+
+文件：
+- `modules/timing/application/event_recorder.py`：核心逻辑（11 §3.4 伪码）
+  - 三类事件 dispatch：question_enter / question_leave / answer_change（不含 heartbeat / pause / resume，详见 00 §14 Timing-4 修订）
+  - 升序校验（Timing-Monotonic）
+  - status writable 校验（Timing-Status-Writable）
+  - stale 校验（Timing-No-Stale-Event）
+  - 单区间截断（Timing-Bounded-Per-Visit ≤ 60s）
+- `modules/timing/interface/routes.py`：`POST /sessions/:id/timing/events`
+- `modules/timing/interface/schemas.py`：TimingEventBatchV2 / EventBatchResponseV2
+- `tests/modules/timing/test_event_recorder.py`：6 条 invariant 各一个测试 + 配对算法 + 截断逻辑
+
+行数 ~340。
+
+#### B25.3 baseline_computer + 周一 cron
+
+文件：
+- `modules/timing/application/baseline_computer.py`：百分位计算 + 90 天窗口 + 脏数据过滤（11 §5.2 伪码）
+- `cron/timing_baseline_cron.py`：周一 03:00 调度（详见 §15.1 修订）
+- `tests/modules/timing/test_baseline_computer.py`：MIN_SAMPLES 阈值 / 脏数据剔除 / 百分位精度
+
+行数 ~280。
+
+#### B25.4 analyzer 服务 + stats/timing 端点
+
+文件：
+- `modules/timing/application/analyzer.py`：
+  - overall / by_category_l1 / by_difficulty 聚合
+  - overtime_questions top-5
+  - pacing_pattern 分类（前/中/后段）
+- `modules/timing/interface/routes.py` 追加：`GET /practice/stats/timing` + `GET /questions/:id/timing-baseline` + `GET /sessions/:id/timing-report`
+- `tests/modules/timing/test_analyzer.py`
+
+行数 ~320。
+
+#### B25.5 与 session.submit 集成 hook + is_overtime 计算
+
+文件：
+- `modules/session/application/hooks.py` 增量：`compute_session_timing_summary(session_id)`
+  - flush 最后一批事件
+  - 算 total_active_seconds（截断异常长区间）
+  - 按 baseline.p95 × 1.2 写 each answer.is_overtime
+  - 写 metric `timing.session.active_seconds_histogram`
+- 在 `modules/session/application/submit.py` 的 hook 调用列表中追加该函数
+- `tests/modules/session/test_submit_timing_hook.py`：含 Timing-Sum-Lte-Wall / Active-Plus-Pause-Lte-Wall / Overtime-Has-Baseline 三条 invariant
+
+行数 ~280。
+
+**估算**：1,500 行 / 5 PR
+**依赖**：B11（PracticeSessionV2 / Answer 字段已扩展前提）；不依赖 B22
+**验收**：
+- 7 条 timing invariant test 0 失败
+- baseline cron 在 dev 环境跑通 + 增量数据后再跑一次结果稳定
+- session.submit 后 total_active_seconds + paused_total_seconds ≤ wall + 5s 容差
+- timing 端点不接受 heartbeat / pause / resume 事件类型（端点路由分离测试）
+
+---
+
+## 20. WU-B26 · session_lifecycle 模块（新建）
+
+**目标**：完整 session 状态机 + heartbeat + pause/resume/discard + active query + 超时回收 cron，覆盖 [12-Session-Lifecycle](./12-Session-Lifecycle.md) 全部规格。
+
+### 20.1 端点（详见 12 §4）
+
+```
+POST /api/v2/practice/sessions/:id/start
+POST /api/v2/practice/sessions/:id/pause
+POST /api/v2/practice/sessions/:id/resume
+POST /api/v2/practice/sessions/:id/heartbeat
+POST /api/v2/practice/sessions/:id/discard
+GET  /api/v2/practice/sessions/active
+GET  /api/v2/practice/sessions/:id/lifecycle
+
+POST /api/v2/admin/practice/sessions/:id/force-abandon
+POST /api/v2/admin/practice/sessions/:id/force-submit
+```
+
+### 20.2 PR 拆分
+
+#### B26.1 模块骨架 + lifecycle 字段 alembic + state_machine 纯函数
+
+文件：
+- `db/models_v2.py`：PracticeSessionV2 lifecycle 字段（status 枚举 6 态 / paused_at / paused_count / last_heartbeat_at / expires_at / abandoned_at / abandoned_reason / force_submitted / force_submitted_reason / recovered_from_session_id）
+- `migrations/versions/xxx_session_lifecycle.py`：字段 + 3 条 CHECK + 终态 trigger + (user_id, status, last_activity_at) 索引（02 §5.5 / §5.6）
+- `modules/session_lifecycle/__init__.py` + `domain/types.py`：SessionStatus / TransitionAttempt / TransitionResult
+- `modules/session_lifecycle/application/state_machine.py`：纯函数 `evaluate_transition`（12 §2.4 接口）
+- `tests/modules/session_lifecycle/test_state_machine.py`：完整 truth table（每条 §2.3 规则一个 case + 终态自循环 + 跨状态非法 + DRAFT/PAUSED 心跳分支）
+
+行数 ~360。
+
+#### B26.2 pause / resume / start / discard 端点 + audit
+
+文件：
+- `modules/session_lifecycle/application/pause_resume.py`：
+  - `pause(session, actor='user')`
+  - `resume(session, actor='user', trigger='user_resume'|'new_heartbeat'|'answer_during_paused')`
+  - resume 必须累加 `paused_total_seconds += (now - paused_at)`（Session-LC-Resume-Adds-Pause-Time invariant）
+- `modules/session_lifecycle/application/discard.py`
+- `modules/session_lifecycle/application/start_endpoint.py`：DRAFT → IN_PROGRESS 显式转换（mock_exam 在此 hook 计算 auto_submit_at）
+- `modules/session_lifecycle/interface/routes.py` + `schemas.py`
+- `tests/modules/session_lifecycle/test_pause_resume.py` + `test_discard.py`：含 Session-LC-Pause-Single-Active / Resume-Adds-Pause-Time / Terminal-Writes-Forbidden / Force-Submit-Audit invariant
+
+行数 ~360。
+
+#### B26.3 heartbeat 端点 + 多端策略 + active query
+
+文件：
+- `modules/session_lifecycle/application/heartbeat.py`：
+  - 终态 → 仅返回状态不写库（Heartbeat-No-Terminal）
+  - **PAUSED → IN_PROGRESS 隐式 resume**（Heartbeat-Wakes-Paused，决策 LC-3a）
+  - **DRAFT 不被心跳唤醒**（Heartbeat-No-Draft-Wake，决策 LC-2）
+  - 写 last_heartbeat_at + config_snapshot.last_seen_question_id
+- `modules/session_lifecycle/application/active_session_query.py`：GET /sessions/active
+- `modules/session_lifecycle/application/lifecycle_query.py`：GET /sessions/:id/lifecycle（从 audit log 读取 transitions 链）
+- `tests/modules/session_lifecycle/test_heartbeat.py`：含 3 条 heartbeat invariant + 终态 session 的心跳响应
+
+行数 ~340。
+
+#### B26.4 cleanup_stale_sessions cron + daily_expire cron + admin 端点 + session 集成 hook
+
+文件：
+- `cron/session_cleanup_cron.py`：
+  - Stage 1: IN_PROGRESS 心跳超时 30min → PAUSED（**SQL where 加 `exam_mode = false`**，Session-LC-MockExam-Heartbeat-Bypass invariant）
+  - Stage 2: PAUSED 24h → ABANDONED
+  - Stage 3: DRAFT 2h → ABANDONED
+- `cron/daily_session_expire_cron.py`：每日 23:55，仅 source_mode=daily 转 EXPIRED（Session-LC-Daily-Expire-Type invariant）
+- `modules/session_lifecycle/interface/admin_routes.py`：force-abandon / force-submit
+- `modules/session/application/commit_answer.py` 与 `submit.py` 增量 hook：调 state_machine 校验 + DRAFT/PAUSED → IN_PROGRESS 隐式转换
+- `tests/cron/test_session_cleanup.py` + `test_daily_expire.py`：含 Cleanup-Idempotent invariant + MockExam-Heartbeat-Bypass
+
+行数 ~240。
+
+**估算**：1,300 行 / 4 PR
+**依赖**：B11（PracticeSessionV2 表已建）+ Phase-Home audit / cron 框架
+**验收**：
+- 12 条 Session-LC-* invariant test 0 失败
+- evaluate_transition truth table 100% 覆盖
+- mock_exam session 不被心跳超时转 PAUSED（B27 集成测试时验证）
+- terminal 状态 trigger 拦截 UPDATE 测试通过
+- multi-device last-writer-wins 场景测试
+
+---
+
+## 21. WU-B27 · mock_exam 模块（新建）
+
+**目标**：在 session_lifecycle 之上叠加模考维度（exam_mode + 倒计时 + 自动提交 + 强制约束），覆盖 [13-Mock-Exam](./13-Mock-Exam.md) 全部规格。
+
+### 21.1 端点（详见 13 §3）
+
+```
+POST /api/v2/practice/mock-exams
+GET  /api/v2/practice/sessions/:id/countdown
+GET  /api/v2/practice/mock-exams/history?period=&paper_code=
+GET  /api/v2/practice/mock-exams/:session_id/comparison
+```
+
+### 21.2 PR 拆分
+
+#### B27.1 mock_exam 字段 alembic + DB CHECK + auto_submit_at trigger
+
+文件：
+- `db/models_v2.py`：PracticeSessionV2 mock_exam 字段（exam_mode / time_limit_minutes / auto_submit_at / allow_review_during / allow_pause / delayed_review_until）
+- `migrations/versions/xxx_session_mock_exam.py`：4 条 CHECK（02 §5.4：requires_time_limit / requires_full_set / requires_paper_source / time_limit_range）+ auto_submit_at trigger（02 §5.3）+ (exam_mode, status, auto_submit_at) 部分索引
+- `tests/db/test_session_mock_exam_constraints.py`：4 条 CHECK 各一个负面测试 + auto_submit_at immutable 测试
+
+行数 ~280。
+
+#### B27.2 模块骨架 + create + start hook + countdown
+
+文件：
+- `modules/mock_exam/__init__.py` + `domain/types.py` + `domain/errors.py`
+- `modules/mock_exam/application/service.py`：`create_mock_exam(paper_code, time_limit_minutes, delayed_review_minutes, idempotency_key)`
+  - 校验 paper 题数 ≥ MOCK_MIN_QUESTIONS（PAPER_NOT_MOCK_ELIGIBLE）
+  - time_limit_minutes 默认值（行测 120 / 申论 180，按 paper.type 判断）
+  - 调 session.create(as_draft=true, exam_mode=true, ...)
+- `modules/mock_exam/application/countdown.py`：GET /sessions/:id/countdown（13 §3.3）
+- `modules/session_lifecycle/application/start_endpoint.py` 增量 hook：DRAFT → IN_PROGRESS 时若 exam_mode=true 计算 auto_submit_at = now + time_limit_minutes
+- `modules/mock_exam/interface/routes.py` + `schemas.py`：含 MockExamCreateRequestV2 / MockExamCountdownResponseV2
+- `tests/modules/mock_exam/test_create_and_start.py`：含 MockExam-Schema-Coupling / Time-Limit-Range / AutoSubmit-Immutable invariant
+
+行数 ~320。
+
+#### B27.3 enforcer + auto_submitter + cron
+
+文件：
+- `modules/mock_exam/application/enforcer.py`：
+  - `assert_can_pause(session)` → MOCK_PAUSE_FORBIDDEN
+  - `assert_can_create_question_note(session)` → MOCK_NOTES_FORBIDDEN
+  - `assert_can_view_solution(session, now)` → DELAYED_REVIEW_LOCKED
+- 这些 assertion 由 session_lifecycle.pause / notes.create_question_linked / session.view-solution 三个端点显式调用
+- `modules/mock_exam/application/auto_submitter.py`：force_submit_mock_exam(session_id, reason)（13 §5.3 伪码）
+- `cron/mock_exam_auto_submit_cron.py`：每分钟扫描 `exam_mode=true ∧ status ∈ (in_progress, paused) ∧ auto_submit_at <= NOW()` → 调 auto_submitter
+- `tests/modules/mock_exam/test_enforcer.py` + `test_auto_submitter.py`：含 Force-Submit-On-Timeout / No-Pause-By-Default / No-Heartbeat-Pause / Notes-Forbidden / Delayed-Review / Closed-Book-Strict / Force-Submit-Audit invariant
+- `tests/cron/test_mock_exam_auto_submit.py`：cron 兜底场景（前端崩溃时 60s 内必 force_submit）
+
+行数 ~360。
+
+#### B27.4 history + comparison + 与 timing/essay 集成
+
+文件：
+- `modules/mock_exam/application/history.py`：含 best_session_id / improvement_trend（最近 5 vs 之前 5）
+- `modules/mock_exam/application/comparison.py`：self_history（同 paper_code 最多 5 条）+ paper_baseline（Stage 1 返回空对象，Stage 2 启用）
+- `modules/mock_exam/interface/routes.py` 追加：history / comparison 端点
+- `tests/modules/mock_exam/test_history.py` + `test_comparison.py`：含 Submit-Includes-Unanswered invariant（force_submit 时未答的 selected_answer=null + is_correct=false）
+
+行数 ~240。
+
+**估算**：1,200 行 / 4 PR
+**依赖**：B11 / B26（state_machine + transition_to）
+**验收**：
+- 12 条 MockExam-* invariant test 0 失败
+- 前端归零后 ≤1s 触发 submit；cron 兜底 ≤ 60s 必 force_submit
+- 心跳超时不进 PAUSED（与 B26 cleanup cron 联调）
+- 申论模考默认 180min；行测默认 120min（`scripts/seed_paper.py` 中 paper.recommended_time_limit 字段提供，B14 增量）
+
+---
+
+## 22. WU-B28 · practice_preferences 模块（新建）
+
+**目标**：用户练习偏好独立表 + GET/PUT/PATCH/RESET 端点 + lazy upgrade，覆盖 [14-Practice-Preferences](./14-Practice-Preferences.md) 全部规格。
+
+### 22.1 端点（详见 14 §4）
+
+```
+GET    /api/v2/profile/practice-preferences
+PUT    /api/v2/profile/practice-preferences
+PATCH  /api/v2/profile/practice-preferences
+POST   /api/v2/profile/practice-preferences/reset
+```
+
+### 22.2 PR 拆分
+
+#### B28.1 模型 + alembic + defaults + Pydantic schema v1
+
+文件：
+- `db/models_v2.py`：UserPracticePreferencesV2（02 §3.9）
+- `migrations/versions/xxx_user_pref.py`
+- `db/schemas_v2.py`：PracticePreferencesPayloadV1 + 6 个子结构（UiPreferences / PacingPreferences / AutoSavePreferences / KeyboardPreferences / ReminderPreferences / CustomPracticeDefaults）+ KeyBindings 类（14 §3.1）
+- `modules/practice_preferences/__init__.py` + `domain/types.py`
+- `modules/practice_preferences/application/defaults.py`：纯函数 `build_default_preferences()`（Pref-Default-Idempotent invariant）
+- `tests/db/test_user_pref.py` + `tests/modules/practice_preferences/test_defaults.py`
+
+行数 ~300。
+
+#### B28.2 validators + service.get/put + LRU 缓存
+
+文件：
+- `modules/practice_preferences/application/validators.py`：Pydantic field validator（interval_seconds 范围 / time_format / KeyBindings 唯一 root_validator）
+- `modules/practice_preferences/application/service.py`：
+  - `get_preferences(user_id)`：DB 命中 → upgrader → return；未命中 → return defaults + isDefault=true
+  - `put_preferences(user_id, schema_version, payload)`：schema 校验 + 全字段校验 + 写入 + 缓存失效
+  - `_lru_cache`（cachetools，TTL=60s，key=user_id）+ invalidate_cache(user_id)
+- `modules/practice_preferences/interface/routes.py` + `schemas.py`：GET / PUT
+- `tests/modules/practice_preferences/test_get_put.py`：含 Pref-User-Scope / Schema-Version-Strict / Field-Range / KeyBinding-Unique invariant
+
+行数 ~300。
+
+#### B28.3 patch + reset + upgrader + audit
+
+文件：
+- `modules/practice_preferences/application/patch.py`：read → merge → 全量校验 → 写入（Pref-PATCH-Atomic invariant）
+- `modules/practice_preferences/application/reset.py`：sections 可选 → 部分重置；调 audit
+- `modules/practice_preferences/application/upgrader.py`：
+  - 初始版本 v1，无升级路径
+  - 但建立 `upgrade(payload, from_version, to_version)` 框架，预留 v2 时使用
+  - lazy upgrade：read 时升级 payload 不写库
+- `modules/practice_preferences/interface/routes.py` 追加 PATCH / RESET
+- AUDIT_TRACKED_PATHS 白名单：仅 schema_version / theme_preference / keyboard.bindings.* 写 audit（Pref-No-Audit-High-Frequency invariant）
+- `tests/modules/practice_preferences/test_patch_reset.py`：含 PATCH-Atomic / Reset-Audit / Lazy-Upgrade / No-Audit-High-Frequency invariant
+- `tests/modules/practice_preferences/test_cache.py`：Cache-Invalidate-On-Write
+
+行数 ~200。
+
+**估算**：800 行 / 3 PR
+**依赖**：Phase-Home 用户体系 / 限流 / audit 框架
+**验收**：
+- 10 条 Pref-* invariant test 0 失败
+- LRU 缓存命中率（dev fixture，10 用户每用户 GET 5 次）≥ 70%
+- KeyBindings 唯一性 root_validator 在 11 个绑定的 happy path + 多种冲突 case 全覆盖
+- schema upgrader 框架对 v1 + 模拟 v2 升级路径有单测（即使本 Phase 不实施 v2，框架可工作）
+
+---
+
+## 23. WU-B29 · question_metadata schema 预留（仅 schema）
+
+**目标**：把题目元数据预留字段 + 知识点两张表落地，但**不**实现端点 / cron / LLM 标注（Phase 2 落地），覆盖 [15-Question-Metadata](./15-Question-Metadata.md) Phase 1 范围。
+
+### 23.1 PR 拆分
+
+#### B29.1 QuestionV2 元数据字段 + CHECK 约束 + Pydantic preview
+
+文件：
+- `db/models_v2.py`：QuestionV2 加 5 字段（ability_dimensions / discrimination_index / heat_score / complexity_level / knowledge_tags）
+- `migrations/versions/xxx_question_meta_p1_fields.py`：字段 + 3 条 CHECK（02 §5.7）+ heat_score 索引
+- `db/schemas_v2.py`：QuestionMetadataPreviewV2（15 §4.2）+ 在 QuestionEnvelopeV2 加 `metadata_preview: QuestionMetadataPreviewV2 | None`（Phase 1 始终 None）
+- 数据回填：现有题 ability_dimensions=[] / discrimination_index=NULL / heat_score=0.0 / complexity_level=NULL / knowledge_tags=[]
+- `tests/db/test_question_meta_phase1_fields.py`：3 条 CHECK 的 invariant test（QMeta-AbilityDim-Enum / Complexity-Range / Heat-NonNegative）+ knowledge_tags 蛇形 lint
+
+行数 ~220。
+
+#### B29.2 KnowledgePointV2 + QuestionKnowledgePointV2 表 + service-layer hidden
+
+文件：
+- `db/models_v2.py`：两张表 + `__phase__ = "phase_2"` marker
+- `migrations/versions/xxx_question_meta_p1_tables.py`：含 UNIQUE 约束
+- `modules/question_metadata/__init__.py`：**仅注释 + marker，不导出任何 service**（QMeta-Phase1-Service-Hidden invariant）
+- `services/api/spec/openapi.json`：Phase 2 端点占位标 `x-phase: 2`（QMeta-Phase1-No-Endpoint invariant）
+- `tests/modules/question_metadata/test_phase1_empty.py`：含 QMeta-Phase1-Empty / No-Endpoint / Service-Hidden / Field-Default-Backfill invariant
+- `tests/spec/test_phase_marker.py`：x-phase=2 marker 不被前端 codegen 拉取
+
+行数 ~180。
+
+**估算**：400 行 / 2 PR
+**依赖**：B10
+**验收**：
+- 9 条 QMeta-* invariant test 0 失败
+- 两张新表 alembic upgrade 后必为空
+- service 层尝试 import KnowledgePointService 失败（被 lint 检查捕获）
+- OpenAPI 不暴露任何 /knowledge-points 端点
+
+---
+
+## 24. WU-B30 · question_report 模块（新建）
+
+**目标**：题目内容纠错（用户提交 + admin 闭环处理 + 与 AI 题自动下线挂钩），覆盖 [02-Data-Model §3.12](./02-Data-Model.md#312-questionreportv2) + [01-Boundary-Rules §17](./01-Boundary-Rules.md#17-题目纠错边界pr-report-)。
+
+### 24.1 端点（详见 01 §17.2）
+
+```
+POST   /api/v2/practice/questions/:qid/reports
+GET    /api/v2/practice/questions/:qid/reports
+PATCH  /api/v2/practice/reports/:rid
+DELETE /api/v2/practice/reports/:rid
+
+GET    /api/v2/admin/practice/reports?status=&category=&question_id=
+PATCH  /api/v2/admin/practice/reports/:rid
+POST   /api/v2/admin/practice/reports/:rid/apply-fix
+```
+
+### 24.2 PR 拆分
+
+#### B30.1 模型 + alembic + 用户端点 CRUD
+
+文件：
+- `db/models_v2.py`：QuestionReportV2 + 5 个枚举（QuestionReportCategory / QuestionReportStatus）
+- `migrations/versions/xxx_question_report.py`：表 + 4 条 CHECK（02 §5.8：description_length / resolved_requires_admin / fix_only_when_fixed / dup_only_when_duplicate）+ 终态不可变 trigger（02 §5.9）+ 活跃 report 部分唯一索引
+- `db/schemas_v2.py`：QuestionReportCreateRequestV2 / QuestionReportEnvelopeV2 / QuestionReportListResponseV2
+- `modules/question_reports/__init__.py` + `domain/types.py` + `domain/errors.py`
+- `modules/question_reports/application/service.py`：
+  - `create_report(user, qid, category, description, source_session_id?, selected_answer_at_report?)`：先查活跃 report 命中 409 REPORT_DUPLICATE_PENDING（PR-Report-Active-Unique）
+  - `list_user_reports(user, qid?)` / `update_pending(rid, description)` / `soft_delete_pending(rid)`
+- `modules/question_reports/interface/routes.py`：用户 4 个端点
+- `tests/modules/question_reports/test_user_crud.py`：含 PR-Report-Active-Unique / Description-Length / Owner-Read invariant + 限流（每用户每日 ≤ 20 reports）
+
+行数 ~300。
+
+#### B30.2 admin 端点 + apply_fix + 与 AI 题下线 hook
+
+文件：
+- `modules/question_reports/application/admin_service.py`：
+  - `list_reports(filter, paging)`
+  - `update_status(rid, new_status, admin_response)`：状态机 enforce（pending → acknowledged → resolved_*；允许直接转 resolved_*）
+  - `apply_fix(rid, applied_fix)`：事务内同时更新 QuestionV2 字段 + report.status=resolved_fixed + 同写两条 audit（PR-Report-Fix-Audit-Question-Mutation invariant）
+  - `mark_duplicate(rid, duplicate_of_report_id)`：校验 duplicate_of 存在性
+- `modules/question_reports/interface/admin_routes.py`：admin 3 个端点（assert_admin guard）
+- `cron/ai_cleanup_cron.py`（B23.1 已建）增量 hook `compute_ai_question_quality`：
+  - 从 QuestionReportV2 聚合 status ∈ (pending, acknowledged) 的活跃报告数 → QuestionV2.report_count
+  - **仅对 source ∈ (ai_generated, ai_modified)** 应用 PR4 阈值（report_count ≥ 5 → is_active=false）
+  - source=real_exam 仅累积 metric 不下线（PR-Report-Real-Exam-No-AutoDeactivate invariant）
+- `tests/modules/question_reports/test_admin.py`：含 PR-Report-Resolved-Requires-Admin / Terminal-Immutable / Fix-Only-When-Fixed / Dup-Only-When-Duplicate / Audit-Required / Real-Exam-No-AutoDeactivate / AutoDeactivate (AI 题阈值触发)
+- `tests/cron/test_ai_cleanup_with_reports.py`：与 B23.1 联合测试
+
+行数 ~300。
+
+**估算**：600 行 / 2 PR
+**依赖**：B10（QuestionV2 表）+ B23.1 cron（compute_ai_question_quality 已建，B30.2 加 hook 即可）
+**验收**：
+- 10 条 PR-Report-* invariant test 0 失败
+- admin 在事务中 resolve_fixed + 应用 question 修改时双 audit 写入
+- AI 题 report_count 阈值触发 is_active=false（与 B23.1 cron 联合 e2e）
+- 真题 report 不触发下线（仅 admin 后台展示风险标记）
+- 限流（每用户 20 req/day）端到端测试
+
+---
+
+## 25. 引用矩阵
 
 | WU | 决策依据 | 边界规则 | 数据模型 | 测试 |
 |---|---|---|---|---|
@@ -965,27 +1385,59 @@ POST /api/v2/practice/essay/reference-answers/generate
 | **B27** | **MockExam-* (00 §16)** | **§14 MockExam-* (12 条)** | **§2.2 / §5.3-§5.4 / §6.9** | **§3.9 mock-exam invariant** |
 | **B28** | **Pref-* (00 §17)** | **§15 Pref-* (10 条)** | **§3.9 / §6.10** | **§6 preferences contract** |
 | **B29** | **QMeta-* (00 §18)** | **§16 QMeta-* (9 条)** | **§2.1 / §3.10 / §3.11 / §5.7** | **§3 schema-only invariant** |
-| **B30** | **真题纠错（隐含）** | **PR-Report (待补 §17)** | **§3.12（新表 QuestionReportV2）** | **§6 e2e + admin** |
+| **B30** | **真题纠错（00-Decisions §11.1 范围内）** | **§17 PR-Report-* (13 条)** | **§3.12 / §5.8-§5.9** | **§3.10 question-report invariant + §6 e2e + admin** |
 
 ---
 
-## 18. 与 Phase-Home WU 的依赖图（详）
+## 26. 与 Phase-Home WU 的依赖图（详）
 
 ```
 Phase-Home:
   WU-B1 (DB schema 基础)  ─────────→ Tab 2 WU-B10 / B11 (扩展 Question/Session/Note/Review)
   WU-B7 (modules/llm/ 框架) ─────────→ Tab 2 WU-B22 (在同一模块内追加 3 能力)
-  WU-B8 (cron 框架)         ─────────→ Tab 2 WU-B23 (注册 4 新 cron + 1 hook)
+  WU-B8 (cron 框架)         ─────────→ Tab 2 WU-B23 (注册 8 新 cron + 1 hook)
   WU-B9 (OpenAPI 锁定)      ─────────→ Tab 2 WU-F9 (前端 types 重生成)
+  Phase-Home 用户体系       ─────────→ Tab 2 WU-B28 (UserPracticePreferencesV2 ondelete=CASCADE)
 
-Tab 2 内部:
-  WU-B10 ─→ B14 / B15 / B17 / B18 / B21
-  WU-B11 ─→ B15 / B16 / B17 / B20
+Tab 2 内部（核心闭环）:
+  WU-B10 ─→ B14 / B15 / B17 / B18 / B21 / B29 / B30
+  WU-B11 ─→ B15 / B16 / B17 / B20 / B25 / B26 / B27
   WU-B12 ─→ B15 / B16 / B17 / B18 / B19
   WU-B13 ─→ B20
   WU-B22 ─→ B18 (LLM question_generator) / B20 (LLM essay_grader / reference_answer_generator)
+
+Tab 2 内部（B25-B30 新模块依赖）:
+  WU-B25 (timing) ───────────────→ session.submit hook（compute_session_timing_summary）
+                                ↑
+  WU-B26 (session_lifecycle) ────┤
+   ├── 提供 evaluate_transition / transition_to → B15 commit_answer / submit
+   ├── pause / resume 端点 ────────────────────────→ 客户端
+   ├── cleanup_stale_sessions cron ─→ 排除 exam_mode=true（依赖 B27 字段）
+   └── heartbeat（受 B27 影响：mock_exam 不被超时转 PAUSED）
+
+  WU-B27 (mock_exam) ────────────→ 依赖 B26 state_machine + B11 字段
+   ├── start hook 写入 auto_submit_at（B26 提供 start 端点）
+   ├── enforcer 在 B15 view-solution / B26 pause / B11 notes 三处被调用
+   └── auto_submitter cron → B26 force_submit_mock_exam
+
+  WU-B28 (preferences) ──────────→ 独立模块，无强依赖
+   └── B27 mock_exam create / B19 daily_practice 读偏好作为默认值
+
+  WU-B29 (question_metadata) ────→ 仅 schema，依赖 B10
+   └── Phase 2 才被消费
+
+  WU-B30 (question_report) ──────→ 依赖 B10 + B23.1
+   └── compute_ai_question_quality cron 增量 hook → 同步 QuestionV2.report_count
+
+集成点:
   WU-B14 ~ B22 ─→ WU-B23 (cron 扩展)
+  WU-B23 增量 hook ←─ WU-B25 baseline cron / WU-B26 cleanup+expire cron / WU-B27 auto_submit cron / WU-B30 ai_cleanup hook
   WU-B23 ─→ WU-B24 (e2e + OpenAPI)
+  WU-B24 ─→ B25-B30 各自的模块 e2e（B25/B26/B27 各 1 个 e2e；B28 contract test；B29 schema-only invariant；B30 admin e2e）
 ```
 
-⚠️ **强约束**：B22 必须在 Phase-Home WU-B7 完工后启动；B18 和 B20 依赖 B22 才能跑真实流程。
+⚠️ **强约束**：
+- B22 必须在 Phase-Home WU-B7 完工后启动；B18 和 B20 依赖 B22 才能跑真实流程
+- **B27 必须在 B26 之后**（mock_exam start hook 使用 lifecycle state_machine）
+- **B25 / B26 / B27 / B28 之间互不阻塞**（除 B27 ⟸ B26）；可与 B14-B22 并行
+- **B30.2 需要 B23.1 已建** compute_ai_question_quality cron 框架后再加 hook

@@ -286,7 +286,7 @@
 | Timing-1 | 是否引入逐题计时 | **是**（公考时间敏感性是核心；缺这块练习产品不完整） |
 | Timing-2 | 计时粒度 | 毫秒级（time_spent_ms），存累计耗时（不含切走切回间隔） |
 | Timing-3 | 上报方式 | 前端事件 batch 上报（buffer ≥ 50 或每 15s flush）；不实时上报每次操作 |
-| Timing-4 | 事件类型 | question_enter / question_leave / answer_change / heartbeat 四类（heartbeat 为减少端点数共用 timing 上报通道，session_pause/resume 走 lifecycle 端点） |
+| Timing-4 | 事件类型 | **question_enter / question_leave / answer_change 三类**（heartbeat 走 lifecycle 独立端点 `POST /sessions/:id/heartbeat`，不在 timing batch 里发送；session_pause/resume 同样走 lifecycle 端点）。理由：heartbeat 影响 status 转换且需要返回 server_ts + status，与 timing 单向 event 上报语义不同 |
 | Timing-5 | 单区间最大值 | 单次 enter→leave 区间 ≤ 60s（超出截断为 60s，防恶意刷时间） |
 | Timing-6 | 超时判定基线 | 用 QuestionTimingBaselineV2.p95_ms × 1.2；样本不足 30 不参与判定 |
 | Timing-7 | 基线计算频率 | 每周一 03:00 cron 重算（最近 90 天数据） |
@@ -306,8 +306,9 @@
 | # | 决策 | 拍板 |
 |---|---|---|
 | Session-LC-1 | 状态枚举 | DRAFT / IN_PROGRESS / PAUSED / SUBMITTED / ABANDONED / EXPIRED 六态 |
-| Session-LC-2 | DRAFT 用途 | 自定义对话框配置完成 / AI 出题等待页生成完成后的过渡态；首次答题 / start 端点转 IN_PROGRESS（heartbeat **不**触发转换） |
+| Session-LC-2 | DRAFT 用途 | 自定义对话框配置完成 / AI 出题等待页生成完成后的过渡态；显式 `POST /sessions/:id/start` 端点或第一次写 answer 隐式触发 DRAFT → IN_PROGRESS。**heartbeat 不触发 DRAFT → IN_PROGRESS 转换**（但 heartbeat 命中 PAUSED 状态时视为隐式 resume，详见 LC-3a） |
 | Session-LC-3 | 心跳间隔 | 30s（前端定时；用户切走 tab 暂停心跳） |
+| Session-LC-3a | PAUSED 收到 heartbeat | **视为隐式 resume**（PAUSED → IN_PROGRESS by trigger='new_heartbeat'；累加 paused_total_seconds += now - paused_at；写 audit）。理由：用户刷新页面 / 切回 tab 后心跳到达即表示重新活跃，无需要求二次手动点击 resume。客户端应在心跳响应中比对 status 字段决定是否切换 UI 状态 |
 | Session-LC-4 | 心跳超时阈值 | 30min 未心跳 → IN_PROGRESS 转 PAUSED（mock_exam 例外） |
 | Session-LC-5 | 无活动放弃阈值 | PAUSED 24h 无任何活动 → ABANDONED |
 | Session-LC-6 | DRAFT 放弃阈值 | DRAFT 2h 无活动 → ABANDONED |
