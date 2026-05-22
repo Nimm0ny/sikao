@@ -149,10 +149,12 @@ def _assert_records_contract_shape(payload: dict) -> None:
     else:
         assert 0 < len(payload["items"]) <= payload["pageSize"]
     for item in payload["items"]:
-        assert set(item.keys()) == {"id", "kind", "title", "status", "score", "occurredAt"}
+        assert set(item.keys()) == {"id", "kind", "title", "status", "href", "score", "occurredAt"}
         assert item["kind"] in RECORD_TITLES_BY_KIND
         assert item["title"] == RECORD_TITLES_BY_KIND[item["kind"]]
         assert item["status"] in RECORD_STATUSES
+        assert isinstance(item["href"], str)
+        assert item["href"].startswith("/")
 
 
 def _load_summary_payload(app: object, *, user_id: int) -> dict:
@@ -406,6 +408,10 @@ def test_dashboard_records_xingce_only_uses_single_aggregate_semantics(tmp_path:
         assert len(payload["items"]) == 2
         assert [item["kind"] for item in payload["items"]] == ["xingce_practice", "xingce_practice"]
         assert [item["status"] for item in payload["items"]] == ["completed", "pending"]
+        assert [item["href"] for item in payload["items"]] == [
+            "/practice/result/2",
+            "/practice/sessions/1",
+        ]
 
 
 def test_dashboard_records_essay_only_uses_single_aggregate_semantics(tmp_path: Path) -> None:
@@ -438,6 +444,7 @@ def test_dashboard_records_essay_only_uses_single_aggregate_semantics(tmp_path: 
         assert payload["items"][0]["title"] == "Essay submission"
         assert payload["items"][0]["status"] == "completed"
         assert payload["items"][0]["score"] == "72.50"
+        assert payload["items"][0]["href"] == "/essay/grades/1"
 
 
 def test_dashboard_records_mixed_data_keeps_summary_items_and_total_in_sync(tmp_path: Path) -> None:
@@ -488,6 +495,11 @@ def test_dashboard_records_mixed_data_keeps_summary_items_and_total_in_sync(tmp_
             "completed",
             "completed",
             "pending",
+        ]
+        assert [item["href"] for item in payload["items"]] == [
+            "/practice/result/2",
+            "/essay/grades/1",
+            "/practice/sessions/1",
         ]
 
 
@@ -561,6 +573,7 @@ def test_dashboard_records_unscored_essay_without_report_normalizes_to_pending(t
         assert payload["items"][0]["title"] == "Essay submission"
         assert payload["items"][0]["status"] == "pending"
         assert payload["items"][0]["score"] is None
+        assert payload["items"][0]["href"] == "/essay/history"
 
 
 def test_dashboard_records_unscored_essay_with_pending_report_stays_pending(tmp_path: Path) -> None:
@@ -591,3 +604,4 @@ def test_dashboard_records_unscored_essay_with_pending_report_stays_pending(tmp_
         assert payload["items"][0]["title"] == "Essay submission"
         assert payload["items"][0]["status"] == "pending"
         assert payload["items"][0]["score"] is None
+        assert payload["items"][0]["href"] == "/essay/history"

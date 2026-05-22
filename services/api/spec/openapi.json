@@ -1062,6 +1062,10 @@
       },
       "LearningRecordItemV2": {
         "properties": {
+          "href": {
+            "title": "Href",
+            "type": "string"
+          },
           "id": {
             "title": "Id",
             "type": "string"
@@ -1100,6 +1104,7 @@
           "kind",
           "title",
           "status",
+          "href",
           "occurredAt"
         ],
         "title": "LearningRecordItemV2",
@@ -1308,6 +1313,29 @@
           "title"
         ],
         "title": "NoteUpdateRequestV2",
+        "type": "object"
+      },
+      "OnboardingStatusV2": {
+        "properties": {
+          "hasExam": {
+            "title": "Hasexam",
+            "type": "boolean"
+          },
+          "hasGoal": {
+            "title": "Hasgoal",
+            "type": "boolean"
+          },
+          "isOnboarded": {
+            "title": "Isonboarded",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "hasGoal",
+          "hasExam",
+          "isOnboarded"
+        ],
+        "title": "OnboardingStatusV2",
         "type": "object"
       },
       "OperationAckV2": {
@@ -4925,6 +4953,32 @@
         "summary": "Get Dashboard Weekly Completion",
         "tags": [
           "planning-v2"
+        ]
+      }
+    },
+    "/api/v2/me/onboarding-status": {
+      "get": {
+        "operationId": "get_onboarding_status_api_v2_me_onboarding_status_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OnboardingStatusV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Onboarding Status",
+        "tags": [
+          "me-v2"
         ]
       }
     },

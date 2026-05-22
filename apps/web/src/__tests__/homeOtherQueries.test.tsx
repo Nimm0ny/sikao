@@ -181,9 +181,10 @@ describe('home runtime query modules', () => {
           items: [
             {
               id: 'record-42',
-              kind: 'practice_session',
+              kind: 'xingce_practice',
               title: 'Morning drill',
-              status: 'done',
+              status: 'completed',
+              href: '/practice/result/42',
               score: '72.50',
               occurredAt: '2026-05-22T01:00:00Z',
             },

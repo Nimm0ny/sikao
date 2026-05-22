@@ -174,6 +174,7 @@ def test_profile_extensions_and_records_canonicalization(tmp_path: Path) -> None
         assert records.status_code == 200, records.text
         assert records.json()["total"] == 1
         assert records.json()["items"][0]["id"] == "practice-1"
+        assert records.json()["items"][0]["href"] == "/practice/result/1"
 
         day_window = client.get(
             "/api/v2/profile/records",
@@ -190,6 +191,9 @@ def test_profile_extensions_and_records_canonicalization(tmp_path: Path) -> None
             "practice-1",
             f"essay-submission-{submission.id}",
         }
+        assert {
+            item["href"] for item in day_window.json()["items"]
+        } == {"/practice/result/1", "/essay/grades/1"}
 
         legacy_dashboard_records = client.get("/api/v2/dashboard/records")
         assert legacy_dashboard_records.status_code == 404, legacy_dashboard_records.text

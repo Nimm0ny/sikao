@@ -131,6 +131,7 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
     app.include_router(review_v2.router)
     app.include_router(notes_v2_skeleton.router)
     app.include_router(profile_v2.router)
+    app.include_router(profile_v2.me_router)
     return app
 
 

@@ -33,6 +33,7 @@ class LearningRecordAggregateItem:
     kind: str
     title: str
     status: str
+    href: str
     occurred_at: datetime
     score: Decimal | None = None
     is_completed: bool = False
@@ -220,6 +221,10 @@ def build_xingce_record(practice_session: PracticeSessionV2) -> LearningRecordAg
         kind=XINGCE_RECORD_KIND,
         title=XINGCE_RECORD_TITLE,
         status=normalized_status,
+        href=build_xingce_record_href(
+            session_id=practice_session.id,
+            status=normalized_status,
+        ),
         occurred_at=practice_session.started_at,
         is_completed=normalized_status == RECORD_STATUS_COMPLETED,
         session_id=practice_session.id,
@@ -245,6 +250,7 @@ def build_essay_record(
         kind=ESSAY_RECORD_KIND,
         title=ESSAY_RECORD_TITLE,
         status=normalized_status,
+        href=build_essay_record_href(report=report),
         occurred_at=submission.submitted_at,
         score=report.score if report is not None else None,
         is_completed=normalized_status == RECORD_STATUS_COMPLETED,
@@ -304,6 +310,7 @@ def to_learning_record_items(items: list[LearningRecordAggregateItem]) -> list[L
             kind=item.kind,
             title=item.title,
             status=item.status,
+            href=item.href,
             score=item.score,
             occurred_at=item.occurred_at,
         )
@@ -313,3 +320,15 @@ def to_learning_record_items(items: list[LearningRecordAggregateItem]) -> list[L
 
 def to_cn_date(value: datetime) -> date:
     return (value.replace(tzinfo=UTC) + timedelta(hours=8)).date()
+
+
+def build_xingce_record_href(*, session_id: int, status: str) -> str:
+    if status == RECORD_STATUS_COMPLETED:
+        return f"/practice/result/{session_id}"
+    return f"/practice/sessions/{session_id}"
+
+
+def build_essay_record_href(*, report: EssayReportV2 | None) -> str:
+    if report is not None and report.status == "completed":
+        return f"/essay/grades/{report.id}"
+    return "/essay/history"
