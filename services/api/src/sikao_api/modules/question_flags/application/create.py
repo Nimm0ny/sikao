@@ -14,14 +14,15 @@ from sikao_api.modules.question_flags.interface.schemas import (
 from sikao_api.modules.system.application.errors import NotFoundError
 
 
-def create_question_flag(
+def upsert_question_flag_record(
     session: Session,
     *,
     user: UserV2,
     question_id: int,
-    payload: QuestionFlagCreateV2,
+    reason: str,
     source_session_id: int | None = None,
-) -> QuestionFlagItemV2:
+    overwrite_existing: bool = True,
+) -> tuple[QuestionFlagV2, QuestionV2]:
     question = _load_question_or_raise(session, question_id)
     flag = session.scalar(
         select(QuestionFlagV2).where(
@@ -34,21 +35,39 @@ def create_question_flag(
         flag = QuestionFlagV2(
             user_id=user.id,
             question_id=question.id,
-            reason=payload.reason,
+            reason=reason,
             source_session_id=source_session_id,
         )
         session.add(flag)
         session.flush()
     else:
-        flag.reason = payload.reason
-        if source_session_id is not None:
-            flag.source_session_id = source_session_id
-
+        if overwrite_existing:
+            flag.reason = reason
+            if source_session_id is not None:
+                flag.source_session_id = source_session_id
     sync_flagged_persistent_review_item(
         session,
         user_id=user.id,
         question=question,
         flag=flag,
+    )
+    return flag, question
+
+
+def create_question_flag(
+    session: Session,
+    *,
+    user: UserV2,
+    question_id: int,
+    payload: QuestionFlagCreateV2,
+    source_session_id: int | None = None,
+) -> QuestionFlagItemV2:
+    flag, question = upsert_question_flag_record(
+        session,
+        user=user,
+        question_id=question_id,
+        reason=payload.reason,
+        source_session_id=source_session_id,
     )
     session.commit()
     session.refresh(flag)
