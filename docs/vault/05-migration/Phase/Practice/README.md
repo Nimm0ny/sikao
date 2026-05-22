@@ -50,11 +50,19 @@
 
 ## 2. 范围（详见 [00-Decisions §11](./00-Decisions.md#11-phase-practice-范围明确)）
 
+> **2026-05-22 RR-4 路径校准**：本节用户可见路径已与 `apps/web/src/router/index.tsx` 实际状态对齐。`/practice/sessions/:id/result` 修正为 `/practice/result/:sessionId`；`/practice/sessions/:id/grading` 与 `/practice/ai-questions/generating` 标 `(NEW, 计划新增)` 因 router 未含。完整路由清单详见 [04-Frontend-WU §1.3](./04-Frontend-WU.md#13-路由表最终)。
+
+> **IA 现状 disclaimer**：当前 `/practice/center` + 4 sub-paths (`xingce|essay × categories|papers`) 是 V2 重构期过渡态 IA，并非"`/practice` 单页 Section A/B/C"目标态。本 Phase **不重做 IA 顶层**，仅在现有 `/practice/center` 入口上补 Section A 历史记录元素 + 在脱壳路由上加 fullscreen view（详见 04-Frontend-WU §1.3）。
+
 **在范围内**：
-- 练习中心 `/practice` 一屏 view（Section A/B/C）+ 顶部快捷区
-- 答题路由 `/practice/sessions/:id` + 结果路由 `/practice/sessions/:id/result`
-- AI 出题等待页 `/practice/ai-questions/generating`
-- 申论批改详情 `/practice/sessions/:id/grading`
+- 练习中心入口 `/practice/center` + 4 sub-paths (`/practice/center/{xingce|essay}/{categories|papers}`)（已存在；本 Phase 加 Section A 历史记录元素）
+- 答题路由 `/practice/sessions/:sessionId` + 结果路由 `/practice/result/:sessionId`（已存在）
+- 自定义刷题准备页 `/practice/custom/start`（已存在）
+- 套卷答题准备页 `/practice/:paperCode/start`（已存在）
+- AI 出题等待页 `/practice/ai-questions/generating` **(NEW, 计划新增, WU-F15)**
+- 申论批改详情：现有 `/essay/grades/:recordId` 已挂载（router L285）；本 Phase 是否新增独立 `/practice/sessions/:id/grading` 路由 **TBD (待 closeloop 后续 PR / lhr 决策)**
+- 题级问题详情 `/practice/questions/:id` **(NEW, 计划新增, WU-F11 / Tab 4 笔记跳转目标)**
+- 每日一练入口 `/practice/daily` **(NEW, 计划新增, WU-F19)**
 - 后端：题库 schema 扩展 / content 端点真实化 / session 多 mode + 答题中操作 / favorites + question_flags 模块 / practice_stats 模块 / ai_questions 模块 / daily_practice 模块 / essay_grading 模块扩展 / LLM 模块扩展 / 真题数据导入 / cron 扩展 / audit / observability
 - 数据：QuestionV2 / PracticeSessionV2 / PracticeSessionAnswerV2 / NoteV2 / ReviewItemV2 五表扩展；新建 PracticeStatsSnapshotV2 / QuestionFavoriteV2 / QuestionFlagV2 / EssayReferenceAnswerV2 / EssayReferenceFeedbackV2 / AiGeneratedQuestionRequestV2 / DailyPracticeV2
 
@@ -66,6 +74,7 @@
 - 申论人工批改入口（D-Q4 选项 D，远期）
 - 题库管理后台（admin tab，未来）
 - 移动端适配
+- **重做 `/practice/center` IA 顶层结构**（保持过渡态 4-sub-paths）
 
 ---
 

@@ -52,23 +52,46 @@ packages/shared-utils/                ← cn / logger / hooks / motion
 | `error` | query.isError | ErrorCard（含重试按钮） |
 | `data` | query.data 有值 | 正常渲染 |
 
-### 1.3 路由表（最终）
+### 1.3 路由表（实际现状 + 计划新增）
 
-```ts
-// apps/web/src/router/index.tsx 增量
-const PRACTICE_ROUTES = [
-  // 主 tab（在 AppShell 内）
-  { path: '/practice', element: <PracticeCenter /> },
-  { path: '/practice/questions/:id', element: <QuestionDetail /> },  // Tab 4 笔记跳转目标
-  { path: '/practice/daily', element: <DailyPracticeStart /> },
+> **2026-05-22 RR-4 校准**：本节按 `apps/web/src/router/index.tsx` 实际状态分两类列出：A) 已存在路由（不动 IA 仅可能扩展行为）、B) 本 Phase 计划新增。原文 §1.3 中 `/practice` 单一入口、`/practice/sessions/:id/result` 等措辞均为不准确。
 
-  // 脱壳路由（全屏，不在 AppShell 内）
-  { path: '/practice/sessions/:id', element: <PracticeSession />, fullscreen: true },
-  { path: '/practice/sessions/:id/result', element: <SessionResult />, fullscreen: true },
-  { path: '/practice/sessions/:id/grading', element: <EssayGradingResult />, fullscreen: true },  // 申论批改详情
-  { path: '/practice/ai-questions/generating', element: <AiQuestionsGenerating />, fullscreen: true },
-];
-```
+#### A. 已存在路由（current state, router/index.tsx）
+
+| Path | Router line | View | 本 Phase 改动 |
+|---|---|---|---|
+| `/practice/center` | L222 | `pages.practiceCenter` | Section A 历史记录元素扩展 (WU-F11) |
+| `/practice/center/xingce/categories` | L224 | `pages.practiceCenter` (segment=xingce, view=categories) | F12 行测专项 |
+| `/practice/center/xingce/papers` | L228 | `pages.practiceCenter` (segment=xingce, view=papers) | F13 行测套卷 |
+| `/practice/center/essay/categories` | L232 | `pages.essaySpecialty` | F12 申论专项 |
+| `/practice/center/essay/papers` | L236 | `pages.essayPapers` | F13 申论套卷 |
+| `/practice/custom/start` | L252 | `pages.customPracticeStart` | F14 自定义刷题对话框 |
+| `/practice/:paperCode/start` | L253 | `pages.practiceStart` | F15 套卷答题准备 |
+| `/practice/sessions/:sessionId` | L254 | `pages.practiceSession` | F15 答题 view 扩展（行测） |
+| `/practice/result/:sessionId` | L255 | `pages.result` | F15 结果页 (注：实际是 `/practice/result/:sessionId`，不是 `/practice/sessions/:id/result`) |
+| `/essay/grades/:recordId` | L285 | `pages.essayGradingResult` | F16 申论批改详情扩展（注：当前路由路径，是否迁到 `/practice/sessions/:id/grading` 待 closeloop / lhr 决策） |
+| `/practice/essay/session/:sessionId` | L308 | `pages.shenlunSession` | F16 申论考场 device-aware shell |
+
+> **/app redirect**: L205 `/app` → `/practice/center` (Phase-Home 路由兼容)
+
+#### B. 计划新增路由（NEW，本 Phase 添加）
+
+| Path | 用途 | 引入 WU | fullscreen |
+|---|---|---|---|
+| `/practice/questions/:id` | 题级详情 view (Tab 4 笔记跳转目标) | WU-F11.x | no |
+| `/practice/daily` | 每日一练入口 | WU-F19 (post-Phase) | no |
+| `/practice/ai-questions/generating` | AI 出题等待页（10-15s 转圈） | WU-F15 | yes (脱壳) |
+| `/practice/sessions/:sessionId/grading` | 申论批改详情（独立 fullscreen 页） | WU-F16 (TBD — 是否复用 `/essay/grades/:recordId` 待 lhr 决策) | yes (脱壳) |
+
+> **TBD: `/practice/sessions/:sessionId/grading` vs `/essay/grades/:recordId`**：原 §1.3 设计的独立路由与 router L285 已挂载的 `/essay/grades/:recordId` 在功能上重叠。本 RR-4 仅记录两者并存的现状；具体 WU-F16 实施前由 closeloop / lhr 决策是 (a) 直接复用 `/essay/grades/:recordId` 不新增独立 grading 路由 / (b) 新增 `/practice/sessions/:sessionId/grading` 并 redirect 老路径。
+
+#### C. 不在本 Phase 调整范围
+
+以下路由在本 Phase **不动**：
+- `/essay/exam/:paperCode` (L189) — 整卷考场，独立轨道
+- `/essay/papers` / `/essay/papers/:paperCode` / `/essay/history` / `/essay/exam/results` / `/essay/specialty` / `/essay/specialty/:questionId` / `/essay/categories` (L281-314) — 老 essay 路由 / redirect 兼容层；WU-F17.3 后续清理
+- `/complete-profile` (L161) — Phase-Profile 范围
+- `/plan` / `/study-plan/history*` — Phase-Home 范围
 
 ### 1.4 Bundle 预算（NF-Bundle 继承 Phase-Home + 本 Phase 追加）
 
