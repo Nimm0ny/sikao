@@ -13,14 +13,31 @@ interface DashboardPreferenceState {
   readonly profileLoaded: boolean;
   readonly isPersisting: boolean;
   readonly lastPersistedAt: number | null;
+  readonly lastPersistError: string | null;
   readonly bootstrapFromProfileInfo: (profileInfo: Pick<ProfileInfoResponseV2, 'dashboardPreferences'>) => void;
   readonly hydrateFromLocalFallback: () => void;
-  readonly replacePreferences: (preferences: DashboardPreferences) => void;
-  readonly patchPreferences: (patch: DashboardPreferences) => void;
+  readonly replacePreferences: (preferences: DashboardPreferences) => Promise<void>;
+  readonly patchPreferences: (patch: DashboardPreferences) => Promise<void>;
   readonly flushPersist: () => Promise<void>;
 }
 
 let persistTimer: ReturnType<typeof setTimeout> | null = null;
+let scheduledPreferences: DashboardPreferences | null = null;
+let scheduledPersistTask: Promise<void> | null = null;
+let resolveScheduledPersist: (() => void) | null = null;
+let rejectScheduledPersist: ((error: unknown) => void) | null = null;
+
+function cancelScheduledPersist(reason: string): void {
+  scheduledPreferences = null;
+  clearPersistTimer();
+  if (scheduledPersistTask && rejectScheduledPersist) {
+    const rejectCurrentPersist = rejectScheduledPersist;
+    scheduledPersistTask = null;
+    resolveScheduledPersist = null;
+    rejectScheduledPersist = null;
+    rejectCurrentPersist(new Error(reason));
+  }
+}
 
 function readLocalFallback(): DashboardPreferences {
   if (typeof localStorage === 'undefined') return {};
@@ -49,37 +66,99 @@ async function persistPreferences(preferences: DashboardPreferences): Promise<vo
   });
 }
 
-function schedulePersist(preferences: DashboardPreferences): void {
+function clearPersistTimer(): void {
   if (persistTimer) {
     clearTimeout(persistTimer);
+    persistTimer = null;
   }
-  persistTimer = setTimeout(() => {
-    void persistPreferences(preferences)
-      .then(() => {
-        useDashboardPreferenceStore.setState({
-          isPersisting: false,
-          lastPersistedAt: Date.now(),
-        });
-      })
-      .catch((error) => {
-        useDashboardPreferenceStore.setState({ isPersisting: false });
-        throw error;
-      });
-  }, PERSIST_DEBOUNCE_MS);
 }
 
-function applyPreferenceWrite(nextPreferences: DashboardPreferences): void {
+function ensureScheduledPersistTask(): Promise<void> {
+  if (scheduledPersistTask) return scheduledPersistTask;
+  let resolveCurrentPersist: (() => void) | null = null;
+  let rejectCurrentPersist: ((error: unknown) => void) | null = null;
+  const task = new Promise<void>((resolve, reject) => {
+    resolveScheduledPersist = resolve;
+    rejectScheduledPersist = reject;
+    resolveCurrentPersist = resolve;
+    rejectCurrentPersist = reject;
+  });
+  scheduledPersistTask = task.finally(() => {
+    if (scheduledPersistTask === task) {
+      scheduledPersistTask = null;
+    }
+    if (resolveScheduledPersist === resolveCurrentPersist) {
+      resolveScheduledPersist = null;
+    }
+    if (rejectScheduledPersist === rejectCurrentPersist) {
+      rejectScheduledPersist = null;
+    }
+  });
+  void scheduledPersistTask.catch(() => {});
+  return scheduledPersistTask;
+}
+
+async function commitPersist(preferences: DashboardPreferences): Promise<void> {
+  useDashboardPreferenceStore.setState({ isPersisting: true, lastPersistError: null });
+  try {
+    await persistPreferences(preferences);
+    useDashboardPreferenceStore.setState({
+      isPersisting: false,
+      lastPersistedAt: Date.now(),
+      lastPersistError: null,
+    });
+  } catch (error) {
+    useDashboardPreferenceStore.setState({
+      isPersisting: false,
+      lastPersistError: String(error),
+    });
+    throw error;
+  }
+}
+
+async function runScheduledPersist(): Promise<void> {
+  const preferences = scheduledPreferences;
+  if (!preferences) return;
+
+  scheduledPreferences = null;
+  const resolveCurrentPersist = resolveScheduledPersist;
+  const rejectCurrentPersist = rejectScheduledPersist;
+  scheduledPersistTask = null;
+  resolveScheduledPersist = null;
+  rejectScheduledPersist = null;
+
+  try {
+    await commitPersist(preferences);
+    resolveCurrentPersist?.();
+  } catch (error) {
+    rejectCurrentPersist?.(error);
+  }
+}
+
+function schedulePersist(preferences: DashboardPreferences): Promise<void> {
+  scheduledPreferences = preferences;
+  clearPersistTimer();
+  const pendingTask = ensureScheduledPersistTask();
+  persistTimer = setTimeout(() => {
+    clearPersistTimer();
+    void runScheduledPersist();
+  }, PERSIST_DEBOUNCE_MS);
+  return pendingTask;
+}
+
+function applyPreferenceWrite(nextPreferences: DashboardPreferences): Promise<void> {
   const { profileLoaded } = useDashboardPreferenceStore.getState();
   useDashboardPreferenceStore.setState({
     preferences: nextPreferences,
     isPersisting: profileLoaded,
+    lastPersistError: null,
   });
   if (profileLoaded) {
     clearLocalFallback();
-    schedulePersist(nextPreferences);
-    return;
+    return schedulePersist(nextPreferences);
   }
   writeLocalFallback(nextPreferences);
+  return Promise.resolve();
 }
 
 export const useDashboardPreferenceStore = create<DashboardPreferenceState>()((set, get) => ({
@@ -87,17 +166,16 @@ export const useDashboardPreferenceStore = create<DashboardPreferenceState>()((s
   profileLoaded: false,
   isPersisting: false,
   lastPersistedAt: null,
+  lastPersistError: null,
   bootstrapFromProfileInfo: (profileInfo) => {
-    if (persistTimer) {
-      clearTimeout(persistTimer);
-      persistTimer = null;
-    }
+    cancelScheduledPersist('dashboard preference persist canceled by profile bootstrap');
     clearLocalFallback();
     set({
       preferences: profileInfo.dashboardPreferences ?? {},
       profileLoaded: true,
       isPersisting: false,
       lastPersistedAt: Date.now(),
+      lastPersistError: null,
     });
   },
   hydrateFromLocalFallback: () => {
@@ -105,10 +183,10 @@ export const useDashboardPreferenceStore = create<DashboardPreferenceState>()((s
     set({ preferences: readLocalFallback() });
   },
   replacePreferences: (preferences) => {
-    applyPreferenceWrite(preferences);
+    return applyPreferenceWrite(preferences);
   },
   patchPreferences: (patch) => {
-    applyPreferenceWrite({
+    return applyPreferenceWrite({
       ...get().preferences,
       ...patch,
     });
@@ -119,12 +197,13 @@ export const useDashboardPreferenceStore = create<DashboardPreferenceState>()((s
       writeLocalFallback(preferences);
       return;
     }
-    if (persistTimer) {
-      clearTimeout(persistTimer);
-      persistTimer = null;
+    scheduledPreferences = preferences;
+    if (persistTimer || scheduledPersistTask) {
+      const pendingTask = ensureScheduledPersistTask();
+      clearPersistTimer();
+      void runScheduledPersist();
+      return pendingTask;
     }
-    set({ isPersisting: true });
-    await persistPreferences(preferences);
-    set({ isPersisting: false, lastPersistedAt: Date.now() });
+    await commitPersist(preferences);
   },
 }));
