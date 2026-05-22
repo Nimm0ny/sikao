@@ -42,3 +42,11 @@ export function addMinutesToIso(iso: string, minutes: number): string {
 export function differenceInCalendarMinutes(startAt: string, endAt: string): number {
   return differenceInMinutes(new Date(endAt), new Date(startAt));
 }
+
+export function fromLocalDateTime(
+  day: string,
+  time: string,
+  timeZone: string,
+): Date {
+  return fromZonedTime(`${day}T${time}:00`, timeZone);
+}
