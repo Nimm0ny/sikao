@@ -17,10 +17,10 @@ export default function NotFound() {
         action={
           <Button
             variant="primary"
-            onClick={() => navigate('/app')}
+            onClick={() => navigate('/')}
             data-testid="not-found-back-home"
           >
-            返回题库中心
+            返回首页
           </Button>
         }
       />

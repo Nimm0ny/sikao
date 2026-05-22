@@ -1,6 +1,7 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useLocation } from 'react-router-dom';
 import { cn } from '@sikao/shared-utils';
 import {
+  NoteIcon,
   SubjectHomeIcon,
   SubjectXingceIcon,
   SubjectWrongbookIcon,
@@ -30,32 +31,44 @@ interface RailItem {
   readonly icon: ComponentType<IconProps>;
   readonly ariaLabel: string;
   readonly testId: string;
+  readonly match: (pathname: string) => boolean;
 }
 
 const RAIL_ITEMS: readonly RailItem[] = [
   {
-    to: '/study/today',
+    to: '/',
     icon: SubjectHomeIcon,
     ariaLabel: '首页',
     testId: 'rail-mini-home',
+    match: (pathname) => pathname === '/' || pathname === '/app' || pathname === '/study/today',
   },
   {
-    to: '/practice/center',
+    to: '/practice',
     icon: SubjectXingceIcon,
     ariaLabel: '练习中心',
     testId: 'rail-mini-practice',
+    match: (pathname) => pathname.startsWith('/practice') || pathname.startsWith('/essay'),
   },
   {
-    to: '/wrong-book',
+    to: '/review',
     icon: SubjectWrongbookIcon,
-    ariaLabel: '错题本',
-    testId: 'rail-mini-wrong-book',
+    ariaLabel: '复盘',
+    testId: 'rail-mini-review',
+    match: (pathname) => pathname.startsWith('/review') || pathname.startsWith('/wrong-book'),
   },
   {
-    to: '/me',
+    to: '/notes',
+    icon: NoteIcon,
+    ariaLabel: '笔记',
+    testId: 'rail-mini-notes',
+    match: (pathname) => pathname.startsWith('/notes'),
+  },
+  {
+    to: '/profile',
     icon: SubjectProfileIcon,
     ariaLabel: '我的',
-    testId: 'rail-mini-me',
+    testId: 'rail-mini-profile',
+    match: (pathname) => pathname.startsWith('/profile') || pathname === '/me',
   },
 ] as const;
 
@@ -79,15 +92,13 @@ interface RailMiniItemProps {
 
 function RailMiniItem({ item }: RailMiniItemProps) {
   const Icon = item.icon;
+  const { pathname } = useLocation();
   return (
     <NavLink
       to={item.to}
-      end
       aria-label={item.ariaLabel}
       data-testid={item.testId}
-      className={({ isActive }) =>
-        cn('rail-mini__item', isActive && 'rail-mini__item--active')
-      }
+      className={() => cn('rail-mini__item', item.match(pathname) && 'rail-mini__item--active')}
     >
       <Icon size={24} />
     </NavLink>

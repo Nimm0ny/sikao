@@ -86,7 +86,7 @@ export default function RegisterEmail() {
     if (response === null) throw new Error('auth.register.email missing response');
     setSession(response.user, response.expiresIn);
     toast.info('注册成功', '欢迎加入思考');
-    navigate('/app', { replace: true });
+    navigate('/', { replace: true });
   };
 
   return (

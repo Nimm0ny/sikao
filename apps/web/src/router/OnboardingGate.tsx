@@ -25,7 +25,7 @@ export function OnboardingGate({ children }: OnboardingGateProps) {
 
   if (ONBOARDING_ALLOWED_PATHS.has(location.pathname)) {
     if (location.pathname === '/study/onboarding' && data?.isOnboarded === true) {
-      return <Navigate to="/dashboard" replace />;
+      return <Navigate to="/" replace />;
     }
     return <>{children}</>;
   }

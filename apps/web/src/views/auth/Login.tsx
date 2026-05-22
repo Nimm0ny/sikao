@@ -46,7 +46,7 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState<FormError | null>(null);
 
-  const from = (location.state as LocationState | null)?.from ?? '/app';
+  const from = (location.state as LocationState | null)?.from ?? '/';
 
   // Wave 1 Round 2: sub 文案带"距 N 国考还有 N 天" 实时计算. days<0
   // (考期已过) 切回"继续你的备考节奏。" 兜底.

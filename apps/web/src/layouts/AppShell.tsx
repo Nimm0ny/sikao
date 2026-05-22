@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 import { OnboardingGate } from '@/router/OnboardingGate';
 import { MvpShell } from '@/components/mvp';
 
@@ -21,15 +23,15 @@ import { MvpShell } from '@/components/mvp';
  *       - landscape: 复用 DesktopShell (Rail 220 + Aside slot 给 PR11)
  *   - desktop  (>= 1280): DesktopShell  (原 Sidebar + main 不变)
  *
- * 路由 API: 跟 router/index.tsx 现状一致 — AppShell 用 layout route 形式挂在
- * <Route element={<AppShell />}> + 内部 <Outlet /> 渲染 children. **不**走 plan
- * F 写的 children prop API (那是 Handoff 抄来的样例, 跟实际 router 不符), 各
- * shell 自挂 Outlet 让 router 调用方零改动.
+ * 路由 API:
+ *   - layout route: <Route element={<AppShell />}> + 内部 Outlet
+ *   - root host:    <AppShell><Dashboard /></AppShell>
+ * 当前 Home M11 需要让 "/" 已登录态直接挂首页宿主，因此补充 children 直挂模式。
  */
-export function AppShell() {
+export function AppShell({ children }: { readonly children?: ReactNode }) {
   return (
     <OnboardingGate>
-      <MvpShell />
+      <MvpShell>{children}</MvpShell>
     </OnboardingGate>
   );
 }
