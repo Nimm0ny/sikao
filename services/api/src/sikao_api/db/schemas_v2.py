@@ -345,6 +345,177 @@ class NoteUpdateRequestV2(CamelModel):
     status: str = Field(default="active")
 
 
+class TrendPointV2(CamelModel):
+    date: date
+    session_id: int
+    accuracy: float
+    count: int
+
+
+class PracticeStatsCellV2(CamelModel):
+    category_key: str | None = None
+    label: str
+    total_questions: int
+    correct_count: int
+    accuracy: float
+    total_sessions: int
+    total_minutes: int
+    recent_trend: list[TrendPointV2] = Field(default_factory=list)
+    percentile_rank: float | None = None
+    last_practiced_at: UtcDatetime | None = None
+
+
+class PracticeStatsResponseV2(CamelModel):
+    type: Literal["xingce", "essay"]
+    overall: PracticeStatsCellV2
+    by_category_l1: list[PracticeStatsCellV2] = Field(default_factory=list)
+    by_category_l2: list[PracticeStatsCellV2] = Field(default_factory=list)
+
+
+class QuestionTimingItemV2(CamelModel):
+    answer_id: int
+    question_id: int
+    time_spent_ms: int
+    baseline_p50_ms: int | None = None
+    baseline_p95_ms: int | None = None
+    is_overtime: bool
+    answer_change_count: int
+    visit_count: int
+
+
+class TimingSummaryV2(CamelModel):
+    overtime_count: int
+    fastest_answer_id: int | None = None
+    slowest_answer_id: int | None = None
+    most_changed_answer_id: int | None = None
+
+
+class SessionTimingReportV2(CamelModel):
+    total_active_seconds: int
+    total_wall_seconds: int
+    paused_total_seconds: int
+    questions: list[QuestionTimingItemV2] = Field(default_factory=list)
+    summary: TimingSummaryV2
+
+
+class TimingOverall(CamelModel):
+    total_minutes: int
+    avg_seconds_per_question: float
+    vs_baseline_ratio: float
+
+
+class TimingByCategory(CamelModel):
+    category: str
+    avg_seconds: float
+    vs_baseline_ratio: float
+    sample_count: int
+
+
+class TimingByDifficulty(CamelModel):
+    difficulty_bucket: str
+    avg_seconds: float
+    vs_baseline_ratio: float
+
+
+class TimingOvertimeBucket(CamelModel):
+    count: int
+    top_5_question_ids: list[int] = Field(default_factory=list)
+
+
+class PracticeStatsTimingResponseV2(CamelModel):
+    overall: TimingOverall
+    by_category_l1: list[TimingByCategory] = Field(default_factory=list)
+    by_difficulty: list[TimingByDifficulty] = Field(default_factory=list)
+    overtime_questions: TimingOvertimeBucket
+    pacing_pattern: Literal["steady", "fast_start_slow_end", "slow_start_fast_end", "irregular"]
+
+
+class LifecycleTransition(CamelModel):
+    from_status: str
+    to_status: str
+    trigger: str
+    actor: Literal["user", "system", "cron", "admin"]
+    ts: UtcDatetime
+    reason: str | None = None
+
+
+class SessionLifecycleResponseV2(CamelModel):
+    status: str
+    paused_at: UtcDatetime | None = None
+    paused_count: int = 0
+    last_heartbeat_at: UtcDatetime | None = None
+    expires_at: UtcDatetime | None = None
+    abandoned_at: UtcDatetime | None = None
+    abandoned_reason: str | None = None
+    force_submitted: bool = False
+    force_submitted_reason: str | None = None
+    transitions: list[LifecycleTransition] = Field(default_factory=list)
+
+
+class ActiveSessionProgress(CamelModel):
+    answered: int
+    total: int
+
+
+class ActiveSessionV2(CamelModel):
+    id: int
+    type: Literal["xingce", "essay"]
+    source_mode: str
+    practice_mode: str
+    status: str
+    started_at: UtcDatetime
+    last_activity_at: UtcDatetime | None = None
+    paused_at: UtcDatetime | None = None
+    progress: ActiveSessionProgress
+    paper_code: str | None = None
+    category: str | None = None
+    exam_mode: bool = False
+
+
+class ActiveSessionsResponseV2(CamelModel):
+    sessions: list[ActiveSessionV2] = Field(default_factory=list)
+    count: int
+
+
+class MockExamCreateRequestV2(CamelModel):
+    paper_code: str = Field(min_length=1, max_length=64)
+    time_limit_minutes: int | None = Field(default=None, ge=10, le=360)
+    delayed_review_minutes: int = Field(default=0, ge=0, le=1440)
+
+
+class MockExamCountdownResponseV2(CamelModel):
+    server_now: UtcDatetime
+    auto_submit_at: UtcDatetime
+    remaining_seconds: int
+    status: str
+    elapsed_seconds: int
+
+
+class MockExamHistoryItem(CamelModel):
+    session_id: int
+    paper_code: str
+    completed_at: UtcDatetime
+    time_limit_minutes: int
+    actual_active_seconds: int
+    accuracy: float
+    total_score: float | None = None
+    is_force_submitted: bool
+    rank_in_self: int | None = None
+
+
+class MockExamAggregate(CamelModel):
+    total_count: int
+    best_accuracy: float
+    best_session_id: int | None = None
+    avg_accuracy: float
+    improvement_trend: float
+
+
+class MockExamHistoryResponseV2(CamelModel):
+    sessions: list[MockExamHistoryItem] = Field(default_factory=list)
+    aggregate: MockExamAggregate
+
+
 class ProfileOverviewResponseV2(CamelModel):
     summary: list[SummaryMetricV2]
     sections: list[SectionCardV2]
