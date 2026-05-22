@@ -17,7 +17,7 @@ last-reviewed: 2026-05-21
 | docs/vault 文档仓库 | complete | 主要文档就位（00-index/01-product/02-domain/03-tech/04-design/05-migration/06-decisions/08-archive） |
 | Legacy Feature Inventory | complete | 顶层盘点 + 单 view 级路由清单 + components 归属表 |
 | ADR | partial | 0001 Monorepo / 0002 Answer-Engine / 0003 Document-Vault 已写；0004 Models 拆分待 R2 |
-| Home Phase（2026-05-22 restart baseline） | partial | M0-M2 已完成；M0.5 / SIK-31 已解锁前端 full typecheck blocker；M3 后端 deliverables 已落地主干；M4 / SIK-35、M5 / SIK-36、M6 / SIK-37 已完成；backend-first 契约与 scheduler 链已收口；前端 runtime 轨已在 `main` 上显式重启，当前 tranche 只覆盖 M7 / SIK-38 与 M8 / SIK-39；M9-M12 仍待后续 UI tranche |
+| Home Phase（2026-05-22 restart baseline） | partial | M0-M2 已完成；M0.5 / SIK-31 已解锁前端 full typecheck blocker；M3 后端 deliverables 已落地主干；M4 / SIK-35、M5 / SIK-36、M6 / SIK-37 已完成；backend-first 契约与 scheduler 链已收口；M7 / SIK-38、M8 / SIK-39、M9 / SIK-40、M10 / SIK-41 已在 `main` 上落地；当前前端只剩 M11-M12 的 route-shell convergence 与最终验收 |
 | **前端代码迁移** | **complete** | **770+ 文件**已搬到正确位置；0 个 MIGRATION_TODO 残留；编码 mojibake 已修复（507 文件 binary-copy 重做）；`tsc -b --noEmit` 0 errors（test exclude）；`vite build` 1.81s 38 chunks pass |
 | Auth（前端） | partial | views/auth/* + components/auth/* + domain/auth/useAuthStore 已迁；登录页面具体功能未验证 |
 | User（前端） | partial | views/Profile + components/profile 已迁 |

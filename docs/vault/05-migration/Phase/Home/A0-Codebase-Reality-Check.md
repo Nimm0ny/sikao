@@ -17,22 +17,21 @@
 
 ## 0.1 2026-05-22 Restart Baseline Addendum
 
-Home 前端 runtime 轨已被显式重启，但当前只重启 `M7 / SIK-38` 与 `M8 / SIK-39`。
+Home 前端 runtime 轨已被显式重启，`M7 / SIK-38`、`M8 / SIK-39`、`M9 / SIK-40` 与 `M10 / SIK-41` 已在 `main` 上落地。
 
-这一轮的约束固定为：
+当前阶段的约束固定为：
 
-- 只做 `@sikao/api-client` canonical Home queries、`@sikao/domain` Home stores、`@sikao/calendar-engine`。
-- 不动 `apps/web/src/router/index.tsx`。
-- 不做 5-tab、`/profile/learning`、`/profile/records`、Section A/B/C、browser acceptance。
+- 已完成 `@sikao/api-client` canonical Home queries、`@sikao/domain` Home stores、`@sikao/calendar-engine`、Section A runtime、Section B / Section C 与 `/profile/learning`。
+- 仍不做 5-tab、`/profile/records`、root-route convergence 与 legacy redirect cleanup。
 
 同时需要把以下现实作为新的前置真相：
 
 - `"/"` 仍是 marketing + authed redirect。
-- authenticated landing 仍是 `/practice/center`，不是 Home Dashboard。
+- `"/dashboard"` 已是 authenticated Home runtime host，`"/plan"` alias 到同一入口。
 - `TabBar.tsx` 与 `RailMini.tsx` 仍是 4 tab，且 `/me` 仍然未注册。
-- `apps/web/src/views/Dashboard.tsx`、`apps/web/src/views/Plan.tsx`、`apps/web/src/views/study/StudyToday.tsx` 已不存在。
+- `apps/web/src/views/Plan.tsx` 与 `apps/web/src/views/study/StudyToday.tsx` 已不存在。
 
-因此，本文后文凡是把 `Dashboard.tsx`、`Plan.tsx`、`StudyToday.tsx` 当作仍然存在的迁移目标，都只能视为历史 WU 假设，不能再作为当前实现入口。
+因此，本文后文凡是把 `/dashboard` 仍当作旧“学情页”或把 `Plan.tsx`、`StudyToday.tsx` 当作仍然存在的迁移目标，都只能视为历史 WU 假设，不能再作为当前实现入口。
 ---
 
 ## 1. 一级导航现状（关键修订）
