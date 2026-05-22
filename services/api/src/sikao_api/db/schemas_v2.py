@@ -153,9 +153,12 @@ class PracticeCenterResponseV2(CamelModel):
 class PracticeSessionCreateRequestV2(CamelModel):
     track: Literal["xingce", "essay"]
     entry_kind: str = Field(min_length=1, max_length=64)
+    mode: str | None = None
+    practice_mode: Literal["per_question", "full_set"] = "full_set"
     paper_code: str | None = None
     question_ids: list[int] = Field(default_factory=list)
     payload: dict[str, Any] = Field(default_factory=dict)
+    config: dict[str, Any] = Field(default_factory=dict)
     linked_plan_event_id: int | None = None
     linked_plan_event_occurrence_ref: str | None = Field(default=None, max_length=64)
     linked_recommendation_id: int | None = None
@@ -214,6 +217,15 @@ class PracticeSessionItemV2(CamelModel):
     prompt: str
     answer_kind: str
     status: str
+    flagged: bool = False
+    viewed_solution: bool = False
+    has_user_notes: bool = False
+    is_favorited: bool = False
+    has_persistent_flag: bool = False
+    time_spent_ms: int = 0
+    answer_change_count: int = 0
+    visit_count: int = 0
+    is_overtime: bool = False
 
 
 class PracticeSessionEnvelopeV2(CamelModel):
@@ -224,6 +236,23 @@ class PracticeSessionEnvelopeV2(CamelModel):
     items: list[PracticeSessionItemV2]
     actions: list[ActionLinkV2]
     started_at: UtcDatetime
+    practice_mode: str = "full_set"
+    source_mode: str = "paper"
+    config_snapshot: dict[str, Any] = Field(default_factory=dict)
+    paused_at: UtcDatetime | None = None
+    paused_count: int = 0
+    last_heartbeat_at: UtcDatetime | None = None
+    expires_at: UtcDatetime | None = None
+    force_submitted: bool = False
+    force_submitted_reason: str | None = None
+    total_active_seconds: int = 0
+    paused_total_seconds: int = 0
+    first_question_at: UtcDatetime | None = None
+    last_activity_at: UtcDatetime | None = None
+    exam_mode: bool = False
+    time_limit_minutes: int | None = None
+    auto_submit_at: UtcDatetime | None = None
+    delayed_review_until: UtcDatetime | None = None
     submitted_at: UtcDatetime | None = None
 
 
@@ -281,6 +310,8 @@ class NoteItemV2(CamelModel):
     title: str
     excerpt: str
     status: str
+    linked_question_id: int | None = None
+    visibility: str = "private"
     created_at: UtcDatetime
     updated_at: UtcDatetime
 
@@ -297,6 +328,8 @@ class NoteDetailV2(CamelModel):
     title: str
     body: str
     status: str
+    linked_question_id: int | None = None
+    visibility: str = "private"
     created_at: UtcDatetime
     updated_at: UtcDatetime
 
