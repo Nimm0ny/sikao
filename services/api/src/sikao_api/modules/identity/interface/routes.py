@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Response
+from fastapi import APIRouter, Depends, Request, Response
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -34,6 +35,7 @@ from sikao_api.modules.identity.application.security_v2 import (
 from sikao_api.modules.identity.application.service import IdentityServiceV2
 
 router = APIRouter(prefix="/api/v2/auth", tags=["identity-v2"])
+_logger = logging.getLogger(__name__)
 
 
 def _serialize_user(session: Session, user: UserV2) -> AuthUserV2:
@@ -124,6 +126,7 @@ def register_phone(
 @router.post("/login", response_model=AuthSessionResponseV2)
 def login(
     payload: LoginRequestV2,
+    request: Request,
     response: Response,
     session: Annotated[Session, Depends(get_db_session)],
     settings: Annotated[Settings, Depends(get_app_settings)],
@@ -134,6 +137,15 @@ def login(
         password=payload.password,
     )
     session.commit()
+    home_scheduler = getattr(request.app.state, "home_scheduler", None)
+    if home_scheduler is not None:
+        try:
+            home_scheduler.enqueue_login_adjustment_check(
+                user_id=user.id,
+                request_id=getattr(request.state, "request_id", None),
+            )
+        except Exception:
+            _logger.exception("home_scheduler.login_enqueue_failed user_id=%s", user.id)
     session.refresh(auth_session)
     set_auth_cookies(
         response,

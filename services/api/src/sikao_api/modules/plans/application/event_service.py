@@ -34,6 +34,7 @@ class EventServiceSupport:
         )
         linked_session_id, status = self._resolve_runtime_status(
             stored_status=parent.status,
+            event_start=occurrence_start,
             event_end=occurrence_start + duration,
             linked_sessions=self._list_linked_sessions(parent_id=parent.id, occurrence_ref=occurrence_ref),
         )
@@ -61,6 +62,7 @@ class EventServiceSupport:
     def _build_concrete_event_model(self, event: PlanEventV2) -> PlanEventReadV2:
         linked_session_id, status = self._resolve_runtime_status(
             stored_status=event.status,
+            event_start=event.start_at,
             event_end=event.end_at,
             linked_sessions=self._list_linked_sessions(
                 parent_id=event.id,
@@ -230,6 +232,7 @@ class EventServiceSupport:
         self,
         *,
         stored_status: str,
+        event_start: datetime,
         event_end: datetime,
         linked_sessions: list[PracticeSessionV2],
     ) -> tuple[int | None, str]:
@@ -245,6 +248,8 @@ class EventServiceSupport:
         if has_submitted_session and current_time >= event_end:
             return linked_session_id, "done"
         if linked_sessions:
+            return linked_session_id, "in_progress"
+        if current_time >= event_start and current_time < event_end:
             return linked_session_id, "in_progress"
         if current_time >= event_end:
             return linked_session_id, "skipped"

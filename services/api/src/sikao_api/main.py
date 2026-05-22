@@ -36,6 +36,7 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
     @asynccontextmanager
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         from sikao_api.core.limiter import close_limiter, init_limiter
+        from sikao_api.core.home_scheduler import build_home_scheduler
         from sikao_api.core.scheduler import build_deletion_sweep_scheduler
 
         app.state.settings = app_settings
@@ -59,9 +60,19 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
         app.state.deletion_scheduler = deletion_scheduler
         if deletion_scheduler is not None:
             await deletion_scheduler.start()
+
+        home_scheduler = build_home_scheduler(
+            db,
+            settings=app_settings,
+        )
+        app.state.home_scheduler = home_scheduler
+        if home_scheduler is not None:
+            await home_scheduler.start()
         try:
             yield
         finally:
+            if home_scheduler is not None:
+                await home_scheduler.stop()
             # Stop scheduler before limiter — 让后台 sweep 优雅退出, 之后再断 redis.
             if deletion_scheduler is not None:
                 await deletion_scheduler.stop()

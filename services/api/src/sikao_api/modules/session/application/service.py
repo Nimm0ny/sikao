@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionV2, UserV2
 from sikao_api.db.schemas_v2 import ActionLinkV2, PracticeAnswerPayloadV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionItemV2, PracticeSessionResultResponseV2, SectionCardV2, SummaryMetricV2
-from sikao_api.modules.progress.application.snapshot_writer import refresh_progress_artifacts_for_user
 from sikao_api.modules.plans.domain.rrule_subset import build_occurrence_ref, end_of_local_day, expand_occurrences, parse_occurrence_ref, start_of_local_day
 from sikao_api.modules.system.application.errors import ConflictError, NotFoundError, ValidationError
 
@@ -151,7 +150,6 @@ class SessionServiceV2:
                 linked_event.status = "done" if submitted_at >= linked_event.end_at else "in_progress"
                 linked_event.linked_session_id = practice_session.id
                 self.session.add(linked_event)
-        refresh_progress_artifacts_for_user(self.session, user_id=practice_session.user_id)
 
     def build_session_response(self, *, practice_session: PracticeSessionV2) -> PracticeSessionEnvelopeV2:
         answers = list(

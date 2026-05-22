@@ -297,6 +297,14 @@ class Settings(BaseSettings):
     # 节奏, 跟 cron 语义对齐.
     deletion_sweep_run_on_startup: bool = False
 
+    # ─── Home Phase M5: scheduler / observability substrate ─────────────────
+    # Stage 1 leader flag. 默认关闭，避免 dev / pytest 无意启动 Home 后台任务。
+    home_scheduler_enabled: bool = False
+    # Home runtime 固定按中国用户时区组织 cron 窗口。
+    home_scheduler_timezone: str = "Asia/Shanghai"
+    # OTel instrumentation flag: False 时保留 runtime 行为但不写指标。
+    home_scheduler_metrics_enabled: bool = True
+
     @field_validator("cors_allowed_origins", mode="before")
     @classmethod
     def parse_cors_allowed_origins(cls, value: object) -> object:
