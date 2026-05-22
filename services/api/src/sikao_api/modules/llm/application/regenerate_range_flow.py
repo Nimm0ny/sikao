@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 from collections.abc import AsyncIterator
 from typing import TYPE_CHECKING
 
@@ -14,6 +15,7 @@ from sikao_api.modules.llm.application.plan_generator import (
 )
 from sikao_api.modules.llm.application.regenerate_window import validate_regenerate_window
 from sikao_api.modules.llm.application.stream_persistence import replace_generated_range_with_frames
+from sikao_api.modules.llm.application.stream_abort import cleanup_aborted_stream
 from sikao_api.modules.llm.application.stream_success import (
     record_stream_success,
     store_replay_and_build_done_frame,
@@ -95,7 +97,25 @@ async def run_regenerate_range_stream(
             ip=ip,
         )
         for frame in frames:
-            yield frame
+            try:
+                yield frame
+            except (asyncio.CancelledError, GeneratorExit):
+                should_release_claim = False
+                cleanup_aborted_stream(
+                    service,
+                    user_id=user.id,
+                    purpose="plan_regenerate_range",
+                    prompt_version=PLAN_REGENERATE_PROMPT_VERSION,
+                    provider_name=provider_name,
+                    model=service.settings.llm_model_study_plan,
+                    messages=messages,
+                    raw_text=raw_text,
+                    usage=usage,
+                    endpoint=endpoint,
+                    idempotency_key=idempotency_key,
+                    request_hash=request_hash,
+                )
+                raise
 
         llm_call_id = record_stream_success(
             service,
@@ -116,14 +136,32 @@ async def run_regenerate_range_stream(
             "llm_call_id": llm_call_id,
         }
         should_release_claim = False
-        yield store_replay_and_build_done_frame(
-            service,
-            user_id=user.id,
-            endpoint=endpoint,
-            idempotency_key=idempotency_key,
-            request_hash=request_hash,
-            response_body=response_body,
-        )
+        try:
+            yield store_replay_and_build_done_frame(
+                service,
+                user_id=user.id,
+                endpoint=endpoint,
+                idempotency_key=idempotency_key,
+                request_hash=request_hash,
+                response_body=response_body,
+            )
+        except (asyncio.CancelledError, GeneratorExit):
+            should_release_claim = False
+            cleanup_aborted_stream(
+                service,
+                user_id=user.id,
+                purpose="plan_regenerate_range",
+                prompt_version=PLAN_REGENERATE_PROMPT_VERSION,
+                provider_name=provider_name,
+                model=service.settings.llm_model_study_plan,
+                messages=messages,
+                raw_text=raw_text,
+                usage=usage,
+                endpoint=endpoint,
+                idempotency_key=idempotency_key,
+                request_hash=request_hash,
+            )
+            raise
     finally:
         if should_release_claim:
             service._release_idempotency_claim(

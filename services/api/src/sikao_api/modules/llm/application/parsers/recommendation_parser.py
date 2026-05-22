@@ -8,18 +8,6 @@ from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from sikao_api.modules.llm.application.llm.json_parser import parse_with_recovery
 
-_DEFAULT_MINUTES_BY_ACTION: dict[str, int] = {
-    "review": 20,
-    "continue": 25,
-    "rest": 15,
-}
-
-_DEFAULT_CTA_BY_ACTION: dict[str, str] = {
-    "review": "Review",
-    "continue": "Continue",
-    "rest": "Rest",
-}
-
 
 class RecommendationDraft(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -29,7 +17,7 @@ class RecommendationDraft(BaseModel):
     estimated_minutes: int = Field(ge=5, le=60)
     action_type: Literal["review", "continue", "rest"]
     cta: str = Field(min_length=1, max_length=12)
-    payload: dict[str, Any] = Field(default_factory=dict)
+    payload: dict[str, Any]
 
     @model_validator(mode="before")
     @classmethod
@@ -44,22 +32,8 @@ class RecommendationDraft(BaseModel):
             data["reason"] = data.pop("description")
         if "estimated_minutes" not in data and isinstance(data.get("estimatedMinutes"), int):
             data["estimated_minutes"] = data.pop("estimatedMinutes")
-        if "estimated_minutes" not in data and isinstance(action_type, str):
-            default_minutes = _DEFAULT_MINUTES_BY_ACTION.get(action_type)
-            if default_minutes is not None:
-                data["estimated_minutes"] = default_minutes
         if "cta" not in data and isinstance(data.get("ctaLabel"), str):
             data["cta"] = data.pop("ctaLabel")
-        if "cta" not in data and isinstance(action_type, str):
-            default_cta = _DEFAULT_CTA_BY_ACTION.get(action_type)
-            if default_cta is not None:
-                data["cta"] = default_cta
-        if isinstance(data.get("cta"), str) and len(data["cta"]) > 12 and isinstance(action_type, str):
-            default_cta = _DEFAULT_CTA_BY_ACTION.get(action_type)
-            if default_cta is not None:
-                data["cta"] = default_cta
-        if not isinstance(data.get("payload"), dict):
-            data["payload"] = {}
         return data
 
 
