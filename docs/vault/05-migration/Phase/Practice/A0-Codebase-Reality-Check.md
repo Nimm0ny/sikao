@@ -73,7 +73,7 @@ modules/
 ├── llm/                      ← 当前代码现实：已有 BYOM/OpenAI-compatible 基础设施；尚未补齐 Home plan/adjust/recommend 能力
 ├── essay/                    ← 旧版本，已废弃，V2 走 EssayDraft/Submission/Report 三表但**无路由模块**
 ├── grading/                  ← 旧版本，已废弃
-├── notes/ + notes_v2/        ← Phase-Home 暂时不动；Tab 4 单独立 Phase
+├── notes/ + notes_v2/        ← B16.4 题级笔记最小 CRUD（CLP-5 落地）；主 view 仍由 [Phase/Notes](../Notes/README.md) 完成
 ├── review/                   ← V2 stub
 ├── favorite/                 ← 旧版本，已废弃
 ├── question_bank/            ← 旧版本，已废弃
@@ -142,7 +142,7 @@ V2 数据层已就绪但路由层缺失：
 
 | 表 | 状态 |
 |---|---|
-| EssayDraftV2 | 已建表，未在路由中使用 |
+| EssayDraftV2 | 已建表，**WU-B20.5 启用**（CLP-6：30s 自动保存草稿端点） |
 | EssaySubmissionV2 | 已建表，仅 session.submit 时写入 |
 | EssayReportV2 | 已建表，从未被写入（无批改流程） |
 

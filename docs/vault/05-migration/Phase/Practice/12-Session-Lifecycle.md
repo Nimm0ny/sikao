@@ -355,9 +355,18 @@ LIMIT 500;
 - `as_draft=False`（默认）：直接创建为 IN_PROGRESS（兼容现有调用方）
 - `as_draft=True`：创建为 DRAFT，配置好题目但用户尚未开始答题
 
-DRAFT 用例：
-- 自定义刷题对话框：用户选好配置→ 后端预生成 session（含选题结果）→ 用户决定是否开始
-- AI 出题：等待页生成完成后 session 处于 DRAFT，用户点"开始"才转 IN_PROGRESS
+各调用方 as_draft 取值约定（CLP-4 固化）：
+
+| 调用方 | as_draft | 进入 IN_PROGRESS 触发 |
+|---|---|---|
+| 自定义对话框（mode=custom） | **false** | 无需 DRAFT；提交即开始 |
+| Section A/B/C 列表入口（mode=paper / category） | **false** | 同上 |
+| AI 出题等待页（mode=ai_generated） | **false** | 等待页 generate 后立即 createSession（CLP-2） |
+| 每日一练（mode=daily） | **false** | 同上 |
+| 错题重做（mode=wrong_redo） | **false** | 同上 |
+| **mock-exam 端点（CLP-3 wrapper）** | **true（强制）** | 用户点 `POST /sessions/:id/start` 启动倒计时 |
+
+DRAFT 在 v1 范围内**仅服务于模考**。如其他路径出现 DRAFT 不消费视为 bug，cron 在 2h 后兜底转 ABANDONED（reason=`no_activity_draft_2h`）。
 
 ### 6.2 DRAFT 的特殊规则
 

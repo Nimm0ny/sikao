@@ -106,14 +106,16 @@ recharts 在所有用到的路由都必须懒加载（`lazy()`）。
 ```
 packages/api-client/src/queries/
   contentQueries.ts           ← 重写（categories filter + papers filter）
-  sessionQueries.ts           ← 扩展（多 mode + 答题中操作）
+  sessionQueries.ts           ← 扩展（多 mode + 答题中操作 + as_draft）
   practiceStatsQueries.ts     ← 新建
   aiQuestionsQueries.ts       ← 新建
   essayGradingQueries.ts      ← 新建（含 polling hook）
+  essayDraftsQueries.ts       ← 新建（CLP-6：30s 自动保存草稿）
   favoritesQueries.ts         ← 新建
   flagsQueries.ts             ← 新建
   dailyPracticeQueries.ts     ← 新建
-  questionDetailQueries.ts    ← 新建（题目详情页用）
+  questionDetailQueries.ts    ← 新建（CLP-7：题目详情聚合页用，对接 GET /practice/questions/:id）
+  notesQueries.ts             ← 新建（CLP-5：题级笔记最小集 CRUD；Tab 4 主 view 仍由 Phase/Notes 落地）
 ```
 
 ### 2.2 PR 拆分
@@ -148,23 +150,28 @@ packages/api-client/src/queries/
 
 行数 ~380。
 
-#### F9.4 essayGradingQueries（异步轮询）+ favoritesQueries + flagsQueries
+#### F9.4 essayGradingQueries（异步轮询）+ essayDraftsQueries + favoritesQueries + flagsQueries
 
 文件：
 - 新建 `essayGradingQueries.ts`：
-  - useTriggerGrading（同步触发）
+  - useTriggerGrading（同步触发；CLP-1：仅用于失败重试，默认路径无需）
   - useGradingStatus（轮询 hook，3s/5s/10s 退避）
   - useGradingResult
   - useReferenceAnswers
   - useFeedbackReference
+- 新建 `essayDraftsQueries.ts`（CLP-6）：
+  - useEssayDraft(sessionId)
+  - useUpsertEssayDraft：30s 间隔自动 PUT，按 content 覆盖（自然幂等，无 IdempotencyKey）
 - 新建 `favoritesQueries.ts`：useFavorites / useToggleFavorite
 - 新建 `flagsQueries.ts`：useFlags / useToggleFlag / useResolveFlag
 
 行数 ~480。
 
-#### F9.5 MSW handlers 全套补齐
+#### F9.5 notesQueries + questionDetailQueries + MSW handlers 全套补齐
 
 文件：
+- 新建 `notesQueries.ts`（CLP-5）：useQuestionLinkedNotes / useCreateQuestionNote / useUpdateNote / useDeleteNote
+- 新建 `questionDetailQueries.ts`（CLP-7）：useQuestionDetail
 - `apps/web/src/test-utils/handlers.ts` 增量
 - 覆盖所有新 endpoint 的成功 / 失败 fixtures
 
@@ -440,8 +447,15 @@ apps/web/src/components/practice/custom/CustomSubmitButton.tsx
 文件：
 - `CustomSubmitButton.tsx`：根据 sourceMode 分支
   - 真题：调 `useCreateSession({ mode: 'custom', config: {...} })` → 跳 `/practice/sessions/:id`
-  - AI 出题：跳 `/practice/ai-questions/generating?config=...`（带 query 参数让等待页用）
-- 失败处理：429 RATE_LIMITED 显示 toast "今日 AI 出题次数已用完"
+  - **AI 出题（CLP-2 流程）**：跳 `/practice/ai-questions/generating?config=...`（带 query 参数）
+    - 等待页主流程：
+      1. 调 `useGenerateAiQuestions(config)` 同步等待（10-30s）→ 拿到 `{ requestId, questionIds }`
+      2. 立即调 `useCreateSession({ mode: 'ai_generated', config: { questionIds, requestId } })`
+      3. 拿到 session_id 后 `navigate('/practice/sessions/:id', { replace: true })`
+      4. 等待页 unmount；若用户再退回浏览器历史，重定向到 `/practice`（不复用同 requestId）
+- 失败处理：
+  - 503（AI_AUDIT_FAILED）：等待页显示"切换到真题"按钮（不调 createSession）
+  - 429（AI_QUOTA_EXCEEDED）：等待页 toast "今日 AI 出题次数已用完"（不调 createSession）
 - 测试
 
 行数 ~300。
@@ -476,12 +490,14 @@ apps/web/src/components/practice/session/SolutionPanel.tsx               ← 答
 #### F15.1 AiQuestionsGenerating view + 失败 fallback
 
 文件：
-- `AiQuestionsGenerating.tsx`：
+- `AiQuestionsGenerating.tsx`（CLP-2 流程）：
   - 旋转动画 + 进度提示分阶段："分析弱项..." → "改编题目..." → "审核质量..."
   - aria-live="polite"
+  - 主流程：调 `useGenerateAiQuestions` → 成功后立即 `useCreateSession(mode=ai_generated, config={ questionIds, requestId })` → `navigate(/practice/sessions/:id, replace)`
   - 30s 超时显示重试按钮
   - 503 失败提示"切换到真题"按钮（清空 config.sourceMode → custom dialog）
-- 测试（mock 各种失败路径）
+  - **不**在等待页落 DRAFT session（CLP-4：mode=ai_generated 路径 as_draft=false）
+- 测试（mock 各种失败路径 + mock generate 成功后 createSession 失败的边界）
 
 行数 ~340。
 
@@ -503,12 +519,13 @@ apps/web/src/components/practice/session/SolutionPanel.tsx               ← 答
 
 行数 ~280。
 
-#### F15.4 QuestionNoteSheet（与 Tab 4 NoteV2 联动）
+#### F15.4 QuestionNoteSheet（CLP-5：题级笔记后端 CRUD 已就绪）
 
 文件：
 - `QuestionNoteSheet.tsx`：题级笔记 drawer（list 该题相关笔记 + 创建新笔记）
-- 调 `notesQueries`（Tab 4 笔记 plan 暂未启动，但 schema 已就绪 = WU-B11.3）
-- 笔记保存后立即可在 Tab 4 看到（联动验证）
+- 调 `notesQueries.useQuestionLinkedNotes / useCreateQuestionNote / useUpdateNote / useDeleteNote`（CLP-5：本 Phase B16.4 已建后端 CRUD）
+- 笔记保存后立即可在 Tab 4 看到（联动验证；Tab 4 主 view 由 Phase/Notes 落地，但数据层闭环完整）
+- 模考期间（exam_mode=true）UI 隐藏"加笔记"入口（与 13-Mock-Exam §3.4 / MockExam-Notes-Forbidden 后端兜底一致）
 - 测试
 
 行数 ~280。
@@ -557,19 +574,20 @@ apps/web/src/components/practice/essay/ReferenceAnswerCard.tsx               ←
 文件：
 - `EssayShell.tsx`：左材料 / 右输入 双栏布局（响应式）
 - `MaterialReader.tsx`：材料阅读 + 标记 + 滚动同步
-- `EssayInput.tsx`：textarea + 字数实时统计 + 自动保存草稿（30s 间隔）
-- 测试
+- `EssayInput.tsx`：textarea + 字数实时统计 + 自动保存草稿（CLP-6：30s 间隔调 `useUpsertEssayDraft(sessionId)` → `PUT /api/v2/practice/essay/sessions/:id/draft`）
+- 测试（含 30s 自动保存 + 离线缓冲 + submit 时草稿归档可见）
 
 ⚠️ 此处可参考现有 `views/ShenlunSession/` 已有的 MaterialPane / TypedEditor 等，但代码已被 V2 重构边缘化，建议**完全重写**而非渐进改造。
 
 行数 ~400。
 
-#### F16.2 EssaySubmitDialog + 异步批改触发
+#### F16.2 EssaySubmitDialog + 异步批改触发（CLP-1：仅依赖 session.submit）
 
 文件：
 - `EssaySubmitDialog.tsx`：提交确认（字数低于阈值时警告）
-- 调 `useTriggerGrading(submission_id)` 异步触发
-- 跳转 `/practice/sessions/:id/result` 进入 pending 状态
+- **CLP-1**：调 `useSubmitSession(sessionId)`（已含申论草稿归档 + 隐式触发批改 hook）；**不**单独调 `useTriggerGrading`
+- 跳转 `/practice/sessions/:id/result` 进入 pending 状态 → polling `useGradingStatus`
+- `useTriggerGrading` 仅在 result 页 `status=failed` 时显式调用作为重试入口
 - 测试
 
 行数 ~280。

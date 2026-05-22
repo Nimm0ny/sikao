@@ -158,6 +158,15 @@ Headers: Idempotency-Key
 
 ⚠️ 创建后 status=DRAFT。用户必须显式调 `POST /sessions/:id/start`（session_lifecycle 模块）才进入 IN_PROGRESS，倒计时此刻才启动（设置 auto_submit_at）。
 
+**实现层（CLP-3）**：`POST /api/v2/practice/mock-exams` = `session.create` 的语法糖。
+内部委托 `session_service.create(source_mode=PAPER, practice_mode=FULL_SET, exam_mode=true, time_limit_minutes=..., as_draft=true)`。
+mock-exam 端点的额外职责：
+1. 套卷资格校验（题数 < 阈值时 422 PAPER_NOT_MOCK_ELIGIBLE）
+2. time_limit_minutes 范围校验（[10, 360]，否则 422 INVALID_TIME_LIMIT）
+3. 写 audit `mock_exam.created`
+
+DB CHECK 约束（[02-Data-Model §5.4](./02-Data-Model.md#54-mock_exam-db-check-约束)）保证两条路径都无法绕过 exam_mode 三联约束（time_limit_minutes 非空 ∧ practice_mode='full_set' ∧ source_mode='paper'）。
+
 ### 3.2 模考开始
 
 ```
