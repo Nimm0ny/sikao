@@ -175,7 +175,7 @@ packages/api-client/src/queries/
 - `apps/web/src/test-utils/handlers.ts` 增量
 - 覆盖所有新 endpoint 的成功 / 失败 fixtures
 
-行数 ~290。
+行数 ~440（较初版 ~290 上调；F9 总数 1,800 / 5 PR 不变，由 F9.4 子项让度，不改 §0 总览）。
 
 **估算**：1,800 行 / 5 PR
 **依赖**：Phase-Practice WU-B24
@@ -525,8 +525,9 @@ apps/web/src/components/practice/session/SolutionPanel.tsx               ← 答
 - `QuestionNoteSheet.tsx`：题级笔记 drawer（list 该题相关笔记 + 创建新笔记）
 - 调 `notesQueries.useQuestionLinkedNotes / useCreateQuestionNote / useUpdateNote / useDeleteNote`（CLP-5：本 Phase B16.4 已建后端 CRUD）
 - 笔记保存后立即可在 Tab 4 看到（联动验证；Tab 4 主 view 由 Phase/Notes 落地，但数据层闭环完整）
-- 模考期间（exam_mode=true）UI 隐藏"加笔记"入口（与 13-Mock-Exam §3.4 / MockExam-Notes-Forbidden 后端兜底一致）
-- 测试
+- 模考期间（exam_mode=true）UI 隐藏"加笔记"入口
+- **S2 修订**：`useCreateQuestionNote` 调用时**必须**携带当前 `sessionId`（即使非模考路径也传）；后端 B16.4 据此校验 mock 期间禁笔记。前端契约由 contract test 锁死：`expect(useCreateQuestionNote).toHaveBeenCalledWith({ question_id, body, session_id: <current> })`
+- 测试：含模考 shell 内 createNote 被后端 422 MOCK_NOTES_FORBIDDEN 的边界
 
 行数 ~280。
 

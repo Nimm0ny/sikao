@@ -153,6 +153,7 @@ Headers: Idempotency-Key
 
 → 422 PAPER_NOT_FOUND
 → 422 PAPER_NOT_MOCK_ELIGIBLE     // 该套卷不支持模考（如题量太少）
+→ 422 INVALID_TIME_LIMIT          // time_limit_minutes 超出 [10, 360]（含 fallback 后校验）
 → 429 RATE_LIMITED
 ```
 
@@ -203,11 +204,17 @@ GET /api/v2/practice/sessions/:id/countdown
 
 ```
 POST /api/v2/practice/sessions/:id/pause     → 422 MOCK_PAUSE_FORBIDDEN（exam_mode=true 且 allow_pause=false 时）
-POST /api/v2/practice/sessions/:id/notes     → 422 MOCK_NOTES_FORBIDDEN（实际是答题界面隐藏入口；后端兜底拒绝）
+POST /api/v2/practice/notes                  → 422 MOCK_NOTES_FORBIDDEN
+                                              （CLP-5/S2：B16.4 service 内校验：
+                                              ① body 显式传 session_id 时直接判 exam_mode；
+                                              ② 不传时 service 兜底 query "该用户在 question_id 所属套卷上是否有 IN_PROGRESS mock-exam session"
+                                              防 curl 绕过 UI）
 POST /api/v2/practice/sessions/:id/answers/:aid/view-solution
                                               → 403 STRICT_CLOSED_BOOK（继承）
                                               → 403 DELAYED_REVIEW_LOCKED（提交后但 < delayed_review_until）
 ```
+
+⚠️ 注：本 Phase 不新建 `POST /sessions/:id/notes` 端点；mock 期间笔记禁止由 B16.4（`POST /practice/notes`）service 层兜底实现，详见 [03-Backend-WU §8.2 B16.4](./03-Backend-WU.md#82-pr-拆分)。
 
 ### 3.5 模考历史
 

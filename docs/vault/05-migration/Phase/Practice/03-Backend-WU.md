@@ -16,7 +16,7 @@
 | WU-B11 | session 系列字段扩展（含 NoteV2 提前升级） | 300 | 4 | Phase-Home WU-B1 |
 | WU-B12 | 新表数据模型（5 个表） | 750 | 5 | B11 |
 | WU-B13 | 申论范文表（2 个表 + trigger） | 350 | 2 | B12 |
-| WU-B14 | content 模块扩展（categories + papers filter + question detail aggregation） | 1,000 | 4 | B10 / B11 / B12 / B16 |
+| WU-B14 | content 模块扩展（categories + papers filter + question detail aggregation） | 1,000 | 4 | B10 / B11.3 |
 | WU-B15 | session 模块扩展（多 mode + 答题中操作 + as_draft） | 1,400 | 5 | B10 / B11 / B12 |
 | WU-B16 | favorites + question_flags + question-linked notes CRUD（新建 / 扩展） | 850 | 4 | B12 |
 | WU-B17 | practice_stats 模块（新建） | 1,500 | 5 | B11 / B12 |
@@ -368,7 +368,8 @@ GET /api/v2/practice/essay/papers?year=&region=&exam_type=
 行数 ~200。
 
 **估算**：1,000 行 / 4 PR
-**依赖**：B10 / B11 / B12 / B16
+**依赖**：B10 / B11.3（NoteV2 schema 升级，B14.4 聚合需读 NoteV2 字段）
+**说明**：B14.4 仅读 QuestionV2 / NoteV2 / QuestionFavoriteV2 / QuestionFlagV2 / EssayReferenceAnswerV2 schema，**不**依赖 B16 service 实现；与 B16 可并行。
 **验收**：filter 组合 query 测试通过；分类树正确聚合；已完成状态准确；题目详情聚合正确（含 e2e 跨 tab 联动 from Tab 4）。
 
 ---
@@ -533,14 +534,18 @@ DELETE /api/v2/practice/notes/:id
 - `modules/notes_v2/application/question_linked_service.py`：题级笔记 CRUD service
   - 强制 `linked_question_id` 非空（否则 422 NOTE_NOT_QUESTION_LINKED）
   - 越权访问其他用户笔记 → 404（不泄漏存在性）
-  - 模考期间 POST 拒绝（先校验 `session.exam_mode=true and session.status=IN_PROGRESS` → 422 MOCK_NOTES_FORBIDDEN）；这里先简化为"不依赖 session_id 上下文，只在前端隐藏入口 + 对所有非 admin POST 不做特殊校验"，由 13-Mock-Exam 后端兜底端点（POST /api/v2/practice/sessions/:id/notes 路径）处理，详见 13 文档 §3.4
+  - **mock 期间禁笔记（CLP-5 ↔ MockExam-Notes-Forbidden 后端兜底，S2 修订）**：
+    - POST body 接受可选 `session_id?: int` 字段
+    - service 内若 session_id 非空：load session，校验 `session.user_id == current_user_id`，若 `session.exam_mode=true ∧ session.status ∈ {DRAFT, IN_PROGRESS, PAUSED}` → 422 MOCK_NOTES_FORBIDDEN
+    - 即使前端不传 session_id，前端在模考 shell 内**必须**主动传 current session_id（约定见 [04-Frontend-WU §8.2 F15.4](./04-Frontend-WU.md#82-pr-拆分)），不传是 contract 违反
+    - 兜底（防 curl 绕过 UI）：service 额外 query "该用户是否有 IN_PROGRESS 的 mock-exam session 在 question_id 所属的套卷上"，命中也拒；该 query 走 `(user_id, exam_mode, status)` 索引（[02-Data-Model §4](./02-Data-Model.md#4-索引策略汇总)）
 - `modules/notes_v2/interface/question_routes.py`：4 个端点
-- `modules/notes_v2/interface/schemas.py`：QuestionNoteCreate / QuestionNoteUpdate / QuestionNoteEnvelope
-- `tests/modules/notes_v2/test_question_linked.py`：CRUD + 越权 + 越权伪装 404 + visibility=private 强制
+- `modules/notes_v2/interface/schemas.py`：QuestionNoteCreate（含可选 `session_id`）/ QuestionNoteUpdate / QuestionNoteEnvelope
+- `tests/modules/notes_v2/test_question_linked.py`：CRUD + 越权 + 越权伪装 404 + visibility=private 强制 + mock 期间 POST 拒（session_id 显式 / 兜底 query 各一组）
 
 ⚠️ 范围限制（A0 §2.3 修订）：仅落地 question-linked 笔记 CRUD；独立笔记 / 双向链接 / 全文搜索 / 标签 / 树状组织继续推到 [Phase/Notes](../Notes/README.md)。
 
-行数 ~200。
+行数 ~250（较初版 +50：加 mock 兜底校验 + 测试）。
 
 **估算**：850 行 / 4 PR
 **依赖**：B11.3（NoteV2 schema 升级）/ B12
@@ -985,9 +990,11 @@ DELETE /api/v2/practice/essay/sessions/:session_id/draft
 - `modules/session/application/hooks.py` 加入 `on_session_submit`：
   - 调 `practice_stats.snapshot_writer.incremental_update`
   - 调 `recommender` 实时刷新（继承 Phase-Home P5）
-  - **CLP-1**：若 session.type=essay，调 `essay_grading.submit_hook.on_session_submit_essay(submission_id)` 隐式触发批改（不抛错；失败仅 audit + metric）
-  - **CLP-6**：若 session.type=essay，调 `essay_grading.draft_service.archive_draft_on_submit(session_id)` 把草稿内容复制为最终 EssaySubmissionV2.essay_text
-- 测试：含 essay submit 的全链路（draft → archive → grading async）
+  - **CLP-6 必须先于 CLP-1**：若 session.type=essay，先调 `essay_grading.draft_service.archive_draft_on_submit(session_id)` 把草稿内容复制到 `EssaySubmissionV2.essay_text`
+  - **CLP-1**：然后才调 `essay_grading.submit_hook.on_session_submit_essay(submission_id)` 隐式触发批改（读 essay_text 时已就绪）；走 fail-fast 例外 [`essay-grading-trigger-hook`](../../../engineering/fail-fast-exceptions.md#essay-grading-trigger-hook)：触发失败仅 audit + metric，主流程不抛错
+- 测试：含 essay submit 的全链路（draft → archive → grading async）+ invariant `test_essay_text_non_empty_when_grading_starts.py`：post-archive 时 `EssaySubmissionV2.essay_text != ''` 是 grading 的前置条件
+
+⚠️ **顺序约束（invariant）**：archive_draft_on_submit 必须先完成才能调 on_session_submit_essay；grade 后台任务读 `EssaySubmissionV2.essay_text` 必非空，否则 audit + metric 失败。
 
 行数 ~170。
 
@@ -1054,13 +1061,13 @@ DELETE /api/v2/practice/essay/sessions/:session_id/draft
 | B11 | D-Q12 基础 / D-Q15 / D-Q5 / D-Q17 | Pace-Closed-Book / Note-Visibility | §2.2-§2.5 | §3 immutable test |
 | B12 | Q5-Fav / Q5-Flag / D-Q3 / D-Q13 / Q7 | Flag-Basic-vs-Persistent / Stat-* / Daily-* | §3.1-§3.7 | §3 unique test |
 | B13 | Essay-3 / D-Q4 / Essay-5 | Essay-Reference | §3.4-§3.5 | §3 trigger test |
-| B14 | Q2 / Stat-1 | - | §2.1 join | §6 e2e |
+| B14 | Q2 / Stat-1 / **CLP-7** | - | §2.1 / **§3.12 联动** | §6 e2e + **B14.4 detail aggregation** |
 | B15 | D-Q15 / D-Q12 / Cust-* / AI-G-3 | Pace-Closed-Book / Flag-* / PR-AI-G | §2.2-§2.3 / §6.1 | §6 e2e + invariant |
-| B16 | Q5-Fav / Q5-Flag / D-Q12 拓展 | Flag-Basic-vs-Persistent / Flag-Resolve | §3.2-§3.3 | §6 e2e |
+| B16 | Q5-Fav / Q5-Flag / D-Q12 拓展 / **CLP-5 / Note-* / D-Q5** | Flag-Basic-vs-Persistent / Flag-Resolve / **Note-Visibility** | §3.2-§3.3 / **§2.4 NoteV2** | §6 e2e + **B16.4 question-linked notes** |
 | B17 | Q6 / D-Q3 / D-Q11 | Stat-* | §3.1 / §6.2 | §6 e2e |
 | B18 | D-Q13 / AI-G-* | PR3 / PR4 / PR-AI-G | §3.6 | §10 invariant test |
 | B19 | Q7 / D-Q6 / Daily-* | - | §3.7 | §6 e2e |
-| B20 | Q4 / D-Q4 / D-Q16 / Essay-* | PR8 / Essay-Reference | §2.5 / §3.4-§3.5 | §6 e2e + async |
+| B20 | Q4 / D-Q4 / D-Q16 / Essay-* / **CLP-1 / CLP-6** | PR8 / Essay-Reference | §2.5 / §3.4-§3.5 | §6 e2e + async + **B20.5 essay drafts** |
 | B21 | D-Q14 | - | §2.1 | §6 sample data |
 | B22 | D-Q1 / D-Q9 / Essay-1 / Essay-3 | PR3 / Essay-Reference | - | §10 mock provider |
 | B23 | Stat-Schedule / Essay-5 / Daily-4 | - | - | §10 cron test |

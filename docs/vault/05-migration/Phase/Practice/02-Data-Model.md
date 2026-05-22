@@ -998,6 +998,31 @@ ALTER TABLE question_v2
   );
 ```
 
+### 5.8 QuestionReportV2 终态不可变 trigger
+
+```sql
+CREATE OR REPLACE FUNCTION protect_question_report_terminal_state_v2()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF OLD.status IN ('accepted', 'rejected', 'duplicated')
+     AND (
+       OLD.status IS DISTINCT FROM NEW.status
+       OR OLD.resolved_at IS DISTINCT FROM NEW.resolved_at
+       OR OLD.resolved_by_admin_id IS DISTINCT FROM NEW.resolved_by_admin_id
+     ) THEN
+    RAISE EXCEPTION 'Terminal QuestionReportV2 status is immutable (was %)', OLD.status;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER question_report_v2_terminal_protect
+BEFORE UPDATE ON question_report_v2
+FOR EACH ROW EXECUTE FUNCTION protect_question_report_terminal_state_v2();
+```
+
+SQLite（开发态）用 application 层校验代替（同 §5.1 模式）。
+
 ---
 
 ## 6. 前端需要消费的字段（OpenAPI / Pydantic Schema）

@@ -132,10 +132,12 @@
 - 轮询间隔：3s / 5s / 10s 指数退避，30s 后停止轮询提示用户"批改时间较长，刷新页面查看"
 - 失败时（status=failed）展示重试按钮
 
-**后端契约**：
-- `POST /api/v2/practice/essay/submissions/:id/grade` 是同步触发（启动后台任务），但**立即返回**
+**后端契约**（CLP-1 修订）：
+- 默认用户路径：`POST /sessions/:id/submit` → session.submit hook 内**隐式调** `essay_grading.submit_hook.on_session_submit_essay(submission_id)` 启动 background task → background task 写 EssayReportV2 → status 转 graded（详见 [03-Backend-WU §15.2 B23.4](./03-Backend-WU.md#152-pr-拆分)）
+- `POST /api/v2/practice/essay/submissions/:id/grade` 端点**不参与默认路径**，仅用于：(a) 上次批改 status=failed 的失败重试 (b) admin 重新批改 (c) reference 缺失时单独补生成
 - 同一 submission 重复触发：第二次起返回当前 status（不重复批改），除非 status=failed 才允许重试
 - 批改后台任务通过 LlmCallV2 完整记录（含成本、token 数）
+- **顺序约束**：B23.4 hook 内必须先 `archive_draft_on_submit` 再 `on_session_submit_essay`，否则 grade 启动时 EssaySubmissionV2.essay_text 为空（详见 03-Backend-WU §15.2 invariant 注）
 
 ### Essay-Reference 范文展示与反馈
 

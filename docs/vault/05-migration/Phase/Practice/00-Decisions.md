@@ -70,7 +70,7 @@
 | D-Q13 | AI 出题"池子优先 + 退化"逻辑 | **三段式**：① 池子里筛用户没做过的 → ② 不够则池子里筛已做过的 → ③ 仍不够则调 LLM 实时生成 |
 | D-Q14 | 真题数据导入 | 按 V2 重构现状制作 import 脚本；用户后续提供数据格式 |
 | D-Q15 | 整组模式中途看解析 | **严格闭卷**（前后端双校验） |
-| D-Q16 | 申论批改时机 | **B 异步后台批改**（提交立即返回 result 页 pending → cron 写 EssayReportV2 → banner 通知） |
+| D-Q16 | 申论批改时机 | **B 异步后台批改**（submit hook 触发 background task 写 EssayReportV2 → 前端轮询 grading-status；详见 §19 CLP-1） |
 | D-Q17 | 题级笔记可见性 | **仅自己可见** + Tab 4 笔记列表点击题级笔记可一键跳到对应题 |
 
 ---
@@ -236,7 +236,7 @@
 ### 11.2 不在范围内
 
 - 错题专项页 → [Phase/Review](../Review/README.md)
-- 笔记主 view + 双向链接 → [Phase/Notes](../Notes/README.md)（本 Phase 仅升级 NoteV2 schema）
+- 笔记主 view + 双向链接 / 全文搜索 / 标签 / 树状组织 → [Phase/Notes](../Notes/README.md)（本 Phase 升级 NoteV2 schema **+ 落地题级笔记最小 CRUD，见 §19 CLP-5**）
 - BindEmail/Phone/CompleteProfile → [Phase/Profile](../Profile/README.md)
 - Onboarding / DiagnosisResult → [Phase/Onboarding](../Onboarding/README.md)
 - 申论人工批改 → 远期
@@ -426,7 +426,7 @@ AI 出题不再让 `session.create(mode=ai_generated)` 内部调 LLM。固化两
 
 ```
 [前端等待页] POST /api/v2/practice/ai-questions/generate
-              ↓ (10-30s 同步等待，返回 question_ids + request_id)
+              ↓ (10-30s 同步等待，典型 10-15s；30s 超时上限沿用 D-Q8。返回 question_ids + request_id)
 [前端等待页] POST /api/v2/practice/sessions
               body: { mode: 'ai_generated',
                       config: { questionIds: [...], requestId: ... } }
@@ -455,18 +455,22 @@ AI 出题不再让 `session.create(mode=ai_generated)` 内部调 LLM。固化两
 async def create_mock_exam(*, paper_code, time_limit_minutes, delayed_review_minutes, user_id):
     # 1. 校验套卷 mock 资格（题数 >= 阈值 / 套卷 status 等）
     paper = await assert_paper_mock_eligible(paper_code)
-    # 2. 委托 session.create
+    # 2. 解析最终 time_limit；先 fallback 再校验最终值（m4 修订）
+    final_time_limit = time_limit_minutes or paper.recommended_time_minutes
+    if not (10 <= final_time_limit <= 360):
+        raise ServiceError(code='INVALID_TIME_LIMIT', http=422)
+    # 3. 委托 session.create
     session = await session_service.create(
         user_id=user_id,
         source_mode=SessionSourceMode.PAPER,
         practice_mode=PracticeMode.FULL_SET,
         paper_code=paper_code,
         exam_mode=True,
-        time_limit_minutes=time_limit_minutes or paper.recommended_time_minutes,
+        time_limit_minutes=final_time_limit,
         delayed_review_until=now + timedelta(minutes=delayed_review_minutes) if delayed_review_minutes else None,
         as_draft=True,        # 模考一律 DRAFT，等用户点"开始"才转 IN_PROGRESS
     )
-    # 3. DB CHECK 兜底（exam_mode 三联约束 + time_limit_range）
+    # 4. DB CHECK 兜底（exam_mode 三联约束 + time_limit_range）
     return session
 ```
 
