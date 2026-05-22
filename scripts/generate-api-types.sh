@@ -3,21 +3,9 @@ set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 
-ROOT_ENV="$ROOT" "$ROOT/scripts/dev-python.sh" - <<'PY'
-import json
-import os
-from pathlib import Path
-
-from sikao_api.main import create_app
-
-root = Path(os.environ["ROOT_ENV"])
-spec_path = root / "services" / "api" / "spec" / "openapi.json"
-spec = create_app().openapi()
-spec_path.write_text(
-    json.dumps(spec, ensure_ascii=False, indent=2) + "\n",
-    encoding="utf-8",
-)
-PY
+"$ROOT/scripts/dev-python.sh" \
+  "$ROOT/services/api/scripts/export_openapi.py" \
+  --out "$ROOT/services/api/spec/openapi.json"
 
 (
   cd "$ROOT"
