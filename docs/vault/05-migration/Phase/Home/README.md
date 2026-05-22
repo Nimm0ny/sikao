@@ -11,6 +11,7 @@
 > 本 Phase 的 00-10 文档基于 IA 决策稿编写，描述的是**目标态**。**A0** 记录代码现实与目标的 delta（4→5 tab 升级 / 模块路径修正 / `modules/llm` 已存在 / 缺失依赖清单 / 文件路径错误等）。子文档与 A0 §11 冲突时**以 A0 为准**。
 >
 > **2026-05-21 口径重定基线**：`M3 / SIK-34` 的后端 deliverables 已落到 `origin/main`。`SIK-34` 当前保留 `blocked`，仅反映旧 Home 前端 runtime 触发了既有 full typecheck gate；该阻塞不再卡住后端 `M4-M6`，只继续约束旧 Home 前端 `M7-M12 / F1-F8` 参考轨。
+> **2026-05-22 更新**：`M0.5 / SIK-31` 已解锁前端 full typecheck blocker。旧 Home 前端仍未自动重启；`M7-M12` 继续保持 paused reference track，直到新的前端重构计划显式接管。
 
 ---
 
@@ -140,7 +141,7 @@ WU-F1 ─→ WU-F2 ──┐                                                 leg
 WU 详细：
 - 后端：[03-Backend-WU](./03-Backend-WU.md)
 - 前端：[04-Frontend-WU](./04-Frontend-WU.md)
-- 当前执行主线：`M4 → M5 → M6` 后端链已完成收口；`SIK-37 / M6` 锁定了 backend Home 契约、OpenAPI 与 records canonical route。`M7-M12` 仍是 paused legacy frontend reference track，不因本轮 backend 完工而自动重启。
+- 当前执行主线：`M0.5 / SIK-31` 已移除 legacy frontend full typecheck blocker，`M4 → M5 → M6` 后端链也已完成收口；`SIK-37 / M6` 锁定了 backend Home 契约、OpenAPI 与 records canonical route。`M7-M12` 仍是 paused legacy frontend reference track，不因 blocker 解锁而自动重启。
 - `M7-M12` 保留为暂停中的 legacy Home 前端参考轨，待新的前端全量重构计划落档后再决定是否接管或替代。
 
 ---
@@ -149,7 +150,7 @@ WU 详细：
 
 ```
 M0   week 0          docs-only 收敛；A0 修订同步进 README + 00-10，并通过 review
-M0.5 week 0-1        独立任务解决旧 Home 前端 full typecheck blocker；未完成前不启动 legacy F1-F8 运行时代码
+M0.5 week 0-1        独立任务解决旧 Home 前端 full typecheck blocker（2026-05-22 已完成）；legacy F1-F8 仍需显式重启计划后才启动
 M1   week 1          WU-B1 完工：DB schema 全部就位
 M2   week 2-3        WU-B2 + WU-B3 + WU-B6：核心 CRUD 端点
 M3   week 4-5        WU-B4 + WU-B5：进度 + planning 真实化（后端 deliverables 已于 2026-05-21 落地主干）
