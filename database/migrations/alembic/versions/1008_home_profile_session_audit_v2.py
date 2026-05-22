@@ -106,15 +106,19 @@ def upgrade() -> None:
     with op.batch_alter_table("practice_sessions_v2") as batch_op:
         batch_op.add_column(sa.Column("linked_plan_event_id", sa.Integer(), nullable=True))
         batch_op.add_column(sa.Column("linked_recommendation_id", sa.Integer(), nullable=True))
+        # FK names trimmed to fit PostgreSQL 63-char identifier limit.
+        # The "<col>_<ref_table>" tail is redundant with the table+column
+        # already in the prefix, and the longer "_recommendation_v2" form
+        # overflowed at 67 chars and crashed `alembic upgrade head` on PG.
         batch_op.create_foreign_key(
-            "fk_practice_sessions_v2_linked_plan_event_id_plan_event_v2",
+            "fk_practice_sessions_v2_linked_plan_event",
             "plan_event_v2",
             ["linked_plan_event_id"],
             ["id"],
             ondelete="SET NULL",
         )
         batch_op.create_foreign_key(
-            "fk_practice_sessions_v2_linked_recommendation_id_recommendation_v2",
+            "fk_practice_sessions_v2_linked_recommendation",
             "recommendation_v2",
             ["linked_recommendation_id"],
             ["id"],
@@ -156,8 +160,8 @@ def downgrade() -> None:
     with op.batch_alter_table("practice_sessions_v2") as batch_op:
         batch_op.drop_index("ix_practice_sessions_v2_linked_recommendation")
         batch_op.drop_index("ix_practice_sessions_v2_linked_plan_event")
-        batch_op.drop_constraint("fk_practice_sessions_v2_linked_recommendation_id_recommendation_v2", type_="foreignkey")
-        batch_op.drop_constraint("fk_practice_sessions_v2_linked_plan_event_id_plan_event_v2", type_="foreignkey")
+        batch_op.drop_constraint("fk_practice_sessions_v2_linked_recommendation", type_="foreignkey")
+        batch_op.drop_constraint("fk_practice_sessions_v2_linked_plan_event", type_="foreignkey")
         batch_op.drop_column("linked_recommendation_id")
         batch_op.drop_column("linked_plan_event_id")
 
