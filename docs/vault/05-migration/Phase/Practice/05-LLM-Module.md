@@ -8,43 +8,74 @@
 
 ---
 
-## 1. 与 Phase-Home LLM 框架的关系
+## 1. 与 Phase-Home LLM 框架的现状（Reality Check）
 
-Phase-Home WU-B7 完工后，`modules/llm/` 已含：
+> **2026-05-22 RR-2 校准**：原 §1 列出的多个 "已建" 文件 (`service.py / provider_registry.py / plan_generator.py / plan_adjustor.py / recommender.py / recommender_policy.py / cache.py / cost_tracker.py / sanitizer.py / parsers/*` 等) 在 main 分支实际**不存在**。本节按当前 repo 实测结果重写。Phase-Home WU-B7 仍是 LLM 模块的目标态，但目标态文件清单与本节"现存"列表的差集就是 WU-B7 待落地工作。
 
-```
-modules/llm/
-  application/
-    service.py                    # facade 入口
-    provider_registry.py          # provider 注册
-    plan_generator.py             # 已建（首页 AI 制定计划）
-    plan_adjustor.py              # 已建（首页 AI 调整提案）
-    recommender.py                # 已建（首页 AI 推荐）
-    recommender_policy.py         # 已建（阈值表）
-    cache.py                      # 已建（LRU + DB 二级缓存）
-    cost_tracker.py               # 已建（token 计数 + 成本聚合）
-    sanitizer.py                  # 已建（输入清洗）
-    parsers/
-      base.py                     # 已建（ParserBase + 校验）
-      plan_output_parser.py       # 已建
-      adjustment_parser.py        # 已建
-      recommendation_parser.py    # 已建
-    prompts/
-      plan_generate.py            # 已建
-      plan_regenerate_range.py    # 已建
-      plan_adjust.py              # 已建
-      recommend_today.py          # 已建
-      _shared.py                  # 已建（公用 SAFETY_FOOTER / POLICY_HEADER 等）
-  domain/
-    types.py                      # ChatMessage / LlmResponse / LlmRequest
-    errors.py                     # LlmServiceError / LlmParseError 等
-    quotas.py                     # 配额策略
-  infrastructure/
-    openai_compatible_provider.py # 统一基类
-    deepseek_provider.py
-    dashscope_provider.py
-    mock_provider.py
-```
+### 1.1 当前 modules/llm/ 实际文件清单（grep verified 2026-05-22）
+
+> 路径相对 `services/api/src/sikao_api/modules/llm/`。来源命令：`find services/api/src/sikao_api/modules/llm -name "*.py" | sort`（24 行）。
+
+| 路径 | 状态 | 备注 |
+|---|---|---|
+| `__init__.py` | exists | 顶层包 marker |
+| `application/__init__.py` | exists | empty package marker |
+| `application/usage.py` | exists | 用户层 usage 入口 |
+| `application/user_configs.py` | exists | BYOM 用户配置 |
+| `application/llm/__init__.py` | exists | sub-namespace 入口 |
+| `application/llm/_stub.py` | exists | stub provider (测试 / dev) |
+| `application/llm/byom_config.py` | exists | BYOM provider 配置 |
+| `application/llm/conversations.py` | exists | 对话历史管理 |
+| `application/llm/json_parser.py` | exists | LLM JSON output 解析 |
+| `application/llm/openai_compatible.py` | exists | OpenAI 兼容 provider 基类 |
+| `application/llm/pricing.py` | exists | 模型价格表 |
+| `application/llm/provider.py` | exists | provider 抽象 |
+| `application/llm/ssrf_guard.py` | exists | SSRF 防护 (BYOM 安全) |
+| `application/llm/usage_estimator.py` | exists | token 估算 |
+| `application/llm/usage_recorder.py` | exists | usage 写库 |
+| `application/llm/prompts/__init__.py` | exists | prompts 子包 |
+| `application/llm/prompts/_shared.py` | exists | 公用 prompt 片段 (SAFETY_FOOTER 等) |
+| `application/llm/prompts/essay_grading.py` | exists | 申论批改 prompt |
+| `application/llm/prompts/qa.py` | exists | QA prompt |
+| `interface/__init__.py` | exists | empty package marker |
+| `interface/conversations.py` | exists | 对话 endpoints |
+| `interface/routes.py` | exists | LLM 模块 routes（**未在 main.py 注册**） |
+| `domain/__init__.py` | placeholder_only | 仅 empty package marker（无 types.py / errors.py / quotas.py） |
+| `infrastructure/__init__.py` | placeholder_only | 仅 empty package marker（无 *_provider.py） |
+
+### 1.2 原 §1 列出但实际**不存在**的文件（待 WU-B7 / Tab 2 WU-B22 落地）
+
+| 路径 | 状态 | 来源决策 |
+|---|---|---|
+| `application/service.py` | not_exists | (Phase-Home WU-B7 facade 入口) |
+| `application/provider_registry.py` | not_exists | (Phase-Home WU-B7) |
+| `application/plan_generator.py` | not_exists | (Phase-Home WU-B7 — 首页 AI 制定计划) |
+| `application/plan_adjustor.py` | not_exists | (Phase-Home WU-B7 — 首页 AI 调整) |
+| `application/recommender.py` | not_exists | (Phase-Home WU-B7 — 首页 AI 推荐) |
+| `application/recommender_policy.py` | not_exists | (Phase-Home WU-B7 — 阈值表) |
+| `application/cache.py` | not_exists | (Phase-Home WU-B7 — LRU + DB 二级缓存) |
+| `application/cost_tracker.py` | not_exists | (Phase-Home WU-B7 — token 计数) |
+| `application/sanitizer.py` | not_exists | (Phase-Home WU-B7 — 输入清洗) |
+| `application/parsers/` (整个目录) | not_exists | (Phase-Home WU-B7 — base / plan_output / adjustment / recommendation parsers) |
+| `application/prompts/plan_generate.py` | not_exists | (Phase-Home WU-B7) |
+| `application/prompts/plan_regenerate_range.py` | not_exists | (Phase-Home WU-B7) |
+| `application/prompts/plan_adjust.py` | not_exists | (Phase-Home WU-B7) |
+| `application/prompts/recommend_today.py` | not_exists | (Phase-Home WU-B7) |
+| `domain/types.py` | not_exists | (Phase-Home WU-B7 — ChatMessage / LlmResponse / LlmRequest) |
+| `domain/errors.py` | not_exists | (Phase-Home WU-B7 — LlmServiceError 等) |
+| `domain/quotas.py` | not_exists | (Phase-Home WU-B7 — 配额策略) |
+| `infrastructure/openai_compatible_provider.py` | not_exists | (Phase-Home WU-B7) |
+| `infrastructure/deepseek_provider.py` | not_exists | (Phase-Home WU-B7) |
+| `infrastructure/dashscope_provider.py` | not_exists | (Phase-Home WU-B7) |
+| `infrastructure/mock_provider.py` | not_exists | (Phase-Home WU-B7 — 测试用) |
+
+> ⚠️ 实际架构与原 §1 的扁平结构不同：当前实现把 LLM 核心放在 `application/llm/` sub-namespace（`provider.py / openai_compatible.py / _stub.py` 等），而非 `infrastructure/*_provider.py`。WU-B7 是否保留这种 sub-namespace 还是迁到 `infrastructure/` 需在 WU-B7 实施前由 lhr 拍板。本 RR-2 仅记录现状不引入决策。
+
+### 1.3 Tab 2 (本 Phase) 追加位置
+
+**目标态**：在 `application/llm/prompts/` 下追加 4 个 prompt（`question_generate.py / question_self_audit.py / essay_grade.py / reference_answer.py`）+ 在 `application/llm/` 下追加 3 个能力 (`question_generator.py / essay_grader.py / reference_answer_generator.py`)。
+
+**注意**：`prompts/` 目录已存在并含 `_shared.py / essay_grading.py / qa.py`。Tab 2 是**追加文件**，不是新建目录。
 
 **Tab 2 追加 3 个能力**：
 - `question_generator.py` + 自审（B22.1）
@@ -55,9 +86,11 @@ modules/llm/
 - 配置层（LlmSettings）
 - Provider 抽象与具体实现
 - 重试与失败兜底（_with_retry）
-- cost_tracker / sanitizer / cache
-- _shared.py 中公用片段（SAFETY_FOOTER 等）
+- cost_tracker / sanitizer / cache（按 §1.2，这些目标态文件待 WU-B7 落地后才"完全复用"成立；Tab 2 当前阶段不在 main 上依赖它们）
+- `_shared.py` 中公用片段（SAFETY_FOOTER 等）
 - LlmCallV2 审计写入
+
+具体能力清单见 §2。
 
 ---
 
