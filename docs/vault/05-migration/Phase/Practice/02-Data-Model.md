@@ -750,6 +750,84 @@ class QuestionKnowledgePointV2(Base):
 
 ---
 
+### 3.12 QuestionReportV2（真题纠错入口）
+
+详见 [03-Backend-WU §0 WU-B30](./03-Backend-WU.md#0-wu-总览) 与 [00-Decisions §19 CLP-8](./00-Decisions.md#clp-8-questionreportv2-schema-补全02-data-model-312)。
+
+```python
+class QuestionReportV2(Base):
+    __tablename__ = "question_report_v2"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user_v2.id", ondelete="CASCADE"), index=True
+    )
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("question_v2.id"), index=True
+    )
+
+    # 报告内容
+    category: Mapped[ReportCategory]
+    # 错题种类：wrong_answer / wrong_explanation / wrong_options /
+    #          stem_typo / option_typo / category_misclassified / other
+    description: Mapped[str] = mapped_column(Text)
+    # 用户描述（必填，<= 1000 char）
+    suggested_correction: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # 用户提议的修正（可选）
+
+    # 状态机
+    status: Mapped[ReportStatus] = mapped_column(default=ReportStatus.PENDING)
+    # pending / triaged / accepted / rejected / duplicated
+    resolved_by_admin_id: Mapped[int | None] = mapped_column(
+        ForeignKey("user_v2.id"), nullable=True
+    )
+    resolved_at: Mapped[datetime | None]
+    resolution_note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    # admin 处理时填的内部备注
+
+    # 关联（如 admin 处理结果引发题目修订）
+    linked_question_revision_id: Mapped[int | None]
+    # 预留扩展位；当前 schema 不强制 FK，避免引入 question_revision_v2 依赖
+
+    created_at: Mapped[datetime] = mapped_column(default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        Index("ix_question_report_status_created", "status", "created_at"),
+        # 同一用户对同一题只能有一条 pending 报告（防滥提）
+        Index(
+            "uq_report_pending_per_user_question",
+            "user_id", "question_id",
+            unique=True,
+            postgresql_where=text("status = 'pending'"),
+        ),
+    )
+
+class ReportCategory(StrEnum):
+    WRONG_ANSWER = "wrong_answer"             # 答案错
+    WRONG_EXPLANATION = "wrong_explanation"   # 解析错
+    WRONG_OPTIONS = "wrong_options"           # 选项设置错
+    STEM_TYPO = "stem_typo"                   # 题面 typo
+    OPTION_TYPO = "option_typo"               # 选项 typo
+    CATEGORY_MISCLASSIFIED = "category_misclassified"  # 分类错
+    OTHER = "other"
+
+class ReportStatus(StrEnum):
+    PENDING = "pending"        # 待 admin 处理
+    TRIAGED = "triaged"        # admin 已分流（暂存）
+    ACCEPTED = "accepted"      # 接受 → 已修题（终态）
+    REJECTED = "rejected"      # 拒绝（终态）
+    DUPLICATED = "duplicated"  # 重复报告（合并到另一条，终态）
+```
+
+⚠️ **使用约束**：
+- 用户提交（POST /api/v2/practice/questions/:id/report）：仅写 status=pending；同用户对同题已有 pending → 409 REPORT_DUPLICATE_PENDING。
+- admin 处理（POST /admin/question-reports/:id/resolve）：转 status ∈ {accepted, rejected, duplicated, triaged} + 写 resolved_at + resolved_by_admin_id。
+- 终态（accepted / rejected / duplicated）不可再变（DB trigger 拦截）。
+- accepted 时如引发题目修订（如修 answer），由 admin 在另一交互中显式更新 question_v2，本表不直接级联。
+
+---
+
 ## 4. 索引策略汇总
 
 | 表 | 索引 | 用途 |
@@ -773,6 +851,8 @@ class QuestionKnowledgePointV2(Base):
 | QuestionTimingBaselineV2 | last_recomputed_at | cron 增量重算 |
 | KnowledgePointV2 | code UNIQUE; (category_l1, category_l2) | Phase 2 查询树 |
 | QuestionKnowledgePointV2 | UNIQUE(question_id, knowledge_point_id) | Phase 2 关联唯一 |
+| QuestionReportV2 | (status, created_at) | admin 队列查询 |
+| QuestionReportV2 | UNIQUE(user_id, question_id) WHERE status='pending' | 防同用户同题重复 pending 报告 |
 
 ---
 
@@ -1226,6 +1306,9 @@ revision_id                   | depends_on              | 描述
 20260521_xx_ai_request        | <prev>                  | AiGeneratedQuestionRequestV2
 20260521_xx_daily             | <prev>                  | DailyPracticeV2
 20260521_xx_user_pref         | <prev>                  | UserPracticePreferencesV2
+20260521_xx_question_report   | <prev>                  | QuestionReportV2 + 终态不可变 trigger
+                              |                         | + (status, created_at) 索引
+                              |                         | + UNIQUE(user_id, question_id) WHERE status='pending'
 ```
 
 每个 migration 必须支持 `alembic downgrade -1`（CI 必跑往返）。

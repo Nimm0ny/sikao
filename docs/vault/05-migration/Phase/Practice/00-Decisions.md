@@ -390,3 +390,239 @@
 | QMeta-12 | 知识点树初始化 | Phase 2 由 admin 录入（200-500 节点）+ LLM 辅助归类历史题目 |
 | QMeta-13 | LLM 标注成本预估 | 10k 题成本约 $30-50（DeepSeek 价格）；Phase 2 单独审批 |
 | QMeta-14 | 与 Phase-Review 的协同 | Phase-Review 错因聚类 Phase 1 仍用 category；Phase 2 升级到 knowledge_point 维度 |
+
+
+
+---
+
+## 19. 闭环修订决策（CLP 系列）
+
+> **添加日期**：2026-05-22
+> **背景**：在对 18 篇 Phase 文档做整体闭环检查时发现 4 个会卡住实施的硬缺口 + 4 个跨文档含糊点，需把"目标态"补齐成端到端可执行。
+> **覆盖范围**：API 入口契约 / 模块边界 / schema 补全。本节是上述缺口的 SSOT；与 §1-§18 既有决策不冲突，仅"补全"。
+
+### CLP-1 申论批改触发入口固化（隐式 hook + 显式 /grade 仅作重试）
+
+**决策**：
+
+- **默认路径（用户感知不到）**：`session.submit` 内的 hook（[03-Backend-WU §15.2 B23.4](./03-Backend-WU.md#152-pr-拆分)）在 session.type=essay 且未触发过批改时**隐式调** `trigger_essay_grading_async(submission_id)`。
+- `POST /api/v2/practice/essay/submissions/:id/grade` 端点**不参与**默认路径，仅用于：
+  1. 上次批改 status=failed 的失败重试
+  2. admin 强制重新批改
+  3. EssayReportV2 已写入但 reference 范文缺失时的补生成
+- 同一 submission_id 的并发 grade 调用走 IdempotencyKeyV2（继承 Phase-Home AI-8）+ EssaySubmissionV2.status 状态机：仅当 status ∈ {pending_grading, failed} 才允许触发，graded 直接 200 返回现有结果。
+- session.submit 内的 hook **不抛错**：批改触发失败仅写 audit + metric，不影响 session.submit 主流程。
+
+**影响章节**：
+- [01-Boundary-Rules §4 PR8](./01-Boundary-Rules.md) 修订为"立即创建 EssaySubmissionV2(status=pending_grading) → submit hook 触发后台 grade → 写 EssayReportV2 → 更新 status=graded/failed"。
+- [03-Backend-WU §12.1](./03-Backend-WU.md#12-wu-b20-essay_grading-模块扩展) 端点说明加注"用户路径不调用此端点；UI 提交后跳 result 页 polling /grading-status 即可"。
+- [A0-Codebase-Reality-Check §5.2](./A0-Codebase-Reality-Check.md#52-sessionsubmit-当前不写-essayreport) 描述与本决策一致。
+
+### CLP-2 AI 出题等待页与 session.create 的流程契约
+
+**决策**：
+
+AI 出题不再让 `session.create(mode=ai_generated)` 内部调 LLM。固化两步流程：
+
+```
+[前端等待页] POST /api/v2/practice/ai-questions/generate
+              ↓ (10-30s 同步等待，返回 question_ids + request_id)
+[前端等待页] POST /api/v2/practice/sessions
+              body: { mode: 'ai_generated',
+                      config: { questionIds: [...], requestId: ... } }
+              ↓ (毫秒级返回 session_id)
+[前端]       navigate(/practice/sessions/:id)
+```
+
+- `session.create(mode=ai_generated)` 的 ai_picker（[03-Backend-WU §7.2 B15.4](./03-Backend-WU.md#72-pr-拆分)）**不**调 ai_questions 模块的 generator service；改为：
+  - 校验 `config.questionIds` 全部存在于 `AiGeneratedQuestionRequestV2[id=requestId].pool_question_ids ∪ llm_generated_question_ids`，否则 422 INVALID_QUESTION_REFERENCE
+  - 校验所有 question_id 满足 `source ∈ (ai_generated, ai_modified) ∧ is_active=true`
+  - 创建 session 并把 `requestId` 写入 `config_snapshot.ai_request_id` 用于审计反查
+- 等待页失败时（503 / 429 / 超时）**不**调 session.create；直接展示重试 / 切真题选项（继承 [00-Decisions §4 AI-G-7](#4-ai-出题ai-g-系列)）。
+- `useGenerateAiQuestions` 与 `useCreateSession` 在前端是两次独立 mutation；**前者**走 IdempotencyKeyV2（继承 AI-G-9），**后者**不走（session.create 本身天然幂等：同一 requestId + question_ids 重复调用返回不同 session_id 由用户负责，前端在等待页跳转后立即 unmount）。
+
+**影响章节**：
+- [03-Backend-WU §7.2 B15.4](./03-Backend-WU.md#72-pr-拆分) 修订 ai_picker 描述。
+- [04-Frontend-WU §7.2 F14.4](./04-Frontend-WU.md#72-pr-拆分) 与 [§8.2 F15.1](./04-Frontend-WU.md#82-pr-拆分) 流程契约对齐：等待页内主流程 = generate → createSession → navigate。
+
+### CLP-3 mock-exam 端点 = session.create 包装糖
+
+**决策**：
+
+`POST /api/v2/practice/mock-exams`（[13-Mock-Exam §3.1](./13-Mock-Exam.md#3-端点)）实现层 = `session.create` 的语法糖，**不**新建独立 service：
+
+```python
+async def create_mock_exam(*, paper_code, time_limit_minutes, delayed_review_minutes, user_id):
+    # 1. 校验套卷 mock 资格（题数 >= 阈值 / 套卷 status 等）
+    paper = await assert_paper_mock_eligible(paper_code)
+    # 2. 委托 session.create
+    session = await session_service.create(
+        user_id=user_id,
+        source_mode=SessionSourceMode.PAPER,
+        practice_mode=PracticeMode.FULL_SET,
+        paper_code=paper_code,
+        exam_mode=True,
+        time_limit_minutes=time_limit_minutes or paper.recommended_time_minutes,
+        delayed_review_until=now + timedelta(minutes=delayed_review_minutes) if delayed_review_minutes else None,
+        as_draft=True,        # 模考一律 DRAFT，等用户点"开始"才转 IN_PROGRESS
+    )
+    # 3. DB CHECK 兜底（exam_mode 三联约束 + time_limit_range）
+    return session
+```
+
+- mock-exam 端点的额外职责：套卷资格校验（PAPER_NOT_MOCK_ELIGIBLE）、时间范围校验（INVALID_TIME_LIMIT）、写 audit `mock_exam.created`。
+- `session.create` 仍然可以直接被调用创建普通 session（exam_mode=false），两条路径共享同一 service。
+- DB CHECK 约束（[02-Data-Model §5.4](./02-Data-Model.md#54-mock_exam-db-check-约束)）保证任何路径都无法绕过 exam_mode 三联约束。
+
+**影响章节**：
+- [13-Mock-Exam §3.1](./13-Mock-Exam.md#3-端点) 注明"内部 = session.create wrapper"。
+- [03-Backend-WU §1.1](./03-Backend-WU.md#11-路由分组) 路由注册顺序：mock-exam router 在 session router 之后注册。
+
+### CLP-4 DRAFT 触发链显式化（as_draft 参数）
+
+**决策**：
+
+`session.create` 接受可选参数 `as_draft: bool = False`（[12-Session-Lifecycle §6.1](./12-Session-Lifecycle.md#6-草稿draft)）。各调用方约定：
+
+| 调用方 | as_draft | 进入 IN_PROGRESS 的触发 |
+|---|---|---|
+| 自定义刷题对话框（mode=custom） | **false** | 直接进 IN_PROGRESS（前端不需要 DRAFT） |
+| Section A/B/C 列表入口（mode=paper / category） | **false** | 同上 |
+| AI 出题等待页（mode=ai_generated）| **false** | 同上（按 CLP-2，等待页只跳一次） |
+| 每日一练（mode=daily） | **false** | 同上 |
+| 错题重做（mode=wrong_redo） | **false** | 同上 |
+| **mock-exam 端点** | **true（强制）** | 用户点 `POST /sessions/:id/start`（[12-Session-Lifecycle §4.1](./12-Session-Lifecycle.md#41-用户主动操作)）启动倒计时 |
+
+DRAFT 状态的实际生产用途**仅限模考**。其他路径不应使用 DRAFT；如出现 DRAFT 不消费视为 bug（cron 在 2h 后清理为 ABANDONED 兜底）。
+
+**影响章节**：
+- [12-Session-Lifecycle §6.1](./12-Session-Lifecycle.md#6-草稿draft) 与 [§9.1](./12-Session-Lifecycle.md#9-与其他模块的集成) 明确 as_draft 默认值与各 mode 的取值约定。
+- [03-Backend-WU §7](./03-Backend-WU.md#7-wu-b15-session-模块扩展多-mode--答题中操作) WU-B15 的 session.create body schema 加 `as_draft?: bool = false` 字段。
+
+### CLP-5 题级笔记后端 CRUD 进入本 Phase 范围
+
+**决策**：
+
+新增 **WU-B16.4 题级笔记最小 CRUD**（[03-Backend-WU §8](./03-Backend-WU.md#8-wu-b16-favorites--question_flags-模块) 增 PR）：
+
+```
+POST   /api/v2/practice/notes
+  body: { question_id: int, body: string, title?: string }
+  → 201 NoteV2 envelope
+  约束：linked_question_id 必须非空（与 Tab 4 主 view 模块的"独立笔记"区分）
+
+GET    /api/v2/practice/questions/:question_id/notes
+  → 200 { notes: NoteV2[] }
+  仅返回 user_id == current 的笔记
+
+PATCH  /api/v2/practice/notes/:id
+  body: { body?, title? }
+
+DELETE /api/v2/practice/notes/:id
+  → 204
+  软删除（写 deleted_at）
+```
+
+- 仅在 `modules/notes_v2/` 内追加题级 CRUD（A0 §2.3 修订：原"Phase-Home 暂时不动"改为"题级 CRUD 由本 Phase B16.4 提前落地，主 view 留 Phase/Notes"）。
+- 不实现：标签 / 双向链接 / 全文搜索 / 树状组织 / 跨用户分享（这些 → Phase/Notes）。
+- 约束：mock 模式下 POST 返回 422 MOCK_NOTES_FORBIDDEN（[13-Mock-Exam §3.4](./13-Mock-Exam.md#34-模考期间禁止的操作)）。
+
+**影响章节**：
+- [A0-Codebase-Reality-Check §2.3](./A0-Codebase-Reality-Check.md#23-现有-modules-现状) 修订。
+- [03-Backend-WU §0 总览](./03-Backend-WU.md#0-wu-总览) WU-B16 行数从 650 调整到 850（增 200）。
+- [03-Backend-WU §17 引用矩阵](./03-Backend-WU.md#17-引用矩阵) B16 行加 Note-* / D-Q5。
+- [04-Frontend-WU §2.1](./04-Frontend-WU.md#21-文件清单) F9 文件清单加 `notesQueries.ts`（最小集，仅 question-linked CRUD）。
+
+### CLP-6 申论草稿 EssayDraft CRUD 进入本 Phase 范围
+
+**决策**：
+
+新增 **WU-B20.5 essay_draft CRUD**（[03-Backend-WU §12](./03-Backend-WU.md#12-wu-b20-essay_grading-模块扩展) 增 PR）：
+
+```
+PUT  /api/v2/practice/essay/sessions/:session_id/draft
+  body: { content: string, client_modified_at?: ISO }
+  → 200 { saved_at, version }
+  策略：last-writer-wins（v1 不引入 ETag）
+  幂等：同 content 重复 PUT 仅更新 updated_at（不计入 audit）
+
+GET  /api/v2/practice/essay/sessions/:session_id/draft
+  → 200 { content, saved_at, version } | 404 ESSAY_DRAFT_NOT_FOUND
+
+DELETE /api/v2/practice/essay/sessions/:session_id/draft
+  → 204
+  仅 admin 调用；用户不需要显式删除（提交后服务端自动归档）
+```
+
+- 写入路径：用户在申论答题界面 30s 间隔自动 PUT；session.submit 时把最终 draft.content 复制到 EssaySubmissionV2.essay_text 并归档 draft（status=submitted）。
+- A0 §2.5 中"EssayDraftV2 已建表，未在路由中使用"问题随本 PR 闭合。
+- 限流：每用户每 session 4 req/min（30s 间隔留余量）。
+- 不走 IdempotencyKeyV2（因为按内容覆盖，自然幂等）。
+
+**影响章节**：
+- [A0-Codebase-Reality-Check §2.5](./A0-Codebase-Reality-Check.md#25-申论-v2-现状关键) EssayDraftV2 行从"未使用"改为"WU-B20.5 启用"。
+- [03-Backend-WU §0 总览](./03-Backend-WU.md#0-wu-总览) WU-B20 行数从 1,300 调整到 1,500（增 200）。
+- [04-Frontend-WU §2.1](./04-Frontend-WU.md#21-文件清单) F9 文件清单加 `essayDraftsQueries.ts`。
+- [04-Frontend-WU §9.2 F16.1](./04-Frontend-WU.md#92-pr-拆分) EssayInput 自动保存的端点指向 `PUT /essay/sessions/:id/draft`。
+
+### CLP-7 题目详情聚合端点进入本 Phase 范围
+
+**决策**：
+
+新增 **WU-B14.4 题目详情聚合端点**（[03-Backend-WU §6](./03-Backend-WU.md#6-wu-b14-content-模块扩展) 增 PR）：
+
+```
+GET  /api/v2/practice/questions/:question_id
+  → 200 {
+       question: QuestionEnvelopeV2,
+       user_notes: NoteV2[],            // 该用户在该题上的笔记
+       user_history: AnswerHistoryItem[],  // 该用户答此题的历史（最近 5 次）
+       favorite: { is_favorited, favorited_at, note? } | null,
+       persistent_flag: { reason, created_at } | null,
+       reference_answers?: EssayReferenceAnswerEnvelopeV2[],  // 仅 type=essay 时
+     }
+  → 410 QUESTION_INACTIVE  // is_active=false 不让看
+  → 404 NOT_FOUND          // 题不存在 / 越权（同样 404，不泄漏存在性）
+```
+
+- 用途：
+  1. Tab 4 笔记列表点击题级笔记 → 跳 `/practice/questions/:id`（[00-Decisions §9 Note-4](#9-题级笔记联动note-系列)）
+  2. 复盘 / 收藏夹 / 标记列表里"查看题目"的统一入口
+- 不进 session、不增加 answer_count；仅是只读聚合。
+- AGENTS-H7 Fail-Fast：聚合内任一子查询失败即整体 500（不静默吞错）。
+
+**影响章节**：
+- [00-Decisions §11.1](#111-在范围内) 路由列表已含 `/practice/questions/:id`，本 CLP 把它的后端契约补齐。
+- [03-Backend-WU §0 总览](./03-Backend-WU.md#0-wu-总览) WU-B14 行数从 800 调整到 1,000（增 200）。
+- [04-Frontend-WU §2.1](./04-Frontend-WU.md#21-文件清单) F9 已含 `questionDetailQueries.ts`，对应消费此端点。
+
+### CLP-8 QuestionReportV2 schema 补全（[02-Data-Model §3.12](./02-Data-Model.md)）
+
+**决策**：
+
+[03-Backend-WU §0 总览](./03-Backend-WU.md#0-wu-总览) WU-B30 与 [§17 引用矩阵](./03-Backend-WU.md#17-引用矩阵) 引用了 `02-Data-Model §3.12 QuestionReportV2`，但该章节缺失。
+
+本 CLP 同步补齐 02-Data-Model §3.12（详见该文件本次提交内容），字段集与 [03-Backend-WU §1.3](./03-Backend-WU.md#13-错误码) `REPORT_DUPLICATE_PENDING` 等错误码对齐。
+
+**影响章节**：
+- [02-Data-Model §3.12](./02-Data-Model.md) 新增。
+- [02-Data-Model §4](./02-Data-Model.md#4-索引策略汇总) 索引表加 `QuestionReportV2 (status, created_at)` 与 `UNIQUE WHERE status='pending'`。
+
+### CLP-9 mode=wrong_redo 入口边界明示
+
+**决策**：
+
+- 数据层（[03-Backend-WU §7.2 B15.3](./03-Backend-WU.md#72-pr-拆分) wrong_redo_picker / [02-Data-Model §2.5](./02-Data-Model.md#25-reviewitemv2扩展-reason-枚举) ReviewReason 枚举扩展）在本 Phase 完工时**已就绪**。
+- 用户**入口** UI（错题专项页 / "去重做"按钮）**不在本 Phase 范围**，由 [Phase/Review](../Review/README.md) 接入。
+- 在本 Phase 完工时，`session.create(mode=wrong_redo)` 端点对外开放且 contract test 全绿；但 **没有前端入口能触达此 mode**——这是预期行为，不视为 bug。
+
+**影响章节**：
+- [README §11 后续工作](./README.md#11-后续工作不在本-phase) 加注"`mode=wrong_redo` 数据层 Phase 1 就绪，UI 入口由 Phase/Review 接入"。
+
+### CLP-10 决策变更日志（仅本批）
+
+| 日期 | 决策 | 替换 / 增量 |
+|---|---|---|
+| 2026-05-22 | CLP-1 ~ CLP-9 | 闭环检查后批量补齐；不撤销既有决策 |
+| 2026-05-22 | A0 §2.3 / §2.5 | "题级笔记 / 申论草稿不动" → 本 Phase B16.4 / B20.5 提前落地 |
+| 2026-05-22 | WU-B14 / B16 / B20 行数估算 | +200 / +200 / +200（共 +600 行；不影响 12-15 周整体里程碑） |
