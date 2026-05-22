@@ -637,6 +637,12 @@ class NoteV2(Base):
     __tablename__ = "notes_v2"
     __table_args__ = (
         Index("ix_notes_v2_user_updated", "user_id", "updated_at"),
+        # Phase-Practice WU-B11.3 (Tab 4 schema 提前升级): the question-level
+        # note write path lives in Tab 2 (D-Q5 / D-Q17), so we add the link
+        # column ahead of the full Tab 4 / Phase-Notes rewrite. Composite
+        # (user_id, linked_question_id) is the hot lookup shape for "show
+        # me my notes on this question" inside the answering view.
+        Index("ix_notes_v2_user_question", "user_id", "linked_question_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -647,6 +653,20 @@ class NoteV2(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+    # Phase-Practice WU-B11.3 — Tab 4 schema brought forward.
+    # linked_question_id: when set, this note is attached to a specific
+    #   question (Tab 2 D-Q5 question-level notes). NULL for free-form notes.
+    #   ondelete=SET NULL preserves the user's note even if the source
+    #   question is hard-deleted (the body still has value as memory aid).
+    # visibility: D-Q17 future-proofing. Tab 2 only writes 'private'; the
+    #   Phase-Notes community feature later adds 'public' / 'shared_group'.
+    linked_question_id: Mapped[int | None] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="SET NULL"), nullable=True
+    )
+    visibility: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="private", server_default="private"
     )
 
 
