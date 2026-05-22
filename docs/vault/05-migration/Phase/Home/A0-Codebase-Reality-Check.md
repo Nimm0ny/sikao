@@ -15,6 +15,26 @@
 
 ---
 
+## 0.1 2026-05-22 Restart Baseline Addendum
+
+Home 前端 runtime 轨已被显式重启，但当前只重启 `M7 / SIK-38` 与 `M8 / SIK-39`。
+
+这一轮的约束固定为：
+
+- 只做 `@sikao/api-client` canonical Home queries、`@sikao/domain` Home stores、`@sikao/calendar-engine`。
+- 不动 `apps/web/src/router/index.tsx`。
+- 不做 5-tab、`/profile/learning`、`/profile/records`、Section A/B/C、browser acceptance。
+
+同时需要把以下现实作为新的前置真相：
+
+- `"/"` 仍是 marketing + authed redirect。
+- authenticated landing 仍是 `/practice/center`，不是 Home Dashboard。
+- `TabBar.tsx` 与 `RailMini.tsx` 仍是 4 tab，且 `/me` 仍然未注册。
+- `apps/web/src/views/Dashboard.tsx`、`apps/web/src/views/Plan.tsx`、`apps/web/src/views/study/StudyToday.tsx` 已不存在。
+
+因此，本文后文凡是把 `Dashboard.tsx`、`Plan.tsx`、`StudyToday.tsx` 当作仍然存在的迁移目标，都只能视为历史 WU 假设，不能再作为当前实现入口。
+---
+
 ## 1. 一级导航现状（关键修订）
 
 ### 1.1 当前 = 4 tab，不是 5 tab
@@ -225,8 +245,8 @@ modules/llm/                           ← 不新建 _v2，全部追加在此
 
 | plan 写的 | 实际路径 | 状态 |
 |---|---|---|
-| `apps/web/src/views/Plan.tsx` | `apps/web/src/views/Plan.tsx` | ✓ 路径正确，删 |
-| `apps/web/src/views/studyToday.tsx` | `apps/web/src/views/study/StudyToday.tsx`（大写 S，子目录） | 路径错；正确删除路径如右 |
+| `apps/web/src/views/Plan.tsx` | **已不存在** | 下游文档若仍引用，视为历史假设；当前 tranche 不再以该文件为入口 |
+| `apps/web/src/views/studyToday.tsx` | **已不存在** | 下游文档若仍引用，视为历史假设；当前 tranche 不再以该文件为入口 |
 | `apps/web/src/views/Onboarding.tsx` | `apps/web/src/views/study/Onboarding.tsx` | 路径错；本 Phase 不删（Onboarding Phase 处理） |
 | `apps/web/src/views/DiagnosisResult.tsx` | `apps/web/src/views/study/DiagnosisResult.tsx` | 路径错；本 Phase 不删（Onboarding Phase 处理） |
 
@@ -234,10 +254,10 @@ modules/llm/                           ← 不新建 _v2，全部追加在此
 
 | view | 现状 | Phase-Home 动作 |
 |---|---|---|
-| `views/Dashboard.tsx` | 当前 `/dashboard` 渲染（"学情数据"页，不是首页 IA 决策中的"首页"） | **重要**：这个 view 内容应迁移到 `views/ProfileLearning.tsx`（H-Plan-7 钻取页），文件本身重写为新首页（Section A/B/C 编排） |
+| `views/Dashboard.tsx` | **已不存在** | 旧 A0 / WU 对它的迁移描述只保留为历史设计意图；当前 tranche 不以该 view 为入口 |
 | `views/Progress.tsx` | 旧"学情"路由 | 删，被 `ProfileLearning.tsx` 替代 |
-| `views/Plan.tsx` | 旧计划 view | 删 |
-| `views/study/StudyToday.tsx` | `/study/today` 渲染（已 Navigate 到 /dashboard） | 删 |
+| `views/Plan.tsx` | **已不存在** | 当前 tranche 不处理文件删除；仅把路由/页面收口留给 `M11` |
+| `views/study/StudyToday.tsx` | **已不存在** | 当前 tranche 不处理文件删除；仅把路由/页面收口留给 `M11` |
 | `views/study/Onboarding.tsx` | Gate 流 | 不动（Onboarding Phase） |
 | `views/study/DiagnosisResult.tsx` | Gate 流 | 不动 |
 | `views/Profile.tsx` | `/profile` 渲染 | 保留（5 tab 的我的 tab 落点） |

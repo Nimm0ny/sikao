@@ -9,6 +9,9 @@
 
 ---
 
+> **2026-05-22 restart baseline**：前端 runtime 轨已在 `main` 上显式重启，但本轮只启动 `WU-F1`、`WU-F2`、`WU-F3`。`WU-F4-F8` 仍暂停，路由壳和 browser acceptance 待后续 UI tranche 接管。
+---
+
 ## 0. WU 总览
 
 | # | WU | 估算 | PR 数 | 依赖 |
@@ -23,7 +26,7 @@
 | WU-F8 | E2E + MSW + a11y test | 1,200 | 4 | F7 |
 | **合计** | | **12,700** | **44** | |
 
-> 前端总量上调（原 8,500），原因：补 loading/empty/error/skeleton 状态、a11y、`/profile/learning` 完整页面、stores 拆分、错误边界。
+> 前端总量上调（原 8,500），原因：补 loading/empty/error/skeleton 状态、a11y、`/profile/learning` 完整页面、stores 拆分、错误边界。2026-05-22 restart 后，当前 tranche 只执行 `WU-F1-F3`；`WU-F4-F8` 保留为后续 UI tranche 规格。
 
 ---
 
@@ -111,6 +114,7 @@ a11y 测试：每个新组件配 `@testing-library/jest-dom` + `axe-core/react` 
 - `F4-F8` 属于前端视觉 phase，必须做 `Chrome MCP` browser smoke；工具不可用时 fail-fast，不静默改用别的浏览器方案。
 - 旧 Home 前端 `F1-F8` 运行时代码启动前，必须先确认前端 full typecheck blocker 已由独立任务解除。
 - 默认验证命令：相关范围的 `npm run typecheck`, `npm run lint`, `vitest --run`；`F8` 再补 desktop/mobile e2e、axe、dark mode smoke。
+- 2026-05-22 restart tranche：当前只执行 `F1-F3`，因此本轮不要求 browser smoke；但 `F1-F3` 仍是 runtime 代码，仍必须过 `typecheck + lint + vitest + web build`。
 
 ---
 

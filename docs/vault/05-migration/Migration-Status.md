@@ -17,7 +17,7 @@ last-reviewed: 2026-05-21
 | docs/vault 文档仓库 | complete | 主要文档就位（00-index/01-product/02-domain/03-tech/04-design/05-migration/06-decisions/08-archive） |
 | Legacy Feature Inventory | complete | 顶层盘点 + 单 view 级路由清单 + components 归属表 |
 | ADR | partial | 0001 Monorepo / 0002 Answer-Engine / 0003 Document-Vault 已写；0004 Models 拆分待 R2 |
-| Home Phase（2026-05-22 rebaseline） | partial | M0-M2 已完成；M0.5 / SIK-31 已解锁前端 full typecheck blocker；M3 后端 deliverables 已落地主干；M4 / SIK-35、M5 / SIK-36、M6 / SIK-37 已完成；backend-first 契约与 scheduler 链已收口；旧 Home 前端 runtime 轨继续作为 paused reference track，仍待显式重启计划 |
+| Home Phase（2026-05-22 restart baseline） | partial | M0-M2 已完成；M0.5 / SIK-31 已解锁前端 full typecheck blocker；M3 后端 deliverables 已落地主干；M4 / SIK-35、M5 / SIK-36、M6 / SIK-37 已完成；backend-first 契约与 scheduler 链已收口；前端 runtime 轨已在 `main` 上显式重启，当前 tranche 只覆盖 M7 / SIK-38 与 M8 / SIK-39；M9-M12 仍待后续 UI tranche |
 | **前端代码迁移** | **complete** | **770+ 文件**已搬到正确位置；0 个 MIGRATION_TODO 残留；编码 mojibake 已修复（507 文件 binary-copy 重做）；`tsc -b --noEmit` 0 errors（test exclude）；`vite build` 1.81s 38 chunks pass |
 | Auth（前端） | partial | views/auth/* + components/auth/* + domain/auth/useAuthStore 已迁；登录页面具体功能未验证 |
 | User（前端） | partial | views/Profile + components/profile 已迁 |
@@ -31,7 +31,7 @@ last-reviewed: 2026-05-21
 | Editor 申论编辑器（前端） | partial | packages/editor 含 ExamShell + TopBar + modals/panels/pieces + styles + tests（36 文件） |
 | Wrong Book（前端） | partial | views/{WrongBook,WrongQuestion*,SmartReview} + components/wrong-book 已合并并迁完；wrong-book 与 wrongbook 重名目录已合并 |
 | Favorite（前端） | needs_review | new_web 没有独立 favorite 模块；逻辑可能并入 wrong-book 或 note_likes_favorites |
-| Study Record / Plan（前端） | partial | views/Plan + domain/study-record + components/plan 已迁 |
+| Study Record / Plan（前端） | partial | `views/Plan` 已不存在；当前仅保留 `domain/study-record` + `components/plan` 历史资产，Home 新计划 runtime 改由 M7-M8 的 canonical queries / stores / calendar-engine 重建 |
 | Notes（前端） | partial | views/{NotesHome,NoteEditor} + components/notes + domain/notes 已迁 |
 | LLM / AI Chat（前端） | partial | views/ConversationsHistory + components/llm + components/ask + domain/llm 已迁 |
 | Analytics / Predicted Score（前端） | partial | api-client/queries/{xingce,essay}SpecialtyQueries 已迁；具体页面消费在 Dashboard / WrongBook |
@@ -40,8 +40,8 @@ last-reviewed: 2026-05-21
 | Marketing 落地页（前端） | partial | views/marketing/* 整目录已迁（运行功能，非原型） |
 | @sikao/ui | partial | 167 文件（ui + icons + brand + TweaksDrawer），barrel index.ts 就位 |
 | @sikao/design-system | partial | tokens.css 已收敛到 `packages/design-system/src/tokens.css`（SSOT，2026-05-13 落地）；apps/web 改 shim 完成；R2 清理 alias 层 |
-| @sikao/api-client | **complete** | 6 query 集合 + types/api.generated + types/api + types/study-plan + essay-client + **request (R2.4) + apiQueries (R2.4)** —— 单一 SSOT，apps/web/src/utils 留 re-export shim |
-| @sikao/domain | partial | 34 文件，10 个子领域（auth/answer-session/dashboard/llm/notes/question-bank/shenlun/study-record/wrong-book/xingce） + sikaoTypes + viewMode 类型 SSOT |
+| @sikao/api-client | partial | 已有 `request` / `apiQueries` / legacy query 集合；Home `M7 / SIK-38` 已重启，当前要补 canonical `plans/recommendations/progress/dashboard/profile` 模块并收口 Home helper |
+| @sikao/domain | partial | 现有 10 个子领域仍偏 legacy；Home `M8 / SIK-39` 已重启，当前要新增 `plan/usePlanStore` 与 dashboard preference / adjustment / recommendation draft stores |
 | @sikao/answer-engine | partial | 16+ 文件：word-limit/grid-layout/highlight/graphic-detect + **scoring/{shenlun,xingce} (R2.1) + session/examPhase (R2.2) + timing/elapsed (R2.3)** |
 | @sikao/editor | partial | 36 文件，所有 modals/panels/pieces 已迁 |
 | @sikao/shared-utils | partial | 31 文件，9 hooks + cn/logger/toast/motion/timing/queryRetry/isAuthError/silent-refresh/useReducedMotion + ToastHost 转发 |
