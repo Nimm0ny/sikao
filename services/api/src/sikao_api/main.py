@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
+from contextlib import suppress
 from uuid import uuid4
 
 from fastapi import FastAPI, Request, Response
@@ -37,6 +38,11 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
     async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         from sikao_api.core.limiter import close_limiter, init_limiter
         from sikao_api.core.scheduler import build_deletion_sweep_scheduler
+        from sikao_api.scheduler import (
+            HomeSchedulerContext,
+            build_home_scheduler,
+            build_home_scheduler_registry,
+        )
 
         app.state.settings = app_settings
         app.state.db = db
@@ -59,10 +65,35 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
         app.state.deletion_scheduler = deletion_scheduler
         if deletion_scheduler is not None:
             await deletion_scheduler.start()
+
+        home_scheduler_registry = build_home_scheduler_registry(app_settings)
+        home_scheduler = build_home_scheduler(
+            context=HomeSchedulerContext(settings=app_settings, db=db),
+            enabled=app_settings.home_scheduler_enabled,
+            timezone=app_settings.home_scheduler_timezone,
+            run_on_startup=app_settings.home_scheduler_run_on_startup,
+            registry=home_scheduler_registry,
+        )
+        app.state.home_scheduler_registry = home_scheduler_registry
+        app.state.home_scheduler = home_scheduler
+        try:
+            if home_scheduler is not None:
+                await home_scheduler.start()
+        except Exception:
+            if home_scheduler is not None:
+                with suppress(Exception):
+                    await home_scheduler.stop()
+            if deletion_scheduler is not None:
+                with suppress(Exception):
+                    await deletion_scheduler.stop()
+            await close_limiter()
+            raise
         try:
             yield
         finally:
-            # Stop scheduler before limiter — 让后台 sweep 优雅退出, 之后再断 redis.
+            # Stop schedulers before limiter so background jobs exit before redis teardown.
+            if home_scheduler is not None:
+                await home_scheduler.stop()
             if deletion_scheduler is not None:
                 await deletion_scheduler.stop()
             await close_limiter()

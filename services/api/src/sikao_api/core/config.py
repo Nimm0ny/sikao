@@ -4,9 +4,10 @@ import re
 from functools import lru_cache
 from pathlib import Path
 from typing import Literal
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 
 from argon2 import PasswordHasher
-from pydantic import ValidationInfo, computed_field, field_validator
+from pydantic import Field, ValidationInfo, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Match `sqlite:///` or `sqlite+<driver>:///` (3 slashes 后跟 path-part).
@@ -296,6 +297,20 @@ class Settings(BaseSettings):
     # 启动立即跑一次 (运维兜底重启时清积压). 默认 False — 重启不应改变 sweep
     # 节奏, 跟 cron 语义对齐.
     deletion_sweep_run_on_startup: bool = False
+    # Stage 1 Home scheduler substrate: embedded APScheduler in API lifespan only.
+    # 固定 MemoryJobStore；不做 SQLAlchemyJobStore、worker 进程或 multi-worker lock。
+    home_scheduler_enabled: bool = False
+    home_scheduler_timezone: str = "Asia/Shanghai"
+    home_scheduler_run_on_startup: bool = False
+    home_progress_snapshot_hour: int = Field(default=0, ge=0, le=23)
+    home_progress_snapshot_minute: int = Field(default=30, ge=0, le=59)
+    home_event_status_tick_interval_minutes: int = Field(default=15, ge=1, le=1440)
+    home_plan_adjustor_hour: int = Field(default=6, ge=0, le=23)
+    home_plan_adjustor_minute: int = Field(default=0, ge=0, le=59)
+    home_cleanup_expired_hour: int = Field(default=2, ge=0, le=23)
+    home_cleanup_expired_minute: int = Field(default=0, ge=0, le=59)
+    home_cleanup_soft_deleted_hour: int = Field(default=3, ge=0, le=23)
+    home_cleanup_soft_deleted_minute: int = Field(default=0, ge=0, le=59)
 
     @field_validator("cors_allowed_origins", mode="before")
     @classmethod
@@ -422,6 +437,17 @@ class Settings(BaseSettings):
         raise ValueError(
             f"LLM_BASE_URL must start with 'https://' or 'http://localhost' (dev), got: {url!r}"
         )
+
+    @field_validator("home_scheduler_timezone", mode="after")
+    @classmethod
+    def validate_home_scheduler_timezone(cls, value: str) -> str:
+        try:
+            ZoneInfo(value)
+        except ZoneInfoNotFoundError as exc:
+            raise ValueError(
+                f"HOME_SCHEDULER_TIMEZONE must be a valid IANA timezone, got: {value!r}"
+            ) from exc
+        return value
 
     @computed_field  # type: ignore[prop-decorator]
     @property
