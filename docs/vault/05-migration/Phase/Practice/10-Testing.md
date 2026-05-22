@@ -41,7 +41,8 @@ services/api/tests/
 │   │   ├── test_quota.py
 │   │   └── test_routes.py
 │   ├── content/
-│   │   └── test_categories_papers.py
+│   │   ├── test_categories_papers.py
+│   │   └── test_question_detail.py          # B14.4 (CLP-7) 题目详情聚合
 │   ├── daily_practice/
 │   │   ├── test_weakness_weighter.py
 │   │   ├── test_routes.py
@@ -75,8 +76,40 @@ services/api/tests/
 │       ├── test_mode_category.py
 │       ├── test_mode_custom.py
 │       ├── test_mode_daily_redo.py
-│       ├── test_mode_ai_generated.py
+│       ├── test_mode_ai_generated.py        # CLP-2: ai_picker 仅消费 question_ids，不调 LLM
 │       └── test_answer_ops.py
+│   ├── timing/                              # B25
+│   │   ├── test_event_recorder.py           # 事件 batch 上报 + 60s 截断
+│   │   ├── test_baseline_compute.py         # 周一 03:00 cron 重算
+│   │   ├── test_overtime_classifier.py      # is_overtime = p95 × 1.2
+│   │   └── test_routes.py
+│   ├── session_lifecycle/                   # B26
+│   │   ├── test_state_machine.py            # evaluate_transition truth table
+│   │   ├── test_heartbeat.py                # 30s 心跳 / PAUSED 隐式 resume
+│   │   ├── test_active_session_query.py
+│   │   ├── test_cleanup_cron.py             # 30min / 24h / 2h 三级回收
+│   │   └── test_routes.py                   # pause / resume / discard / start
+│   ├── mock_exam/                           # B27
+│   │   ├── test_create_wrapper.py           # CLP-3：端点 = session.create wrapper
+│   │   ├── test_countdown.py                # auto_submit_at 绝对时间 + drift 校准
+│   │   ├── test_force_submit.py             # 倒计时归零 cron 兜底
+│   │   ├── test_pause_blocked.py            # MOCK_PAUSE_FORBIDDEN
+│   │   ├── test_notes_blocked.py            # MOCK_NOTES_FORBIDDEN
+│   │   └── test_history.py
+│   ├── practice_preferences/                # B28
+│   │   ├── test_get_defaults.py             # isDefault=true 兜底
+│   │   ├── test_put_full_payload.py         # schema_version mismatch 422
+│   │   ├── test_patch_path.py               # JSON Patch path 校验
+│   │   ├── test_keybindings_unique.py       # root validator
+│   │   └── test_lru_cache.py                # 写入立即失效该用户
+│   ├── question_metadata/                   # B29 schema-only
+│   │   └── test_schema_constraints.py       # complexity / heat / ability_dim_enum CHECK
+│   ├── question_report/                     # B30
+│   │   ├── test_report_creation.py          # 同用户同题 pending 唯一 → 409
+│   │   ├── test_admin_resolve.py            # 状态机转换
+│   │   └── test_terminal_immutable.py
+│   └── notes_v2/                            # B16.4 (CLP-5) 题级笔记最小 CRUD
+│       └── test_question_linked.py          # CRUD + 越权 404 + visibility=private
 ├── invariant/
 │   ├── test_question_source_immutable.py     # PR2
 │   ├── test_strict_closed_book.py            # Pace-Closed-Book
@@ -87,12 +120,15 @@ services/api/tests/
 │   └── test_flag_basic_vs_persistent.py      # Flag-Basic-vs-Persistent
 ├── e2e/practice/
 │   ├── test_content_endpoints.py
+│   ├── test_question_detail_endpoint.py    # B14.4 (CLP-7) 跨 tab 联动入口
 │   ├── test_session_modes.py
 │   ├── test_session_pace_invariant.py
 │   ├── test_favorites_flags_stats.py
-│   ├── test_ai_questions_flow.py
+│   ├── test_question_linked_notes.py       # B16.4 (CLP-5) 题级笔记 e2e
+│   ├── test_ai_questions_flow.py           # CLP-2: generate → createSession 双步流程
 │   ├── test_daily_practice.py
-│   ├── test_essay_grading_async.py
+│   ├── test_essay_grading_async.py         # CLP-1: submit hook 隐式触发
+│   ├── test_essay_drafts.py                # B20.5 (CLP-6) 30s 自动保存 + 归档
 │   └── test_essay_reference.py
 ├── cron/
 │   ├── test_question_accuracy_cron.py

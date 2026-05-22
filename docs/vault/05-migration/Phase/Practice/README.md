@@ -110,14 +110,18 @@ PR8 申论批改异步（submit 立即返回 result pending → cron 写 EssayRe
 
 | 维度 | 估算 |
 |---|---|
-| 总行数（新增 + 删除） | ~27,200 |
-| Backend / Frontend | 14,700 / 12,500 |
-| PR 总数 | ~97（B 58 + F 39，详见 03 / 04） |
+| 总行数（新增 + 删除） | ~33,600 |
+| Backend / Frontend | 21,100 / 12,500 |
+| PR 总数 | ~120（B 81 + F 39，详见 03 / 04） |
 | Backend 阶段 | 7-9 周 |
 | Frontend 阶段 | 5-6 周 |
 | 全程 | 12-15 周 |
 
-> 估算说明：本数字与 `03-Backend-WU §0` / `04-Frontend-WU §0` 总览表一致。比早期单文件 plan（22,000 / 55 PR）上调，原因：补全 audit / idempotency / observability / 限流 / 完整 invariant test / 前端 4 状态 + a11y + bundle 控制。
+> 估算说明：
+> - 早期单文件 plan 22,000 / 55 PR；之后补全 audit / idempotency / observability / 限流 / 完整 invariant test / 前端 4 状态 + a11y + bundle 控制 → 27,200 / 97 PR；
+> - 再次扩展加入 4 个 MUST 模块（B25 timing / B26 session_lifecycle / B27 mock_exam / B28 practice_preferences）+ B29 metadata schema 预留 + B30 question_report → 后端 78 PR；
+> - 闭环修订（CLP）补齐 4 个硬缺口（B14.4 题目详情聚合 / B16.4 题级笔记 CRUD / B20.5 essay_draft CRUD）+ B15.4 / B20.1 流程澄清，后端 +600 行 / +3 PR → 当前 81 PR / 21,100 行。
+> - 本数字与 `03-Backend-WU §0` / `04-Frontend-WU §0` 总览表保持一致。整体里程碑（12-15 周）不受影响。
 
 ---
 
@@ -292,7 +296,9 @@ M19  week 14-15      WU-F18：e2e 验收
 ## 11. 后续工作（不在本 Phase）
 
 - 错题专项页 → [Phase/Review](../Review/README.md)
+  - ⚠️ `mode=wrong_redo` 数据层 Phase 1 已就绪（B15.3 wrong_redo_picker / ReviewItemV2.reason=flagged_persistent / session.create 端点对外开放且 contract test 全绿）；UI 入口由 [Phase/Review](../Review/README.md) 接入。本 Phase 完工时该 mode 端点 e2e 通过但**没有前端入口能触达**——这是预期行为，不视为 bug。
 - 笔记主 view + 双向链接 → [Phase/Notes](../Notes/README.md)
+  - ⚠️ 题级笔记最小 CRUD 由本 Phase B16.4 提前落地（CLP-5）；主 view（双向链接 / 全文搜索 / 标签 / 树状组织）仍由 [Phase/Notes](../Notes/README.md) 完成。
 - 申论人工批改入口（D-Q4 选项 D） → 远期
 - 题库管理后台 → 远期 admin Phase
 - 收藏夹分组（QuestionFavoriteV2 加 folder_id） → 远期
