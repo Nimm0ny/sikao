@@ -48,7 +48,7 @@ class LLMConfigError(LLMServiceError):
         super().__init__(message, code="llm_config_missing")
 
 
-ProviderLabel = Literal["system", "user_byom"]
+ProviderLabel = Literal["mock", "system", "user_byom"]
 
 
 def build_llm_provider(
@@ -84,6 +84,20 @@ def build_llm_provider(
     等, 强制 override 反而打断用户; 用户自配自负). Slice 3a 学习计划同步
     路径用此压短到 10s, 申论批改 / AI 答疑等不传走默认 120s.
     """
+    # Explicit mock provider always wins.
+    if settings.llm_provider == "mock":
+        from sikao_api.modules.llm.application.llm._stub import StubLLMProvider
+
+        return StubLLMProvider(), "mock"
+
+    # Test env fallback: no implicit .env/apikey file lookup, and no real key means
+    # deterministic stub. If the caller explicitly provides a real key in test env,
+    # allow the real provider path for smoke/debug use.
+    if settings.app_env == "test" and not settings.llm_api_key:
+        from sikao_api.modules.llm.application.llm._stub import StubLLMProvider
+
+        return StubLLMProvider(), "mock"
+
     # Try user BYOM first (Slice 0c). 4th-review P1 #3: decrypt 失败 / SSRF
     # 失败 → logger.warn + fallback system default (BYOM 是 optional layer,
     # 不该让全站 AI 500 直到用户手动删除 row).
@@ -101,19 +115,15 @@ def build_llm_provider(
                 )
                 return provider, "user_byom"
             except InvalidEncryptedBlob as exc:
-                # master key rotation / blob 损坏 / wrong user_id (不应到此).
-                # 不吞: warn 让 ops 监控 + admin 提醒用户重填. fallback system.
                 logger.warning(
-                    "llm.byom.decrypt_failed user_id=%s config_id=%s err=%s — fallback to system default",
+                    "llm.byom.decrypt_failed user_id=%s config_id=%s err=%s -> fallback to system default",
                     user_id,
                     user_default.id,
                     exc,
                 )
             except SsrfBlockedError as exc:
-                # DNS rebinding 二次 resolve 拦下 (创建时 OK 但调用时 hostname
-                # rebind 到内网). fallback 防 attack.
                 logger.warning(
-                    "llm.byom.ssrf_recheck_failed user_id=%s config_id=%s err=%s — fallback to system default",
+                    "llm.byom.ssrf_recheck_failed user_id=%s config_id=%s err=%s -> fallback to system default",
                     user_id,
                     user_default.id,
                     exc,
@@ -130,7 +140,7 @@ def build_llm_provider(
     if settings.llm_api_key.startswith(("mock-", "fake-")):
         from sikao_api.modules.llm.application.llm._stub import StubLLMProvider
 
-        return StubLLMProvider(), "system"
+        return StubLLMProvider(), "mock"
     base_url = settings.llm_base_url.strip()
     if not _is_acceptable_base_url_scheme(base_url):
         raise LLMConfigError(

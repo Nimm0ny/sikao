@@ -1,20 +1,11 @@
-"""Stub LLM provider for e2e/smoke testing — returns fixed fixture without real API call.
-
-Activated when LLM_API_KEY starts with 'mock-' or 'fake-'. 200ms simulated delay
-to keep the BackgroundTask poll path realistic. Fixture is essay-grading-shaped
-JSON; for non-essay LLM features (qa / study-plan) the same fixture is returned
-and may not parse correctly — this stub focuses on essay grading e2e flow only.
-
-Design rationale: keeping the stub in-process (vs HTTP mock server) avoids
-network setup and lets pytest fixtures share the same path. Real essay grading
-uses build_llm_provider() returning OpenAICompatibleProvider against DeepSeek.
-"""
+"""Structured in-process LLM stub used by tests and local dry-run flows."""
 
 from __future__ import annotations
 
 import asyncio
 import json
 from collections.abc import AsyncIterator
+from datetime import datetime, timedelta, timezone
 
 from sikao_api.modules.llm.application.llm.provider import (
     ChatCompletionChunk,
@@ -22,39 +13,30 @@ from sikao_api.modules.llm.application.llm.provider import (
     LLMMessage,
 )
 
-# Schema 跟 essay_grading.py::_finalize_feedback 期望对齐:
-# - 顶级 evaluation (object) + sample_answer (string)
-# - evaluation.dimensions[].name 必须命中 ESSAY_DIMENSIONS 5 个 (论点准确 / 材料运用 / 语言 / 结构 / 字数符合度)
-# - dimension.score 0-10 浮点
-# 见 services/llm/prompts/essay_grading.py 第 28-34 行
-_STUB_ESSAY_FEEDBACK: dict[str, object] = {
+_UTC = timezone.utc
+
+_ESSAY_PAYLOAD: dict[str, object] = {
     "evaluation": {
         "dimensions": [
-            {"name": "论点准确", "score": 8.0, "comment": "立意明确，紧扣题意，论点回应给定材料"},
-            {"name": "材料运用", "score": 7.5, "comment": "材料引用充分，未过度抄袭原文"},
-            {"name": "语言", "score": 7.0, "comment": "表达流畅，公文体感稍弱"},
-            {"name": "结构", "score": 7.5, "comment": "开头-论证-结尾层次清晰"},
-            {"name": "字数符合度", "score": 9.0, "comment": "字数符合题干上下界要求"},
+            {"name": "argument_accuracy", "score": 8.0, "comment": "Core thesis is on-topic."},
+            {"name": "material_usage", "score": 7.5, "comment": "Uses provided material well."},
+            {"name": "language", "score": 7.0, "comment": "Language is clear and controlled."},
+            {"name": "structure", "score": 7.5, "comment": "Sections are ordered logically."},
+            {"name": "length_fit", "score": 9.0, "comment": "Length fits the prompt window."},
         ],
-        "strengths": ["立意切题明确", "结构层次工整", "材料引用恰当"],
-        "weaknesses": ["论据深度可加强", "举例可更新颖"],
-        "suggestions": ["第二段可补充对比论证", "结尾回扣立意 + 高位结论"],
+        "strengths": ["clear thesis", "good structure", "material is cited"],
+        "weaknesses": ["could deepen evidence", "closing can be sharper"],
+        "suggestions": ["add one contrast paragraph", "tighten the final conclusion"],
     },
     "sample_answer": (
-        "（mock 范文 · e2e 占位）\n\n"
-        "立意先行，论据为支撑。本题应当从「治理理念升级」高位切入，以"
-        "材料中的核心数据（如「1 万亿千瓦时」）开篇，三段式展开「现状—难点—路径」，"
-        "结尾回扣立意。注意：本范文为 e2e 测试 stub provider 返回的固定 fixture，"
-        "真实评分请配置 LLM_API_KEY 为真 key (sk-...)。"
+        "Sample essay answer for test and smoke flows only. "
+        "This payload is deterministic and should not be treated as a real model output."
     ),
 }
 
 
 class StubLLMProvider:
-    """Stub provider — returns fixed fixture, no real API call.
-
-    Implements LLMProvider Protocol. Activated by LLM_API_KEY=mock-* / fake-*.
-    """
+    """Small structured provider that returns JSON fixtures by feature family."""
 
     async def chat_completion(
         self,
@@ -64,9 +46,11 @@ class StubLLMProvider:
         max_tokens: int | None = None,
         temperature: float = 0.7,
     ) -> ChatCompletionResult:
-        await asyncio.sleep(0.2)
+        del max_tokens, temperature
+        await asyncio.sleep(0.05)
+        content = json.dumps(self._build_payload(messages=messages), ensure_ascii=False)
         return ChatCompletionResult(
-            content=json.dumps(_STUB_ESSAY_FEEDBACK, ensure_ascii=False),
+            content=content,
             prompt_tokens=120,
             prompt_cache_hit_tokens=0,
             prompt_cache_miss_tokens=120,
@@ -83,8 +67,9 @@ class StubLLMProvider:
         max_tokens: int | None = None,
         temperature: float = 0.7,
     ) -> AsyncIterator[ChatCompletionChunk]:
-        await asyncio.sleep(0.05)
-        full_content = json.dumps(_STUB_ESSAY_FEEDBACK, ensure_ascii=False)
+        del model, max_tokens, temperature
+        await asyncio.sleep(0.02)
+        full_content = json.dumps(self._build_payload(messages=messages), ensure_ascii=False)
         yield ChatCompletionChunk(
             content_delta=full_content,
             is_final=False,
@@ -103,3 +88,116 @@ class StubLLMProvider:
             completion_tokens=180,
             finish_reason="stop",
         )
+
+    def _build_payload(self, *, messages: list[LLMMessage]) -> dict[str, object]:
+        prompt = "\n".join(message.content for message in messages)
+        if "plan generator" in prompt.lower() or "generate plan" in prompt.lower():
+            return self._build_plan_payload()
+        if "plan adjuster" in prompt.lower() or "adjustment proposal" in prompt.lower():
+            return self._build_adjustment_payload()
+        if "today recommender" in prompt.lower() or "recommendation cards" in prompt.lower():
+            return self._build_recommendation_payload()
+        return _ESSAY_PAYLOAD
+
+    def _build_plan_payload(self) -> dict[str, object]:
+        base = datetime.now(_UTC).replace(second=0, microsecond=0, minute=0)
+        first_start = base + timedelta(days=1, hours=10)
+        first_end = first_start + timedelta(minutes=90)
+        second_start = first_start + timedelta(days=1)
+        second_end = second_start + timedelta(minutes=90)
+        return {
+            "events": [
+                {
+                    "title": "Xingce verbal drill",
+                    "category": "xingce",
+                    "subject": "verbal",
+                    "start_at": first_start.isoformat(),
+                    "end_at": first_end.isoformat(),
+                    "notes": "Focus on logic fill-in and passage reading.",
+                    "target_id": None,
+                },
+                {
+                    "title": "Essay full answer",
+                    "category": "essay",
+                    "subject": "essay",
+                    "start_at": second_start.isoformat(),
+                    "end_at": second_end.isoformat(),
+                    "notes": "Write one complete response to the prompt.",
+                    "target_id": None,
+                },
+            ],
+            "summary": {
+                "total_minutes": 180,
+                "events_per_week_avg": 2,
+                "review_ratio": 0.0,
+                "mock_count": 0,
+            },
+            "errors": [],
+        }
+
+    def _build_adjustment_payload(self) -> dict[str, object]:
+        base = datetime.now(_UTC).replace(second=0, microsecond=0, minute=0)
+        start_at = base + timedelta(days=2, hours=9)
+        end_at = start_at + timedelta(minutes=60)
+        return {
+            "reason": "Recent skipped review blocks suggest moving one review session to a steadier morning slot.",
+            "changes": [
+                {
+                    "action": "add",
+                    "event_id": None,
+                    "before": None,
+                    "after": {
+                        "title": "Review wrong answers",
+                        "category": "review",
+                        "notes": "Revisit the highest-frequency weak spots from the last three days.",
+                        "start_at": start_at.isoformat(),
+                        "end_at": end_at.isoformat(),
+                        "timezone": "Asia/Shanghai",
+                        "status": "planned",
+                    },
+                    "diff_summary": "Add one morning review block",
+                }
+            ],
+            "skip_reason": None,
+        }
+
+    def _build_recommendation_payload(self) -> dict[str, object]:
+        return {
+            "recommendations": [
+                {
+                    "title": "Review weak items first",
+                    "reason": "Your latest session just ended, so a short review pass has the highest immediate value.",
+                    "estimated_minutes": 20,
+                    "action_type": "review",
+                    "cta": "Review",
+                    "payload": {
+                        "session_template": {
+                            "track": "xingce",
+                            "entry_kind": "review",
+                            "subject": "verbal",
+                        }
+                    },
+                },
+                {
+                    "title": "Continue the unfinished session",
+                    "reason": "There is still an in-progress practice session, so finishing it beats opening a new task.",
+                    "estimated_minutes": 25,
+                    "action_type": "continue",
+                    "cta": "Continue",
+                    "payload": {
+                        "session_template": {
+                            "track": "xingce",
+                            "entry_kind": "manual",
+                        }
+                    },
+                },
+                {
+                    "title": "Reserve a short recovery block",
+                    "reason": "A short break now reduces the chance of skipping the next planned block.",
+                    "estimated_minutes": 15,
+                    "action_type": "rest",
+                    "cta": "Rest",
+                    "payload": {"rest_minutes": 15},
+                },
+            ]
+        }

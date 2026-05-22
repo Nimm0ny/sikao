@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Literal
 
 from argon2 import PasswordHasher
-from pydantic import computed_field, field_validator
+from pydantic import ValidationInfo, computed_field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # Match `sqlite:///` or `sqlite+<driver>:///` (3 slashes 后跟 path-part).
@@ -239,7 +239,7 @@ class Settings(BaseSettings):
     # ─── LLM infra (Slice 0a, plan §4.5) ─────────────────────────────────────
     # 系统默认 provider. PoC 阶段只 verify DeepSeek V4, 用户 BYOM 走相同
     # OpenAICompatibleProvider impl 但接其他 endpoint (Slice 0c 才加 BYOM).
-    llm_provider: Literal["deepseek", "openai", "custom"] = "deepseek"
+    llm_provider: Literal["deepseek", "openai", "custom", "mock"] = "deepseek"
     # API key: env var 优先, 缺则 fallback 读 <repo_root>/.env/apikey 文件.
     # None 不 startup fail-fast (LLM 是 optional feature) — build_llm_provider
     # 调用时检查并抛 ConfigError, route handler 转 503 给 user.
@@ -259,6 +259,14 @@ class Settings(BaseSettings):
     # system path; BYOM 用户自配 base_url (azure region 等可能高延迟), 用户
     # 自配自负, BYOM 路径继续用 llm_timeout_seconds.
     llm_timeout_study_plan_seconds: int = 10
+    llm_max_retries: int = 1
+    llm_temperature: float = 0.7
+    llm_max_input_tokens: int = 16000
+    llm_cache_ttl_seconds: int = 3600
+    llm_quota_per_user_per_day: int = 50
+    llm_quota_per_user_cost_cny_per_day: float = 5.0
+    llm_cost_input_per_1m: float = 1.0
+    llm_cost_output_per_1m: float = 2.0
     # Token usage estimation fallback (R9): stream final chunk usage 缺失时本地估算.
     # tiktoken: 用 OpenAI 兼容 BPE encoder 数 token (近似但够估算用量).
     # none: 计 0 + warn log (用量记账偏低但不阻塞).
@@ -354,7 +362,9 @@ class Settings(BaseSettings):
 
     @field_validator("llm_api_key", mode="after")
     @classmethod
-    def _llm_api_key_fallback_to_file(cls, value: str | None) -> str | None:
+    def _llm_api_key_fallback_to_file(
+        cls, value: str | None, info: ValidationInfo
+    ) -> str | None:
         """If LLM_API_KEY not set in env, fall back to <repo_root>/.env/apikey content.
 
         .env/ 是 gitignored 目录, lhr 把 DS apikey 放这. None if neither env
@@ -362,6 +372,8 @@ class Settings(BaseSettings):
         """
         if value:
             return value
+        if info.data.get("app_env") == "test":
+            return None
         return _read_apikey_file_default()
 
     @field_validator("llm_config_enc_key", mode="after")
