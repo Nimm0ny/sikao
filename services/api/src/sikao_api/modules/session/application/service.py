@@ -7,8 +7,9 @@ from typing import Any
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionV2, UserV2
+from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionFlagV2, QuestionV2, UserV2
 from sikao_api.db.schemas_v2 import ActionLinkV2, PracticeAnswerPayloadV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionItemV2, PracticeSessionResultResponseV2, SectionCardV2, SummaryMetricV2
+from sikao_api.modules.session.application.answer_flag_ops import promote_flagged_answers
 from sikao_api.modules.session.application.mode_dispatcher import resolve_session_selection
 from sikao_api.modules.plans.domain.rrule_subset import build_occurrence_ref, end_of_local_day, expand_occurrences, parse_occurrence_ref, start_of_local_day
 from sikao_api.modules.system.application.errors import ConflictError, NotFoundError, ValidationError
@@ -144,6 +145,13 @@ class SessionServiceV2:
                 "practice session already submitted",
                 code="practice_session_submitted",
             )
+        user = self.session.get(UserV2, practice_session.user_id)
+        if user is not None:
+            promote_flagged_answers(
+                self.session,
+                user=user,
+                practice_session=practice_session,
+            )
         if practice_session.linked_plan_event_id is not None and practice_session.linked_plan_event_occurrence_ref is None:
             linked_event = self.session.scalar(
                 select(PlanEventV2).where(
@@ -166,13 +174,21 @@ class SessionServiceV2:
             )
         )
         questions_by_id = self._load_questions_for_answers(answers)
+        persistent_question_ids = self._load_persistent_flag_question_ids(
+            user_id=practice_session.user_id,
+            answers=answers,
+        )
         return PracticeSessionEnvelopeV2(
             id=practice_session.id,
             track=practice_session.track,
             entry_kind=practice_session.entry_kind,
             status=practice_session.status,
             items=[
-                self._build_session_item(answer=answer, questions_by_id=questions_by_id)
+                self._build_session_item(
+                    answer=answer,
+                    questions_by_id=questions_by_id,
+                    persistent_question_ids=persistent_question_ids,
+                )
                 for answer in answers
             ],
             actions=[
@@ -459,6 +475,7 @@ class SessionServiceV2:
         *,
         answer: PracticeSessionAnswerV2,
         questions_by_id: dict[int, QuestionV2],
+        persistent_question_ids: set[int] | None = None,
     ) -> PracticeSessionItemV2:
         question = questions_by_id.get(answer.question_id) if answer.question_id is not None else None
         if question is None:
@@ -473,6 +490,13 @@ class SessionServiceV2:
             prompt=prompt,
             answer_kind=answer_kind,
             status="answered" if self._has_meaningful_answer(answer.response_json) else "pending",
+            flagged=answer.flagged,
+            viewed_solution=answer.viewed_solution,
+            has_persistent_flag=bool(
+                answer.question_id is not None
+                and persistent_question_ids is not None
+                and answer.question_id in persistent_question_ids
+            ),
         )
 
     def _resolve_new_answer_question_id(
@@ -530,3 +554,24 @@ class SessionServiceV2:
             )
         )
         return {question.id: question for question in questions}
+
+    def _load_persistent_flag_question_ids(
+        self,
+        *,
+        user_id: int,
+        answers: list[PracticeSessionAnswerV2],
+    ) -> set[int]:
+        question_ids = [answer.question_id for answer in answers if answer.question_id is not None]
+        if not question_ids:
+            return set()
+        return {
+            int(question_id)
+            for question_id in self.session.scalars(
+                select(QuestionFlagV2.question_id).where(
+                    QuestionFlagV2.user_id == user_id,
+                    QuestionFlagV2.question_id.in_(question_ids),
+                    QuestionFlagV2.resolved_at.is_(None),
+                )
+            )
+            if question_id is not None
+        }
