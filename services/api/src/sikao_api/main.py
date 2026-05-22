@@ -24,6 +24,7 @@ from sikao_api.modules.question_flags.interface import routes as question_flags_
 from sikao_api.modules.recommendations.interface import routes as recommendations_v2
 from sikao_api.modules.review.interface import routes as review_v2
 from sikao_api.modules.session.interface import routes as session_v2
+from sikao_api.modules.session_lifecycle.interface import routes as session_lifecycle_v2
 from sikao_api.modules.system.application.errors import ServiceError
 from sikao_api.modules.system.interface import ops
 from sikao_api.modules.system.interface import routes as system_v2
@@ -133,6 +134,7 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
     app.include_router(favorites_v2.router)
     app.include_router(question_flags_v2.router)
     app.include_router(practice_stats_v2.router)
+    app.include_router(session_lifecycle_v2.router)
     app.include_router(session_v2.router)
     app.include_router(review_v2.router)
     app.include_router(notes_v2_skeleton.router)
