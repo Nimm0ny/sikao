@@ -81,11 +81,13 @@ def _backfill_content_hash() -> None:
             )
         last_id = rows[-1].id
 
-    # Dedup losers: oldest id wins, younger rows get NULL hash + is_active=0.
+    # Dedup losers: oldest id wins, younger rows get NULL hash + is_active=false.
     # NULL hash is allowed by UNIQUE in both PG and SQLite, so this clears the
     # path for the constraint that lands next.
+    # Boolean literal FALSE (not integer 0): PG strict-types the comparison, SQLite
+    # coerces both. Same lesson as PR-A1.8 server_default fix.
     bind.execute(sa.text(
-        "UPDATE questions_v2 SET is_active = 0, content_hash = NULL "
+        "UPDATE questions_v2 SET is_active = FALSE, content_hash = NULL "
         "WHERE id IN ("
         "  SELECT q.id FROM questions_v2 q "
         "  JOIN ("
