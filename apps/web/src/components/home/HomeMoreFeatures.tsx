@@ -45,7 +45,7 @@ const FEATURES: readonly FeatureLink[] = [
     title: '学习计划',
     description: '查看今日安排和周计划',
     icon: SubjectPlanIcon,
-    to: '/plan',
+    to: '/',
     testId: 'home-feature-study-plan',
   },
   {
@@ -53,7 +53,7 @@ const FEATURES: readonly FeatureLink[] = [
     title: '学情数据',
     description: '查看练习表现和复盘指标',
     icon: SubjectDashboardIcon,
-    to: '/dashboard',
+    to: '/profile/learning',
     testId: 'home-feature-dashboard',
   },
 ];

@@ -176,7 +176,7 @@ export default function PracticeCenter() {
               label={subject === 'xingce' ? '资料分析 · 综合提高' : '概括归纳 · 结构训练'}
               description={subject === 'xingce' ? '按当前薄弱模块推荐一组短练。' : '从申论高频题型开始写一题。'}
               chip="推荐"
-              onClick={() => navigate(subject === 'xingce' ? '/practice/center/xingce/categories' : '/practice/center/essay/categories')}
+              onClick={() => navigate(subject === 'xingce' ? '/practice/xingce/categories' : '/practice/essay/categories')}
               testId="practice-entry-recommended"
             />
             <PracticeEntryCard
@@ -184,7 +184,7 @@ export default function PracticeCenter() {
               title="专项练习"
               label={subject === 'xingce' ? '言语 / 判断 / 数量 / 资料 / 常识' : '概括 / 对策 / 公文 / 作文'}
               description="按知识点和题型拆开练，适合补弱。"
-              onClick={() => navigate(`/practice/center/${subject}/categories`)}
+              onClick={() => navigate(`/practice/${subject}/categories`)}
               testId="practice-entry-categories"
             />
             <PracticeEntryCard
@@ -192,7 +192,7 @@ export default function PracticeCenter() {
               title="套卷模考"
               label={subject === 'xingce' ? '全真模拟 · 行测套卷' : '申论套卷 · 限时作答'}
               description="按整卷节奏完成，交卷后看结果页。"
-              onClick={() => navigate(`/practice/center/${subject}/papers`)}
+              onClick={() => navigate(`/practice/${subject}/papers`)}
               testId="practice-entry-papers"
             />
           </section>
@@ -203,7 +203,7 @@ export default function PracticeCenter() {
               error={lastSessionQ.isError}
               session={lastSessionQ.data ?? null}
               onResume={(session) => navigate(`/practice/sessions/${session.id}`)}
-              onOpenPapers={() => navigate(`/practice/center/${subject}/papers`)}
+              onOpenPapers={() => navigate(`/practice/${subject}/papers`)}
             />
             <FavoritesCard />
           </section>
@@ -214,7 +214,7 @@ export default function PracticeCenter() {
             loading={weakQ.isLoading}
             error={weakQ.isError}
             modules={weakQ.data?.modules ?? []}
-            onPractice={(module) => navigate(`/practice/center/${subject}/categories#${encodeURIComponent(module.subject)}`)}
+            onPractice={(module) => navigate(`/practice/${subject}/categories#${encodeURIComponent(module.subject)}`)}
           />
           <ReasonCard subject={subject} />
         </aside>

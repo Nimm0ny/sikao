@@ -63,6 +63,7 @@ export function PlanAiDialog({
       open={open}
       onClose={onClose}
       title={mode === 'generate' ? 'AI 制定计划' : 'AI 局部重生成'}
+      ariaLabel={mode === 'generate' ? 'AI 制定计划' : 'AI 局部重生成'}
       size="lg"
       footer={
         <div className="flex w-full justify-end">

@@ -71,10 +71,10 @@ const LEARNING_TOOL_ENTRIES: readonly LearningToolEntry[] = [
     icon: SubjectDashboardIcon,
   },
   {
-    path: '/plan',
-    label: '学习计划',
-    description: '回看历史计划和阶段安排',
-    testId: 'profile-study-plan-entry',
+    path: '/profile/records',
+    label: '学习记录',
+    description: '按日期回看练习与申论作答记录',
+    testId: 'profile-records-entry',
     icon: SubjectPlanIcon,
   },
   {
