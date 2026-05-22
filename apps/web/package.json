@@ -16,6 +16,7 @@
   "dependencies": {
     "@sikao/api-client": "*",
     "@sikao/answer-engine": "*",
+    "@sikao/calendar-engine": "*",
     "@sikao/config": "*",
     "@sikao/design-system": "*",
     "@sikao/domain": "*",

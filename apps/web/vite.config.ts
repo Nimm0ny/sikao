@@ -43,6 +43,7 @@ export default defineConfig({
       '@sikao/design-system': resolve(__dirname, '../../packages/design-system/src'),
       '@sikao/api-client': resolve(__dirname, '../../packages/api-client/src'),
       '@sikao/domain': resolve(__dirname, '../../packages/domain/src'),
+      '@sikao/calendar-engine': resolve(__dirname, '../../packages/calendar-engine/src'),
       '@sikao/answer-engine': resolve(__dirname, '../../packages/answer-engine/src'),
       '@sikao/editor': resolve(__dirname, '../../packages/editor/src'),
       '@sikao/shared-utils': resolve(__dirname, '../../packages/shared-utils/src'),

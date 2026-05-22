@@ -26,6 +26,8 @@
       "@sikao/api-client/*": ["packages/api-client/src/*"],
       "@sikao/domain": ["packages/domain/src/index.ts"],
       "@sikao/domain/*": ["packages/domain/src/*"],
+      "@sikao/calendar-engine": ["packages/calendar-engine/src/index.ts"],
+      "@sikao/calendar-engine/*": ["packages/calendar-engine/src/*"],
       "@sikao/answer-engine": ["packages/answer-engine/src/index.ts"],
       "@sikao/answer-engine/*": ["packages/answer-engine/src/*"],
       "@sikao/editor": ["packages/editor/src/index.ts"],
