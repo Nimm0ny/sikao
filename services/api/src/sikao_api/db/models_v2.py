@@ -614,6 +614,21 @@ class ReviewItemV2(Base):
         ForeignKey("essay_submissions_v2.id", ondelete="SET NULL"), nullable=True
     )
     metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+
+    # Phase-Practice WU-B11.4 (Tab 2): why this review item was queued.
+    # Application-layer enum, intentionally nullable for legacy rows that
+    # pre-date the field. Values:
+    #   wrong_answer        Auto-queued from a wrong submission (existing flow).
+    #   low_confidence      Auto-queued when user marks low confidence on submit.
+    #   manual_add          User explicitly added the item to their queue.
+    #   flagged_persistent  Tab 2 NEW: a session-level flag was promoted to the
+    #                       persistent review queue via WU-B16 QuestionFlagV2
+    #                       (D-Q12 "拓展" tier).
+    # We do not enforce a DB-level enum or CHECK constraint; that lives in the
+    # WU-B14+ review module's writer paths and follows the same pattern as
+    # PlanV2.source / RecommendationV2.status.
+    reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
