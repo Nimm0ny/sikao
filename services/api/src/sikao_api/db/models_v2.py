@@ -415,6 +415,19 @@ class PracticeSessionV2(Base):
         Index("ix_practice_sessions_v2_user_started", "user_id", "started_at"),
         Index("ix_practice_sessions_v2_linked_plan_event", "linked_plan_event_id"),
         Index("ix_practice_sessions_v2_linked_recommendation", "linked_recommendation_id"),
+        CheckConstraint(
+            "(status = 'paused' AND paused_at IS NOT NULL) OR "
+            "(status != 'paused' AND paused_at IS NULL)",
+            name="ck_ps_v2_paused_status",
+        ),
+        CheckConstraint(
+            "(status != 'abandoned') OR (abandoned_reason IS NOT NULL)",
+            name="ck_ps_v2_abandoned_reason",
+        ),
+        CheckConstraint(
+            "(force_submitted = false) OR (force_submitted_reason IS NOT NULL)",
+            name="ck_ps_v2_force_submit_reason",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -473,6 +486,22 @@ class PracticeSessionV2(Base):
     # (stored as TEXT) and JSON('{}') parses cleanly on both backends.
     config_snapshot: Mapped[dict[str, Any]] = mapped_column(
         JSONB_COMPAT, nullable=False, default=dict, server_default=text("'{}'")
+    )
+    paused_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    paused_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    last_heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    abandoned_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    abandoned_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    force_submitted: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    force_submitted_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    recovered_from_session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("practice_sessions_v2.id", ondelete="SET NULL"),
+        nullable=True,
     )
 
 
