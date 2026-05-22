@@ -23,6 +23,8 @@
 | WU-F8 | E2E + MSW + a11y test | 1,200 | 4 | F7 |
 | **合计** | | **12,700** | **44** | |
 
+> **2026-05-22 执行注记**：`WU-F1 / SIK-38` 继续保持 paused reference-track 语义；在 `M6 + M0.5 + 新前端重构计划落档` 前，只允许 endpoint inventory、canonical/shim 差异表、OpenAPI→TS types 生成演练、query key 草表这类 prep 产物，不启动任何 runtime 代码。
+
 > 前端总量上调（原 8,500），原因：补 loading/empty/error/skeleton 状态、a11y、`/profile/learning` 完整页面、stores 拆分、错误边界。
 
 ---
@@ -115,6 +117,8 @@ a11y 测试：每个新组件配 `@testing-library/jest-dom` + `axe-core/react` 
 ---
 
 ## 2. WU-F1 · API client + queries
+
+> **执行约束（2026-05-22）**：本节当前只保留为 future runtime blueprint。若没有新的前端重构计划显式重启，本节允许产出的仅是 prep 级契约素材，不得直接落 `apps/web` / `packages/domain` 运行时代码。
 
 ### 2.1 PR 拆分
 

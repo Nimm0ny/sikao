@@ -663,60 +663,95 @@ PR 行数：~180
 
 ### 9.2 PR 拆分
 
-#### B8.1 APScheduler 集成 + ProgressSnapshot + event-status cron
+> **2026-05-22 执行基线**：`WU-B8` 先走 `B8.0 Define-First`，再落 `B8.1a substrate-only`。`B8.1b` 与 `B8.3a` 可在 substrate 定型后并行；任何会改 `SessionServiceV2.submit()` 的工作必须串行收口，因此 `B8.2` 与 `B8.4` 不并改。
+
+#### B8.1a APScheduler substrate only
 
 文件：
-- `services/api/src/sikao_api/core/scheduler.py`（APScheduler lifespan 集成）
-- `services/api/src/sikao_api/scheduler/jobs/progress_snapshot.py`
-- `services/api/src/sikao_api/scheduler/jobs/event_status_tick.py`
-- `tests/scheduler/test_progress_snapshot_job.py`
-- `tests/scheduler/test_event_status_tick.py`
+- `services/api/src/sikao_api/main.py`（lifespan 挂载）
+- `services/api/src/sikao_api/core/config.py`（Home scheduler config）
+- `services/api/src/sikao_api/scheduler/`（registry / lifecycle / substrate）
+- `tests/test_home_scheduler_substrate.py`
 
 业务规则：
-- Stage 1：MemoryJobStore + BlockingScheduler 单 worker
-- Stage 2 切换：把 jobstore 换 SQLAlchemyJobStore + 单 worker 锁；本 PR 用 ABC `JobStoreProvider` 抽象
-- 失败重试：每个任务包 try/except，失败写 audit_log + 抛错被 scheduler 记录；不静默吞
+- Stage 1：embedded APScheduler + `MemoryJobStore`
+- 不做 `SQLAlchemyJobStore`、multi-worker locking、`services/worker`
+- 只落 substrate：enabled flag、timezone、run_on_startup、registry、start/stop discipline
+- 后续 job 接口统一显式吃 `HomeSchedulerContext(settings + db)`，不再假设零参 callable
+- 本 tranche 不实现 Home 业务 job
 
-PR 行数：~360
+PR 行数：~220
 
-#### B8.2 WeaknessSnapshot cron + session.submit hook
+#### B8.1b ProgressSnapshot + event-status cron
+
+文件：
+- `services/api/src/sikao_api/scheduler/jobs/progress_snapshot.py`
+- `services/api/src/sikao_api/scheduler/jobs/event_status_tick.py`
+- `services/api/tests/test_home_progress_snapshot_job.py`
+- `services/api/tests/test_home_event_status_tick.py`
+
+业务规则：
+- 只接 `B8.1a` substrate，不重写调度底座
+- `event_status_tick` 只推进事件状态，不破坏 P2/P3 进度边界
+- 失败必须显式抛错，由 scheduler 记录；不静默吞
+
+PR 行数：~320
+
+#### B8.2 WeaknessSnapshot cron + session.submit progress boundary
 
 文件：
 - `scheduler/jobs/weakness_snapshot.py`
-- `modules/answer_session/application/on_submit.py`（增量：dispatch progress + weakness 更新）
-- `tests/scheduler/test_weakness_snapshot.py`
-- `tests/modules/answer_session/test_on_submit_hooks.py`
+- `modules/session/application/service.py`（增量：显式 progress/weakness side-effect boundary）
+- `services/api/tests/test_home_weakness_snapshot_job.py`
+- `services/api/tests/test_home_submit_progress_hooks.py`
+
+业务规则：
+- `refresh_progress_artifacts_for_user()` 已在 submit 主事务中存在；本 tranche 只做边界收口，不重复造新 hook 层
+- 若 submit side effects 要重构，必须为后续 `B8.4` 预留串行接点
 
 PR 行数：~280
 
-#### B8.3 plan_adjustor cron + login hook + skipped hook + 过期清理 + 物理清理
+#### B8.3a plan_adjustor cron + cleanup logic
 
 文件：
 - `scheduler/jobs/plan_adjustor_daily.py`
 - `scheduler/jobs/cleanup_expired.py`
 - `scheduler/jobs/cleanup_soft_deleted.py`
-- `modules/identity/application/service.py`（增量：登录后触发 adjustor 检查）
-- 接入 event-status-tick：标 skipped 后 enqueue adjustor
-- `tests/scheduler/test_plan_adjustor_cron.py`
-- `tests/scheduler/test_cleanup_jobs.py`
-- `tests/modules/identity/test_login_hook.py`
+- `services/api/tests/test_home_plan_adjustor_daily.py`
+- `services/api/tests/test_home_cleanup_jobs.py`
 
 业务规则（ADJ-6 限流）：
 - adjustor 入口先查近 24h 同 user_id 是否已生成同类 adjustment（按 changes diff 哈希），命中则跳过
 - 限流计数写 audit_log
+- 本 tranche 只落 job 逻辑、幂等、审计/日志证据
 
-PR 行数：~390
+PR 行数：~300
+
+#### B8.3b login hook + skipped hook wiring
+
+文件：
+- `modules/identity/application/service.py`（增量：登录后触发 adjustor 检查）
+- 接入 event-status-tick：标 skipped 后 enqueue adjustor
+- `services/api/tests/test_home_login_hook.py`
+
+业务规则：
+- wiring 必须晚于 substrate 与 cleanup/adjustor job 稳定后接线
+- login：成功后判断 `last_adjusted_at < today 00:00 && ai_adjust_enabled=true`
+- skipped hook：event-status-tick 把 planned/in_progress 过时事件改成 skipped 后，若该 event 属于 active plan，则 enqueue adjustor
+
+PR 行数：~220
 
 #### B8.4 session.submit hook → recommender 实时刷新
 
 文件：
-- `modules/answer_session/application/on_submit.py`（增量：dispatch recommender refresh）
+- `modules/session/application/service.py`（增量：dispatch recommender refresh）
 - 异步 enqueue（asyncio task，Stage 1；Stage 2 切 worker queue）
-- `tests/modules/answer_session/test_recommender_refresh.py`
+- `services/api/tests/test_home_recommender_refresh.py`
 
 业务规则：
 - session.submit 不应阻塞返回；recommender 刷新走后台任务
 - 刷新前先检查上次 generated_at 是否 < 5 min（防抖）
+- 本 tranche 与 `B8.2` 串行执行，不并改 submit 主事务
 
 PR 行数：~220
 
@@ -725,6 +760,8 @@ PR 行数：~220
 ## 10. WU-B9 · E2E + OpenAPI 验收
 
 ### 10.1 PR 拆分
+
+> **2026-05-22 执行基线**：`WU-B9` 拆成 `B9-prep` 与 `B9-lock` 两段。`B9-prep` 可在 `B8.1a` 之后并行推进非-cron surfaces 与 export/drift harness；`B9-lock` 必须等全部 `B8` runtime hooks 收口后再做 shim 删除与 spec/types 锁定。
 
 #### B9.1 plans + events e2e
 
@@ -772,14 +809,21 @@ PR 行数：~280
 #### B9.5 OpenAPI 重生成 + drift 测试
 
 文件：
-- `services/api/scripts/export_openapi.py`（如不存在则新建）
+- `services/api/scripts/export_openapi.py`（wrapper）
+- `services/api/src/sikao_api/cli/export_openapi.py`（实现）
 - `services/api/spec/openapi.json`（重生成）
-- `tests/contract/test_openapi_drift.py`：跑时实时 generate vs file，diff 必须为空
+- `services/api/tests/test_openapi_drift.py`：跑时实时 generate vs file，diff 必须为空
 - `packages/api-client/src/types/api.generated.ts`（基于 openapi.json 重生成 ts types，本 PR 仅生成不消费）
 
 收口要求：
 - 删除 legacy `GET /api/v2/dashboard/records` shim，只保留 canonical `GET /api/v2/profile/records`
 - 锁定后的 `openapi.json` 不再包含 `/dashboard/records`
+- 锁定后的 `api.generated.ts` 不再包含 `/dashboard/records`
+
+`B9-prep` 限制：
+- 可以先补 export/drift harness、非-cron e2e、shim 删除前后的断言矩阵
+- 不得提前删除 shim
+- 不得提前提交最终锁定版 `openapi.json` / `api.generated.ts`
 
 PR 行数：~280（其中 openapi.json 自动生成不计入手写）
 
@@ -834,9 +878,11 @@ B7.4  plan_adjustor + prompts/parsers
 B7.5  recommender + recommender_policy + prompts/parsers
 B7.6  LLM 单测 + JSON mode fallback + 真 provider 脚本
 
-B8.1  APScheduler + ProgressSnapshot + event-status tick
-B8.2  WeaknessSnapshot cron + session.submit progress hook
-B8.3  plan_adjustor cron + login hook + skipped hook + cleanup
+B8.1a APScheduler substrate only
+B8.1b ProgressSnapshot + event-status tick
+B8.2  WeaknessSnapshot cron + session.submit progress boundary
+B8.3a plan_adjustor cron + cleanup logic
+B8.3b login hook + skipped hook wiring
 B8.4  session.submit recommender refresh hook
 
 B9.1  e2e plans + events
@@ -844,7 +890,7 @@ B9.2  e2e recommendations
 B9.3  e2e progress
 B9.4  e2e planning + profile
 B9.5  OpenAPI 重生成 + drift 测试 + ts types 生成
-```
+``` 
 
 ---
 
