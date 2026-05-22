@@ -15,34 +15,34 @@
  *   - filters: 60min — 元数据, 改动罕见
  *   - list/extended: 2min — 用户切 page / filter 高频, 短 stale + cache key 隔离
  */
+// NOTE(2026-05-22): this legacy query module now reads types from ../types/api
+// adjunct contracts. The generated OpenAPI file remains the canonical backend
+// SSOT, but these specific DTO names are not sourced from components.schemas.
 import {
   useQuery,
   type UseQueryResult,
 } from '@tanstack/react-query';
 import { api } from '../request';
 import { shouldRetry } from '@sikao/shared-utils';
-import type { components } from '@sikao/api-client/types/api.generated';
+import type {
+  EssayPapersFiltersResponseV2,
+  EssayPapersListExtendedResponseV2,
+  EssaySpecialtyCategoriesResponseV2,
+  EssaySpecialtySummaryV2,
+} from '../types/api';
 
-export type EssaySpecialtySummaryV2 =
-  components['schemas']['EssaySpecialtySummaryV2'];
-export type EssaySpecialtyCategoriesResponseV2 =
-  components['schemas']['EssaySpecialtyCategoriesResponseV2'];
-export type SpecialtyCategoryV2 =
-  components['schemas']['SpecialtyCategoryV2'];
-export type SpecialtySubtypeRowV2 =
-  components['schemas']['SpecialtySubtypeRowV2'];
-export type SpecialtyTotalsV2 =
-  components['schemas']['SpecialtyTotalsV2'];
-export type SpecialtyResumeV2 =
-  components['schemas']['SpecialtyResumeV2'];
-export type EssayPapersListExtendedResponseV2 =
-  components['schemas']['EssayPapersListExtendedResponseV2'];
-export type EssayPaperListItemV2Extended =
-  components['schemas']['EssayPaperListItemV2Extended'];
-export type EssayLastAttemptV2 =
-  components['schemas']['EssayLastAttemptV2'];
-export type EssayPapersFiltersResponseV2 =
-  components['schemas']['EssayPapersFiltersResponseV2'];
+export type {
+  EssayLastAttemptV2,
+  EssayPaperListItemV2Extended,
+  EssayPapersFiltersResponseV2,
+  EssayPapersListExtendedResponseV2,
+  EssaySpecialtyCategoriesResponseV2,
+  EssaySpecialtySummaryV2,
+  SpecialtyCategoryV2,
+  SpecialtyResumeV2,
+  SpecialtySubtypeRowV2,
+  SpecialtyTotalsV2,
+} from '../types/api';
 
 export type EssayPapersSort = 'default' | 'year' | 'recent';
 

@@ -14,14 +14,15 @@
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import { api } from '@sikao/api-client/request';
 import { shouldRetry } from '@sikao/shared-utils';
-import type { components } from '@sikao/api-client/types/api.generated';
+import type {
+  WrongBookHeatmapResponse,
+} from '@sikao/api-client/types/api';
 
-export type WrongBookHeatmapResponse =
-  components['schemas']['WrongBookHeatmapResponse'];
-export type WrongBookHeatmapRow =
-  components['schemas']['WrongBookHeatmapRow'];
-export type WrongBookHeatmapCell =
-  components['schemas']['WrongBookHeatmapCell'];
+export type {
+  WrongBookHeatmapCell,
+  WrongBookHeatmapResponse,
+  WrongBookHeatmapRow,
+} from '@sikao/api-client/types/api';
 
 export type HeatmapDays = 7 | 30 | 90 | 180;
 

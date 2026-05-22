@@ -15,34 +15,34 @@
  *   - filters: 60min — 元数据, 改动罕见
  *   - list/extended: 2min — 用户切 page / filter 高频, 短 stale + cache key 隔离
  */
+// NOTE(2026-05-22): this legacy query module now reads types from ../types/api
+// adjunct contracts. The generated OpenAPI file remains the canonical backend
+// SSOT, but these specific DTO names are not sourced from components.schemas.
 import {
   useQuery,
   type UseQueryResult,
 } from '@tanstack/react-query';
 import { api } from '../request';
 import { shouldRetry } from '@sikao/shared-utils';
-import type { components } from '@sikao/api-client/types/api.generated';
+import type {
+  XingcePapersFiltersResponseV2,
+  XingcePapersListExtendedResponseV2,
+  XingceSpecialtyCategoriesResponseV2,
+  XingceSpecialtySummaryV2,
+} from '../types/api';
 
-export type XingceSpecialtySummaryV2 =
-  components['schemas']['XingceSpecialtySummaryV2'];
-export type XingceSpecialtyCategoriesResponseV2 =
-  components['schemas']['XingceSpecialtyCategoriesResponseV2'];
-export type XingceSpecialtyCategoryV2 =
-  components['schemas']['XingceSpecialtyCategoryV2'];
-export type XingceSpecialtySubtypeRowV2 =
-  components['schemas']['XingceSpecialtySubtypeRowV2'];
-export type XingceSpecialtyTotalsV2 =
-  components['schemas']['XingceSpecialtyTotalsV2'];
-export type XingceSpecialtyResumeV2 =
-  components['schemas']['XingceSpecialtyResumeV2'];
-export type XingcePapersListExtendedResponseV2 =
-  components['schemas']['XingcePapersListExtendedResponseV2'];
-export type XingcePaperListItemV2Extended =
-  components['schemas']['XingcePaperListItemV2Extended'];
-export type XingceLastAttemptV2 =
-  components['schemas']['XingceLastAttemptV2'];
-export type XingcePapersFiltersResponseV2 =
-  components['schemas']['XingcePapersFiltersResponseV2'];
+export type {
+  XingceLastAttemptV2,
+  XingcePaperListItemV2Extended,
+  XingcePapersFiltersResponseV2,
+  XingcePapersListExtendedResponseV2,
+  XingceSpecialtyCategoriesResponseV2,
+  XingceSpecialtyCategoryV2,
+  XingceSpecialtyResumeV2,
+  XingceSpecialtySubtypeRowV2,
+  XingceSpecialtySummaryV2,
+  XingceSpecialtyTotalsV2,
+} from '../types/api';
 
 export type XingcePapersSort = 'default' | 'year' | 'recent';
 

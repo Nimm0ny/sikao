@@ -5,7 +5,7 @@ import {
   type BackendEssayQuestion,
 } from '@sikao/domain/shenlun/mapBackendPaper';
 import { logger } from '@sikao/shared-utils';
-import type { components } from './types/api.generated';
+import type { EssayDraft, EssayDraftSubmission } from './types/api';
 
 // EssayClient 鈥?abstraction so PRs 2-8 don't bind to mock vs real API.
 // PR1 鍒囩湡鍚庣 submit (Promise.allSettled 骞跺彂 N 娆?POST /essay/grade).
@@ -17,8 +17,6 @@ import type { components } from './types/api.generated';
 
 const SNAPSHOT_KEY_PREFIX = 'exam-session-v2:';
 
-type EssayDraft = components['schemas']['EssayDraftV2'];
-type EssayDraftSubmission = components['schemas']['EssayDraftSubmissionV2'];
 
 // 鍚庣 EssayGradingV2 schema 瀛愰泦 (鎴戜滑鍙 id 鏉ユ瀯 recordIds).
 // 瀹屾暣 shape 鍦?frontend/src/types/api.ts EssayGradingV2 (auto-generated).

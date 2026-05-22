@@ -677,3 +677,337 @@ export type LlmStreamFrame =
   | { type: 'delta'; content: string }
   | { type: 'done'; messageId: number; conversationId: number }
   | { type: 'error'; code: string; message: string; conversationId?: number };
+
+export interface EssayDraft {
+  questionId: number;
+  typedDraft: string;
+  handwrittenDraftMetadata: Record<string, unknown> | null;
+  updatedAt?: string;
+}
+
+export interface EssayDraftSubmission {
+  questionId: number;
+  typedDraft: string;
+  handwrittenDraftMetadata: Record<string, unknown> | null;
+}
+
+export type SpecialtyRowStatus = 'pending' | 'progress' | 'done';
+
+export interface SpecialtySubtypeRowV2 {
+  id: string;
+  questionId: number;
+  name: string;
+  meta: string;
+  practiced: number;
+  total: number;
+  status: SpecialtyRowStatus;
+}
+
+export interface SpecialtyCategoryV2 {
+  id: string;
+  idx: number;
+  name: string;
+  desc: string;
+  overallProgress: number;
+  practiced: number;
+  total: number;
+  state: 'empty' | null;
+  subTypes: SpecialtySubtypeRowV2[];
+}
+
+export interface SpecialtyTotalsV2 {
+  practiced: number;
+  total: number;
+  streakDays: number;
+  weekDone: number;
+  avgScore: number;
+}
+
+export interface SpecialtyResumeV2 {
+  questionId: number;
+  typeName: string;
+  qIndex: number;
+  qTotal: number;
+  weekGoal: [number, number];
+  lastScores: number[];
+}
+
+export interface EssaySpecialtySummaryV2 {
+  totals: SpecialtyTotalsV2;
+  resume: SpecialtyResumeV2 | null;
+}
+
+export interface EssaySpecialtyCategoriesResponseV2 {
+  cats: SpecialtyCategoryV2[];
+}
+
+export interface EssayLastAttemptV2 {
+  score: number;
+  submittedAt: string;
+}
+
+export interface EssayPaperListItemV2Extended {
+  id: number;
+  paperCode: string;
+  paperName: string;
+  examYear: number | null;
+  sourceProvider: string | null;
+  sourceKind: string | null;
+  questionCount: number;
+  currentRevisionId: string | number;
+  region: string;
+  track: string;
+  difficulty: 1 | 2 | 3 | null;
+  status: 'todo' | 'doing' | 'done';
+  progress: string;
+  lastAttempt: EssayLastAttemptV2 | null;
+  pinned: boolean;
+}
+
+export interface EssayPapersListExtendedResponseV2 {
+  items: EssayPaperListItemV2Extended[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface EssayPapersFiltersResponseV2 {
+  regions: string[];
+  years: number[];
+  paperTypes: string[];
+}
+
+export type XingceSpecialtySubtypeRowV2 = SpecialtySubtypeRowV2;
+export type XingceSpecialtyCategoryV2 = SpecialtyCategoryV2;
+export type XingceSpecialtyTotalsV2 = SpecialtyTotalsV2;
+export type XingceSpecialtyResumeV2 = SpecialtyResumeV2;
+export type XingcePaperListItemV2Extended = EssayPaperListItemV2Extended;
+export type XingceLastAttemptV2 = EssayLastAttemptV2;
+export type XingcePapersFiltersResponseV2 = EssayPapersFiltersResponseV2;
+
+export interface XingceSpecialtySummaryV2 {
+  totals: XingceSpecialtyTotalsV2;
+  resume: XingceSpecialtyResumeV2 | null;
+}
+
+export interface XingceSpecialtyCategoriesResponseV2 {
+  cats: XingceSpecialtyCategoryV2[];
+}
+
+export interface XingcePapersListExtendedResponseV2 {
+  items: XingcePaperListItemV2Extended[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface WrongBookSummary {
+  inPractice: number;
+  todoCount: number;
+  dangerCount: number;
+  graduatedCount: number;
+  weeklyNew: number;
+}
+
+export interface GraduationCandidate {
+  questionId: number;
+  stem: string;
+  knowledgePoint: string | null;
+  consecutiveCorrectCount: number;
+}
+
+export interface MarkMasteredResult {
+  questionId: number;
+  masteryLevel: MasteryLevel;
+  consecutiveCorrectCount: number;
+}
+
+export interface PeekResult {
+  questionId: number;
+  peekCount: number;
+  peekRemaining?: number | null;
+  remainingPeekCount?: number | null;
+}
+
+export interface WrongBookSubmitPayload {
+  [key: string]: unknown;
+}
+
+export interface WrongBookSubmitResult {
+  questionId: number;
+  isCorrect: boolean;
+  masteryLevel: MasteryLevel;
+  consecutiveCorrectCount: number;
+  bluffDetected?: boolean;
+  bluffCount?: number;
+  peekDetected?: boolean;
+}
+
+export type SmartReviewMode = 'qifei' | 'single' | 'similar' | 'mock' | 'danger';
+
+export interface SmartReviewToday {
+  pushedToday: number;
+  finishedToday: number;
+  streakDays: number;
+  daysToExam: number;
+}
+
+export interface SmartReviewNext {
+  questionId: number;
+  mode: SmartReviewMode;
+  stem: string;
+  knowledgePoint: string | null;
+  consecutiveCorrectCount: number;
+  lastWrongTime: string;
+}
+
+export interface WrongBookHeatmapCell {
+  date: string;
+  count: number;
+  rate: number | null;
+}
+
+export interface WrongBookHeatmapRow {
+  subject: string;
+  total: number;
+  peakIdx: number | null;
+  cells: WrongBookHeatmapCell[];
+}
+
+export interface WrongBookHeatmapResponse {
+  days: number;
+  rows: WrongBookHeatmapRow[];
+}
+
+export interface ExamEventOutV2 {
+  id: number;
+  slug: string;
+  name: string;
+  category: string;
+  examDate: string;
+  precision: string;
+}
+
+export interface ExamEventListResponse {
+  items: ExamEventOutV2[];
+}
+
+export type NoteType = 'quote' | 'method' | 'reflect' | 'material';
+export type NoteSourceDomain = 'xingce' | 'essay';
+export type NoteSourceKind = 'manual' | 'practice' | 'imported' | 'system';
+export type NoteVisibility = 'self' | 'public';
+
+export interface NoteAttachedToV2 {
+  paperIds?: number[];
+  questionTypeIds?: string[];
+  wrongAnswerIds?: number[];
+  xingceQuestionIds?: number[];
+}
+
+export interface NoteOutV2 {
+  id: number;
+  title: string;
+  type: NoteType;
+  sourceDomain: NoteSourceDomain;
+  sourceKind: NoteSourceKind;
+  sourceRef: string;
+  tags: string[];
+  visibility: NoteVisibility;
+  body: Record<string, unknown>;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NoteCreateV2 {
+  type: NoteType;
+  body: Record<string, unknown>;
+  sourceKind: NoteSourceKind;
+  sourceRef: string;
+  sourceDomain: NoteSourceDomain;
+  title: string;
+  tags: string[];
+  visibility: NoteVisibility;
+  sourceQuote?: string;
+  attachedTo?: NoteAttachedToV2;
+}
+
+export type NoteUpdateV2 = NoteCreateV2;
+
+export interface NoteListOutV2 {
+  items: NoteOutV2[];
+  nextCursor: number | null;
+  total: number;
+}
+
+export interface NoteReviewOutV2 {
+  id: number;
+  noteId: number;
+  recallQuality: number;
+  reviewedAt: string;
+  nextReviewAt: string | null;
+}
+
+export interface NoteReviewListOutV2 {
+  items: NoteReviewOutV2[];
+}
+
+export interface NoteReviewSubmitV2 {
+  recallQuality: number;
+}
+
+export interface NoteStatsV2 {
+  total: number;
+  byType: Record<NoteType, number>;
+  bySourceDomain: Record<NoteSourceDomain, number>;
+}
+
+export interface CommunityNote {
+  id: number;
+  title: string;
+  type: NoteType;
+  sourceDomain: NoteSourceDomain;
+  sourceKind: NoteSourceKind;
+  sourceRef: string;
+  body: Record<string, unknown>;
+  tags: string[];
+  createdAt: string;
+  updatedAt: string;
+  publicAt: string | null;
+  userDisplayName: string | null;
+  likedByMe: boolean;
+  favoritedByMe: boolean;
+  likesCount: number;
+  commentsCount: number;
+}
+
+export interface CommunityNoteListResponse {
+  items: CommunityNote[];
+  total: number;
+}
+
+export interface CommunityNoteComment {
+  id: number;
+  noteId: number;
+  userDisplayName: string | null;
+  content: string;
+  createdAt: string;
+  parentCommentId: number | null;
+}
+
+export interface CommunityNoteCommentList {
+  items: CommunityNoteComment[];
+}
+
+export interface CommunityNoteCommentCreate {
+  content: string;
+  parentCommentId: number | null;
+}
+
+export interface CommunityNoteLikeToggleResponse {
+  liked: boolean;
+  likesCount: number;
+}
+
+export interface CommunityNoteFavoriteToggleResponse {
+  favorited: boolean;
+}

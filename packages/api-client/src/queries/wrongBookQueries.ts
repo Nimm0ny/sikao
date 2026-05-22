@@ -23,20 +23,28 @@ import {
 } from '@tanstack/react-query';
 import { api } from '../request';
 import { shouldRetry } from '@sikao/shared-utils';
-import type { components } from '@sikao/api-client/types/api.generated';
+import type {
+  GraduationCandidate,
+  MarkMasteredResult,
+  PeekResult,
+  SmartReviewNext,
+  SmartReviewToday,
+  WrongBookSubmitPayload,
+  WrongBookSubmitResult,
+  WrongBookSummary,
+} from '../types/api';
 
 // ── BE 契约类型 (api.generated.ts SSOT) ────────────────────────────────────
-export type WrongBookSummary = components['schemas']['WrongBookSummary'];
-export type GraduationCandidate =
-  components['schemas']['GraduationCandidate'];
-export type MarkMasteredResult = components['schemas']['MarkMasteredResult'];
-export type PeekResult = components['schemas']['PeekResult'];
-export type WrongBookSubmitPayload =
-  components['schemas']['WrongBookSubmitPayload'];
-export type WrongBookSubmitResult =
-  components['schemas']['WrongBookSubmitResult'];
-export type SmartReviewToday = components['schemas']['SmartReviewToday'];
-export type SmartReviewNext = components['schemas']['SmartReviewNext'];
+export type {
+  GraduationCandidate,
+  MarkMasteredResult,
+  PeekResult,
+  SmartReviewNext,
+  SmartReviewToday,
+  WrongBookSubmitPayload,
+  WrongBookSubmitResult,
+  WrongBookSummary,
+} from '../types/api';
 
 // ── React Query keys (跟 utils/apiQueries.ts wrongBookKeys.all 同根, 改一处) ──
 export const wrongBookV2Keys = {

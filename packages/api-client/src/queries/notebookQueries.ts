@@ -25,22 +25,34 @@ import {
 } from '@tanstack/react-query';
 import { api } from '../request';
 import { shouldRetry } from '@sikao/shared-utils';
-import type { components } from '@sikao/api-client/types/api.generated';
+import type {
+  NoteCreateV2,
+  NoteListOutV2,
+  NoteOutV2,
+  NoteReviewListOutV2,
+  NoteReviewSubmitV2,
+  NoteSourceDomain,
+  NoteStatsV2,
+  NoteType,
+  NoteUpdateV2,
+} from '../types/api';
 
 // ── re-export schema 类型 ──────────────────────────────────────────────────
 
-export type NoteOutV2 = components['schemas']['NoteOutV2'];
-export type NoteCreateV2 = components['schemas']['NoteCreateV2'];
-export type NoteUpdateV2 = components['schemas']['NoteUpdateV2'];
-export type NoteListOutV2 = components['schemas']['NoteListOutV2'];
-export type NoteReviewOutV2 = components['schemas']['NoteReviewOutV2'];
-export type NoteReviewListOutV2 = components['schemas']['NoteReviewListOutV2'];
-export type NoteReviewSubmitV2 = components['schemas']['NoteReviewSubmitV2'];
-export type NoteStatsV2 = components['schemas']['NoteStatsV2'];
-export type NoteAttachedToV2 = components['schemas']['NoteAttachedToV2'];
-export type NoteType = NoteOutV2['type'];
-export type NoteSourceKind = NoteOutV2['sourceKind'];
-export type NoteSourceDomain = NoteOutV2['sourceDomain'];
+export type {
+  NoteAttachedToV2,
+  NoteCreateV2,
+  NoteListOutV2,
+  NoteOutV2,
+  NoteReviewListOutV2,
+  NoteReviewOutV2,
+  NoteReviewSubmitV2,
+  NoteSourceDomain,
+  NoteSourceKind,
+  NoteStatsV2,
+  NoteType,
+  NoteUpdateV2,
+} from '../types/api';
 
 // ── React Query keys ──────────────────────────────────────────────────────
 

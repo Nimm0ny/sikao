@@ -27,11 +27,9 @@ import {
   DEFAULT_EXAM_LABEL,
   daysUntilExam,
 } from '@sikao/domain/study-record/exam-countdown';
-import type { components } from '@sikao/api-client/types/api.generated';
+import type { ExamEventListResponse, ExamEventOutV2 } from '../types/api';
 
-export type ExamEventOutV2 = components['schemas']['ExamEventOutV2'];
-export type ExamEventListResponse =
-  components['schemas']['ExamEventListResponse'];
+export type { ExamEventListResponse, ExamEventOutV2 } from '../types/api';
 export type ExamCategory = ExamEventOutV2['category'];
 
 export const examEventKeys = {

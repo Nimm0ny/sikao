@@ -32,12 +32,11 @@ import { debounce, type DebouncedFunc } from 'lodash-es';
 import { api } from '@sikao/api-client/request';
 import { shouldRetry } from '@sikao/shared-utils';
 import { logger } from '@sikao/shared-utils';
-import type { components } from '@sikao/api-client/types/api.generated';
+import type { EssayDraft, EssayDraftSubmission } from '@sikao/api-client/types/api';
 
 // ── re-export schema 类型 ─────────────────────────────────────────────────
 
-export type EssayDraft = components['schemas']['EssayDraftV2'];
-export type EssayDraftSubmission = components['schemas']['EssayDraftSubmissionV2'];
+export type { EssayDraft, EssayDraftSubmission } from '@sikao/api-client/types/api';
 
 /** TopBar SaveStatus pill 状态机. */
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'unsaved';

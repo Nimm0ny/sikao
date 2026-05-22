@@ -25,22 +25,26 @@ import {
 } from '@tanstack/react-query';
 import { api } from '@sikao/api-client/request';
 import { shouldRetry } from '@sikao/shared-utils';
-import type { components } from '@sikao/api-client/types/api.generated';
+import type {
+  CommunityNoteComment,
+  CommunityNoteCommentCreate,
+  CommunityNoteCommentList,
+  CommunityNoteFavoriteToggleResponse,
+  CommunityNoteLikeToggleResponse,
+  CommunityNoteListResponse,
+} from '@sikao/api-client/types/api';
 
 // ── re-export schema 类型 (替 Phase C _communityNotesMock 静态 type) ────────
 
-export type CommunityNote = components['schemas']['NotePublicListItemV2'];
-export type CommunityNoteListResponse =
-  components['schemas']['NotePublicListResponseV2'];
-export type CommunityNoteComment = components['schemas']['NoteCommentOutV2'];
-export type CommunityNoteCommentList =
-  components['schemas']['NoteCommentListV2'];
-export type CommunityNoteCommentCreate =
-  components['schemas']['NoteCommentCreateV2'];
-export type CommunityNoteLikeToggleResponse =
-  components['schemas']['NoteLikeToggleResponseV2'];
-export type CommunityNoteFavoriteToggleResponse =
-  components['schemas']['NoteFavoriteToggleResponseV2'];
+export type {
+  CommunityNote,
+  CommunityNoteComment,
+  CommunityNoteCommentCreate,
+  CommunityNoteCommentList,
+  CommunityNoteFavoriteToggleResponse,
+  CommunityNoteLikeToggleResponse,
+  CommunityNoteListResponse,
+} from '@sikao/api-client/types/api';
 
 // ── React Query keys ──────────────────────────────────────────────────────
 
