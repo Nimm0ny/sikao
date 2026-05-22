@@ -236,3 +236,176 @@ class HomeLlmService:
             model=model,
             messages=messages,
         )
+
+    def _record_success_call(
+        self,
+        *,
+        user_id: int,
+        purpose: str,
+        prompt_version: str,
+        provider: str,
+        model: str,
+        messages: list[LLMMessage],
+        raw_text: str,
+        parsed_output: dict[str, Any],
+        usage: dict[str, int | None],
+    ) -> LlmCallV2:
+        return record_success_call(
+            self,
+            user_id=user_id,
+            purpose=purpose,
+            prompt_version=prompt_version,
+            provider=provider,
+            model=model,
+            messages=messages,
+            raw_text=raw_text,
+            parsed_output=parsed_output,
+            usage=usage,
+        )
+
+    def _record_failed_call(
+        self,
+        *,
+        user_id: int,
+        purpose: str,
+        prompt_version: str,
+        provider: str,
+        model: str,
+        messages: list[LLMMessage],
+        raw_text: str,
+        usage: dict[str, int | None],
+        error: Exception,
+        parse_status: str,
+    ) -> None:
+        record_failed_call(
+            self,
+            user_id=user_id,
+            purpose=purpose,
+            prompt_version=prompt_version,
+            provider=provider,
+            model=model,
+            messages=messages,
+            raw_text=raw_text,
+            usage=usage,
+            error=error,
+            parse_status=parse_status,
+        )
+
+    def _provider_name(self, provider_label: str) -> str:
+        return provider_name(self, provider_label=provider_label)
+
+    def _get_replay(
+        self,
+        *,
+        user_id: int,
+        endpoint: str,
+        idempotency_key: str,
+        request_hash: str,
+    ) -> dict[str, Any] | None:
+        return get_replay(
+            self.session,
+            user_id=user_id,
+            endpoint=endpoint,
+            idempotency_key=idempotency_key,
+            request_hash=request_hash,
+        )
+
+    def _claim_idempotency_key(
+        self,
+        *,
+        user_id: int,
+        endpoint: str,
+        idempotency_key: str,
+        request_hash: str,
+    ) -> dict[str, Any] | None:
+        return claim_idempotency_key(
+            self.session,
+            user_id=user_id,
+            endpoint=endpoint,
+            idempotency_key=idempotency_key,
+            request_hash=request_hash,
+        )
+
+    def _release_idempotency_claim(
+        self,
+        *,
+        user_id: int,
+        endpoint: str,
+        idempotency_key: str,
+        request_hash: str,
+    ) -> None:
+        release_idempotency_claim(
+            self.session,
+            user_id=user_id,
+            endpoint=endpoint,
+            idempotency_key=idempotency_key,
+            request_hash=request_hash,
+        )
+
+    def _store_replay(
+        self,
+        *,
+        user_id: int,
+        endpoint: str,
+        idempotency_key: str,
+        request_hash: str,
+        response_body: dict[str, Any],
+    ) -> None:
+        store_replay(
+            self.session,
+            user_id=user_id,
+            endpoint=endpoint,
+            idempotency_key=idempotency_key,
+            request_hash=request_hash,
+            response_body=response_body,
+        )
+
+    def _validate_idempotency_key(self, key: str) -> None:
+        validate_idempotency_key(key)
+
+    def _sanitize_generate_params(self, params: PlanGenerateParams) -> PlanGenerateParams:
+        return sanitize_generate_params(
+            params,
+            max_input_tokens=self.settings.llm_max_input_tokens,
+        )
+
+    def _sanitize_regenerate_params(self, params: RegenerateRangeParams) -> RegenerateRangeParams:
+        return sanitize_regenerate_params(
+            params,
+            max_input_tokens=self.settings.llm_max_input_tokens,
+        )
+
+    def _build_generated_plan_request(self, *, params: PlanGenerateParams) -> PlanCreateRequestV2:
+        return build_generated_plan_request(params=params)
+
+    def _build_generated_event_request(
+        self, *, plan_id: int, event: dict[str, Any]
+    ) -> PlanEventCreateRequestV2:
+        return build_generated_event_request(
+            plan_id=plan_id,
+            event=event,
+            default_timezone=_LOCAL_TZ,
+        )
+
+    def _normalize_datetime(self, value: Any) -> datetime:
+        return normalize_datetime(value)
+
+    def _build_recommendation_cache_key(self, *, user_id: int, payload: dict[str, Any]) -> str:
+        return build_recommendation_cache_key(user_id=user_id, payload=payload, today=today_cn())
+
+    def _load_window_events(
+        self,
+        *,
+        user_id: int,
+        plan_id: int,
+        from_date: date,
+        to_date: date,
+    ) -> list[dict[str, Any]]:
+        return load_window_events(
+            self.session,
+            user_id=user_id,
+            plan_id=plan_id,
+            from_date=from_date,
+            to_date=to_date,
+            timezone=_LOCAL_TZ,
+        )
