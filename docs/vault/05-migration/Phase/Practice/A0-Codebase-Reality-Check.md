@@ -60,25 +60,38 @@ ProfileInfoV2 / ProfileGoalV2
 
 ### 2.3 现有 modules/ 现状
 
-```
-modules/
-├── auth/                     ← 已废弃（V2 用 identity）
-├── identity/                 ← V2 主用，已实
-├── content/                  ← V2 现状：catalog 端点真但全是 stub 数据
-│   ├── application/service.py     （build_practice_center_envelope 真，4 个 catalog 全 build_empty_catalog）
-│   └── interface/routes.py
-├── session/                  ← V2 主用，已实
-│   ├── application/service.py     （402 行，真实现：state machine + paper_code/question_ids 双 mode）
-│   └── interface/routes.py        （5 端点：POST /sessions, GET /sessions/:id, POST /answers, /submit, /result）
-├── llm/                      ← 当前代码现实：已有 BYOM/OpenAI-compatible 基础设施；尚未补齐 Home plan/adjust/recommend 能力
-├── essay/                    ← 旧版本，已废弃，V2 走 EssayDraft/Submission/Report 三表但**无路由模块**
-├── grading/                  ← 旧版本，已废弃
-├── notes/ + notes_v2/        ← Phase-Home 暂时不动；Tab 4 单独立 Phase
-├── review/                   ← V2 stub
-├── favorite/                 ← 旧版本，已废弃
-├── question_bank/            ← 旧版本，已废弃
-├── ...
-```
+`services/api/src/sikao_api/modules/` 实际包含 **26 个模块**（grep verified: `ls -d modules/*/ | wc -l` = 26）。完整端点列表见 §2.3.1（由 RR-3 后续补全）。
+
+| 模块路径 | status | phase relation | notes |
+|---|---|---|---|
+| `admin/` | migrating | out-of-scope | `interface/routes.py` (~11 endpoints, prefix `/api/v2/admin`) + `interface/note_reports.py` (~3 endpoints) 但 `main.py` 未 `include_router`; 管理后台模块 (paper / question / import / note-report 管理), Tab 2 不触及 |
+| `analytics/` | migrating | peripheral | `interface/progress.py` (3 endpoints prefix `/api/v2/progress`) + `interface/xingce_specialty.py` (4 endpoints prefix `/api/v2/papers/xingce`) 但 `main.py` 未 `include_router`; `application/xingce_specialty.py` 896 行真实现 (predicted_score / progress / xingce_specialty 分析) |
+| `answer_session/` | migrating | primary | routes.py exists with **25 endpoints** prefix `/api/v2/practice` but NOT mounted in main.py; full endpoint list in §2.3.1 (added by RR-3) |
+| `auth/` | deprecated | out-of-scope | replaced by `identity` (V2 mounted as `identity_v2`) |
+| `content/` | active | primary | mounted as `content_v2` (main.py L120). `application/service.py` 已实现 5 个真函数: `build_practice_center_overview / build_xingce_categories / build_xingce_papers / build_essay_categories / build_essay_papers`. WU-B14 估算需基于此现状下调 (per RR-Plan §2.4 B14) |
+| `essay/` | migrating | primary | `interface/routes.py` 含 7 端点 prefix `/api/v2/essay` 但 `main.py` 未 `include_router` — 代码完成但未挂载状态. WU-B20 路由策略需 lhr 决策 (per RR-Plan §2.4 B20). 完整端点列表见 §2.3.1 (added by RR-3) |
+| `exam_events/` | migrating | out-of-scope | `interface/routes.py` 含 `public_router` (prefix `/api/v2/exam-events`) + `admin_router` 但 `main.py` 未 `include_router`; `application/exam_events.py` 149 行; Tab 2 不触及 |
+| `favorite/` | deprecated | out-of-scope | V2 计划用新表 `QuestionFavoriteV2` (WU-B16) 替代 |
+| `grading/` | deprecated | out-of-scope | V2 计划用新模块 `essay_grading` (WU-B20) 替代 |
+| `identity/` | active | peripheral | mounted as `identity_v2` (main.py L114). Tab 2 读取用户身份信息 |
+| `llm/` | migrating | primary | BYOM/OpenAI-compatible 基础设施已建; `application/llm/prompts/` 含 `_shared.py / essay_grading.py / qa.py`; `main.py` 未 `include_router` (`interface/routes.py` exists). Tab 2 通过 WU-B22 扩展 question_generator / essay_grader / reference_answer_generator |
+| `notes/` | deprecated | out-of-scope | 由 `notes_v2` 替代 |
+| `notes_v2/` | placeholder | out-of-scope | mounted as `notes_v2_skeleton` (main.py L123). Tab 4 主用; Tab 2 仅扩展 `NoteV2.linked_question_id` (WU-B11.3) |
+| `paper/` | placeholder | peripheral | 纯 scaffold (`application/__init__.py` / `interface/__init__.py` / `infrastructure/__init__.py` 全空, 仅 `domain/__init__.py` re-export `Paper / PaperBlock / PaperRevision / PaperSection`); PaperV2 等数据模型实际位于 `db/models_v2.py` (per §2.1); 占位待 ADR 决定 paper / question_bank 边界; Tab 2 paper-mode 通过 `content` + `session` 模块间接读取 |
+| `planning/` | active | peripheral | mounted as `planning_v2` (main.py L115). Tab 2 不直接用 |
+| `plans/` | active | peripheral | mounted as `plans_v2` (main.py L116). Tab 2 不直接用 |
+| `profile_v2/` | active | out-of-scope | mounted as `profile_v2` (main.py L124). Tab 5 主用 |
+| `progress/` | placeholder | peripheral | mounted as `progress_v2_skeleton` (main.py L117). Phase-Home 部分实现 |
+| `question_bank/` | deprecated | out-of-scope | V1 旧模块; V2 题库走 `content` + `QuestionV2` 直查 |
+| `recommendations/` | active | peripheral | mounted as `recommendations_v2` (main.py L118). Phase-Home 推荐引擎 |
+| `record/` | active | peripheral | mounted as `record_v2` (main.py L119). Tab 2 写 audit / event |
+| `review/` | active | primary | mounted as `review_v2` (main.py L122). Tab 2 错题队列源 (`ReviewItemV2`) |
+| `session/` | active | primary | mounted as `session_v2` (main.py L121). 5 端点 prefix `/api/v2/practice/sessions`. `application/service.py` 514 行真实现 (state machine + paper_code/question_ids 双 mode) |
+| `system/` | active | peripheral | mounted as `system_v2` + `ops` (main.py L112-113). 系统状态 |
+| `user/` | deprecated | out-of-scope | V1 旧模块; V2 用户身份走 `identity` |
+| `wrong_book/` | deprecated | out-of-scope | V1 旧模块; V2 错题队列走 `review` + `ReviewItemV2` |
+
+> **§2.3.1 forward-ref**: `answer_session` (25 endpoints) 与 `essay` (7 endpoints, unmounted) 的完整端点详表由 RR-3 后续 PR 在 §2.3.1 补全。本表中两个 `migrating` 模块的 status 描述基于 RR-3 待提交内容。
 
 ### 2.4 modules/llm 与 Tab 2 的关系（重要）
 
@@ -203,10 +216,10 @@ sqlite> SELECT COUNT(*) FROM question_v2;
 
 ```
 modules/content/application/service.py:
-  build_practice_center_envelope()  → 真实现（返回 PracticeCenterResponseV2 envelope）
+  build_practice_center_overview()  → 真实现（返回 PracticeCenterResponseV2 envelope）
 
 modules/content/interface/routes.py:
-  GET /practice/center                   → service.build_practice_center_envelope（真）
+  GET /practice/center                   → service.build_practice_center_overview（真）
   GET /practice/xingce/categories        → build_empty_catalog（stub）
   GET /practice/xingce/papers            → build_empty_catalog（stub）
   GET /practice/essay/categories         → build_empty_catalog（stub）
