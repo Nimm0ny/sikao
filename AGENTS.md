@@ -118,11 +118,10 @@
      - 已通过独立 subagent review。
      - 最终回复不得说“全量验证通过”，只能说 scoped validation 通过、full validation blocked。
 
-4. Known Full Validation Blocker（2026-05-21）
-   - 当前全量 `npm run typecheck` 被既有前端迁移债务阻塞。
-   - 主要类别：workspace package 通过 `paths` 直接引用其它 package 源码导致 `rootDir` 报错；`packages/api-client/src/types/api.generated.ts` 缺少后端已有 schema；测试 matcher 类型未统一接入。
-   - 该 blocker 不得用 silent fallback、`any`、删除业务代码、或跳过 OpenAPI 契约的方式硬修。
-   - 解决路径必须单独开任务：先定义 package typecheck / OpenAPI SSOT 边界，再修生成类型和 workspace TS 配置。
+4. Known Full Validation Blocker（2026-05-21，已于 2026-05-22 由 `SIK-31` 解锁）
+   - 此条保留为历史记录，不再构成当前 repo 的 validation 豁免理由。
+   - `SIK-31` 已解掉当时的三类阻塞：workspace `rootDir` 冲突、`packages/api-client/src/types/api.generated.ts` 之外的 legacy consumer 类型缺口、测试 matcher 类型接入不统一。
+   - 若未来再次出现 full validation 阻塞，必须新开任务并重写 blocker 说明，不得继续援引本条。
 
 5. Git Gate
    - 正常 commit 必须原子拆分，`<=15` 文件、`<=400` 净增。
