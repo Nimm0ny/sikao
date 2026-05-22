@@ -19,7 +19,6 @@ from sikao_api.modules.plans.interface import routes as plans_v2
 from sikao_api.modules.profile_v2.interface import routes as profile_v2
 from sikao_api.modules.progress.interface import routes as progress_v2_skeleton
 from sikao_api.modules.recommendations.interface import routes as recommendations_v2
-from sikao_api.modules.record.interface import routes as record_v2
 from sikao_api.modules.review.interface import routes as review_v2
 from sikao_api.modules.session.interface import routes as session_v2
 from sikao_api.modules.system.application.errors import ServiceError
@@ -127,7 +126,6 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
     app.include_router(plans_v2.router)
     app.include_router(progress_v2_skeleton.router)
     app.include_router(recommendations_v2.router)
-    app.include_router(record_v2.router)
     app.include_router(content_v2.router)
     app.include_router(session_v2.router)
     app.include_router(review_v2.router)

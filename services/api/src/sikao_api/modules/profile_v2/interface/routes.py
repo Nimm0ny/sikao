@@ -106,7 +106,7 @@ def get_profile_records(
     kind: str | None = None,
     status: str | None = None,
     from_date: Annotated[date | None, Query(alias="from")] = None,
-    to_date: date | None = None,
+    to_date: Annotated[date | None, Query(alias="to")] = None,
     session_id: int | None = None,
 ) -> LearningRecordListResponseV2:
     return build_learning_record_list(
