@@ -6,10 +6,24 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, Request
 from sqlalchemy.orm import Session
 
-from sikao_api.db.schemas_v2 import OperationAckV2, PracticeAnswerUpsertRequestV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionResultResponseV2
+from sikao_api.db.schemas_v2 import (
+    OperationAckV2,
+    PracticeAnswerFlagRequestV2,
+    PracticeAnswerUpsertRequestV2,
+    PracticePersistentFlagRequestV2,
+    PracticeSessionCreateRequestV2,
+    PracticeSessionEnvelopeV2,
+    PracticeSessionItemV2,
+    PracticeSessionResultResponseV2,
+)
 from sikao_api.db.session import get_db_session
 from sikao_api.modules.identity.application.security_v2 import get_current_user_v2, verify_csrf_v2
+from sikao_api.modules.session.application.answer_flag_ops import (
+    create_persistent_flag,
+    set_answer_flag,
+)
 from sikao_api.modules.session.application.service import SessionServiceV2
+from sikao_api.modules.session.application.view_solution_ops import mark_view_solution
 from sikao_api.db.models_v2 import UserV2
 
 router = APIRouter(prefix="/api/v2/practice/sessions", tags=["session-v2"])
@@ -52,6 +66,72 @@ def save_answers(
     service.save_answers(practice_session=practice_session, answers=payload.answers)
     session.commit()
     return OperationAckV2(ok=True, status="saved")
+
+
+@router.post(
+    "/{session_id}/answers/{answer_id}/flag",
+    response_model=PracticeSessionItemV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def flag_answer(
+    session_id: int,
+    answer_id: int,
+    payload: PracticeAnswerFlagRequestV2,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> PracticeSessionItemV2:
+    item = set_answer_flag(
+        session,
+        user=user,
+        session_id=session_id,
+        answer_id=answer_id,
+        flagged=payload.flagged,
+    )
+    session.commit()
+    return item
+
+
+@router.post(
+    "/{session_id}/answers/{answer_id}/view-solution",
+    response_model=PracticeSessionItemV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def view_solution(
+    session_id: int,
+    answer_id: int,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> PracticeSessionItemV2:
+    item = mark_view_solution(
+        session,
+        user=user,
+        session_id=session_id,
+        answer_id=answer_id,
+    )
+    session.commit()
+    return item
+
+
+@router.post(
+    "/{session_id}/persistent-flag",
+    response_model=PracticeSessionItemV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def persistent_flag(
+    session_id: int,
+    payload: PracticePersistentFlagRequestV2,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> PracticeSessionItemV2:
+    item = create_persistent_flag(
+        session,
+        user=user,
+        session_id=session_id,
+        question_id=payload.question_id,
+        reason=payload.reason,
+    )
+    session.commit()
+    return item
 
 
 @router.post("/{session_id}/submit", response_model=OperationAckV2, dependencies=[Depends(verify_csrf_v2)])
