@@ -24,6 +24,9 @@ export type { ProgressBarProps, ProgressVariant } from './ProgressBar';
 export { EmptyState } from './EmptyState';
 export type { EmptyStateProps } from './EmptyState';
 
+export { SectionErrorBoundary } from './SectionErrorBoundary';
+export type { SectionErrorBoundaryProps } from './SectionErrorBoundary';
+
 export { AuthFallbackEmptyState } from './AuthFallbackEmptyState';
 export type { AuthFallbackEmptyStateProps } from './AuthFallbackEmptyState';
 

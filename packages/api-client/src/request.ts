@@ -28,7 +28,7 @@ export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
   '/api/v2';
 
-// withCredentials=true 让浏览器自动携带 auth_token / csrf_token cookie.
+// withCredentials=true 让浏览器自动携带 auth_session_v2 / csrf_token_v2 cookie.
 // 配合后端 dual-fallback dependency (Phase B.1b)，JWT 不再 stays in JS scope，
 // 而是 httpOnly cookie 里。
 export const request = axios.create({
@@ -72,16 +72,17 @@ export const api = {
 // cookie-only auth:
 //   - 不再 Authorization Bearer 注入. 后端 cookie 优先 (B.1b dual fallback),
 //     httpOnly cookie 自动跑 (withCredentials=true). 前端不再持有 token in JS.
-//   - 加 X-CSRF-Token 注入: 读 document.cookie 中的 csrf_token (非 httpOnly).
-//     后端校验 cookie csrf_token == header X-CSRF-Token (B.3 double-submit).
+//   - 加 X-CSRF-Token 注入: 读 document.cookie 中的 csrf_token_v2 (非 httpOnly).
+//     后端校验 cookie csrf_token_v2 == header X-CSRF-Token (B.3 double-submit).
 //     不再从 store 读 —— single source of truth = cookie.
 // Exported for streamingFetch (fetch + ReadableStream needs CSRF on
 // mutating SSE POST; axios interceptor below covers regular calls).
 export function readCsrfTokenFromCookie(): string | null {
   if (typeof document === 'undefined') return null;
+  const cookieNames = ['csrf_token_v2', 'csrf_token'];
   for (const part of document.cookie.split(';')) {
     const [name, ...rest] = part.trim().split('=');
-    if (name === 'csrf_token') {
+    if (cookieNames.includes(name)) {
       return rest.join('=') || null;
     }
   }

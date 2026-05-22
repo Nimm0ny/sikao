@@ -37,6 +37,7 @@ export type ProgressWeaknessResponseV2 = components['schemas']['ProgressWeakness
 export type RecommendationAcceptRequestV2 = components['schemas']['RecommendationAcceptRequestV2'];
 export type RecommendationAcceptResponseV2 = components['schemas']['RecommendationAcceptResponseV2'];
 export type RecommendationListResponseV2 = components['schemas']['RecommendationListResponseV2'];
+export type RecommendationReadV2 = components['schemas']['RecommendationReadV2'];
 export type RecommendationRejectRequestV2 = components['schemas']['RecommendationRejectRequestV2'];
 
 export interface EventWindowFilters {

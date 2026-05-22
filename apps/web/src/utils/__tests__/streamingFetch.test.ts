@@ -36,7 +36,7 @@ function mockFetchOnce(opts: {
 beforeEach(() => {
   vi.unstubAllGlobals();
   // csrf cookie set; readCsrfTokenFromCookie 读 document.cookie.
-  document.cookie = 'csrf_token=test-csrf';
+  document.cookie = 'csrf_token_v2=test-csrf';
 });
 
 afterEach(() => {

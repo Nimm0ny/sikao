@@ -20,7 +20,7 @@ function makeReadableStream(chunks: readonly string[]): ReadableStream<Uint8Arra
 }
 
 beforeEach(() => {
-  document.cookie = 'csrf_token=stream-test';
+  document.cookie = 'csrf_token_v2=stream-test';
 });
 
 afterEach(() => {
