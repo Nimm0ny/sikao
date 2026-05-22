@@ -25,4 +25,8 @@
 
 export { useAuthStore } from './auth/useAuthStore';
 export { usePracticeStore } from './answer-session/usePracticeStore';
+export { useAdjustmentBannerStore } from './dashboard/useAdjustmentBannerStore';
+export { useDashboardPreferenceStore } from './dashboard/useDashboardPreferenceStore';
+export { useRecommendationDraftStore } from './dashboard/useRecommendationDraftStore';
+export { usePlanStore } from './plan/usePlanStore';
 export { useHighlightStore } from './xingce/useHighlightStore';
