@@ -14,8 +14,10 @@
     "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
-    "@sikao/api-client": "*",
+    "@dnd-kit/core": "^6.3.1",
+    "@dnd-kit/sortable": "^8.0.0",
     "@sikao/answer-engine": "*",
+    "@sikao/api-client": "*",
     "@sikao/calendar-engine": "*",
     "@sikao/config": "*",
     "@sikao/design-system": "*",
