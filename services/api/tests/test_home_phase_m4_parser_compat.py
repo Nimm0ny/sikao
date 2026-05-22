@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import pytest
+from pydantic import ValidationError as PydanticValidationError
+
 from sikao_api.modules.llm.application.plan_generator import parse_generated_plan
 from sikao_api.modules.llm.application.recommender import parse_recommendations
 
@@ -11,7 +14,10 @@ def test_recommendation_parser_accepts_bailian_shape() -> None:
             {
               "title": "Review weak items first",
               "description": "You just submitted a session, so review is the best next action.",
-              "action_type": "review"
+              "estimatedMinutes": 20,
+              "actionType": "review",
+              "ctaLabel": "Review",
+              "payload": {}
             }
           ]
         }"""
@@ -23,22 +29,54 @@ def test_recommendation_parser_accepts_bailian_shape() -> None:
     assert item.payload == {}
 
 
-def test_recommendation_parser_rewrites_long_cta_to_default() -> None:
-    parsed = parse_recommendations(
-        """{
-          "recommendations": [
-            {
-              "title": "Review weak items first",
-              "reason": "You just submitted a session, so review is the best next action.",
-              "estimated_minutes": 20,
-              "action_type": "review",
-              "cta": "Review weak spots",
-              "payload": {}
-            }
-          ]
-        }"""
-    )
-    assert parsed.recommendations[0].cta == "Review"
+def test_recommendation_parser_rejects_missing_required_fields() -> None:
+    with pytest.raises(PydanticValidationError):
+        parse_recommendations(
+            """{
+              "recommendations": [
+                {
+                  "title": "Review weak items first",
+                  "description": "You just submitted a session, so review is the best next action.",
+                  "action_type": "review"
+                }
+              ]
+            }"""
+        )
+
+
+def test_recommendation_parser_rejects_missing_payload() -> None:
+    with pytest.raises(PydanticValidationError):
+        parse_recommendations(
+            """{
+              "recommendations": [
+                {
+                  "title": "Review weak items first",
+                  "reason": "You just submitted a session, so review is the best next action.",
+                  "estimated_minutes": 20,
+                  "action_type": "review",
+                  "cta": "Review"
+                }
+              ]
+            }"""
+        )
+
+
+def test_recommendation_parser_rejects_long_cta() -> None:
+    with pytest.raises(PydanticValidationError):
+        parse_recommendations(
+            """{
+              "recommendations": [
+                {
+                  "title": "Review weak items first",
+                  "reason": "You just submitted a session, so review is the best next action.",
+                  "estimated_minutes": 20,
+                  "action_type": "review",
+                  "cta": "Review weak spots",
+                  "payload": {}
+                }
+              ]
+            }"""
+        )
 
 
 def test_plan_parser_accepts_bailian_start_end_aliases() -> None:

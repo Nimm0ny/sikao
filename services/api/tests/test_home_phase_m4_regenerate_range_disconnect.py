@@ -6,7 +6,7 @@ from pathlib import Path
 
 from sqlalchemy import select
 
-from sikao_api.db.models_v2 import PlanEventV2, UserV2
+from sikao_api.db.models_v2 import IdempotencyKeyV2, LlmCallV2, PlanEventV2, UserV2
 from sikao_api.modules.llm.application.plan_generator import RegenerateRangeParams
 from sikao_api.modules.llm.application.service import HomeLlmService
 
@@ -74,9 +74,20 @@ def test_regenerate_range_disconnect_rolls_back_deleted_window(tmp_path: Path) -
                     )
                 )
             )
+            idem = verify.scalar(
+                select(IdempotencyKeyV2).where(
+                    IdempotencyKeyV2.key == "123e4567-e89b-12d3-a456-426614174204"
+                )
+            )
+            calls = list(
+                verify.scalars(select(LlmCallV2).where(LlmCallV2.purpose == "plan_regenerate_range"))
+            )
             assert original is not None
             assert original.deleted_at is None
             assert len(alive_rows) == 1
             assert alive_rows[0].id == original_id
+            assert idem is None
+            assert len(calls) == 1
+            assert calls[0].parse_status == "client_disconnected"
         finally:
             verify.close()
