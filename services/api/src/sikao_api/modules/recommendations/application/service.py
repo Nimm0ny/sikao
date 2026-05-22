@@ -9,6 +9,7 @@ from zoneinfo import ZoneInfo
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from sikao_api.core.config import Settings
 from sikao_api.db.models_v2 import IdempotencyKeyV2, PlanEventV2, PlanV2, PracticeSessionV2, RecommendationFeedbackV2, RecommendationV2, UserV2
 from sikao_api.db.schemas_v2 import (
     RecommendationAcceptRequestV2,
@@ -17,6 +18,10 @@ from sikao_api.db.schemas_v2 import (
     RecommendationReadV2,
     RecommendationRejectRequestV2,
 )
+from sikao_api.modules.llm.application.cache import invalidate_user_prefix_all
+from sikao_api.modules.llm.application.idempotency import claim_idempotency_key, release_idempotency_claim, store_replay
+from sikao_api.modules.llm.application.recommender import RecommendationContext
+from sikao_api.modules.llm.application.service import HomeLlmService
 from sikao_api.modules.plans.application.helpers import now_utc
 from sikao_api.modules.system.application.audit_v2 import add_audit_log
 from sikao_api.modules.system.application.errors import ConflictError, NotFoundError, ValidationError
@@ -65,135 +70,247 @@ class RecommendationServiceV2:
             raise ConflictError("idempotency key was reused with a different payload", code="idempotency_key_reused")
         return RecommendationListResponseV2.model_validate(row.response_body)
 
-    def refresh(
+    async def refresh(
         self,
         *,
         user: UserV2,
+        settings: Settings,
         idempotency_key: str,
         request_hash: str,
         request_id: str | None,
         ip: str | None,
     ) -> RecommendationListResponseV2:
         self._validate_idempotency_key(idempotency_key)
-        pending_rows = list(
-            self.session.scalars(
-                select(RecommendationV2).where(
-                    RecommendationV2.user_id == user.id,
-                    RecommendationV2.status == "pending",
-                )
-            )
-        )
-        now = now_utc()
-        for row in pending_rows:
-            row.status = "expired"
-            self.session.add(row)
-
-        items: list[RecommendationV2] = []
-        latest_in_progress = self.session.scalar(
-            select(PracticeSessionV2)
-            .where(
-                PracticeSessionV2.user_id == user.id,
-                PracticeSessionV2.status.in_(("draft", "in_progress")),
-            )
-            .order_by(PracticeSessionV2.started_at.desc(), PracticeSessionV2.id.desc())
-        )
-        if latest_in_progress is not None:
-            items.append(
-                RecommendationV2(
-                    user_id=user.id,
-                    title="Continue your active practice",
-                    reason="You already have an unfinished practice session.",
-                    estimated_minutes=25,
-                    cta="Continue",
-                    action_type="continue",
-                    payload={
-                        "session_template": {
-                            "track": latest_in_progress.track,
-                            "entry_kind": latest_in_progress.entry_kind,
-                        }
-                    },
-                    expires_at=now + timedelta(hours=4),
-                    source_signals={"in_progress_session_id": latest_in_progress.id},
-                )
-            )
-
-        latest_submitted = self.session.scalar(
-            select(PracticeSessionV2)
-            .where(
-                PracticeSessionV2.user_id == user.id,
-                PracticeSessionV2.status == "submitted",
-            )
-            .order_by(PracticeSessionV2.submitted_at.desc(), PracticeSessionV2.id.desc())
-        )
-        if latest_submitted is not None:
-            items.append(
-                RecommendationV2(
-                    user_id=user.id,
-                    title="Add a focused review block",
-                    reason="Recent completed practice suggests it is time to review weak spots.",
-                    estimated_minutes=20,
-                    cta="Review",
-                    action_type="review",
-                    payload={
-                        "session_template": {
-                            "track": latest_submitted.track,
-                            "entry_kind": "review",
-                            "subject": latest_submitted.payload_json.get("subject")
-                            if isinstance(latest_submitted.payload_json, dict)
-                            else None,
-                        }
-                    },
-                    expires_at=now + timedelta(hours=4),
-                    source_signals={"latest_submitted_session_id": latest_submitted.id},
-                )
-            )
-
-        items.append(
-            RecommendationV2(
-                user_id=user.id,
-                title="Reserve a short recovery block",
-                reason="Keeping some slack in the day helps sustain execution quality.",
-                estimated_minutes=15,
-                cta="Block time",
-                action_type="rest",
-                payload={"rest_minutes": 15},
-                expires_at=now + timedelta(hours=4),
-                source_signals={"strategy": "baseline_rest"},
-            )
-        )
-        for row in items[:3]:
-            self.session.add(row)
-        self.session.flush()
-        response = RecommendationListResponseV2(
-            items=[RecommendationReadV2.model_validate(row) for row in items[:3]],
-            total=min(len(items), 3),
-        )
-        self.session.add(
-            IdempotencyKeyV2(
-                key=idempotency_key,
-                user_id=user.id,
-                endpoint="POST /api/v2/recommendations/refresh",
-                request_hash=request_hash,
-                response_status=200,
-                response_body=response.model_dump(mode="json"),
-                created_at=now,
-                expires_at=now + timedelta(hours=24),
-            )
-        )
-        add_audit_log(
+        endpoint = "POST /api/v2/recommendations/refresh"
+        replay = claim_idempotency_key(
             self.session,
             user_id=user.id,
-            actor_type="user",
-            actor_id=str(user.id),
-            action="recommendation.refresh",
-            target_type="recommendation_v2",
-            target_id=None,
-            after={"count": response.total},
-            metadata={"idempotency_key": idempotency_key},
-            request_id=request_id,
-            ip=ip,
+            endpoint=endpoint,
+            idempotency_key=idempotency_key,
+            request_hash=request_hash,
         )
-        return response
+        if replay is not None:
+            return RecommendationListResponseV2.model_validate(replay)
+
+        should_release_claim = True
+        try:
+            pending_rows = list(
+                self.session.scalars(
+                    select(RecommendationV2).where(
+                        RecommendationV2.user_id == user.id,
+                        RecommendationV2.status == "pending",
+                    )
+                )
+            )
+            for row in pending_rows:
+                row.status = "expired"
+                self.session.add(row)
+            replaced_ids = {row.id for row in pending_rows}
+
+            latest_in_progress = self.session.scalar(
+                select(PracticeSessionV2)
+                .where(
+                    PracticeSessionV2.user_id == user.id,
+                    PracticeSessionV2.status.in_(("draft", "in_progress")),
+                )
+                .order_by(PracticeSessionV2.started_at.desc(), PracticeSessionV2.id.desc())
+            )
+            latest_submitted = self.session.scalar(
+                select(PracticeSessionV2)
+                .where(
+                    PracticeSessionV2.user_id == user.id,
+                    PracticeSessionV2.status == "submitted",
+                )
+                .order_by(PracticeSessionV2.submitted_at.desc(), PracticeSessionV2.id.desc())
+            )
+            llm_rows, llm_call = await HomeLlmService(self.session, settings).recommend_today(
+                user=user,
+                context=RecommendationContext(
+                    payload={
+                        "in_progress_session": (
+                            {
+                                "id": latest_in_progress.id,
+                                "track": latest_in_progress.track,
+                                "entry_kind": latest_in_progress.entry_kind,
+                            }
+                            if latest_in_progress is not None
+                            else None,
+                        ),
+                        "latest_submitted_session": (
+                            {
+                                "id": latest_submitted.id,
+                                "track": latest_submitted.track,
+                                "entry_kind": latest_submitted.entry_kind,
+                                "subject": latest_submitted.payload_json.get("subject")
+                                if isinstance(latest_submitted.payload_json, dict)
+                                else None,
+                            }
+                            if latest_submitted is not None
+                            else None
+                        ),
+                        "pending_rows_replaced": len(pending_rows),
+                    }
+                ),
+            )
+            items = self._materialize_recommendations(
+                user=user,
+                llm_rows=llm_rows,
+                latest_in_progress=latest_in_progress,
+                latest_submitted=latest_submitted,
+                llm_call_id=llm_call.id,
+                excluded_recent_ids=replaced_ids,
+            )
+            for row in items:
+                self.session.add(row)
+            self.session.flush()
+            response = RecommendationListResponseV2(
+                items=[RecommendationReadV2.model_validate(row) for row in items],
+                total=len(items),
+            )
+            store_replay(
+                self.session,
+                user_id=user.id,
+                endpoint=endpoint,
+                idempotency_key=idempotency_key,
+                request_hash=request_hash,
+                response_body=response.model_dump(mode="json"),
+            )
+            add_audit_log(
+                self.session,
+                user_id=user.id,
+                actor_type="user",
+                actor_id=str(user.id),
+                action="recommendation.refresh",
+                target_type="recommendation_v2",
+                target_id=None,
+                after={"count": response.total},
+                metadata={"idempotency_key": idempotency_key},
+                request_id=request_id,
+                ip=ip,
+            )
+            should_release_claim = False
+            return response
+        except Exception:
+            self.session.rollback()
+            if should_release_claim:
+                release_idempotency_claim(
+                    self.session,
+                    user_id=user.id,
+                    endpoint=endpoint,
+                    idempotency_key=idempotency_key,
+                    request_hash=request_hash,
+                )
+            raise
+
+    def _materialize_recommendations(
+        self,
+        *,
+        user: UserV2,
+        llm_rows: list[dict[str, object]],
+        latest_in_progress: PracticeSessionV2 | None,
+        latest_submitted: PracticeSessionV2 | None,
+        llm_call_id: int,
+        excluded_recent_ids: set[int],
+    ) -> list[RecommendationV2]:
+        items: list[RecommendationV2] = []
+        now = now_utc()
+        for row in llm_rows:
+            action_type = str(row["action_type"])
+            if action_type == "continue" and latest_in_progress is None:
+                continue
+            if self._was_recently_served(
+                user_id=user.id,
+                title=str(row["title"]),
+                action_type=action_type,
+                now=now,
+                excluded_ids=excluded_recent_ids,
+            ):
+                continue
+
+            payload = row.get("payload") if isinstance(row.get("payload"), dict) else {}
+            source_signals: dict[str, object] = {}
+            estimated_minutes_value = row["estimated_minutes"]
+            estimated_minutes = (
+                estimated_minutes_value
+                if isinstance(estimated_minutes_value, int)
+                else int(str(estimated_minutes_value))
+            )
+            if action_type == "continue" and latest_in_progress is not None:
+                payload = {
+                    "session_template": {
+                        "track": latest_in_progress.track,
+                        "entry_kind": latest_in_progress.entry_kind,
+                    }
+                }
+                source_signals["in_progress_session_id"] = latest_in_progress.id
+            elif action_type == "review" and latest_submitted is not None:
+                payload = {
+                    "session_template": {
+                        "track": latest_submitted.track,
+                        "entry_kind": "review",
+                        "subject": latest_submitted.payload_json.get("subject")
+                        if isinstance(latest_submitted.payload_json, dict)
+                        else None,
+                    }
+                }
+                source_signals["latest_submitted_session_id"] = latest_submitted.id
+            elif action_type == "rest":
+                payload = payload or {"rest_minutes": estimated_minutes}
+                source_signals["strategy"] = "baseline_rest"
+
+            items.append(
+                RecommendationV2(
+                    user_id=user.id,
+                    title=str(row["title"]),
+                    reason=str(row["reason"]),
+                    estimated_minutes=estimated_minutes,
+                    cta=str(row["cta"]),
+                    action_type=action_type,
+                    payload=payload if isinstance(payload, dict) else {},
+                    expires_at=now + timedelta(hours=4),
+                    source_signals=source_signals,
+                    llm_call_id=llm_call_id,
+                )
+            )
+            if len(items) == 3:
+                break
+
+        if not items:
+            items.append(
+                RecommendationV2(
+                    user_id=user.id,
+                    title="Reserve a short recovery block",
+                    reason="No higher-confidence recommendation was produced, so keep one light recovery block.",
+                    estimated_minutes=15,
+                    cta="Rest",
+                    action_type="rest",
+                    payload={"rest_minutes": 15},
+                    expires_at=now + timedelta(hours=4),
+                    source_signals={"strategy": "fallback_rest"},
+                    llm_call_id=llm_call_id,
+                )
+            )
+        return items
+
+    def _was_recently_served(
+        self,
+        *,
+        user_id: int,
+        title: str,
+        action_type: str,
+        now: datetime,
+        excluded_ids: set[int],
+    ) -> bool:
+        query = select(RecommendationV2.id).where(
+                RecommendationV2.user_id == user_id,
+                RecommendationV2.title == title,
+                RecommendationV2.action_type == action_type,
+                RecommendationV2.generated_at >= now - timedelta(hours=24),
+            )
+        if excluded_ids:
+            query = query.where(RecommendationV2.id.not_in(excluded_ids))
+        recent = self.session.scalar(query)
+        return recent is not None
 
     def accept(
         self,
@@ -213,6 +330,7 @@ class RecommendationServiceV2:
             )
             recommendation.status = "accepted_session"
             recommendation.accepted_at = now_utc()
+            invalidate_user_prefix_all(user_prefix=f"recommend_today:{user.id}:")
             self.session.add_all([recommendation, session_row])
             add_audit_log(
                 self.session,
@@ -241,6 +359,7 @@ class RecommendationServiceV2:
         )
         recommendation.status = "accepted_plan"
         recommendation.accepted_at = now_utc()
+        invalidate_user_prefix_all(user_prefix=f"recommend_today:{user.id}:")
         self.session.add_all([recommendation, event_row])
         add_audit_log(
             self.session,
@@ -273,6 +392,7 @@ class RecommendationServiceV2:
         self._ensure_pending(recommendation)
         recommendation.status = "rejected"
         recommendation.rejected_at = now_utc()
+        invalidate_user_prefix_all(user_prefix=f"recommend_today:{user.id}:")
         self.session.add(recommendation)
         self.session.add(
             RecommendationFeedbackV2(
