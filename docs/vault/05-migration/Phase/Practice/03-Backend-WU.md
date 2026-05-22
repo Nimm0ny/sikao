@@ -16,7 +16,7 @@
 | WU-B11 | session 系列字段扩展（含 NoteV2 提前升级） | 300 | 4 | Phase-Home WU-B1 |
 | WU-B12 | 新表数据模型（5 个表） | 750 | 5 | B11 |
 | WU-B13 | 申论范文表（2 个表 + trigger） | 350 | 2 | B12 |
-| WU-B14 | content 模块扩展（categories + papers filter） | 800 | 3 | B10 |
+| WU-B14 | content 模块扩展（categories + papers filter） | ~~800~~ **250** ⚠️ | ~~3~~ **1** ⚠️ | B10 |
 | WU-B15 | session 模块扩展（多 mode + 答题中操作） | 1,400 | 5 | B10 / B11 / B12 |
 | WU-B16 | favorites + question_flags 模块（新建） | 650 | 3 | B12 |
 | WU-B17 | practice_stats 模块（新建） | 1,500 | 5 | B11 / B12 |
@@ -36,6 +36,8 @@
 | **合计** | | **20,500** | **78** | |
 
 > 新合计较初版 README 的 17k/70 PR 上调，原因：4 个 MUST 模块（B25-B28）完整落地 + B29 schema 预留 + B30 真题纠错入口。
+>
+> **2026-05-22 RR-5 估算修正**：B14 (content 模块) 估算从 800/3 PR 下调到 ~250/1 PR，因为 `content/application/service.py` 已实现 5 个真函数 (`build_practice_center_overview / build_xingce_categories / build_xingce_papers / build_essay_categories / build_essay_papers`)，剩余仅 filter 参数 + 已完成态 join 工作。B14 估算需 lhr 二次确认（RR-Plan §2.4 B14 估算二次确认）。本表合计未滚动 −550 行 / −2 PR；最终合计在 lhr 拍板后由独立 PR 调整。
 >
 > 前端总量见 [04-Frontend-WU](./04-Frontend-WU.md)。
 
@@ -65,6 +67,30 @@ app.include_router(question_reports_router,      prefix="/api/v2")
 # question_metadata Phase 1 不挂 router（仅建表）；Phase 2 才挂载
 # 已存在的 content / session / 其他不变（仅扩展原模块）
 ```
+
+#### 1.1.1 路由 prefix 占用现状（RR-5 added 2026-05-22）
+
+> **背景**：在新模块挂载之前，必须了解现有占用情况以避免端点撞车。下表列出 `/api/v2/practice/*` 与 `/api/v2/essay/*` 关键 prefix 当前的占用情况（grep verified against `main.py` + `modules/*/interface/routes.py`）。
+
+| Prefix | 持有模块 | 在 main.py 注册? | 已存在端点数 | 备注 |
+|---|---|---|---|---|
+| `/api/v2/practice` (主入口, 含 `/center / /xingce/* / /essay/*`) | `content/` | ✅ `content_v2` (main.py:120) | 5 (5 真函数已实现) | 详见 WU-B14；**不是 stub**（v3 修订） |
+| `/api/v2/practice/sessions` | `session/` | ✅ `session_v2` (main.py:121) | 5 (POST /, GET /:id, POST /:id/answers, POST /:id/submit, GET /:id/result) | session 模块独占该 sub-prefix；WU-B15 在此扩展多 mode |
+| `/api/v2/practice/{custom,papers,history,wrong-questions,stats/*,smart-review,last-session}` | `answer_session/` | ❌ NOT mounted (per §A0 §2.3.1.1) | 25 | 详见 [A0 §2.3.1.1](./A0-Codebase-Reality-Check.md#2-3-1)；**WU-B17 stats sub-prefix overlaps**（详见 §9 RR-Plan §2.4 B17 ownership 待 lhr 决策） |
+| `/api/v2/essay` | `essay/` (routes.py) | ❌ NOT mounted (per A0 §2.3.1.2) | 7 | 详见 [A0 §2.3.1.2 sub-router 1](./A0-Codebase-Reality-Check.md#2-3-1)；WU-B20 路由策略待 lhr 决策（RR-Plan §2.4 B20） |
+| `/api/v2/papers/essay` | `essay/specialty.py` | ❌ NOT mounted (per A0 §2.3.1.2) | 4 | 详见 [A0 §2.3.1.2 sub-router 2](./A0-Codebase-Reality-Check.md#2-3-1)；同上待 lhr 决策 |
+| `/api/v2/practice/sessions/:id/{pause,resume,heartbeat,discard,...}` | `session_lifecycle/` (B26 新建) | n/a (新建) | 0 | 在 session prefix 下追加 sub-paths；与现有 `session_v2` 协作（B26 实施时与 session 模块协议化分工，详见 02-Data-Model §6 字段所有权矩阵, RR-6 added） |
+| `/api/v2/practice/sessions/:id/timing` | `timing/` (B25 新建) | n/a (新建) | 0 | 同上 sub-paths 模式 |
+| `/api/v2/practice/mock-exams`, `/api/v2/practice/sessions/:id/countdown` | `mock_exam/` (B27 新建) | n/a (新建) | 0 | 新增 prefix |
+| `/api/v2/practice/{favorites, flags}`, `/api/v2/practice/questions/:id/{favorite,flag}` | `favorite/` (B16 新建) | n/a (新建) | 0 | 注意 `modules/favorite/` (V1 旧版) 已废弃；B16 新模块名 TBD（避免冲突） |
+| `/api/v2/practice/stats/{realtime,trend,percentile,cross}` 子路径 | `practice_stats/` (B17 新建) | n/a (新建) | 0 | **撞车 answer_session/stats/* 4 端点**（heatmap/trend/knowledge-points/summary）；待 lhr 决策（RR-Plan §2.4 B17） |
+| `/api/v2/practice/ai-questions` | `ai_questions/` (B18 新建) | n/a (新建) | 0 | 新增 prefix |
+| `/api/v2/practice/daily` | `daily_practice/` (B19 新建) | n/a (新建) | 0 | 新增 prefix |
+| `/api/v2/practice/essay/{submissions,reference-answers}` | `essay_grading/` (B20 扩展或新建) | n/a (待决策) | 0 | 与现有 `modules/essay/` (7 ep at /api/v2/essay) 关系待 lhr 决策（RR-Plan §2.4 B20） |
+| `/api/v2/profile/practice-preferences` | `practice_preferences/` (B28 新建) | n/a (新建) | 0 | 新增 prefix（在 profile_v2 已有的 `/api/v2/profile` 下面） |
+| `/api/v2/practice/questions/:id/report`, `/api/v2/admin/question-reports` | `question_report/` (B30 新建) | n/a (新建) | 0 | 新增 prefix |
+
+> **决策依赖摘要** (RR-Plan §2.4)：B14 重新估算（content 已 5 真函数，详见 §6 RR-5 update）；B17 ownership（合并 / 拆分 / 搬迁，详见 §9 RR-5 update）；B20 essay 路由策略（直接挂载 / 重写 / 新建 essay_grading 模块）。所有 B17/B20 实施 PR 启动前 master 必须发起独立 decision PR。
 
 ### 1.2 鉴权与授权
 
@@ -295,7 +321,9 @@ POST /api/v2/practice/mock-exams                      # 创建模考
 
 ## 6. WU-B14 · content 模块扩展
 
-**目标**：把 V2 现有的 stub catalog 端点改为真实现，含 filter。
+**目标**：在 V2 现有 5 真函数 catalog 端点上扩展 filter / 已完成状态 join / 排序参数。
+
+> **2026-05-22 RR-5 校准**：原文写"把 stub catalog 端点改为真实现" — **错误**。`content/application/service.py` 已实现 5 个真函数 (grep verified at lines 17/64/84/103/121: `build_practice_center_overview / build_xingce_categories / build_xingce_papers / build_essay_categories / build_essay_papers`)，对应 `routes.py:21-49` 5 端点已挂载 main.py:120 (`content_v2`)。剩余 B14 工作仅是 §6.1 列出的 filter 参数 + §6.3 已完成态 join + 排序，工作量从 800 行/3 PR 下调到 ~250 行/1 PR（待 lhr 二次确认 — RR-Plan §2.4）。
 
 ### 6.1 端点变更
 
@@ -334,9 +362,9 @@ GET /api/v2/practice/essay/papers?year=&region=&exam_type=
 
 行数 ~250。
 
-**估算**：800 行 / 3 PR
+**估算**：~~800 行 / 3 PR~~ **~250 行 / 1 PR** (待 lhr 二次确认 — RR-Plan §2.4 B14 估算二次确认)
 **依赖**：B10
-**验收**：filter 组合 query 测试通过；分类树正确聚合；已完成状态准确。
+**验收**：filter 组合 query 测试通过；分类树正确聚合；已完成状态准确；新工作不重复 existing 5 真函数实现。
 
 ---
 
@@ -482,6 +510,14 @@ GET    /api/v2/practice/flags?reason=
 ---
 
 ## 9. WU-B17 · practice_stats 模块
+
+> ⚠️ **2026-05-22 RR-5 lhr 决策依赖**：本模块的设计端点 `/api/v2/practice/stats?type=` 与 `answer_session` 模块**已存在**的 `/api/v2/practice/stats/{heatmap, trend, knowledge-points, summary}` 4 端点 (per [A0 §2.3.1.1](./A0-Codebase-Reality-Check.md#2-3-1) lines 243/251/260/270) 共享 prefix `/api/v2/practice/stats`。三个待决策选项 (per [RR-Plan §2.4 B17 ownership](./RR-Plan.md#24-待-lhr-决策清单不在本-plan-范围))：
+>
+> - **A) 合并到 answer_session**：把 B17 计划的 4 端点 (`/realtime, /trend, /percentile, /cross`) 加入 `answer_session/interface/routes.py`；不新建 `practice_stats` 模块
+> - **B) 拆 practice_stats 新模块共享 prefix**：B17 端点放新 `practice_stats/` 模块，与 answer_session 共享 `/api/v2/practice/stats` prefix（FastAPI 注册顺序 + tag 区分）
+> - **C) 搬迁 stats 端点到 practice_stats**：把 answer_session 的 4 stats 端点搬到新 `practice_stats/` 模块（最大改动，与代码现状最远，但路由清晰度最高）
+>
+> 本 §9 内容描述选项 B 的设计；A/C 的 PR 拆分需在 lhr 拍板后另行调整。任何 B17 实施 PR 启动前 master 必须先发起独立 decision PR / Multica issue。
 
 ### 9.1 端点
 
