@@ -1033,6 +1033,60 @@ class UserPracticePreferencesV2(Base):
     )
 
 
+class KnowledgePointV2(Base):
+    __tablename__ = "knowledge_point_v2"
+    __phase__ = "phase_2"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    code: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    label: Mapped[str] = mapped_column(String(128), nullable=False)
+    category_l1: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    category_l2: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("knowledge_point_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    weight_in_exam: Mapped[float | None] = mapped_column(Float, nullable=True)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=true(), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+
+class QuestionKnowledgePointV2(Base):
+    __tablename__ = "question_knowledge_point_v2"
+    __phase__ = "phase_2"
+    __table_args__ = (
+        UniqueConstraint(
+            "question_id",
+            "knowledge_point_id",
+            name="uq_qkp_v2_question_knowledge",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    knowledge_point_id: Mapped[int] = mapped_column(
+        ForeignKey("knowledge_point_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    weight: Mapped[float] = mapped_column(
+        Float, nullable=False, default=1.0, server_default="1"
+    )
+    annotated_by: Mapped[str] = mapped_column(String(32), nullable=False)
+    annotated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
+
+
 class ProfileInfoV2(Base):
     __tablename__ = "profile_infos_v2"
     __table_args__ = (
