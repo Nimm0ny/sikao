@@ -51,6 +51,14 @@ last-reviewed: 2026-05-21
    Must: `typecheck + lint + tests` 必须过；UI 改动还要浏览器自验；没有 PASS 证据不得说完成。
    If conflict: 只能修复或标 `blocked/in_progress`，不能硬收口。
 
+## Validation Note
+
+- `backend-first` validation profile 不是根级 full gate 的常规替代。
+- 它只可作为 scoped validation 工具，用于 backend-only 主线任务；混合前端/后端或任何前端 runtime 改动都不能使用它替代 full gate。
+- 使用时至少要跑 `services/api` 范围的 `ruff + mypy + pytest`；若触及 migration / runtime schema，再补 `alembic upgrade head`。
+- 若触及 route / schema / OpenAPI 契约，还要附 targeted contract evidence。
+- 最终说明仍必须记录 full validation blocker，并明确是 backend-first scoped validation，不得表述为 full validation 通过。
+
 9. `AGENT-H9 Commit Batch`
    Trigger: 任何 commit / push 前。
    Must: 原子提交，一次一事；`>100` 行单 commit 必须拆；`<=15` 文件、`<=400` 行净增 per commit；禁止混合 plan/schema/实现/测试的大杂烩提交。

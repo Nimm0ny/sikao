@@ -2,7 +2,7 @@
 type: engineering
 status: active
 owner: xiaodeng
-last-reviewed: 2026-05-21
+last-reviewed: 2026-05-22
 ---
 
 # Quick Commands
@@ -16,6 +16,8 @@ npm run gate:preflight
 node scripts/gates/gate-runner.mjs multica-intake --issue <issue-id>
 node scripts/gates/gate-runner.mjs review --reviewed
 npm run gate:validation
+npm run gate:validation:backend
+node scripts/gates/gate-runner.mjs validation --profile docs
 node scripts/gates/gate-runner.mjs git
 ```
 
@@ -56,11 +58,21 @@ Hard constraints:
 ```bash
 cd services/api
 pip install -e ".[dev,postgres]"
-ruff check src tests
-mypy src
-pytest
+python -m ruff check src tests
+python -m mypy src
+python -m pytest
 uvicorn sikao_api.main:app --reload --port 8000 --host 127.0.0.1
 ```
+
+Backend-first gate from repo root:
+
+```bash
+npm run gate:validation:backend
+```
+
+Use it only when the task is backend-only and the repo-root full gate is blocked by known unrelated frontend debt.
+It does not replace `npm run gate:validation` for mixed-scope or frontend runtime work, and the final report still must record the full validation blocker.
+If you invoke `gate-runner.mjs` directly, do it from repo root or pass an absolute script path.
 
 Alembic from repo root:
 

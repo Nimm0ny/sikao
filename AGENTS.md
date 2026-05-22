@@ -117,6 +117,11 @@
      - 已通过本次改动相关测试。
      - 已通过独立 subagent review。
      - 最终回复不得说“全量验证通过”，只能说 scoped validation 通过、full validation blocked。
+   - `backend-first` validation profile 只属于上述 scoped validation 工具，不是根级 full gate 的常规替代；仅用于 backend-only 主线任务，且必须同时满足：
+     - 改动不包含前端 runtime、前端视觉、或需要前端 workspace 参与验收的实现。
+     - 已运行 `services/api` 范围的 `ruff + mypy + pytest`；若触及 migration / runtime schema，再补 `alembic upgrade head`。
+     - 若触及 route / schema / OpenAPI 契约，已附 targeted contract evidence。
+     - 最终说明仍必须记录 full validation blocker，并明确结果属于 backend-first scoped validation。
 
 4. Known Full Validation Blocker（2026-05-21）
    - 当前全量 `npm run typecheck` 被既有前端迁移债务阻塞。
