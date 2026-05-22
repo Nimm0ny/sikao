@@ -415,6 +415,7 @@ class PracticeSessionV2(Base):
         Index("ix_practice_sessions_v2_user_started", "user_id", "started_at"),
         Index("ix_practice_sessions_v2_linked_plan_event", "linked_plan_event_id"),
         Index("ix_practice_sessions_v2_linked_recommendation", "linked_recommendation_id"),
+        Index("ix_practice_sessions_v2_user_status_activity", "user_id", "status", "last_activity_at"),
         CheckConstraint(
             "(status = 'paused' AND paused_at IS NOT NULL) OR "
             "(status != 'paused' AND paused_at IS NULL)",
@@ -503,6 +504,14 @@ class PracticeSessionV2(Base):
         ForeignKey("practice_sessions_v2.id", ondelete="SET NULL"),
         nullable=True,
     )
+    total_active_seconds: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    paused_total_seconds: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    first_question_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_activity_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class PracticeSessionAnswerV2(Base):
@@ -550,6 +559,21 @@ class PracticeSessionAnswerV2(Base):
         Boolean, nullable=False, default=False, server_default=false()
     )
     view_solution_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    time_spent_ms: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    first_seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    first_answered_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_modified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    answer_change_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    visit_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    is_overtime: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
 
 
 class EssayDraftV2(Base):
