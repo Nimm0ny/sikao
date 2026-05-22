@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionV2, UserV2
 from sikao_api.db.schemas_v2 import ActionLinkV2, PracticeAnswerPayloadV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionItemV2, PracticeSessionResultResponseV2, SectionCardV2, SummaryMetricV2
+from sikao_api.modules.session.application.mode_dispatcher import resolve_session_selection
 from sikao_api.modules.plans.domain.rrule_subset import build_occurrence_ref, end_of_local_day, expand_occurrences, parse_occurrence_ref, start_of_local_day
 from sikao_api.modules.system.application.errors import ConflictError, NotFoundError, ValidationError
 
@@ -35,10 +36,12 @@ class SessionServiceV2:
             linked_plan_event_id=payload.linked_plan_event_id,
             linked_plan_event_occurrence_ref=payload.linked_plan_event_occurrence_ref,
         )
+        selection = resolve_session_selection(self.session, user=user, payload=payload)
         paper_id, revision_id = self._resolve_paper_binding(payload.paper_code)
         selected_questions = self._resolve_questions(
             question_ids=payload.question_ids,
             revision_id=revision_id,
+            fallback_questions=selection.questions,
         )
         practice_session = PracticeSessionV2(
             user_id=user.id,
@@ -48,6 +51,9 @@ class SessionServiceV2:
             paper_id=paper_id,
             revision_id=revision_id,
             payload_json=payload.payload,
+            practice_mode=payload.practice_mode,
+            source_mode=selection.source_mode,
+            config_snapshot=selection.config_snapshot,
             linked_plan_event_id=payload.linked_plan_event_id,
             linked_plan_event_occurrence_ref=payload.linked_plan_event_occurrence_ref,
             linked_recommendation_id=payload.linked_recommendation_id,
@@ -177,6 +183,9 @@ class SessionServiceV2:
                 )
             ],
             started_at=practice_session.started_at,
+            practice_mode=practice_session.practice_mode,
+            source_mode=practice_session.source_mode,
+            config_snapshot=practice_session.config_snapshot,
             submitted_at=practice_session.submitted_at,
         )
 
@@ -244,9 +253,20 @@ class SessionServiceV2:
         *,
         question_ids: list[int],
         revision_id: int | None,
+        fallback_questions: list[QuestionV2],
     ) -> list[QuestionV2]:
+        if fallback_questions:
+            return fallback_questions
         if not question_ids:
-            return []
+            if revision_id is None:
+                return []
+            return list(
+                self.session.scalars(
+                    select(QuestionV2)
+                    .where(QuestionV2.revision_id == revision_id)
+                    .order_by(QuestionV2.item_no.asc(), QuestionV2.id.asc())
+                )
+            )
         self._ensure_distinct_question_ids(question_ids)
         if revision_id is None:
             raise ValidationError(
