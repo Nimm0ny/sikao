@@ -74,7 +74,7 @@ def _backfill_content_hash() -> None:
         if not rows:
             break
         for row in rows:
-            digest = compute_question_content_hash(row.prompt or "", row.content_json)
+            digest = compute_question_content_hash(row.prompt, row.content_json)
             bind.execute(
                 sa.text("UPDATE questions_v2 SET content_hash = :h WHERE id = :id"),
                 {"h": digest, "id": row.id},

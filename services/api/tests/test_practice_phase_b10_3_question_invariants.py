@@ -22,7 +22,14 @@ from sqlalchemy.exc import IntegrityError, OperationalError
 from sqlalchemy.orm import Session
 
 from sikao_api.db.content_hash import compute_question_content_hash
-from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, QuestionV2
+from sikao_api.db.models_v2 import (
+    PaperRevisionV2,
+    PaperV2,
+    PracticeSessionAnswerV2,
+    PracticeSessionV2,
+    QuestionV2,
+    UserV2,
+)
 
 
 _REPO_ROOT = Path(__file__).resolve().parents[3]
@@ -212,3 +219,93 @@ def test_indexes_and_trigger_round_trip(tmp_path: Path) -> None:
     indexes, triggers = _state()
     assert "ix_questions_v2_source_active" in indexes
     assert "questions_v2_source_protect" in triggers
+
+
+
+def test_content_hash_helper_rejects_none_inputs() -> None:
+    """AGENTS-H7 fail-fast: prompt and content_json are NOT NULL in the DB,
+    so passing None for either is an impossible state that the helper must
+    refuse rather than silently coercing into a stable digest (which would
+    cause two malformed rows to dedup-collide in WU-B10.3 backfill)."""
+    with pytest.raises(ValueError, match="prompt"):
+        compute_question_content_hash(None, {})  # type: ignore[arg-type]
+    with pytest.raises(ValueError, match="content_json"):
+        compute_question_content_hash("prompt", None)
+
+
+def test_dedup_loser_remains_readable_via_session_answer(tmp_path: Path) -> None:
+    """WU-B10.3 dedup losers come out with content_hash=NULL and is_active=0
+    so the picker stops resurfacing them. But the model docstring promises
+    historical reads (the user's own session result page) still render the
+    question text via the FK join. This regression test pins that contract:
+    a row with is_active=false must remain reachable from
+    practice_session_answers_v2.question_id without ever filtering on
+    questions_v2.is_active. If a future picker / result query refactors to
+    `WHERE is_active=true` and breaks user history, this test catches it."""
+    _, env, db_url = _make_database(tmp_path)
+    _alembic(env, "upgrade", "head")
+
+    engine = _engine_with_fk(db_url)
+    try:
+        with Session(engine) as session:
+            user = UserV2(public_id=str(uuid4()), display_name="historical user")
+            paper = PaperV2(paper_code=f"p-{uuid4().hex}", title="paper", subject_kind="xingce")
+            session.add_all([user, paper])
+            session.flush()
+            revision = PaperRevisionV2(paper_id=paper.id, revision_number=1, status="draft")
+            session.add(revision)
+            session.flush()
+            retired = QuestionV2(
+                revision_id=revision.id, item_no=1, subject_kind="xingce",
+                prompt="historical question stem", answer_kind="single_choice",
+                status="draft", content_json={"answer": "A"},
+            )
+            session.add(retired)
+            session.flush()
+            ps = PracticeSessionV2(
+                user_id=user.id, track="xingce", entry_kind="paper",
+                status="submitted", payload_json={},
+            )
+            session.add(ps)
+            session.flush()
+            answer = PracticeSessionAnswerV2(
+                session_id=ps.id,
+                question_id=retired.id,
+                question_key="q-1",
+                display_order=1,
+                response_json={"choice": "A"},
+                is_correct=True,
+            )
+            session.add(answer)
+            session.commit()
+            retired_id = retired.id
+            session_id = ps.id
+
+        # Simulate the WU-B10.3 dedup demote: hash NULLed, is_active flipped off.
+        # We cannot UPDATE source (immutable trigger), but is_active is fair game.
+        with Session(engine) as session:
+            session.execute(
+                text(
+                    "UPDATE questions_v2 SET is_active = 0, content_hash = NULL "
+                    "WHERE id = :id"
+                ),
+                {"id": retired_id},
+            )
+            session.commit()
+
+        # Historical-read contract: even though the question is retired, the
+        # answer row's question_id still resolves and the prompt still reads.
+        with Session(engine) as session:
+            row = session.execute(
+                text(
+                    "SELECT q.prompt, q.is_active "
+                    "FROM practice_session_answers_v2 a "
+                    "JOIN questions_v2 q ON q.id = a.question_id "
+                    "WHERE a.session_id = :sid"
+                ),
+                {"sid": session_id},
+            ).one()
+            assert row.prompt == "historical question stem"
+            assert row.is_active == 0
+    finally:
+        engine.dispose()
