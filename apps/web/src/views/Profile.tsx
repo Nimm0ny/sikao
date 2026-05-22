@@ -64,7 +64,7 @@ interface LearningToolEntry {
 
 const LEARNING_TOOL_ENTRIES: readonly LearningToolEntry[] = [
   {
-    path: '/dashboard',
+    path: '/profile/learning',
     label: '学情数据',
     description: '查看累计练习、正确率和错题沉淀',
     testId: 'profile-dashboard-entry',

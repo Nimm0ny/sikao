@@ -25,6 +25,7 @@ const pages = {
   wrongQuestionRedo: lazy(() => import('@/views/WrongQuestionRedoView')),
   smartReview: lazy(() => import('@/views/SmartReviewView')),
   dashboard: lazy(() => import('@/views/Dashboard')),
+  profileLearning: lazy(() => import('@/views/ProfileLearning')),
   profile: lazy(() => import('@/views/Profile')),
   examCalendar: lazy(() => import('@/views/ExamCalendar')),
   conversationsHistory: lazy(() => import('@/views/ConversationsHistory')),
@@ -265,6 +266,7 @@ export const router = createBrowserRouter([
       { path: '/wrong-book/:questionId/redo', element: routeElement(<pages.wrongQuestionRedo />) },
       { path: '/dashboard', element: routeElement(<pages.dashboard />) },
       { path: '/profile', element: routeElement(<pages.profile />) },
+      { path: '/profile/learning', element: routeElement(<pages.profileLearning />) },
       // Identity v2 (commit #6n): bind email (登录后绑定/换邮箱). path 跟
       // backend `frontend_base_url + /bind-email?token=...` 对齐 (中划线非斜线).
       { path: '/bind-email', element: routeElement(<pages.bindEmail />) },
