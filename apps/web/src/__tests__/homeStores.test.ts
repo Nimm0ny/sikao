@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const { updateProfileInfoMock } = vi.hoisted(() => ({
   updateProfileInfoMock: vi.fn(),
@@ -29,9 +29,14 @@ beforeEach(() => {
     profileLoaded: false,
     isPersisting: false,
     lastPersistedAt: null,
+    lastPersistError: null,
   });
   useAdjustmentBannerStore.setState({ dismissedByAdjustmentId: {} });
   useRecommendationDraftStore.setState({ draftsByRecommendationId: {} });
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe('home runtime stores', () => {
@@ -76,6 +81,115 @@ describe('home runtime stores', () => {
         density: 'compact',
       },
     });
+  });
+
+  it('propagates flushPersist failures without faking lastPersistedAt', async () => {
+    const store = useDashboardPreferenceStore.getState();
+    const error = new Error('persist failed');
+    updateProfileInfoMock.mockRejectedValueOnce(error);
+
+    store.bootstrapFromProfileInfo({
+      dashboardPreferences: { focusMode: 'deep' },
+    });
+    const previousPersistedAt = useDashboardPreferenceStore.getState().lastPersistedAt;
+
+    await expect(store.flushPersist()).rejects.toThrow('persist failed');
+
+    expect(useDashboardPreferenceStore.getState().isPersisting).toBe(false);
+    expect(useDashboardPreferenceStore.getState().lastPersistedAt).toBe(previousPersistedAt);
+    expect(useDashboardPreferenceStore.getState().lastPersistError).toContain('persist failed');
+  });
+
+  it('keeps debounced persist failures observable without updating lastPersistedAt', async () => {
+    vi.useFakeTimers();
+    const store = useDashboardPreferenceStore.getState();
+    const error = new Error('debounced persist failed');
+    updateProfileInfoMock.mockRejectedValueOnce(error);
+
+    store.bootstrapFromProfileInfo({
+      dashboardPreferences: { focusMode: 'deep' },
+    });
+    const previousPersistedAt = useDashboardPreferenceStore.getState().lastPersistedAt;
+
+    const pendingPersist = store.patchPreferences({ density: 'compact' });
+    await vi.advanceTimersByTimeAsync(500);
+    await expect(pendingPersist).rejects.toThrow('debounced persist failed');
+
+    expect(updateProfileInfoMock).toHaveBeenCalledWith({
+      dashboardPreferences: {
+        focusMode: 'deep',
+        density: 'compact',
+      },
+    });
+    expect(useDashboardPreferenceStore.getState().isPersisting).toBe(false);
+    expect(useDashboardPreferenceStore.getState().lastPersistedAt).toBe(previousPersistedAt);
+    expect(useDashboardPreferenceStore.getState().lastPersistError).toContain(
+      'debounced persist failed',
+    );
+  });
+
+  it('rejects pending debounced persistence when profile bootstrap supersedes it', async () => {
+    vi.useFakeTimers();
+    const store = useDashboardPreferenceStore.getState();
+
+    store.bootstrapFromProfileInfo({
+      dashboardPreferences: { focusMode: 'deep' },
+    });
+
+    const pendingPersist = store.patchPreferences({ density: 'compact' });
+    store.bootstrapFromProfileInfo({
+      dashboardPreferences: { focusMode: 'reset' },
+    });
+
+    await expect(pendingPersist).rejects.toThrow(
+      'dashboard preference persist canceled by profile bootstrap',
+    );
+  });
+
+  it('gives each debounced write its own lifecycle when a second patch arrives during the first persist', async () => {
+    vi.useFakeTimers();
+    const store = useDashboardPreferenceStore.getState();
+    const releases: Array<() => void> = [];
+    updateProfileInfoMock.mockImplementation(
+      () =>
+        new Promise((resolve) => {
+          releases.push(() =>
+            resolve({
+              dashboardPreferences: {},
+            }),
+          );
+        }),
+    );
+
+    store.bootstrapFromProfileInfo({
+      dashboardPreferences: { focusMode: 'deep' },
+    });
+
+    const firstPersist = store.patchPreferences({ density: 'compact' });
+    await vi.advanceTimersByTimeAsync(500);
+
+    let secondSettled = false;
+    const secondPersist = store
+      .patchPreferences({ focusMode: 'exam' })
+      .then(() => {
+        secondSettled = true;
+      });
+
+    releases[0]!();
+    await Promise.resolve();
+    expect(secondSettled).toBe(false);
+
+    await vi.advanceTimersByTimeAsync(500);
+    expect(updateProfileInfoMock).toHaveBeenNthCalledWith(2, {
+      dashboardPreferences: {
+        focusMode: 'exam',
+        density: 'compact',
+      },
+    });
+    releases[1]!();
+
+    await expect(firstPersist).resolves.toBeUndefined();
+    await expect(secondPersist).resolves.toBeUndefined();
   });
 
   it('persists dismissed adjustment banners in sessionStorage', () => {
