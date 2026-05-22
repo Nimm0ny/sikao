@@ -474,6 +474,27 @@ class PracticeSessionAnswerV2(Base):
     duration_seconds: Mapped[int | None] = mapped_column(Integer, nullable=True)
     answered_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
+    # Phase-Practice WU-B11.2 (Tab 2): per-answer in-session flags.
+    #
+    # flagged tracks the user's "mark as uncertain" toggle for THIS session
+    # only. Cross-session persistent flags live on QuestionFlagV2 (see WU-B16);
+    # this column is the throwaway working set during answering.
+    #
+    # viewed_solution + view_solution_at record whether the user requested the
+    # solution panel before submitting. Only meaningful in practice_mode=
+    # per_question; full_set sessions strictly forbid solution view pre-submit
+    # (D-Q15 closed-book invariant) and the route handler returns 403
+    # STRICT_CLOSED_BOOK rather than letting the columns get set. The column
+    # still exists on every row so the post-submit result page can render the
+    # "you peeked at N solutions" stat uniformly.
+    flagged: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("0")
+    )
+    viewed_solution: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("0")
+    )
+    view_solution_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
 
 class EssayDraftV2(Base):
     __tablename__ = "essay_drafts_v2"
