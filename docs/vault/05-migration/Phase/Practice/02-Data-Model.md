@@ -1,7 +1,7 @@
 # Phase-Practice · 02 · Data Model
 
 > **Status**: ACCEPTED
-> **Last Updated**: 2026-05-21
+> **Last Updated**: 2026-05-22
 > **Index**: see `./README.md`
 > **Convention**: Python type hints; SQLAlchemy 2.0 declarative；Alembic migration 字段顺序与本文件 §3-§4 一致
 > **重要**：所有"`db/models/*.py`"路径均为**逻辑命名**，实际文件 = `services/api/src/sikao_api/db/models_v2.py`（详见 [A0 §2.1](./A0-Codebase-Reality-Check.md#21-dbmodels-是单文件)）
@@ -15,7 +15,8 @@ QuestionV2 (扩展) ──┐
                     ├─ source / year / region / exam_type
                     ├─ category_l1 / category_l2
                     ├─ historical_accuracy / answer_count
-                    ├─ quality_score / report_count / is_active     (AI 题专属)
+                    ├─ quality_score / report_count / is_active     (真题 + AI 题双轨；详见 §19 Report-7 supersede)
+                    ├─ disable_reason                                (is_active=false 时；3 值枚举见 §2.1)
                     ├─ ai_source_question_id (self-ref nullable)
                     ├─ ai_self_audit_passed / ai_generated_at        (AI 题专属)
                     ├─ content_hash (UNIQUE)                         (去重)
@@ -27,9 +28,12 @@ QuestionV2 (扩展) ──┐
   ┌─────────────────────────────────────────────────────┐
   │ QuestionFavoriteV2 (NEW)  ─ user-question 收藏关系    │
   │ QuestionFlagV2 (NEW)      ─ user-question 持久标记     │
+  │ QuestionReportV2 (NEW)    ─ user-question 纠错报错     │
   │ QuestionTimingBaselineV2 (NEW) ─ 每题 p50/p90/p95     │
   │ QuestionKnowledgePointV2 (NEW, schema-only Phase 1)  │
   └─────────────────────────────────────────────────────┘
+
+QuestionReportArchivedV2 (NEW) ─ resolved >90d 归档（admin 可查）
 
 KnowledgePointV2 (NEW, schema-only Phase 1)
   ─ code / label / category_l1/l2 / parent_id / weight_in_exam
@@ -117,9 +121,15 @@ class QuestionV2(Base):
     # 质量与统计
     historical_accuracy: Mapped[float] = mapped_column(Float, default=0.0)  # 0.0-1.0
     answer_count: Mapped[int] = mapped_column(Integer, default=0)
-    quality_score: Mapped[float] = mapped_column(Float, default=5.0)  # 仅 AI 题有效，0.0-5.0
-    report_count: Mapped[int] = mapped_column(Integer, default=0)     # 仅 AI 题有效
+    quality_score: Mapped[float] = mapped_column(Float, default=5.0)  # 0.0-5.0；真题与 AI 题双轨衰减：真题 -= 0.05/active report，AI 题 -= 0.10/active report，distinct user ≥ 3 强制置 0.0；详见 [00-Decisions §19 Report-7](./00-Decisions.md#19-题目纠错report-系列) + §13 supersede AI-G-5
+    report_count: Mapped[int] = mapped_column(Integer, default=0)     # distinct user 维度 active report 计数，真题 + AI 题双轨；视图意义而非物化列（具体由 modules/question_report cron 维护，详见 [00-Decisions §19 Report-7](./00-Decisions.md#19-题目纠错report-系列)）
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    disable_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    # is_active=false 的下线原因；当前枚举锁三值 ∈ {auto_offline_by_reports, admin_manual_offline, replaced_by_regenerate}：
+    # - auto_offline_by_reports: Report-6 cron 真题自动下线 (distinct user ≥ 5) 或 Report-7 AI 题 quality_score=0 ⟹ AI-G-6 自动下线
+    # - admin_manual_offline:    Report-13 admin 端点手动下线 (audit action question.admin_offline)
+    # - replaced_by_regenerate:  Report-15 AI 题 outcome=fixed 触发 regenerate 后旧题被替换
+    # 后续若需要新增枚举值（如 legal_takedown / import_invalidated）走 [00-Decisions §13 决策变更日志](./00-Decisions.md#13-决策变更日志) 流程 + 新一轮 PR；DB 层不加 IN (...) CHECK 是为放过未来扩展，但 §5.8 NOT NULL coupling CHECK 仍然强约束 is_active=false ⟹ disable_reason IS NOT NULL（与同表 abandoned_reason_required / force_submit_reason_required 姊妹模式一致）
 
     # 去重（用于 AI 题改编后命中已有题；真题导入时也用同一字段防重复入库）
     content_hash: Mapped[str | None] = mapped_column(String(32), unique=True, index=True, nullable=True)
@@ -750,6 +760,189 @@ class QuestionKnowledgePointV2(Base):
 
 ---
 
+### 3.12 QuestionReportV2
+
+详见 [00-Decisions §19 Report 系列](./00-Decisions.md#19-题目纠错report-系列) + [16-Question-Report.md](./16-Question-Report.md)（PR 5 提供）。
+
+```python
+class QuestionReportV2(Base):
+    __tablename__ = "question_report_v2"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user_v2.id", ondelete="CASCADE"), index=True
+    )
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("question_v2.id", ondelete="CASCADE"), index=True
+    )
+
+    # 报错主体
+    report_type: Mapped[ReportType]                            # 7 值枚举（详见下方 ReportType）
+    description: Mapped[str] = mapped_column(String(500))      # 必填，10-500 char（DB CHECK，trim 后 NOT NULL）
+    proposed_correction: Mapped[str | None] = mapped_column(
+        String(500), nullable=True
+    )                                                           # 可选，≤500 char（DB CHECK）
+
+    # 状态机（详见 [00-Decisions §19 Report-5](./00-Decisions.md#19-题目纠错report-系列)）
+    status: Mapped[ReportStatus] = mapped_column(default=ReportStatus.PENDING, index=True)
+    outcome: Mapped[ReportOutcome | None] = mapped_column(nullable=True)
+    # status=resolved ⟺ outcome IS NOT NULL（CHECK 约束 §5.8）
+
+    # SLA 标记（详见 [00-Decisions §19 Report-8](./00-Decisions.md#19-题目纠错report-系列)）
+    is_stale: Mapped[bool] = mapped_column(Boolean, default=False, index=True)
+    # cron 每日 04:15 标 true if pending > 7d；不阻塞用户继续报错
+
+    # admin 处理痕迹
+    handled_by_admin_id: Mapped[int | None] = mapped_column(
+        ForeignKey("user_v2.id", ondelete="SET NULL"), nullable=True
+    )
+    admin_resolution_note: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    # 时间戳
+    created_at: Mapped[datetime] = mapped_column(default=func.now(), index=True)
+    transitioned_at: Mapped[datetime | None]                   # 进入 under_review 的时刻
+    resolved_at: Mapped[datetime | None]                       # 进入 resolved 的时刻
+
+    # Idempotency（详见 [00-Decisions §19 Report-18](./00-Decisions.md#19-题目纠错report-系列)）
+    idempotency_key: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    # 双源 idempotency 职责切分（与 AI-G-9 单源模式不同；本表 + Phase-Home IdempotencyKeyV2 双轨设计）：
+    # - 本列：行级查询索引，已知 idempotency_key 反查 report_id（admin dashboard / 客户端 retry 命中查询）
+    # - IdempotencyKeyV2（models_v2.py:741）：24h response_body 缓存（请求重放时直接返回旧 response，含 report_id）
+    # 写入顺序（PR 11 service 层强制单事务，避免 chicken-and-egg）：
+    #   ① INSERT QuestionReportV2（含 idempotency_key 列，PK 由 DB 自增生成）→ session.flush() 拿 report_id
+    #   ② INSERT IdempotencyKeyV2（response_body 含 report_id，从 ① flush 后读取）
+    #   ③ commit
+    # 漂移不可能：单事务原子；崩溃回滚两表都清。客户端 retry 时 IdempotencyKeyV2 命中即返旧 response_body（含 report_id），本列仅作行级反查辅助索引
+
+    __table_args__ = (
+        # Active state partial UNIQUE（详见 [00-Decisions §19 Report-4](./00-Decisions.md#19-题目纠错report-系列)）
+        Index(
+            "uq_report_active_per_user_question",
+            "user_id", "question_id",
+            unique=True,
+            sqlite_where=text("status IN ('pending', 'under_review')"),
+            postgresql_where=text("status IN ('pending', 'under_review')"),
+        ),
+        # admin dashboard：按 (status, is_stale, created_at) 聚合查询
+        Index("ix_report_status_stale_created", "status", "is_stale", "created_at"),
+        # admin 视图：按 question_id 聚合（多用户对同一题的报错）
+        Index("ix_report_question_status", "question_id", "status"),
+        # 限速 DB count（详见 [00-Decisions §19 Report-20](./00-Decisions.md#19-题目纠错report-系列)）
+        Index("ix_report_user_created", "user_id", "created_at"),
+        # SLA cron 扫描：(status='pending', is_stale=false, created_at < now - 7d)
+        Index(
+            "ix_report_sla_scan",
+            "status", "created_at",
+            sqlite_where=text("status = 'pending' AND is_stale = false"),
+            postgresql_where=text("status = 'pending' AND is_stale = false"),
+        ),
+        # 归档 cron 扫描：WHERE status='resolved' AND resolved_at < now() - 90d
+        Index(
+            "ix_report_resolved_for_archive",
+            "resolved_at",
+            sqlite_where=text("status = 'resolved'"),
+            postgresql_where=text("status = 'resolved'"),
+        ),
+    )
+
+
+class ReportType(StrEnum):
+    """7 值枚举，详见 [00-Decisions §19 Report-2](./00-Decisions.md#19-题目纠错report-系列)。"""
+    WRONG_ANSWER = "wrong_answer"             # 答案错
+    WRONG_EXPLANATION = "wrong_explanation"   # 解析错
+    TYPO = "typo"                              # 错别字
+    WRONG_CATEGORY = "wrong_category"         # 分类错
+    OUTDATED = "outdated"                      # 时效过期
+    DUPLICATE = "duplicate"                    # 与已有题重复
+    OTHER = "other"                            # 仅 admin 内部分类用，前端 UI 不暴露
+
+
+class ReportStatus(StrEnum):
+    """3 态机，详见 [00-Decisions §19 Report-5](./00-Decisions.md#19-题目纠错report-系列)。终态 resolved 不可改（trigger §5.8）。"""
+    PENDING = "pending"
+    UNDER_REVIEW = "under_review"
+    RESOLVED = "resolved"
+
+
+class ReportOutcome(StrEnum):
+    """status=resolved 时必填，详见 [00-Decisions §19 Report-5](./00-Decisions.md#19-题目纠错report-系列)。"""
+    FIXED = "fixed"            # 报错有效，已修订（真题走人工 PR；AI 题走 Report-15 regenerate）
+    REJECTED = "rejected"      # 报错无效（可触发 Report-10 申诉路径）
+    DUPLICATE = "duplicate"    # 与同题其他 report 合并（不重复处理）
+```
+
+**Alembic 数据回填**（B30.1）：
+
+```python
+# 新表，无回填需求；空表上线
+# 7 个 enum 字面量值在 PR 11 落地 service 层统一 import StrEnum，不在 migration 中硬编码
+```
+
+⚠️ **partial UNIQUE 注意**：
+
+- `WHERE status IN ('pending', 'under_review')` 的 partial UNIQUE 在 PostgreSQL 与 SQLite 3.8.0+ 均直接支持（参考 `db/models_v2.py:588 / 626 / 672 / 702 / 766` 既有 `sqlite_where=` + `postgresql_where=` 双轨写法）；本表所有 partial 索引均双轨发射，开发态 SQLite 不退化。
+- 同一 (user_id, question_id) 在 status=resolved 后自动释放约束，允许 Report-10 申诉路径再插入 1 行（service 层 + DB trigger 双层校验 lifetime ≤ 3 见 §5.9）。
+- **DB 层强约束在 SQLite + PG 双跑通过**；service 层不再做 SELECT 1 反查（避免 TOCTOU 漏洞）。
+
+---
+
+### 3.13 QuestionReportArchivedV2
+
+详见 [00-Decisions §19 Report-17](./00-Decisions.md#19-题目纠错report-系列)（resolved 90 天后归档）。
+
+```python
+class QuestionReportArchivedV2(Base):
+    __tablename__ = "question_report_archived_v2"
+
+    # 字段集与 QuestionReportV2 完全一致（不引入新字段）
+    id: Mapped[int] = mapped_column(primary_key=True)
+    original_report_id: Mapped[int] = mapped_column(Integer, nullable=False, index=True)
+    # 归档前 QuestionReportV2.id（archive cron 不复用 PK 序列，用 original_report_id 保留追溯）
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("user_v2.id", ondelete="SET NULL"), nullable=True, index=True)
+    # ondelete=SET NULL：归档表保留历史，user 删除后清 user_id，保留 report 内容供运营周报参考
+    question_id: Mapped[int] = mapped_column(ForeignKey("question_v2.id", ondelete="SET NULL"), nullable=True, index=True)
+
+    report_type: Mapped[ReportType]
+    description: Mapped[str] = mapped_column(String(500))
+    proposed_correction: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    status: Mapped[ReportStatus]                               # 归档时一定为 resolved，但保留枚举字段供调试
+    outcome: Mapped[ReportOutcome | None]
+    is_stale: Mapped[bool] = mapped_column(Boolean, default=False)
+
+    handled_by_admin_id: Mapped[int | None] = mapped_column(
+        ForeignKey("user_v2.id", ondelete="SET NULL"), nullable=True
+    )
+    admin_resolution_note: Mapped[str | None] = mapped_column(String(500), nullable=True)
+
+    created_at: Mapped[datetime]                               # 原 QuestionReportV2.created_at
+    transitioned_at: Mapped[datetime | None]
+    resolved_at: Mapped[datetime]                              # 归档前必为 NOT NULL
+
+    archived_at: Mapped[datetime] = mapped_column(default=func.now(), index=True)
+    # archive cron 触发时间（每月 1 号 02:45）
+
+    __table_args__ = (
+        Index("ix_report_archived_question", "question_id"),
+        Index("ix_report_archived_user_created", "user_id", "created_at"),
+    )
+```
+
+**归档 cron 行为**（详见 [00-Decisions §19 Report-17](./00-Decisions.md#19-题目纠错report-系列)）：
+
+```sql
+-- 每月 1 号 02:45 由 modules/question_report/application/archive_cron.py 执行
+-- 单事务内：INSERT INTO question_report_archived_v2 SELECT ... FROM question_report_v2
+--          WHERE status='resolved' AND resolved_at < now() - interval '90 days';
+-- 然后    DELETE FROM question_report_v2 WHERE id IN (<archived ids>);
+-- 失败回滚（防止双写或丢失）；advisory lock 防并发
+```
+
+---
+
 ## 4. 索引策略汇总
 
 | 表 | 索引 | 用途 |
@@ -773,6 +966,14 @@ class QuestionKnowledgePointV2(Base):
 | QuestionTimingBaselineV2 | last_recomputed_at | cron 增量重算 |
 | KnowledgePointV2 | code UNIQUE; (category_l1, category_l2) | Phase 2 查询树 |
 | QuestionKnowledgePointV2 | UNIQUE(question_id, knowledge_point_id) | Phase 2 关联唯一 |
+| QuestionReportV2 | UNIQUE WHERE status IN (pending, under_review)（双轨 sqlite_where + postgresql_where） | active 报错唯一约束（Report-4 partial UNIQUE） |
+| QuestionReportV2 | (status, is_stale, created_at) | admin dashboard 状态聚合 |
+| QuestionReportV2 | (question_id, status) | admin 视图按题聚合（Report-11 GROUP BY） |
+| QuestionReportV2 | (user_id, created_at) | rate-limit DB count（Report-20） |
+| QuestionReportV2 | (status, created_at) WHERE status='pending' AND is_stale=false（双轨） | SLA cron 扫描（Report-8） |
+| QuestionReportV2 | (resolved_at) WHERE status='resolved'（双轨） | 归档 cron 扫描（Report-17 月度归档专用前缀） |
+| QuestionReportV2 | idempotency_key | Idempotency 命中查询（Report-18；详见 §3.12 双源职责切分注释） |
+| QuestionReportArchivedV2 | original_report_id; (question_id); (user_id, created_at); archived_at | admin 归档查询 |
 
 ---
 
@@ -917,6 +1118,104 @@ ALTER TABLE question_v2
     OR (ability_dimensions::jsonb <@ '["comprehension", "reasoning", "calculation", "memory", "application"]'::jsonb)
   );
 ```
+
+### 5.8 QuestionReportV2 终态不可改 trigger + outcome / status 一致性
+
+终态 (status='resolved') 后不可改 status / outcome / resolved_at / transitioned_at（admin 误操作防护，详见 [00-Decisions §19 Report-5](./00-Decisions.md#19-题目纠错report-系列)）。
+
+```sql
+CREATE OR REPLACE FUNCTION protect_report_terminal_state_v2()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF OLD.status = 'resolved'
+     AND (
+       OLD.status IS DISTINCT FROM NEW.status
+       OR OLD.outcome IS DISTINCT FROM NEW.outcome
+       OR OLD.resolved_at IS DISTINCT FROM NEW.resolved_at
+       OR OLD.transitioned_at IS DISTINCT FROM NEW.transitioned_at
+     ) THEN
+    RAISE EXCEPTION 'Terminal report status is immutable (was %)', OLD.status;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER report_v2_terminal_protect
+BEFORE UPDATE ON question_report_v2
+FOR EACH ROW EXECUTE FUNCTION protect_report_terminal_state_v2();
+```
+
+```sql
+-- status=resolved ⟺ outcome NOT NULL 一致性约束
+ALTER TABLE question_report_v2
+  ADD CONSTRAINT report_status_outcome_consistency CHECK (
+    (status = 'resolved' AND outcome IS NOT NULL)
+    OR (status != 'resolved' AND outcome IS NULL)
+  );
+
+-- description 长度约束（10-500 char，详见 [00-Decisions §19 Report-3](./00-Decisions.md#19-题目纠错report-系列)）
+-- 用 length()（PostgreSQL + SQLite 双跑兼容；PG 对 text 类型 length() 返回字符数，等价于 char_length）
+ALTER TABLE question_report_v2
+  ADD CONSTRAINT report_description_length CHECK (
+    length(trim(description)) >= 10 AND length(description) <= 500
+  );
+
+-- proposed_correction 长度约束（≤500 char）
+ALTER TABLE question_report_v2
+  ADD CONSTRAINT report_proposed_correction_length CHECK (
+    proposed_correction IS NULL OR length(proposed_correction) <= 500
+  );
+
+-- QuestionV2 disable_reason NOT NULL coupling（与同表 abandoned_reason_required / force_submit_reason_required 姊妹模式一致）
+ALTER TABLE question_v2
+  ADD CONSTRAINT question_disable_reason_required CHECK (
+    (is_active = true) OR (disable_reason IS NOT NULL)
+  );
+```
+
+⚠️ **CHECK 约束 SQLite 兼容**：CHECK 机制 SQLite 直接支持，但函数集与 PG 不同。本节用 `length(trim(...))` 而非 `char_length(...)` 以保 SQLite 兼容（SQLite 内置无 char_length）。SQLite 对 text 类型 `length()` 返回字符数，与 PostgreSQL 等价。
+
+### 5.9 QuestionReportV2 申诉 lifetime ≤ 3 trigger
+
+详见 [00-Decisions §19 Report-10](./00-Decisions.md#19-题目纠错report-系列)：同一 (user_id, question_id) 累计 ≤ 3 次 lifetime（含归档表的历史记录）；超出 INSERT 时 RAISE。
+
+```sql
+CREATE OR REPLACE FUNCTION enforce_report_appeal_lifetime_v2()
+RETURNS TRIGGER AS $$
+DECLARE
+  total_count INTEGER;
+BEGIN
+  -- 并发 race 防护（详见本节末"并发安全注意"）：
+  -- (user_id, question_id) 维度串行化，避免 PG 默认 READ COMMITTED 下两 INSERT 同读 count<3 都过校验
+  PERFORM pg_advisory_xact_lock(
+    hashtext(NEW.user_id::text || ':' || NEW.question_id::text)
+  );
+
+  SELECT
+    (SELECT COUNT(*) FROM question_report_v2          WHERE user_id = NEW.user_id AND question_id = NEW.question_id)
+    + (SELECT COUNT(*) FROM question_report_archived_v2 WHERE user_id = NEW.user_id AND question_id = NEW.question_id)
+  INTO total_count;
+  -- 注意：本次 INSERT 行还未写入，所以 SELECT COUNT 不含本行；触发后总计 = total_count + 1
+  IF total_count >= 3 THEN
+    RAISE EXCEPTION 'Report appeal lifetime exceeded: user_id=% question_id=% already has 3 records', NEW.user_id, NEW.question_id
+      USING ERRCODE = 'check_violation';
+    -- service 层捕获 check_violation 转 422 RESUBMIT_LIMIT_EXCEEDED
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER report_v2_appeal_lifetime
+BEFORE INSERT ON question_report_v2
+FOR EACH ROW EXECUTE FUNCTION enforce_report_appeal_lifetime_v2();
+```
+
+⚠️ **并发安全注意**：
+
+- PostgreSQL 默认 READ COMMITTED 隔离下，两个并发 INSERT 同 (user_id, question_id) 在 lifetime=2 状态下都能读到 count=2 通过校验最终落 4 行。`pg_advisory_xact_lock(hashtext(...))` 把 (user_id, question_id) 维度串行化（轻量，不阻塞其它 user/question 维度的并发 INSERT）。advisory lock 在事务结束自动释放（xact 后缀），无需 manual unlock。
+- SQLite 没有 `pg_advisory_xact_lock`；trigger 整体 PG-only（与 §5.1 / §5.3 / §5.6 既有"PG-only trigger，SQLite 应用层校验代替"模式同款）。SQLite 开发态依赖单 worker + 文件级 BEGIN IMMEDIATE 锁，自然串行（PR 11 service 层走默认事务模式，并在 service 层补 lifetime ≤ 3 校验作 fallback）。`pg_advisory_xact_lock` 仅用于 PostgreSQL 这一侧针对并发 race 的额外防护。
+- service 层补充：`outcome=fixed / outcome=duplicate` 后用户**不可再报**（即便 lifetime 计数 < 3，service 层 422 拒绝；详见 Report-10 末段）。这一约束 trigger 不强制（trigger 只防 lifetime 超限），由 service 层在 POST /reports 入口校验最近一条 resolved record 的 outcome。
+- Report-10 的 lifetime ≤ 3 含归档表行数，因此 cron 归档时不变更总计；申诉路径在归档发生后仍受同一上限保护。
 
 ---
 
@@ -1190,7 +1489,7 @@ class PracticePreferencesResponseV2(CamelModel):
 
 ## 7. Migration 顺序
 
-新增 12 个 Alembic migration（B10-B13 + B25-B29 范围）：
+新增 16 个 Alembic migration（B10-B13 + B25-B30 范围）：
 
 ```
 revision_id                   | depends_on              | 描述
@@ -1226,11 +1525,22 @@ revision_id                   | depends_on              | 描述
 20260521_xx_ai_request        | <prev>                  | AiGeneratedQuestionRequestV2
 20260521_xx_daily             | <prev>                  | DailyPracticeV2
 20260521_xx_user_pref         | <prev>                  | UserPracticePreferencesV2
+20260522_xx_question_disable  | <prev>                  | QuestionV2 加 disable_reason 字段（NULL allowed；
+                              |                         | 取值见 §2.1 注释；不加 IN(...) CHECK 防 enum 演进锁死，
+                              |                         | 但加 question_disable_reason_required CHECK：
+                              |                         | is_active=false ⟹ disable_reason IS NOT NULL，
+                              |                         | 与同表 abandoned_reason_required / force_submit_reason_required 姊妹模式对齐）
+20260522_xx_question_report   | <prev>                  | QuestionReportV2 + QuestionReportArchivedV2 两表
+                              |                         | + ReportType / ReportStatus / ReportOutcome 三 enum
+                              |                         | + 7 索引（含 partial UNIQUE active state + resolved_at 归档专用，全部 sqlite_where + postgresql_where 双轨）
+                              |                         | + 终态不可改 trigger（含 transitioned_at）+ lifetime ≤ 3 trigger（含 pg_advisory_xact_lock 并发防护）
+                              |                         | + 3 CHECK 约束（status⟺outcome / description 长度
+                              |                         | / proposed_correction 长度）；length() 而非 char_length() 以保 SQLite 兼容
 ```
 
 每个 migration 必须支持 `alembic downgrade -1`（CI 必跑往返）。
 
-**注意**：以上 13 个 migration 在物理顺序上需保证 `session_lifecycle` 在 `session_timing` 与 `session_mock_exam` 之前（后两者依赖 lifecycle 字段已就绪）。`question_meta_p1` 可与其他 migration 并行只要 `question_v2` 已建。
+**注意**：以上 16 个 migration 在物理顺序上需保证 `session_lifecycle` 在 `session_timing` 与 `session_mock_exam` 之前（后两者依赖 lifecycle 字段已就绪）；`question_disable` 必须在 `question_report` 之前（后者的 service 层会写 disable_reason）；`question_meta_p1` 可与其他 migration 并行只要 `question_v2` 已建。
 
 ---
 
@@ -1256,6 +1566,7 @@ revision_id                   | depends_on              | 描述
 | **MockExam-* (00-Decisions §16)** | **PracticeSessionV2.exam_mode / time_limit_minutes / auto_submit_at / allow_pause / delayed_review_until** |
 | **Pref-* (00-Decisions §17)** | **UserPracticePreferencesV2** |
 | **QMeta-* (00-Decisions §18) Phase 1** | **QuestionV2 ability_dimensions / discrimination_index / heat_score / complexity_level / knowledge_tags + KnowledgePointV2（空表） + QuestionKnowledgePointV2（空表）** |
+| **Report-* (00-Decisions §19)** | **QuestionReportV2 (主表) + QuestionReportArchivedV2 (归档) + QuestionV2.disable_reason + QuestionV2.quality_score / report_count 注释 supersede（真题 / AI 题双轨）** |
 
 ---
 
@@ -1299,6 +1610,15 @@ PracticePreferencesPatchV2, PracticePreferencesResetRequestV2
 
 # Phase-1 schema 预留（Phase 2 才用）
 QuestionMetadataPreviewV2  # 暴露给 QuestionEnvelopeV2.metadata_preview 字段
+
+# Tab 2 question_report 模块（B30）
+QuestionReportCreateRequestV2     # POST /reports body
+QuestionReportEnvelopeV2          # 用户视角 report 详情
+QuestionReportListResponseV2      # GET /me/reports
+AdminQuestionReportEnvelopeV2     # admin 视角（含 description / handler 等内部字段）
+AdminQuestionReportTransitionV2   # PATCH /admin/reports/:id/transition body
+AdminQuestionOfflineRequestV2     # POST /admin/questions/:id/offline body
+AdminQuestionReportArchivedListV2 # GET /admin/reports/archived
 ```
 
-完整 Pydantic 定义在 [03-Backend-WU §B10-B17 + §B25-B29](./03-Backend-WU.md) 各 PR 内。
+完整 Pydantic 定义在 [03-Backend-WU §B10-B17 + §B25-B30](./03-Backend-WU.md) 各 PR 内。
