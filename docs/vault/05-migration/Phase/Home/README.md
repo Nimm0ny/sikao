@@ -140,7 +140,7 @@ WU-F1 ─→ WU-F2 ──┐                                                 leg
 WU 详细：
 - 后端：[03-Backend-WU](./03-Backend-WU.md)
 - 前端：[04-Frontend-WU](./04-Frontend-WU.md)
-- 当前执行主线：`M4 → M5 → M6` 后端链按 `M3` 已落地主干的输出继续推进，不等待 `SIK-34` 关单。
+- 当前执行主线：`M4 → M5 → M6` 后端链已完成收口；`SIK-37 / M6` 锁定了 backend Home 契约、OpenAPI 与 records canonical route。`M7-M12` 仍是 paused legacy frontend reference track，不因本轮 backend 完工而自动重启。
 - `M7-M12` 保留为暂停中的 legacy Home 前端参考轨，待新的前端全量重构计划落档后再决定是否接管或替代。
 
 ---
