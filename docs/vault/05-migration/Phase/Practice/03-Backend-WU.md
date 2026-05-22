@@ -16,13 +16,13 @@
 | WU-B11 | session 系列字段扩展（含 NoteV2 提前升级） | 300 | 4 | Phase-Home WU-B1 |
 | WU-B12 | 新表数据模型（5 个表） | 750 | 5 | B11 |
 | WU-B13 | 申论范文表（2 个表 + trigger） | 350 | 2 | B12 |
-| WU-B14 | content 模块扩展（categories + papers filter） | 800 | 3 | B10 |
-| WU-B15 | session 模块扩展（多 mode + 答题中操作） | 1,400 | 5 | B10 / B11 / B12 |
-| WU-B16 | favorites + question_flags 模块（新建） | 650 | 3 | B12 |
+| WU-B14 | content 模块扩展（categories + papers filter + question detail aggregation） | 1,000 | 4 | B10 / B11 / B12 / B16 |
+| WU-B15 | session 模块扩展（多 mode + 答题中操作 + as_draft） | 1,400 | 5 | B10 / B11 / B12 |
+| WU-B16 | favorites + question_flags + question-linked notes CRUD（新建 / 扩展） | 850 | 4 | B12 |
 | WU-B17 | practice_stats 模块（新建） | 1,500 | 5 | B11 / B12 |
 | WU-B18 | ai_questions 模块（新建） | 1,200 | 4 | B10 / B12 / B22 |
 | WU-B19 | daily_practice 模块（新建） | 800 | 3 | B12 / B17 |
-| WU-B20 | essay_grading 模块扩展 | 1,300 | 4 | B13 / B22 |
+| WU-B20 | essay_grading 模块扩展（含 essay_draft CRUD） | 1,500 | 5 | B13 / B22 |
 | WU-B21 | 真题数据导入脚本 | 500 | 2 | B10 |
 | WU-B22 | LLM 模块扩展（在 modules/llm/ 上追加 3 能力） | 2,000 | 6 | Phase-Home WU-B7 |
 | WU-B23 | cron 扩展（4 新 cron + 1 增量 hook） | 900 | 4 | B17 / B18 / B19 / B20 |
@@ -33,9 +33,9 @@
 | WU-B28 | practice_preferences 模块（新建） | 800 | 3 | Phase-Home 用户体系 |
 | WU-B29 | question_metadata schema 预留（仅 schema） | 400 | 2 | B10 |
 | WU-B30 | question_report 模块（新建） | 600 | 2 | B10 |
-| **合计** | | **20,500** | **78** | |
+| **合计** | | **21,100** | **81** | |
 
-> 新合计较初版 README 的 17k/70 PR 上调，原因：4 个 MUST 模块（B25-B28）完整落地 + B29 schema 预留 + B30 真题纠错入口。
+> 较初版 README 的 17k/70 PR 上调，原因：4 个 MUST 模块（B25-B28）完整落地 + B29 schema 预留 + B30 真题纠错入口 + 闭环修订（CLP）补齐 4 个硬缺口（B14.4 题目详情聚合 / B16.4 题级笔记 CRUD / B20.5 essay_draft CRUD）。
 >
 > 前端总量见 [04-Frontend-WU](./04-Frontend-WU.md)。
 
@@ -51,10 +51,13 @@
 # main.py（增量）
 app.include_router(favorites_router,         prefix="/api/v2")
 app.include_router(question_flags_router,    prefix="/api/v2")
+app.include_router(question_notes_router,    prefix="/api/v2")  # B16.4 题级笔记最小 CRUD
+app.include_router(question_detail_router,   prefix="/api/v2")  # B14.4 GET /questions/:id 聚合
 app.include_router(practice_stats_router,    prefix="/api/v2")
 app.include_router(ai_questions_router,      prefix="/api/v2")
 app.include_router(daily_practice_router,    prefix="/api/v2")
 app.include_router(essay_grading_router,     prefix="/api/v2")
+app.include_router(essay_drafts_router,      prefix="/api/v2")  # B20.5 申论草稿 CRUD
 # Phase-Practice 4 个 MUST 模块新增：
 app.include_router(timing_router,                prefix="/api/v2")
 app.include_router(session_lifecycle_router,     prefix="/api/v2")
@@ -83,6 +86,10 @@ app.include_router(question_reports_router,      prefix="/api/v2")
 | `ESSAY_GRADING_PENDING` | 200 | 申论批改进行中（不是错误，是状态） |
 | `ESSAY_GRADING_FAILED` | 200 | 批改失败（前端展示重试按钮） |
 | `QUESTION_INACTIVE` | 410 | 题已下线（is_active=false） |
+| **闭环修订（CLP）新增** | | |
+| `INVALID_QUESTION_REFERENCE` | 422 | session.create(mode=ai_generated) 校验 question_ids 不全在 AiGeneratedQuestionRequestV2 内（CLP-2） |
+| `NOTE_NOT_QUESTION_LINKED` | 422 | 题级笔记 CRUD 端点收到 linked_question_id 为空（B16.4） |
+| `ESSAY_DRAFT_NOT_FOUND` | 404 | GET essay/sessions/:id/draft 但该 session 尚未保存过草稿（B20.5） |
 | **timing 模块新增** | | |
 | `EVENT_ORDER_VIOLATION` | 422 | timing events 内 ts 非升序 |
 | `STALE_EVENT` | 422 | timing event ts 早于 last_modified - 60s |
@@ -116,6 +123,9 @@ app.include_router(question_reports_router,      prefix="/api/v2")
 - `POST /essay/reference-answers/generate`：每用户 10 req/day
 - 收藏 / 标记 / 反馈类：每用户 60 req/min
 - 列表读取类：每用户 120 req/min
+- **B14.4 题目详情聚合**：`GET /practice/questions/:id` 每用户 60 req/min
+- **B16.4 题级笔记 CRUD**：POST/PATCH/DELETE 每用户 30 req/min；GET /questions/:id/notes 60 req/min
+- **B20.5 essay_draft CRUD**：`PUT /essay/sessions/:id/draft` 每用户每 session 4 req/min（30s 间隔有余量）
 - **timing**：`POST /sessions/:id/timing/events` 每用户每 session 20 req/min
 - **session_lifecycle**：`POST /sessions/:id/heartbeat` 每用户每 session 5 req/min；pause/resume 30 req/min；discard 10 req/min；GET /sessions/active 60 req/min
 - **mock_exam**：`POST /practice/mock-exams` 每用户 20 req/day；`GET /sessions/:id/countdown` 每用户每 session 30 req/min
@@ -140,6 +150,9 @@ POST /api/v2/practice/mock-exams                      # 创建模考
 - heartbeat：天然幂等（同一 ts 多次到达只更新 last_heartbeat_at）
 - preferences PUT/PATCH：last-writer-wins，无需幂等
 - pause/resume/discard：状态机转换天然 idempotent（重复调用要么成功要么 INVALID_TRANSITION）
+- **essay_draft PUT**（B20.5）：last-writer-wins 按 content 覆盖，自然幂等
+- **题级笔记 CRUD**（B16.4）：客户端不会高频重试；MVP 阶段不强制
+- **session.create**（含 ai_generated mode，CLP-2）：前端在等待页跳转后立即 unmount，不会重复触发；同一 requestId 重复 create 返回不同 session_id 视为正常，由前端负责导航
 
 ### 1.6 OpenAPI Tag 约定
 
@@ -152,7 +165,10 @@ POST /api/v2/practice/mock-exams                      # 创建模考
 | stats | /practice/stats |
 | ai-questions | /practice/ai-questions |
 | daily | /practice/daily |
-| essay-grading | /practice/essay |
+| essay-grading | /practice/essay/submissions, /practice/essay/reference-answers |
+| **essay-drafts** (CLP-6) | /practice/essay/sessions/:id/draft |
+| **question-detail** (CLP-7) | /practice/questions/:id |
+| **question-notes** (CLP-5) | /practice/notes, /practice/questions/:id/notes |
 | **timing** | /practice/sessions/:id/timing, /practice/stats/timing, /practice/questions/:id/timing-baseline |
 | **session-lifecycle** | /practice/sessions/:id/{pause|resume|heartbeat|discard|start|lifecycle}, /practice/sessions/active |
 | **mock-exam** | /practice/mock-exams, /practice/sessions/:id/countdown |
@@ -334,9 +350,26 @@ GET /api/v2/practice/essay/papers?year=&region=&exam_type=
 
 行数 ~250。
 
-**估算**：800 行 / 3 PR
-**依赖**：B10
-**验收**：filter 组合 query 测试通过；分类树正确聚合；已完成状态准确。
+#### B14.4 题目详情聚合端点（CLP-7）
+
+文件：
+- `modules/content/application/question_detail.py`：聚合查询
+  - 题面（QuestionV2 + options + assets）
+  - 该用户题级笔记列表（NoteV2 where user_id AND linked_question_id）
+  - 该用户答题历史（最近 5 次 PracticeSessionAnswerV2 join PracticeSessionV2 where status=submitted）
+  - 收藏状态（QuestionFavoriteV2 单条 / null）
+  - 持久标记状态（QuestionFlagV2 active / null）
+  - 范文列表（仅 type=essay 时；按 source + quality_score 排序，limit=5）
+- `modules/content/interface/routes.py`：`GET /api/v2/practice/questions/:question_id`
+- AGENTS-H7：聚合内任一子查询失败即整体 500，不静默吞错
+- 返回 410 QUESTION_INACTIVE / 404 NOT_FOUND（越权伪装为 404）
+- `tests/modules/content/test_question_detail.py`：聚合正确性 + 越权 / 下线题 / 范文存在性各路径
+
+行数 ~200。
+
+**估算**：1,000 行 / 4 PR
+**依赖**：B10 / B11 / B12 / B16
+**验收**：filter 组合 query 测试通过；分类树正确聚合；已完成状态准确；题目详情聚合正确（含 e2e 跨 tab 联动 from Tab 4）。
 
 ---
 
@@ -349,9 +382,13 @@ POST /api/v2/practice/sessions
   body 新增字段：
     mode: paper | category | custom | ai_generated | daily | wrong_redo
     practice_mode: per_question | full_set
+    as_draft?: bool = false        # CLP-4：默认 false 直接 IN_PROGRESS；
+                                    #         mock-exam 端点强制 true 等用户点 start
     config: {
       category?, year_range?, difficulty_range?, count?,
-      exclude_already_done?, only_wrong?
+      exclude_already_done?, only_wrong?,
+      questionIds?: int[],         # mode=ai_generated 必填
+      requestId?: int              # mode=ai_generated 必填（关联 AiGeneratedQuestionRequestV2）
     }
     linked_plan_event_id?: int
     linked_recommendation_id?: int
@@ -394,11 +431,18 @@ POST /api/v2/practice/sessions/:id/persistent-flag
 
 行数 ~250。
 
-#### B15.4 mode=ai_generated 支持
+#### B15.4 mode=ai_generated 支持（CLP-2 修订：不调 LLM，仅消费已生成 question_ids）
 
 文件：
-- `modules/session/application/ai_picker.py`：调 ai_questions 模块的 generator service
-- 测试：含 LLM mock provider
+- `modules/session/application/ai_picker.py`：
+  - 接收 `config.questionIds` 与 `config.requestId`
+  - 校验所有 question_id 存在且 `source ∈ (ai_generated, ai_modified) ∧ is_active=true`
+  - 校验 question_ids 全部出现在 `AiGeneratedQuestionRequestV2[id=requestId].pool_question_ids ∪ llm_generated_question_ids`，否则 422 INVALID_QUESTION_REFERENCE
+  - 把 requestId 写入 `session.config_snapshot.ai_request_id` 用于审计反查
+  - **不**直接调 ai_questions 模块的 generator service（generator 已在前端等待页阶段消费完成）
+- 测试：含 LLM mock provider（仅用于校验 ai_picker 不调 LLM 路径，AI 生成由 B18 端点单测）
+
+⚠️ CLP-2 流程：前端等待页 `POST /ai-questions/generate` → 拿到 question_ids → 再 `POST /sessions { mode: 'ai_generated', config: { questionIds, requestId } }`。session.create 与 ai-questions/generate 是两次独立 mutation。
 
 行数 ~250。
 
@@ -441,6 +485,14 @@ POST   /api/v2/practice/questions/:id/flag
 DELETE /api/v2/practice/questions/:id/flag
 PATCH  /api/v2/practice/questions/:id/flag/resolve
 GET    /api/v2/practice/flags?reason=
+
+# B16.4 题级笔记最小 CRUD（CLP-5）
+POST   /api/v2/practice/notes
+  body: { question_id: int, body: str, title?: str }
+GET    /api/v2/practice/questions/:question_id/notes
+PATCH  /api/v2/practice/notes/:id
+  body: { body?: str, title?: str }
+DELETE /api/v2/practice/notes/:id
 ```
 
 ### 8.2 PR 拆分
@@ -475,9 +527,24 @@ GET    /api/v2/practice/flags?reason=
 
 行数 ~150。
 
-**估算**：650 行 / 3 PR
-**依赖**：B12
-**验收**：flag CRUD 闭环；resolve 流程；review 联动正确。
+#### B16.4 题级笔记最小 CRUD（CLP-5）
+
+文件：
+- `modules/notes_v2/application/question_linked_service.py`：题级笔记 CRUD service
+  - 强制 `linked_question_id` 非空（否则 422 NOTE_NOT_QUESTION_LINKED）
+  - 越权访问其他用户笔记 → 404（不泄漏存在性）
+  - 模考期间 POST 拒绝（先校验 `session.exam_mode=true and session.status=IN_PROGRESS` → 422 MOCK_NOTES_FORBIDDEN）；这里先简化为"不依赖 session_id 上下文，只在前端隐藏入口 + 对所有非 admin POST 不做特殊校验"，由 13-Mock-Exam 后端兜底端点（POST /api/v2/practice/sessions/:id/notes 路径）处理，详见 13 文档 §3.4
+- `modules/notes_v2/interface/question_routes.py`：4 个端点
+- `modules/notes_v2/interface/schemas.py`：QuestionNoteCreate / QuestionNoteUpdate / QuestionNoteEnvelope
+- `tests/modules/notes_v2/test_question_linked.py`：CRUD + 越权 + 越权伪装 404 + visibility=private 强制
+
+⚠️ 范围限制（A0 §2.3 修订）：仅落地 question-linked 笔记 CRUD；独立笔记 / 双向链接 / 全文搜索 / 标签 / 树状组织继续推到 [Phase/Notes](../Notes/README.md)。
+
+行数 ~200。
+
+**估算**：850 行 / 4 PR
+**依赖**：B11.3（NoteV2 schema 升级）/ B12
+**验收**：flag CRUD 闭环；resolve 流程；review 联动正确；题级笔记 CRUD + 越权 404 invariant 通过。
 
 ---
 
@@ -675,10 +742,14 @@ GET /api/v2/practice/daily/history?period=7d|30d
 ```
 POST /api/v2/practice/essay/submissions/:id/grade
   Headers: Idempotency-Key
-  → 触发批改（异步）。立即返回，结果通过 polling 拉取
+  → 触发批改（异步）。
+  ⚠️ CLP-1：默认用户路径**不调用此端点**；session.submit hook 自动隐式触发。
+     此端点仅用于：(a) 上次批改 status=failed 重试 (b) admin 重新批改 (c) reference 缺失补生成。
+  立即返回，结果通过 polling 拉取。
 
 GET /api/v2/practice/essay/submissions/:id/grading-status
   → 查询批改状态（pending_grading | graded | failed）
+  ⚠️ 用户提交申论后跳 result 页直接 polling 此端点；不调 grade。
 
 GET /api/v2/practice/essay/submissions/:id/result
   → 完整批改结果（status=graded 时）
@@ -696,6 +767,18 @@ POST /api/v2/practice/essay/reference-answers/generate
   body: { question_id }
   Headers: Idempotency-Key
   → 触发 AI 生成范文（异步）
+
+# B20.5 申论草稿 CRUD（CLP-6）
+PUT  /api/v2/practice/essay/sessions/:session_id/draft
+  body: { content: str, client_modified_at?: ISO }
+  → 200 { saved_at, version }
+  策略：last-writer-wins，无 ETag（v1）；自然幂等（content 覆盖）；不走 IdempotencyKeyV2
+
+GET  /api/v2/practice/essay/sessions/:session_id/draft
+  → 200 { content, saved_at, version } | 404 ESSAY_DRAFT_NOT_FOUND
+
+DELETE /api/v2/practice/essay/sessions/:session_id/draft
+  → 仅 admin（运维）；用户提交后服务端自动归档（见 B20.5 service 描述）
 ```
 
 ### 12.2 PR 拆分
@@ -706,8 +789,12 @@ POST /api/v2/practice/essay/reference-answers/generate
 - `modules/essay_grading/__init__.py`
 - `modules/essay_grading/application/service.py`：trigger / status query
 - `modules/essay_grading/application/background_grader.py`：后台任务包装（FastAPI BackgroundTasks）
+- `modules/essay_grading/application/submit_hook.py`（CLP-1）：暴露 `on_session_submit_essay(submission_id)`：
+  - 仅当 status ∈ {pending_grading, failed} 才调 background_grader（避免重复）
+  - 不抛错（catch + audit + metric）
+  - 由 `modules/session/application/hooks.py:on_session_submit` 调用（B23.4 增量 hook）
 - `modules/essay_grading/interface/routes.py` / `schemas.py`
-- 测试：异步流程 e2e（含 polling）
+- 测试：异步流程 e2e（含 polling）+ submit hook 隐式触发 invariant
 
 行数 ~340。
 
@@ -740,9 +827,25 @@ POST /api/v2/practice/essay/reference-answers/generate
 
 行数 ~300。
 
-**估算**：1,300 行 / 4 PR
+#### B20.5 essay_draft CRUD（CLP-6）
+
+文件：
+- `modules/essay_grading/application/draft_service.py`：
+  - `upsert_draft(session_id, user_id, content)`：last-writer-wins（自然幂等）；写入 EssayDraftV2 同时更新 PracticeSessionV2.last_activity_at
+  - `get_draft(session_id, user_id)`：返回 content + saved_at + version；404 ESSAY_DRAFT_NOT_FOUND
+  - `archive_draft_on_submit(session_id)`：session.submit 时把 draft.content 复制到 EssaySubmissionV2.essay_text，draft.status='submitted'
+- `modules/essay_grading/interface/draft_routes.py`：3 个端点（PUT / GET / DELETE）
+- `modules/essay_grading/interface/draft_schemas.py`
+- `modules/session/application/hooks.py`：在 on_session_submit 内调 `archive_draft_on_submit`（仅 essay session）
+- `tests/modules/essay_grading/test_draft.py`：upsert 幂等 / 越权 404 / submit 归档 / 限流
+
+⚠️ A0 §2.5 修订：EssayDraftV2 由本 PR 启用（之前"已建表，未在路由中使用"）。
+
+行数 ~200。
+
+**估算**：1,500 行 / 5 PR
 **依赖**：B13 / B22
-**验收**：异步批改完整流程通过；范文 CRUD + feedback 正确；AI 自审失败的范文 status=archived。
+**验收**：异步批改完整流程通过；范文 CRUD + feedback 正确；AI 自审失败的范文 status=archived；草稿 30s 间隔自动 PUT 不丢失数据；submit 时草稿正确归档。
 
 ---
 
@@ -882,7 +985,9 @@ POST /api/v2/practice/essay/reference-answers/generate
 - `modules/session/application/hooks.py` 加入 `on_session_submit`：
   - 调 `practice_stats.snapshot_writer.incremental_update`
   - 调 `recommender` 实时刷新（继承 Phase-Home P5）
-- 测试
+  - **CLP-1**：若 session.type=essay，调 `essay_grading.submit_hook.on_session_submit_essay(submission_id)` 隐式触发批改（不抛错；失败仅 audit + metric）
+  - **CLP-6**：若 session.type=essay，调 `essay_grading.draft_service.archive_draft_on_submit(session_id)` 把草稿内容复制为最终 EssaySubmissionV2.essay_text
+- 测试：含 essay submit 的全链路（draft → archive → grading async）
 
 行数 ~170。
 
@@ -966,6 +1071,7 @@ POST /api/v2/practice/essay/reference-answers/generate
 | **B28** | **Pref-* (00 §17)** | **§15 Pref-* (10 条)** | **§3.9 / §6.10** | **§6 preferences contract** |
 | **B29** | **QMeta-* (00 §18)** | **§16 QMeta-* (9 条)** | **§2.1 / §3.10 / §3.11 / §5.7** | **§3 schema-only invariant** |
 | **B30** | **真题纠错（隐含）** | **PR-Report (待补 §17)** | **§3.12（新表 QuestionReportV2）** | **§6 e2e + admin** |
+| **CLP-1 ~ CLP-9** | **00 §19** | **§4 PR8 修订 / Note-* / Essay-* / AI-G-*** | **§3.12 新增 / §2.5 NoteV2 / EssayDraftV2 启用** | **§4 e2e essay async + 题级笔记跨 tab + AI 出题流程** |
 
 ---
 
