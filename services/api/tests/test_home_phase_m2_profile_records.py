@@ -175,11 +175,24 @@ def test_profile_extensions_and_records_canonicalization(tmp_path: Path) -> None
         assert records.json()["total"] == 1
         assert records.json()["items"][0]["id"] == "practice-1"
 
-        dashboard_records = client.get("/api/v2/dashboard/records")
-        assert dashboard_records.status_code == 200, dashboard_records.text
-        assert dashboard_records.json()["sections"][0]["href"] == "/profile/records"
-        assert dashboard_records.json()["actions"][0]["href"] == "/profile/records"
-        assert dashboard_records.json()["summary"]["avgXingceAccuracy"] == "0.50"
+        day_window = client.get(
+            "/api/v2/profile/records",
+            params={
+                "page": 1,
+                "size": 10,
+                "from": "2026-06-15",
+                "to": "2026-06-15",
+            },
+        )
+        assert day_window.status_code == 200, day_window.text
+        assert day_window.json()["total"] == 2
+        assert {item["id"] for item in day_window.json()["items"]} == {
+            "practice-1",
+            f"essay-submission-{submission.id}",
+        }
+
+        legacy_dashboard_records = client.get("/api/v2/dashboard/records")
+        assert legacy_dashboard_records.status_code == 404, legacy_dashboard_records.text
 
         openapi = client.get("/openapi.json")
         assert openapi.status_code == 200
@@ -188,3 +201,4 @@ def test_profile_extensions_and_records_canonicalization(tmp_path: Path) -> None
         assert "/api/v2/plans/events" in paths
         assert "/api/v2/recommendations/today" in paths
         assert "/api/v2/profile/records" in paths
+        assert "/api/v2/dashboard/records" not in paths

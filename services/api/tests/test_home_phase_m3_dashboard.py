@@ -8,8 +8,6 @@ from tests._home_phase_m3_support import (
     PlanEventV2,
     PracticeSessionAnswerV2,
     PracticeSessionV2,
-    ProgressSnapshotV2,
-    WeaknessSnapshotV2,
     build_client,
     load_user,
     register,
@@ -297,18 +295,15 @@ def test_home_m3_session_submit_refreshes_snapshots_and_progress_ignores_event_s
         assert submitted.status_code == 200, submitted.text
 
         before = client.get("/api/v2/dashboard/progress", params={"planId": plan_id})
+        weakness_before = client.get("/api/v2/dashboard/progress/weakness")
         assert before.status_code == 200, before.text
+        assert weakness_before.status_code == 200, weakness_before.text
         before_payload = before.json()
+        weakness_before_payload = weakness_before.json()
 
         session = app.state.db.session_factory()
         try:
-            snapshot = session.scalar(select(ProgressSnapshotV2).where(ProgressSnapshotV2.user_id == user.id))
-            weakness_rows = list(
-                session.scalars(select(WeaknessSnapshotV2).where(WeaknessSnapshotV2.user_id == user.id))
-            )
             event = session.get(PlanEventV2, event_id)
-            assert snapshot is not None
-            assert weakness_rows
             assert event is not None
             event.status = "skipped"
             session.add(event)
@@ -317,10 +312,14 @@ def test_home_m3_session_submit_refreshes_snapshots_and_progress_ignores_event_s
             session.close()
 
         after = client.get("/api/v2/dashboard/progress", params={"planId": plan_id})
+        weakness_after = client.get("/api/v2/dashboard/progress/weakness")
         assert after.status_code == 200, after.text
+        assert weakness_after.status_code == 200, weakness_after.text
         after_payload = after.json()
+        weakness_after_payload = weakness_after.json()
 
         assert before_payload["summary"]["today"] == after_payload["summary"]["today"]
+        assert weakness_before_payload == weakness_after_payload
         assert before_payload["summary"]["planSlice"]["eventsDone"] == 1
         assert after_payload["summary"]["planSlice"]["eventsDone"] == 0
         assert after_payload["summary"]["planSlice"]["eventsSkipped"] == 1

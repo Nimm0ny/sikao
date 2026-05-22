@@ -264,7 +264,7 @@ def test_phase1_contract_smoke_covers_all_new_endpoints(tmp_path: Path) -> None:
             "/api/v2/dashboard/progress/weakness",
             "/api/v2/dashboard/progress/diagnosis",
             "/api/v2/dashboard/full-plan",
-            "/api/v2/dashboard/records",
+            "/api/v2/profile/records",
         ]:
             response = client.get(path)
             assert response.status_code == 200, (path, response.text)
