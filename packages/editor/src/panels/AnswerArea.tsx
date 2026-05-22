@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FormatBoldIcon } from '@sikao/ui/icons';
 import { Tooltip } from '@sikao/ui/ui';
 import { cn } from '@sikao/shared-utils';
-import { useExamSession } from '../hooks/useExamSession';
+import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
 import { CELL, COLS, layoutText } from '@sikao/answer-engine/grid-layout/gridLayout';
 import { allChars, bodyChars } from '@sikao/answer-engine/word-limit/bodyChars';
 import { getWordLimitTarget } from '@sikao/answer-engine/word-limit/wordLimits';

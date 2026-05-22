@@ -7,13 +7,13 @@ import {
 } from '@sikao/ui/icons';
 import { Tooltip } from '@sikao/ui/ui';
 import { cn } from '@sikao/shared-utils';
-import { useExamSession } from './hooks/useExamSession';
+import { bodyChars } from '@sikao/answer-engine/word-limit/bodyChars';
+import { hasReachedMinimum } from '@sikao/answer-engine/word-limit/wordLimits';
+import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
 import { TopBar } from './TopBar';
 import { MaterialsPanel } from './panels/MaterialsPanel';
 import { AnswerArea } from './panels/AnswerArea';
 import { ScratchPanel } from './panels/ScratchPanel';
-import { bodyChars } from './lib/bodyChars';
-import { hasReachedMinimum } from './lib/wordLimits';
 import { PrestartModal } from './modals/PrestartModal';
 import { PausedOverlay } from './modals/PausedOverlay';
 import { SubmitDialog } from './modals/SubmitDialog';

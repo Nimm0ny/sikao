@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useExamSession } from '../hooks/useExamSession';
+import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
 import { MaterialsHeader } from '../pieces/MaterialsHeader';
 import { MaterialTabs } from '../pieces/MaterialTabs';
 import { MaterialReader } from '../pieces/MaterialReader';

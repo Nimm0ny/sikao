@@ -2,7 +2,7 @@ import { useRef, useState } from 'react';
 import { NavSubmitIcon, PenIcon, XCloseIcon } from '@sikao/ui/icons';
 import { Tooltip } from '@sikao/ui/ui/Tooltip';
 import { cn } from '@sikao/shared-utils';
-import { useExamSession } from '../hooks/useExamSession';
+import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
 import { scratchChars } from '@sikao/answer-engine/word-limit/bodyChars';
 
 // ScratchPanel — ruled notebook on the right edge. Accepts plain-text

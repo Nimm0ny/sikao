@@ -9,14 +9,14 @@ import {
 } from '@sikao/ui/icons';
 import { Tooltip } from '@sikao/ui/ui';
 import { cn } from '@sikao/shared-utils';
-import { formatTime } from './lib/gridLayout';
-import { bodyChars } from './lib/bodyChars';
+import { formatTime } from '@sikao/answer-engine/grid-layout/gridLayout';
+import { bodyChars } from '@sikao/answer-engine/word-limit/bodyChars';
 import {
   getWordLimitTarget,
   hasExceededMaximum,
   hasReachedMinimum,
-} from './lib/wordLimits';
-import { useExamSession } from './hooks/useExamSession';
+} from '@sikao/answer-engine/word-limit/wordLimits';
+import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
 import { QuestionRing } from './pieces/QuestionRing';
 import { QuestionPeek } from './pieces/QuestionPeek';
 
