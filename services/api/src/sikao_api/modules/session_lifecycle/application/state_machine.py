@@ -5,6 +5,7 @@ from typing import Literal, cast
 from sikao_api.modules.session_lifecycle.domain.types import TransitionAttempt, TransitionResult
 
 _TRANSITIONS: dict[tuple[str, str], str] = {
+    ("draft", "user_start"): "in_progress",
     ("draft", "first_answer"): "in_progress",
     ("draft", "first_heartbeat"): "in_progress",
     ("in_progress", "user_pause"): "paused",

@@ -7,6 +7,7 @@ from typing import Literal, NamedTuple
 SessionStatus = Literal["draft", "in_progress", "paused", "submitted", "abandoned", "expired"]
 SessionTrigger = Literal[
     "session_create",
+    "user_start",
     "first_answer",
     "first_heartbeat",
     "user_pause",
