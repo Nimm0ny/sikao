@@ -80,6 +80,64 @@ modules/
 ├── ...
 ```
 
+### 2.3.1 `answer_session` 与 `essay` 模块端点详表
+
+> **添加由 RR-3 PR (2026-05-22)**。本节为 §2.3 modules 表中标 `migrating` + `primary` 的两个模块（`answer_session` / `essay`）提供完整 endpoint 清单。两者都有 routes.py 但 main.py 未 `include_router`，所以处于"代码完成但未挂载"状态。WU-B17 / WU-B20 实施前需 lhr 决策（见 RR-Plan §2.4）。
+
+#### 2.3.1.1 `answer_session/interface/routes.py` — 25 endpoints (prefix `/api/v2/practice`, tag `practice-v2`)
+
+> Source: `services/api/src/sikao_api/modules/answer_session/interface/routes.py:25` (router 定义).
+> Verified: `grep -cE "^@router\." routes.py` = **25** (2026-05-22).
+> Mount status: **NOT in main.py** (`grep "answer_session" main.py` returns empty).
+
+| # | Line | Method | Path (with prefix) | Handler |
+|---|---|---|---|---|
+| 1 | 28 | GET | `/api/v2/practice/custom/facets` | `list_custom_practice_facets` |
+| 2 | 38 | POST | `/api/v2/practice/custom/start` | `start_custom_practice_session` |
+| 3 | 52 | POST | `/api/v2/practice/papers/{paper_code}/start` | `start_paper_session` |
+| 4 | 67 | POST | `/api/v2/practice/sessions/{session_id}/submit` | `submit_session_answer` |
+| 5 | 104 | POST | `/api/v2/practice/sessions/{session_id}/complete` | `complete_session` |
+| 6 | 144 | GET | `/api/v2/practice/sessions/{session_id}/result` | `get_session_result` |
+| 7 | 157 | GET | `/api/v2/practice/history` | `get_history` |
+| 8 | 168 | GET | `/api/v2/practice/wrong-questions` | `list_wrong_questions` |
+| 9 | 204 | POST | `/api/v2/practice/wrong-questions/retry-batch` | `retry_wrong_batch` |
+| 10 | 223 | POST | `/api/v2/practice/wrong-questions/{question_id}/retry` | `retry_wrong_question` |
+| 11 | 243 | GET | `/api/v2/practice/stats/heatmap` | `stats_heatmap` |
+| 12 | 251 | GET | `/api/v2/practice/stats/trend` | `stats_trend` |
+| 13 | 260 | GET | `/api/v2/practice/stats/knowledge-points` | `stats_knowledge_points` |
+| 14 | 270 | GET | `/api/v2/practice/stats/summary` | `stats_summary` |
+| 15 | 282 | GET | `/api/v2/practice/wrong-questions/summary` | `get_wrong_book_summary` |
+| 16 | 296 | GET | `/api/v2/practice/wrong-questions/graduation-candidates` | `get_graduation_candidates` |
+| 17 | 311 | PATCH | `/api/v2/practice/wrong-questions/{question_id}/mark-mastered` | `mark_wrong_question_mastered` |
+| 18 | 327 | POST | `/api/v2/practice/wrong-questions/{question_id}/peek` | `peek_wrong_question` |
+| 19 | 343 | POST | `/api/v2/practice/wrong-questions/{question_id}/submit-bluff` | `submit_wrong_question_with_bluff` |
+| 20 | 362 | GET | `/api/v2/practice/smart-review/today` | `get_smart_review_today` |
+| 21 | 376 | GET | `/api/v2/practice/smart-review/next` | `get_smart_review_next` |
+| 22 | 390 | GET | `/api/v2/practice/wrong-questions/heatmap` | `get_wrong_book_heatmap` |
+| 23 | 412 | GET | `/api/v2/practice/last-session` | `get_last_incomplete_practice_session` |
+| 24 | 430 | GET | `/api/v2/practice/wrong-questions/weakness` | `get_weakness_modules` |
+| 25 | 449 | PATCH | `/api/v2/practice/sessions/{session_id}/answers/{answer_id}/diagnosis` | `update_answer_wrong_reason` |
+
+> **路由 prefix 撞车注意**：本模块占用 `/api/v2/practice` 大部分子路径（`/custom/* / /papers/* / /sessions/* / /history / /wrong-questions/* / /stats/* / /smart-review/* / /last-session`）。WU-B17 (practice_stats) 设计的 `/stats/realtime / /stats/percentile / /stats/cross` 端点与本模块**共享 prefix `/api/v2/practice/stats`**——B17 ownership 决策 (见 RR-Plan §2.4) 必须在 B17 实施前拍板：合并到 `answer_session` / 拆 `practice_stats` 共享 prefix / 搬迁本模块 stats 端点到 `practice_stats`。
+
+#### 2.3.1.2 `essay/interface/routes.py` — 7 endpoints (prefix `/api/v2/essay`, tag `essay-v2`)
+
+> Source: `services/api/src/sikao_api/modules/essay/interface/routes.py:50` (router 定义).
+> Verified: `grep -cE "^@router\." routes.py` = **7** (2026-05-22).
+> Mount status: **NOT in main.py** (`grep "essay" main.py` returns empty).
+
+| # | Line | Method | Path (with prefix) | Handler |
+|---|---|---|---|---|
+| 1 | 53 | POST | `/api/v2/essay/grade` | `submit_essay_grade` |
+| 2 | 88 | GET | `/api/v2/essay/grades/{record_id}` | `get_my_essay_grade` |
+| 3 | 103 | GET | `/api/v2/essay/grades` | `list_my_essay_grades` |
+| 4 | 120 | GET | `/api/v2/essay/categories` | `list_essay_categories` |
+| 5 | 142 | GET | `/api/v2/essay/specialty/questions` | `list_essay_specialty_questions` |
+| 6 | 193 | POST | `/api/v2/essay/drafts` | `save_essay_draft` |
+| 7 | 223 | GET | `/api/v2/essay/drafts/{question_id}` | `get_my_essay_draft` |
+
+> **B20 决策依赖**：本模块代码完成但 `main.py` 未 `include_router`。WU-B20 (essay_grading) 路由策略 (见 RR-Plan §2.4 B20) 必须在 B20 实施前由 lhr 拍板：A) 直接挂载现有路由 + 在其上扩展批改流程 / B) 重写 essay routes 为 B20 / C) 新建独立 `modules/essay_grading/`。本 RR-3 仅记录现状。
+
 ### 2.4 modules/llm 与 Tab 2 的关系（重要）
 
 Tab 2 的 LLM 扩展（question_generator / essay_grader / reference_answer_generator）**继续在 Phase-Home 的 `modules/llm/` 内追加**，不新建 `modules/llm_v2/`。
@@ -138,18 +196,26 @@ modules/llm/
 
 ### 2.5 申论 V2 现状（关键）
 
-V2 数据层已就绪但路由层缺失：
+> **2026-05-22 RR-3 校准**：原文写"V2 数据层已就绪但路由层缺失"——**部分错误**。修正：申论 V2 的 routes.py 实际**代码完成但未挂载**，详见 §2.3.1.2。
 
-| 表 | 状态 |
+V2 数据层 + 路由代码现状：
+
+| 项 | 状态 |
 |---|---|
-| EssayDraftV2 | 已建表，未在路由中使用 |
-| EssaySubmissionV2 | 已建表，仅 session.submit 时写入 |
-| EssayReportV2 | 已建表，从未被写入（无批改流程） |
+| `EssayDraftV2` (db schema) | 已建表 |
+| `EssaySubmissionV2` (db schema) | 已建表 |
+| `EssayReportV2` (db schema) | 已建表，从未被写入（无批改流程） |
+| `modules/essay/interface/routes.py` | **代码完成（7 endpoints prefix `/api/v2/essay`）但 main.py 未 include_router**（详见 §2.3.1.2） |
+| `modules/essay/interface/specialty.py` | 存在（专项题相关） |
+| `modules/essay/application/` | 存在 |
+| `modules/essay/domain/` | 存在 |
+| `modules/essay/infrastructure/` | 存在 |
 
-Tab 2 的 essay_grading 模块（WU-B20）是首次真正使用这三张表的入口，需要：
-- 扩展 EssaySubmissionV2.status 枚举（加 `pending_grading | graded | failed`）
-- 写 EssayReportV2 写入器（从 LLM essay_grader 输出解析）
-- 新建 EssayReferenceAnswerV2 / EssayReferenceFeedbackV2（WU-B13）
+Tab 2 的 essay_grading 模块（WU-B20）需要：
+- 扩展 `EssaySubmissionV2.status` 枚举（加 `pending_grading | graded | failed`）
+- 写 `EssayReportV2` 写入器（从 LLM essay_grader 输出解析）
+- 新建 `EssayReferenceAnswerV2` / `EssayReferenceFeedbackV2`（WU-B13）
+- **决定 `modules/essay/` 处置策略**（直接挂载 / 重写 / 新建 `modules/essay_grading/`）—— 此项**待 lhr 决策**，见 RR-Plan §2.4 "B20 essay 路由策略"
 
 ---
 
