@@ -167,22 +167,22 @@ describe('Result compact MVP rendering', () => {
     expect(screen.getByTestId('result-ai-action')).toBeInTheDocument();
   });
 
-  it('back-home action navigates to dashboard', async () => {
+  it('back-home action navigates to home', async () => {
     const user = userEvent.setup();
     renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
 
     const btn = await screen.findByTestId('result-back-home');
     await user.click(btn);
-    expect(navigateSpy).toHaveBeenCalledWith('/dashboard');
+    expect(navigateSpy).toHaveBeenCalledWith('/');
   });
 
-  it('wrong-book action keeps the paperCode filter', async () => {
+  it('review action keeps the paperCode filter', async () => {
     const user = userEvent.setup();
     renderWithProviders(<Result />, { initialEntries: ['/practice/result/42'] });
 
     const btn = await screen.findByTestId('result-view-wrong');
     await user.click(btn);
-    expect(navigateSpy).toHaveBeenCalledWith('/wrong-book?paperCode=TEST-001');
+    expect(navigateSpy).toHaveBeenCalledWith('/review?paperCode=TEST-001');
   });
 
   it('saves manual wrong-reason override', async () => {
@@ -240,7 +240,7 @@ describe('Result error fallback', () => {
     expect(screen.getByRole('alert')).toHaveAttribute('data-tone', 'error');
   });
 
-  it('error home action navigates to dashboard', async () => {
+  it('error home action navigates to home', async () => {
     server.use(
       http.get('/api/v2/practice/sessions/:id/result', () =>
         HttpResponse.json({ detail: 'not_found' }, { status: 404 }),
@@ -251,7 +251,7 @@ describe('Result error fallback', () => {
 
     const backBtn = await screen.findByTestId('result-error-home');
     await user.click(backBtn);
-    expect(navigateSpy).toHaveBeenCalledWith('/dashboard');
+    expect(navigateSpy).toHaveBeenCalledWith('/');
   });
 
   it('retry refetch recovers to compact success view', async () => {

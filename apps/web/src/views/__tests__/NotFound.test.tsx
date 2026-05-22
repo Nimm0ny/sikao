@@ -19,11 +19,11 @@ describe('NotFound', () => {
     expect(screen.getByTestId('not-found-back-home')).toBeInTheDocument();
   });
 
-  it('back-home button navigates to /app', async () => {
+  it('back-home button navigates to /', async () => {
     navigate.mockClear();
     const user = userEvent.setup();
     renderWithProviders(<NotFound />, { initialEntries: ['/missing'] });
     await user.click(screen.getByTestId('not-found-back-home'));
-    expect(navigate).toHaveBeenCalledWith('/app');
+    expect(navigate).toHaveBeenCalledWith('/');
   });
 });

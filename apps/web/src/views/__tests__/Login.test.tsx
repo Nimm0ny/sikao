@@ -28,7 +28,7 @@ describe('Login', () => {
     localStorage.clear();
   });
 
-  it('happy path: setSession is called and navigate("/app") fires', async () => {
+  it('happy path: setSession is called and navigate("/") fires', async () => {
     renderWithProviders(<Login />, { initialEntries: ['/login'] });
 
     fireEvent.change(screen.getByTestId('login-identifier'), {
@@ -43,7 +43,7 @@ describe('Login', () => {
     await waitFor(() => {
       expect(useAuthStore.getState().user?.username).toBe('alice');
     });
-    expect(navigateSpy).toHaveBeenCalledWith('/app', { replace: true });
+    expect(navigateSpy).toHaveBeenCalledWith('/', { replace: true });
     // form-error strip should remain hidden on success
     expect(screen.queryByTestId('login-form-error')).not.toBeInTheDocument();
   });

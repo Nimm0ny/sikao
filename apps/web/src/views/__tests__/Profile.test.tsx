@@ -48,7 +48,7 @@ describe('Profile compact entry page', () => {
     const card = screen.getByTestId('profile-learning-tools-card');
     const rows = [
       screen.getByTestId('profile-dashboard-entry'),
-      screen.getByTestId('profile-study-plan-entry'),
+      screen.getByTestId('profile-records-entry'),
       screen.getByTestId('profile-essay-history-entry'),
       screen.getByTestId('profile-conversations-entry'),
     ];
@@ -56,7 +56,7 @@ describe('Profile compact entry page', () => {
     expect(rows.every((row) => card.contains(row))).toBe(true);
     expect(rows.map((row) => row.textContent)).toEqual([
       expect.stringContaining('学情数据'),
-      expect.stringContaining('学习计划'),
+      expect.stringContaining('学习记录'),
       expect.stringContaining('我的申论'),
       expect.stringContaining('解析问答'),
     ]);

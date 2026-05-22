@@ -42,7 +42,7 @@ describe('RegisterPhone', () => {
     await waitFor(() => {
       expect(useAuthStore.getState().user?.phone).toBe('13800138000');
     });
-    expect(navigateSpy).toHaveBeenCalledWith('/app', { replace: true });
+    expect(navigateSpy).toHaveBeenCalledWith('/', { replace: true });
     expect(screen.queryByTestId('register-phone-form-error')).not.toBeInTheDocument();
   });
 
