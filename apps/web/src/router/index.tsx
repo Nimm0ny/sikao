@@ -24,6 +24,7 @@ const pages = {
   wrongQuestionDetail: lazy(() => import('@/views/WrongQuestionDetailView')),
   wrongQuestionRedo: lazy(() => import('@/views/WrongQuestionRedoView')),
   smartReview: lazy(() => import('@/views/SmartReviewView')),
+  dashboard: lazy(() => import('@/views/Dashboard')),
   profile: lazy(() => import('@/views/Profile')),
   examCalendar: lazy(() => import('@/views/ExamCalendar')),
   conversationsHistory: lazy(() => import('@/views/ConversationsHistory')),
@@ -262,7 +263,7 @@ export const router = createBrowserRouter([
       { path: '/wrong-book/smart-review', element: routeElement(<pages.smartReview />) },
       { path: '/wrong-book/:questionId', element: routeElement(<pages.wrongQuestionDetail />) },
       { path: '/wrong-book/:questionId/redo', element: routeElement(<pages.wrongQuestionRedo />) },
-      { path: '/dashboard', element: <Navigate to="/practice/center" replace /> },
+      { path: '/dashboard', element: routeElement(<pages.dashboard />) },
       { path: '/profile', element: routeElement(<pages.profile />) },
       // Identity v2 (commit #6n): bind email (登录后绑定/换邮箱). path 跟
       // backend `frontend_base_url + /bind-email?token=...` 对齐 (中划线非斜线).
@@ -314,7 +315,7 @@ export const router = createBrowserRouter([
       { path: '/essay/categories', element: <Navigate to="/practice/center/essay/categories" replace /> },
       // SIKAO Wave 3 PR0 (2026-05-11): /plan 周视图 view (07 hifi). 旧
       // /study-plan/history* 路由 redirect 到 /plan 兼容老书签 / 外链.
-      { path: '/plan', element: <Navigate to="/practice/center" replace /> },
+      { path: '/plan', element: <Navigate to="/dashboard" replace /> },
       { path: '/study-plan/history', element: <Navigate to="/practice/center" replace /> },
       { path: '/study-plan/history/:planId', element: <Navigate to="/practice/center" replace /> },
       // MVP AI 公考提分闭环 (PR-1/2/6): 用户引导 + 今日任务 + 进度看板
