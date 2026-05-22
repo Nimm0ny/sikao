@@ -211,7 +211,7 @@ packages/domain/src/practice/
 
 文件：
 - 自定义刷题配置（Cust-* 字段集合）
-- 持久化策略：localStorage 即时 + profile.info.dashboard_preferences.practice_custom_config 异步同步（继承 Phase-Home D5）
+- 持久化策略：localStorage 即时 + `practice_preferences` 的 `custom_practice` 子树异步同步（不再写 `profile.info.dashboard_preferences`；详见 `14-Practice-Preferences.md` §7.1）
 
 行数 ~250。
 

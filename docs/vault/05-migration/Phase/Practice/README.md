@@ -55,8 +55,8 @@
 - 答题路由 `/practice/sessions/:id` + 结果路由 `/practice/sessions/:id/result`
 - AI 出题等待页 `/practice/ai-questions/generating`
 - 申论批改详情 `/practice/sessions/:id/grading`
-- 后端：题库 schema 扩展 / content 端点真实化 / session 多 mode + 答题中操作 / favorites + question_flags 模块 / practice_stats 模块 / ai_questions 模块 / daily_practice 模块 / essay_grading 模块扩展 / LLM 模块扩展 / 真题数据导入 / cron 扩展 / audit / observability
-- 数据：QuestionV2 / PracticeSessionV2 / PracticeSessionAnswerV2 / NoteV2 / ReviewItemV2 五表扩展；新建 PracticeStatsSnapshotV2 / QuestionFavoriteV2 / QuestionFlagV2 / EssayReferenceAnswerV2 / EssayReferenceFeedbackV2 / AiGeneratedQuestionRequestV2 / DailyPracticeV2
+- 后端：题库 schema 扩展 / content 端点真实化 / session 多 mode + 答题中操作 / favorites + question_flags 模块 / practice_stats 模块 / ai_questions 模块 / daily_practice 模块 / essay_grading 模块扩展 / LLM 模块扩展 / 真题数据导入 / cron 扩展 / timing / session_lifecycle / mock_exam / practice_preferences / question_report / audit / observability
+- 数据：QuestionV2 / PracticeSessionV2 / PracticeSessionAnswerV2 / NoteV2 / ReviewItemV2 五表扩展；新建 PracticeStatsSnapshotV2 / QuestionFavoriteV2 / QuestionFlagV2 / EssayReferenceAnswerV2 / EssayReferenceFeedbackV2 / AiGeneratedQuestionRequestV2 / DailyPracticeV2 / QuestionTimingBaselineV2 / UserPracticePreferencesV2 / KnowledgePointV2 / QuestionKnowledgePointV2 / QuestionReportV2
 
 **不在范围内**：
 - 错题专项页（独立 [Phase/Review](../Review/README.md)）
@@ -110,14 +110,14 @@ PR8 申论批改异步（submit 立即返回 result pending → cron 写 EssayRe
 
 | 维度 | 估算 |
 |---|---|
-| 总行数（新增 + 删除） | ~27,200 |
-| Backend / Frontend | 14,700 / 12,500 |
-| PR 总数 | ~97（B 58 + F 39，详见 03 / 04） |
-| Backend 阶段 | 7-9 周 |
-| Frontend 阶段 | 5-6 周 |
-| 全程 | 12-15 周 |
+| 总行数（新增 + 删除） | ~37,100 |
+| Backend / Frontend | 20,500 / 16,600 |
+| PR 总数 | ~132（B 78 + F 54，详见 03 / 04） |
+| Backend 阶段 | 旧 7-9 周口径失效，待按 B25-B30 重估 |
+| Frontend 阶段 | 旧 5-6 周口径失效，待按 F19-F22 重估 |
+| 全程 | 以 03 / 04 最新 WU 拆分为准（旧 12-15 周口径失效） |
 
-> 估算说明：本数字与 `03-Backend-WU §0` / `04-Frontend-WU §0` 总览表一致。比早期单文件 plan（22,000 / 55 PR）上调，原因：补全 audit / idempotency / observability / 限流 / 完整 invariant test / 前端 4 状态 + a11y + bundle 控制。
+> 估算说明：本数字与 `03-Backend-WU §0` / `04-Frontend-WU §0` 最新总览表一致。较旧口径继续上调，原因是把 `B25-B30` 与 `F19-F22` 也纳入当前 Phase 主体，而不是留在“声明了但没有详细 WU”状态。
 
 ---
 
@@ -226,6 +226,12 @@ WU 详细：
 
 ## 7. 阶段里程碑
 
+⚠️ **latest-doc 说明**：下面的 `M0-M19` 仍保留为顶层主脊柱，但已经不再穷尽当前 Phase 的全部 WU。
+
+- Backend：`B25-B30` 必须在 `M10 / WU-B24` 最终 gate 前完成并进入同一套 e2e / OpenAPI / invariant 收口。
+- Frontend：`F19-F22` 与 `F11-F16` 平行展开，由 `F17` 整合，并在 `M19 / WU-F18` 最终验收中一并覆盖。
+- 详细拆分以 `03-Backend-WU §19-§24` 与 `04-Frontend-WU §12-§15` 为准。
+
 ```
 M0   week 0          启动；本 plan review 通过，后续按 Phase-Home 后端门槛逐段解锁
 M1   week 1          WU-B10：QuestionV2 字段扩展完工
@@ -261,8 +267,8 @@ M19  week 14-15      WU-F18：e2e 验收
 
 旧 Home 前端 `F1-F8` 仅属于 Home 自身的 legacy runtime 轨，不作为本 Phase 后端或规划推进的前置。
 
-**保守串行估算**：Phase-Home 11-14 周 + Phase-Practice 12-15 周 = 23-29 周
-**理想并行估算**：约 18-22 周
+**保守串行估算**：旧 `12-15 周` 口径已失效；需按 `B25-B30 / F19-F22` 纳入后的最新 WU 重新估算。
+**理想并行估算**：待在 `03-Backend-WU` / `04-Frontend-WU` 最新拆分基础上重算，不再沿用旧值。
 
 ### 7.2 真题数据导入时机
 
@@ -278,6 +284,7 @@ M19  week 14-15      WU-F18：e2e 验收
 详见各 WU 文档与 [10-Testing §6](./10-Testing.md#6-完工-gate)。
 
 ### 8.1 后端 M10
+- [ ] B25-B30 相关 invariant / cron / module e2e 已纳入同一套 backend gate，而不是停留在详细 WU 文档层
 - [ ] pytest 全绿（含 invariant / e2e / audit / observability）
 - [ ] alembic upgrade head 干净（含本 Phase 7+ 个新 migration）
 - [ ] OpenAPI drift 测试 0 diff
@@ -286,6 +293,7 @@ M19  week 14-15      WU-F18：e2e 验收
 - [ ] 真题 import 脚本 dry-run + 小批量正式导入测试通过
 
 ### 8.2 前端 M19
+- [ ] F19-F22 模块场景（timing / lifecycle / mock-exam / preferences）已进入最终前端验收，而不是只停留在新增 WU 草案
 - [ ] vitest 全绿（含 e2e + a11y）
 - [ ] tsc strict 0 errors
 - [ ] 9 lint:* 全过
@@ -328,10 +336,10 @@ M19  week 14-15      WU-F18：e2e 验收
 - 申论人工批改入口（D-Q4 选项 D） → 远期
 - 题库管理后台 → 远期 admin Phase
 - 收藏夹分组（QuestionFavoriteV2 加 folder_id） → 远期
-- 题目纠错入口（用户标记题目本身有问题） → 远期
+- 题目元数据 Phase 2 完整能力（端点 / cron / LLM 标注 / 数据填充） → 后续独立 Phase
 - AI 出题"自动评分"（基于用户答题反推 LLM 改编质量） → 远期
 - 跨用户笔记共享（D-Q17 visibility 枚举预留） → 远期
-- 套卷模考模式（带计时器 + 严格仿真考场） → 远期
+- 跨用户模考排行榜 / 同水平对比 → 远期
 - 离线题库下载（移动端） → 远期
 
 ---
