@@ -8,7 +8,7 @@
 
 ## 概述
 
-7 条硬边界规则。所有 PR agent 在写逻辑前必须检查是否违反。违反即打回。
+11 条硬边界规则。所有 PR agent 在写逻辑前必须检查是否违反。违反即打回。
 
 ---
 
@@ -123,6 +123,123 @@ CHECK (
 
 ---
 
+## PR-R8 · Cause Tag Enum + Override Audit
+
+LLM 错因分析输出的 `dimensions[].slug` 必须严格在 `cause_tag_v2` 词典 enum 内（参见 [13-Cause-Taxonomy](./13-Cause-Taxonomy.md)）。
+
+**Parser 强制规则**：
+- 启动时加载 `is_active=true` 的 slug 集合（VALID_SLUGS），TTL 5min
+- LLM 输出 slug 不在 VALID_SLUGS（含拼写错 / 空 / deprecated）→ 强制归 `other` + severity=`low`
+- 原 LLM 输出存 `_llm_original` 字段，metric `cause_taxonomy.other_fallback` +1
+- 大小写归一化为小写后比对
+
+**用户 override 规则**（PATCH `/cause-analysis/:analysis_id/dimensions/:dimension_index`）：
+- override.slug 必须在 VALID_SLUGS 内；不在则 422 InvalidCauseTagError
+- 写入时不删 LLM 原 slug：`dim._llm_original_slug` 保留 + `dim.user_override` 块
+- 必须 require_owner（A 用户不能改 B 用户的分析）
+- 必须写 ReviewAttemptV2 行 `outcome=CAUSE_TAG_OVERRIDDEN`（含 from→to slug）
+- 必须 bump `analysis.version`（PR-R10 适用）
+
+**演进规则**：
+- slug 一旦发布永远禁止 rename；删除 = `is_active=false` 软删
+- 新增 slug → `taxonomy_version` +1；name / description / display_order 可改不限
+- 聚类 / Insights-3 一律使用 `effective_slug = COALESCE(user_override.slug_overridden, dim.slug)`
+
+**Cache invalidate**：`POST /admin/cause-tag/invalidate-cache` 仅 super_user 可调；普通用户 403。
+
+---
+
+## PR-R9 · Debt Management Invariants
+
+复盘债务核算与流量调度规则（参见 [12-Debt-Management](./12-Debt-Management.md)）。
+
+**daily_limit 不可绕过**：
+- `profile.review_daily_limit ∈ [10, 100]`，越界 422
+- 用户主动"加做明日 K 道"：推送 K 道但 `next_review_at` 不前移（保留节奏）
+- 即使 daily_limit 已满，severity 重新计算时仍按真实 overdue 计
+
+**打散不修改 SRS 主字段**：
+- redistribute 只动 `next_review_at` + `metadata.debt_status` / `debt_redistributed_to` / `original_overdue_at`
+- `correct_streak` / `algorithm_version` / `version` 字段必须保持不变（PR-R10 适用）
+- 触发条件：`severity=heavy` 自动触发 OR 用户主动（severity ≥ moderate 才允许，severity=none/light 调用 422）
+
+**ramp-up 与打散互斥**：
+- 用户处于 ramp-up（`last_attempt ≥ 7d`）期间，cron 跳过打散（不动 next_review_at）
+- ramp-up day_5 完成时触发**一次**打散，剩余 overdue 进入正常节奏
+- ramp-up 期间 ConfidenceRatingPrompt 隐藏 certain 选项（与 PR-R11 协同）
+
+**HARD 题（is_hard=true）规则**：
+- 答对 multiplier cap at ×1.0（recall+certain 也不翻倍）；unsure ×0.5 惩罚保留为 `min(1.0, multiplier)`
+- list / detail 端点对 is_hard 透明（status 字段不变；前端通过 metadata 渲染 HardQuestionBadge）
+- 自动 deep-analysis 走独立桶 `daily_deep_quota=5`（不计入 `daily_llm_quota=20`）
+- 用户 fresh start 清 is_hard + streak=0；`re_fail_count` 保留作审计（不清零）
+
+**cron 幂等**：`debt_severity_evaluator` / `hard_question_detector` / `rampup_phase_advancer` 重复执行不重算 / 不重复 audit；单用户失败不阻塞其他用户。
+
+---
+
+## PR-R10 · SRS Optimistic Lock Invariant
+
+任何修改 ReviewItemV2 的 SRS 状态字段（`correct_streak` / `next_review_at` / `status` / `metadata.algorithm_version` / `debt_status` / `is_hard`）必须遵守乐观锁（参见 [00-Decisions](./00-Decisions.md) §4 SRS-2 / SRS-8 / SRS-9）。
+
+**事务 + CAS**：
+1. 进事务前 SELECT version → expected_version
+2. 业务计算（advance_on_correct / regress / redistribute / mark_hard / clear_hard / cause-override）
+3. `UPDATE ... SET version = version + 1 WHERE id = :id AND version = :expected_version`
+4. 受影响行数 = 0 → 抛 `OptimisticLockError`（不静默忽略）
+
+**适用范围**：
+- session.commit 触发的 SRS 状态推进
+- 用户主动操作（mark_resolved / archive / restore / fresh_start / cause-override）
+- cron job（debt redistribute / rampup advance / hard detect）
+- 算法版本切换（simple_v1 ↔ sm2_v1 迁移路径）
+
+**Fail-Fast**（AGENT H7）：
+- `OptimisticLockError` 必须抛错；调用方决定 retry 或回滚整个 batch
+- 禁止 silent catch + 重试无限次；retry 限 3 次仍失败则向上抛
+- 跨 cron job 同时改一行 → 一个成功一个抛；后者必须重新计算（不能用旧快照）
+
+**审计要求**：所有 SRS 状态变更必须配套 ReviewAttemptV2 行（含 outcome 枚举），从 audit 链路可还原版本号路径。
+
+**例外**：纯 read-only 派生字段（`last_confidence` / `re_fail_count` 显示用复制）不强制 CAS；但写入它们的 hook 路径仍需在事务内一并 bump version。
+
+---
+
+## PR-R11 · Confidence Rating Semantics
+
+4 档信心评级（`guess` / `unsure` / `likely` / `certain`）改写 SRS 路径语义（参见 [14-Confidence-Rating](./14-Confidence-Rating.md)）。
+
+**guess 答对不递增 streak**：
+- streak 不变；`next_review_at` 按当前 streak 原地复算
+- 不享受 recall 加成（multiplier 强制 ×1.0）
+- ReviewAttemptV2 行 outcome=CORRECT 但 `notes_json.advance_skipped_due_to_guess=true`
+
+**unsure 阻毕业**：
+- streak 仍 +1
+- 间隔倍数：unsure + 无 recall = ×0.5；unsure + recall = ×1.0（recall 抵消半懵惩罚但不翻倍）
+- 即使 streak 达到 `GRADUATION_THRESHOLD`（4），仍强制再做一次：streak 卡在 `GRADUATION_THRESHOLD - 1`，`metadata.unsure_blocked_graduation=true`，下次 likely+ 才允许进 probationary
+
+**certain + recall + 临门一脚 → early probationary**：
+- 条件：streak ≥ `GRADUATION_THRESHOLD - 1` + `confidence=certain` + `used_recall=True`
+- 走 [05-SRS-Engine](./05-SRS-Engine.md) §5 Branch 4 进 probationary（不直接 graduated）
+- `metadata.early_graduated=true`；ReviewAttemptV2 outcome=PROBATION_ENTERED
+
+**certain + 答错 = mismatch（强制路径）**：
+- 标记 `metadata.confidence_mismatch_count += 1`
+- 调度 forced cause-analysis（不计 `daily_llm_quota`，使用 `cause_analysis_forced` prompt 变体）
+- forced 路径 LLM 失败时不阻塞（参见 PR-R6）；前端读 `metadata.forced_cause_analysis_pending` 自动 trigger
+- `confidence_mismatch_count ≥ 2` → 自动晋升 `is_hard=true`（与 PR-R9 联动）
+
+**跳过（confidence=null）**：
+- 按 likely 等价处理（保守默认）
+- `metadata.confidence_skipped_count += 1`；累计 > 5 在最近 30 题内 → 下次强制弹出不可跳
+
+**ramp-up 期间限制**：
+- ConfidenceRatingPrompt 不展示 certain 选项（避免回归首日错估自我）
+- 已有 `confidence_mismatch_count ≥ 1` / `is_hard=true` 的题：confidence 强制弹出不可跳
+
+---
+
 ## 引用矩阵
 
 | 规则 | 决策来源 | 涉及子文档 |
@@ -130,7 +247,11 @@ CHECK (
 | PR-R1 | R-1 | 02-Data-Model / 03-Backend-WU WU-R1/R2 |
 | PR-R2 | R-1 | 02-Data-Model / 03-Backend-WU WU-R2 |
 | PR-R3 | D-R3 | 03-Backend-WU WU-R2 / 08-Question-Hub-Page |
-| PR-R4 | D-R2 | 03-Backend-WU WU-R4 / 04-Frontend-WU WU-FR4 |
+| PR-R4 | D-R2 | 03-Backend-WU WU-R4 / 04-Frontend-WU WU-FR8 |
 | PR-R5 | SRS-6 | 03-Backend-WU WU-R4 / 05-SRS-Engine |
 | PR-R6 | AI-Cause-8 | 06-AI-Cause-Analysis / 04-Frontend-WU WU-FR9 |
 | PR-R7 | R-1 note_card | 02-Data-Model / 03-Backend-WU WU-R1 |
+| PR-R8 | Taxonomy-3 / -4 / -5 | 13-Cause-Taxonomy / 03-Backend-WU WU-R13 / 04-Frontend-WU WU-FR9 |
+| PR-R9 | Debt-1 ~ Debt-8 | 12-Debt-Management / 03-Backend-WU WU-R14 / 04-Frontend-WU WU-FR14 |
+| PR-R10 | SRS-2 / SRS-8 / SRS-9 | 02-Data-Model §3 version / 03-Backend-WU WU-R3 / R4 / 05-SRS-Engine |
+| PR-R11 | Confidence-1 ~ Confidence-7 | 14-Confidence-Rating / 03-Backend-WU WU-R3 修订 / 04-Frontend-WU WU-FR13 |
