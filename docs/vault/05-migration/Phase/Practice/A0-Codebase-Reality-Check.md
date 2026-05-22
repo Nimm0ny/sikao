@@ -120,11 +120,15 @@ modules/
 
 > **路由 prefix 撞车注意**：本模块占用 `/api/v2/practice` 大部分子路径（`/custom/* / /papers/* / /sessions/* / /history / /wrong-questions/* / /stats/* / /smart-review/* / /last-session`）。WU-B17 (practice_stats) 设计的 `/stats/realtime / /stats/percentile / /stats/cross` 端点与本模块**共享 prefix `/api/v2/practice/stats`**——B17 ownership 决策 (见 RR-Plan §2.4) 必须在 B17 实施前拍板：合并到 `answer_session` / 拆 `practice_stats` 共享 prefix / 搬迁本模块 stats 端点到 `practice_stats`。
 
-#### 2.3.1.2 `essay/interface/routes.py` — 7 endpoints (prefix `/api/v2/essay`, tag `essay-v2`)
+#### 2.3.1.2 `essay/interface/` — 11 endpoints across 2 routers (both unmounted)
 
-> Source: `services/api/src/sikao_api/modules/essay/interface/routes.py:50` (router 定义).
-> Verified: `grep -cE "^@router\." routes.py` = **7** (2026-05-22).
-> Mount status: **NOT in main.py** (`grep "essay" main.py` returns empty).
+> Source: `services/api/src/sikao_api/modules/essay/interface/{routes,specialty}.py`.
+> Verified (2026-05-22): `routes.py` has 7 `@router.` decorators; `specialty.py` has 4. Total 11.
+> Mount status: **NEITHER in main.py** (`grep "essay" main.py` returns empty).
+
+**Sub-router 1: `essay/interface/routes.py` — 7 endpoints (prefix `/api/v2/essay`, tag `essay-v2`)**
+
+> Router definition: `routes.py:50` — `APIRouter(prefix="/api/v2/essay", tags=["essay-v2"])`
 
 | # | Line | Method | Path (with prefix) | Handler |
 |---|---|---|---|---|
@@ -136,7 +140,18 @@ modules/
 | 6 | 193 | POST | `/api/v2/essay/drafts` | `save_essay_draft` |
 | 7 | 223 | GET | `/api/v2/essay/drafts/{question_id}` | `get_my_essay_draft` |
 
-> **B20 决策依赖**：本模块代码完成但 `main.py` 未 `include_router`。WU-B20 (essay_grading) 路由策略 (见 RR-Plan §2.4 B20) 必须在 B20 实施前由 lhr 拍板：A) 直接挂载现有路由 + 在其上扩展批改流程 / B) 重写 essay routes 为 B20 / C) 新建独立 `modules/essay_grading/`。本 RR-3 仅记录现状。
+**Sub-router 2: `essay/interface/specialty.py` — 4 endpoints (prefix `/api/v2/papers/essay`, tag `essay-specialty-v2`)**
+
+> Router definition: `specialty.py:36` — `APIRouter(prefix="/api/v2/papers/essay", tags=["essay-specialty-v2"])`
+
+| # | Line | Method | Path (with prefix) | Handler |
+|---|---|---|---|---|
+| 1 | 39 | GET | `/api/v2/papers/essay/specialty/summary` | `get_essay_specialty_summary` |
+| 2 | 58 | GET | `/api/v2/papers/essay/specialty/categories` | `get_essay_specialty_categories` |
+| 3 | 78 | GET | `/api/v2/papers/essay/list/extended` | `list_essay_papers_extended` |
+| 4 | 118 | GET | `/api/v2/papers/essay/filters` | `get_essay_papers_filters` |
+
+> **B20 决策依赖**：本模块共 11 endpoints 分布在 2 个 routers，全部 `main.py` 未 `include_router`。WU-B20 (essay_grading) 路由策略 (见 RR-Plan §2.4 B20) 必须在 B20 实施前由 lhr 拍板：A) 直接挂载现有 2 个 routers + 在其上扩展批改流程 / B) 重写 essay routes 为 B20 / C) 新建独立 `modules/essay_grading/` (并决定如何处置现有 specialty.py 的 4 个真题查询端点). 本 RR-3 仅记录现状。
 
 ### 2.4 modules/llm 与 Tab 2 的关系（重要）
 
@@ -205,8 +220,8 @@ V2 数据层 + 路由代码现状：
 | `EssayDraftV2` (db schema) | 已建表 |
 | `EssaySubmissionV2` (db schema) | 已建表 |
 | `EssayReportV2` (db schema) | 已建表，从未被写入（无批改流程） |
-| `modules/essay/interface/routes.py` | **代码完成（7 endpoints prefix `/api/v2/essay`）但 main.py 未 include_router**（详见 §2.3.1.2） |
-| `modules/essay/interface/specialty.py` | 存在（专项题相关） |
+| `modules/essay/interface/routes.py` | **代码完成（7 endpoints prefix `/api/v2/essay`）但 main.py 未 include_router**（详见 §2.3.1.2 sub-router 1） |
+| `modules/essay/interface/specialty.py` | **存在 (4 endpoints prefix `/api/v2/papers/essay`，与 routes.py 同样 main.py 未 include_router)**（详见 §2.3.1.2 sub-router 2） |
 | `modules/essay/application/` | 存在 |
 | `modules/essay/domain/` | 存在 |
 | `modules/essay/infrastructure/` | 存在 |
