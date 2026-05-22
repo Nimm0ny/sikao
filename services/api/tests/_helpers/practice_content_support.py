@@ -131,13 +131,18 @@ def build_postgres_client(tmp_path: Path) -> Iterator[TestClient]:
             admin_engine.dispose()
 
 
-def register_user(client: TestClient) -> int:
+def register_user(
+    client: TestClient,
+    *,
+    email: str = "content@example.com",
+    display_name: str = "Content User",
+) -> int:
     response = client.post(
         "/api/v2/auth/register/email",
         json={
-            "email": "content@example.com",
+            "email": email,
             "password": "secret123",
-            "displayName": "Content User",
+            "displayName": display_name,
         },
     )
     assert response.status_code == 200, response.text
@@ -147,7 +152,7 @@ def register_user(client: TestClient) -> int:
     app = cast(Any, client.app)
     factory = app.state.db.session_factory
     with factory() as session:
-        user = session.query(UserV2).filter_by(display_name="Content User").one()
+        user = session.query(UserV2).filter_by(display_name=display_name).one()
         return user.id
 
 
@@ -158,7 +163,7 @@ def seed_paper(
     title: str,
     subject_kind: str,
     questions: list[dict[str, Any]],
-) -> None:
+) -> list[int]:
     app = cast(Any, client.app)
     factory = app.state.db.session_factory
     with factory() as session:
@@ -172,9 +177,9 @@ def seed_paper(
         )
         session.add(revision)
         session.flush()
+        question_ids: list[int] = []
         for item_no, payload in enumerate(questions, start=1):
-            session.add(
-                QuestionV2(
+            question = QuestionV2(
                     revision_id=revision.id,
                     item_no=item_no,
                     subject_kind=subject_kind,
@@ -190,8 +195,11 @@ def seed_paper(
                     category_l2=str(payload["category_l2"]),
                     historical_accuracy=float(payload.get("historical_accuracy", 0.5)),
                 )
-            )
+            session.add(question)
+            session.flush()
+            question_ids.append(question.id)
         session.commit()
+        return question_ids
 
 
 def seed_completed_session(
