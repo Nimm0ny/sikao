@@ -1,11 +1,17 @@
 from __future__ import annotations
 
+import json
 from datetime import date
+from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Request
+import httpx
+from fastapi import APIRouter, Depends, Header, Query, Request
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 
+from sikao_api.core.config import Settings
+from sikao_api.core.deps import get_app_settings
 from sikao_api.db.models_v2 import UserV2
 from sikao_api.db.schemas_v2 import (
     EventConflictsRequestV2,
@@ -15,11 +21,13 @@ from sikao_api.db.schemas_v2 import (
     PlanAdjustmentListResponseV2,
     PlanAdjustmentReadV2,
     PlanAdjustmentRejectRequestV2,
+    PlanAutoGenerateRequestV2,
     PlanCreateRequestV2,
     PlanEventBulkDeleteRequestV2,
     PlanEventBulkDeleteResponseV2,
     PlanEventCreateRequestV2,
     PlanEventReadV2,
+    PlanRegenerateRangeRequestV2,
     PlanEventUpdateRequestV2,
     PlanListResponseV2,
     PlanReadV2,
@@ -27,11 +35,14 @@ from sikao_api.db.schemas_v2 import (
 )
 from sikao_api.db.session import get_db_session
 from sikao_api.modules.identity.application.security_v2 import get_current_user_v2, verify_csrf_v2
+from sikao_api.modules.llm.application.plan_generator import PlanGenerateParams, RegenerateRangeParams
+from sikao_api.modules.llm.application.service import HomeLlmService, HomeLlmStreamFrame
 from sikao_api.modules.plans.application.adjustment_service import AdjustmentServiceV2
 from sikao_api.modules.plans.application.event_command_service import EventCommandServiceV2
 from sikao_api.modules.plans.application.event_delete_service import EventDeleteServiceV2
 from sikao_api.modules.plans.application.event_query_service import EventQueryServiceV2
 from sikao_api.modules.plans.application.plan_service import PlanServiceV2
+from sikao_api.modules.system.application.errors import ServiceError
 
 router = APIRouter(prefix="/api/v2/plans", tags=["plans"])
 
@@ -59,6 +70,42 @@ def create_plan(
     )
     session.commit()
     return result
+
+
+@router.post("/auto-generate", dependencies=[Depends(verify_csrf_v2)])
+async def auto_generate_plan(
+    payload: PlanAutoGenerateRequestV2,
+    request: Request,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_app_settings)],
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+) -> StreamingResponse:
+    service = HomeLlmService(session, settings)
+    params = PlanGenerateParams(
+        name=payload.name,
+        target_exam_id=payload.target_exam_id,
+        target_exam_date=payload.target_exam_date,
+        daily_minutes_target=payload.daily_minutes_target,
+        style=payload.style,
+        baseline=payload.baseline,
+        focus_subjects=payload.focus_subjects,
+        user_notes=payload.user_notes,
+    )
+    return StreamingResponse(
+        _stream_home_llm_frames(
+            request=request,
+            session=session,
+            frames=service.generate_plan_stream(
+                user=user,
+                params=params,
+                idempotency_key=idempotency_key or "",
+                request_id=getattr(request.state, "request_id", None),
+                ip=request.client.host if request.client else None,
+            ),
+        ),
+        media_type="text/event-stream",
+    )
 
 
 @router.get("/events", response_model=EventWindowResponseV2)
@@ -178,6 +225,38 @@ def detect_event_conflicts(
     session: Annotated[Session, Depends(get_db_session)],
 ) -> EventConflictsResponseV2:
     return EventQueryServiceV2(session).detect_conflicts(user=user, payload=payload)
+
+
+@router.post("/events/regenerate-range", dependencies=[Depends(verify_csrf_v2)])
+async def regenerate_event_range(
+    payload: PlanRegenerateRangeRequestV2,
+    request: Request,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_app_settings)],
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+) -> StreamingResponse:
+    service = HomeLlmService(session, settings)
+    params = RegenerateRangeParams(
+        plan_id=payload.plan_id,
+        from_date=payload.from_date,
+        to_date=payload.to,
+        user_notes=payload.user_notes,
+    )
+    return StreamingResponse(
+        _stream_home_llm_frames(
+            request=request,
+            session=session,
+            frames=service.regenerate_range_stream(
+                user=user,
+                params=params,
+                idempotency_key=idempotency_key or "",
+                request_id=getattr(request.state, "request_id", None),
+                ip=request.client.host if request.client else None,
+            ),
+        ),
+        media_type="text/event-stream",
+    )
 
 
 @router.post("/events/{event_id}/restore", response_model=PlanEventReadV2, dependencies=[Depends(verify_csrf_v2)])
@@ -345,3 +424,44 @@ def pause_plan(
     )
     session.commit()
     return result
+
+
+async def _stream_home_llm_frames(
+    *,
+    request: Request,
+    session: Session,
+    frames: AsyncIterator[HomeLlmStreamFrame],
+) -> AsyncIterator[bytes]:
+    try:
+        async for frame in frames:
+            if await request.is_disconnected():
+                session.rollback()
+                return
+            yield _sse_frame({"type": frame.type, **frame.payload})
+        session.commit()
+    except (httpx.HTTPStatusError, httpx.TimeoutException, httpx.RequestError) as exc:
+        session.rollback()
+        yield _sse_frame(
+            {
+                "type": "error",
+                "code": "llm_upstream",
+                "message": str(exc),
+            }
+        )
+    except ServiceError as exc:
+        session.rollback()
+        yield _sse_frame(
+            {
+                "type": "error",
+                "code": exc.code,
+                "message": exc.message,
+            }
+        )
+    finally:
+        aclose = getattr(frames, "aclose", None)
+        if callable(aclose):
+            await aclose()
+
+
+def _sse_frame(payload: dict[str, object]) -> bytes:
+    return f"data: {json.dumps(payload, ensure_ascii=False)}\n\n".encode()
