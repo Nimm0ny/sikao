@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 import os
 from pathlib import Path
 import subprocess
@@ -17,6 +17,8 @@ from sqlalchemy.engine import URL, make_url
 
 from sikao_api.core.config import Settings
 from sikao_api.db.models_v2 import (
+    EssayReportV2,
+    EssaySubmissionV2,
     PaperRevisionV2,
     PaperV2,
     PracticeSessionAnswerV2,
@@ -207,9 +209,10 @@ def seed_completed_session(
     *,
     user_id: int,
     paper_code: str,
+    started_at: datetime | None = None,
     submitted_at: datetime | None = None,
     answer_outcomes: list[bool | None] | None = None,
-) -> None:
+) -> int:
     app = cast(Any, client.app)
     factory = app.state.db.session_factory
     with factory() as session:
@@ -220,6 +223,7 @@ def seed_completed_session(
             .order_by(PaperRevisionV2.revision_number.desc())
             .one()
         )
+        resolved_submitted_at = submitted_at or datetime.now(UTC).replace(tzinfo=None)
         practice_session = PracticeSessionV2(
             user_id=user_id,
             track=paper.subject_kind,
@@ -228,7 +232,8 @@ def seed_completed_session(
             paper_id=paper.id,
             revision_id=revision.id,
             payload_json={},
-            submitted_at=submitted_at or datetime.now(UTC).replace(tzinfo=None),
+            started_at=started_at or (resolved_submitted_at - timedelta(minutes=5)),
+            submitted_at=resolved_submitted_at,
         )
         session.add(practice_session)
         session.flush()
@@ -250,6 +255,43 @@ def seed_completed_session(
                         display_order=display_order,
                         response_json={},
                         is_correct=outcome,
+                        answered_at=resolved_submitted_at,
                     )
                 )
         session.commit()
+        return practice_session.id
+
+
+def seed_essay_submission(
+    client: TestClient,
+    *,
+    user_id: int,
+    question_id: int,
+    submitted_at: datetime | None = None,
+    score: float | None = None,
+    report_status: str = "completed",
+    practice_session_id: int | None = None,
+) -> int:
+    app = cast(Any, client.app)
+    factory = app.state.db.session_factory
+    with factory() as session:
+        submission = EssaySubmissionV2(
+            user_id=user_id,
+            question_id=question_id,
+            practice_session_id=practice_session_id,
+            content="essay content",
+            status="submitted",
+            submitted_at=submitted_at or datetime.now(UTC).replace(tzinfo=None),
+        )
+        session.add(submission)
+        session.flush()
+        session.add(
+            EssayReportV2(
+                submission_id=submission.id,
+                status=report_status,
+                score=score,
+                feedback_json={},
+            )
+        )
+        session.commit()
+        return submission.id
