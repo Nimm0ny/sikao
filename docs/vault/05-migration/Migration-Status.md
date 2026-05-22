@@ -17,7 +17,7 @@ last-reviewed: 2026-05-21
 | docs/vault 文档仓库 | complete | 主要文档就位（00-index/01-product/02-domain/03-tech/04-design/05-migration/06-decisions/08-archive） |
 | Legacy Feature Inventory | complete | 顶层盘点 + 单 view 级路由清单 + components 归属表 |
 | ADR | partial | 0001 Monorepo / 0002 Answer-Engine / 0003 Document-Vault 已写；0004 Models 拆分待 R2 |
-| Home Phase（2026-05-21 rebaseline） | partial | M0-M2 已完成；M3 后端 deliverables 已落地主干；当前下一活跃后端阶段是 M4 / SIK-35；旧 Home 前端 runtime 轨暂停待重构 |
+| Home Phase（2026-05-21 rebaseline） | partial | M0-M2 已完成；M3 后端 deliverables 已落地主干；M4 / SIK-35 已完成；当前活跃后端阶段是 M5 / SIK-36；旧 Home 前端 runtime 轨暂停待重构 |
 | **前端代码迁移** | **complete** | **770+ 文件**已搬到正确位置；0 个 MIGRATION_TODO 残留；编码 mojibake 已修复（507 文件 binary-copy 重做）；`tsc -b --noEmit` 0 errors（test exclude）；`vite build` 1.81s 38 chunks pass |
 | Auth（前端） | partial | views/auth/* + components/auth/* + domain/auth/useAuthStore 已迁；登录页面具体功能未验证 |
 | User（前端） | partial | views/Profile + components/profile 已迁 |
