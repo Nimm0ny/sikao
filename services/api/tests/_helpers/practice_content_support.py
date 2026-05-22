@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from contextlib import contextmanager
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, date, datetime, timedelta
 import os
 from pathlib import Path
 import subprocess
@@ -17,6 +17,7 @@ from sqlalchemy.engine import URL, make_url
 
 from sikao_api.core.config import Settings
 from sikao_api.db.models_v2 import (
+    DailyPracticeV2,
     EssayReportV2,
     EssaySubmissionV2,
     PaperRevisionV2,
@@ -24,6 +25,7 @@ from sikao_api.db.models_v2 import (
     PracticeSessionAnswerV2,
     PracticeSessionV2,
     QuestionV2,
+    ReviewItemV2,
     UserV2,
 )
 from sikao_api.main import create_app
@@ -253,7 +255,7 @@ def seed_completed_session(
                         question_id=question.id,
                         question_key=f"question-{question.id}",
                         display_order=display_order,
-                        response_json={},
+                        response_json={"selected": ["A"]} if outcome is not None else {},
                         is_correct=outcome,
                         answered_at=resolved_submitted_at,
                     )
@@ -295,3 +297,59 @@ def seed_essay_submission(
         )
         session.commit()
         return submission.id
+
+
+def seed_daily_practice(
+    client: TestClient,
+    *,
+    user_id: int,
+    type_name: str,
+    question_ids: list[int],
+    date_value: date,
+    status: str = "pending",
+    completed_session_id: int | None = None,
+    expired_at: datetime | None = None,
+) -> int:
+    app = cast(Any, client.app)
+    factory = app.state.db.session_factory
+    with factory() as session:
+        row = DailyPracticeV2(
+            user_id=user_id,
+            date=date_value,
+            type=type_name,
+            question_ids=question_ids,
+            generation_strategy="test_seed",
+            status=status,
+            completed_session_id=completed_session_id,
+            expired_at=expired_at or datetime.combine(date_value, datetime.max.time()).replace(tzinfo=None),
+        )
+        session.add(row)
+        session.commit()
+        return row.id
+
+
+def seed_review_item(
+    client: TestClient,
+    *,
+    user_id: int,
+    question_id: int,
+    title: str,
+    status: str = "pending",
+    reason: str = "wrong_answer",
+) -> int:
+    app = cast(Any, client.app)
+    factory = app.state.db.session_factory
+    with factory() as session:
+        item = ReviewItemV2(
+            user_id=user_id,
+            source_kind="question",
+            source_id=question_id,
+            title=title,
+            status=status,
+            question_id=question_id,
+            metadata_json={},
+            reason=reason,
+        )
+        session.add(item)
+        session.commit()
+        return item.id
