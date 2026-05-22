@@ -18,9 +18,9 @@ _ABILITY_DIMENSIONS = {
     "memory",
     "application",
 }
-_KNOWLEDGE_TAG_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 _KEY_BINDING_PATTERN = re.compile(r"^(?:Ctrl\+|Shift\+|Alt\+)?[A-Za-z0-9_]+$")
 _TIME_PATTERN = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+_KNOWLEDGE_TAG_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
 class ActionLinkV2(CamelModel):

@@ -44,12 +44,12 @@ class UserV2(Base):
     public_id: Mapped[str] = mapped_column(String(36), unique=True, nullable=False, default=lambda: str(uuid4()))
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
-    deletion_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    deletion_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     password_credential: Mapped[PasswordCredentialV2 | None] = relationship(
         back_populates="user",
@@ -282,6 +282,10 @@ class QuestionV2(Base):
     answer_kind: Mapped[str] = mapped_column(String(32), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
     content_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
 
     # Phase-Practice WU-B10.1 (Tab 2): question source + exam classification.
     # Source distinguishes real_exam vs ai_generated/ai_modified items so the
@@ -290,19 +294,34 @@ class QuestionV2(Base):
     # application layer (no DB enum, matching PlanV2.source convention) and the
     # value is logically immutable post-create — the DB-level immutable trigger
     # is added in WU-B10.3 once content_hash backfill completes.
-    source: Mapped[str] = mapped_column(String(32), nullable=False, default="real_exam")
+    source: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="real_exam",
+        server_default="real_exam",
+    )
     # year / region intentionally nullable: AI-generated items have no
     # provenance year and not every official paper carries a region (e.g. 国考).
     year: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     region: Mapped[str | None] = mapped_column(String(32), nullable=True)
     # exam_type values: national / provincial / institution / xuandiao / other.
-    exam_type: Mapped[str] = mapped_column(String(32), nullable=False, default="other")
+    exam_type: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="other",
+        server_default="other",
+    )
     # category_l1 stores the top-level taxonomy key (e.g. 'verbal', 'numeric').
     # category_l2 is optional sub-category. Exact value space is defined by the
     # WU-B14 content service's category aggregator and the WU-B21 import script;
     # legacy rows are seeded with 'uncategorized' so the NOT NULL invariant
     # holds across the migration.
-    category_l1: Mapped[str] = mapped_column(String(32), nullable=False, default="uncategorized")
+    category_l1: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="uncategorized",
+        server_default="uncategorized",
+    )
     category_l2: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # Phase-Practice WU-B10.2 (Tab 2): quality signals + dedup key + AI-source
@@ -343,8 +362,9 @@ class QuestionV2(Base):
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default=true(), index=True
     )
-    # content_hash: BLAKE2b(stem + sorted options + correct_answer); 32 chars
-    # hex. Used to dedup both AI re-generations against existing real exams and
+    # content_hash: canonical 32-char BLAKE2b over prompt + normalized
+    # content_json (see sikao_api.db.content_hash.compute_question_content_hash).
+    # Used to dedup both AI re-generations against existing real exams and
     # repeated real-exam imports. Nullable in WU-B10.2 because legacy rows are
     # backfilled in WU-B10.3, after which the UNIQUE constraint is added.
     content_hash: Mapped[str | None] = mapped_column(String(32), nullable=True)
@@ -380,11 +400,6 @@ class QuestionV2(Base):
         server_default=text("'[]'"),
     )
 
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=utc_now, onupdate=utc_now, nullable=False
-    )
-
 
 class QuestionOptionV2(Base):
     __tablename__ = "question_options_v2"
@@ -412,7 +427,6 @@ class QuestionAssetV2(Base):
 class PracticeSessionV2(Base):
     __tablename__ = "practice_sessions_v2"
     __table_args__ = (
-        Index("ix_practice_sessions_v2_user_started", "user_id", "started_at"),
         Index("ix_practice_sessions_v2_user_started", "user_id", "started_at"),
         Index("ix_practice_sessions_v2_linked_plan_event", "linked_plan_event_id"),
         Index("ix_practice_sessions_v2_linked_recommendation", "linked_recommendation_id"),
@@ -468,12 +482,12 @@ class PracticeSessionV2(Base):
         ForeignKey("plan_event_v2.id", ondelete="SET NULL"),
         nullable=True,
     )
-    linked_plan_event_occurrence_ref: Mapped[str | None] = mapped_column(
-        String(64),
-        nullable=True,
-    )
     linked_recommendation_id: Mapped[int | None] = mapped_column(
         ForeignKey("recommendation_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    linked_plan_event_occurrence_ref: Mapped[str | None] = mapped_column(
+        String(64),
         nullable=True,
     )
 
@@ -736,13 +750,12 @@ class ReviewItemV2(Base):
     #                       (D-Q12 "拓展" tier).
     # We do not enforce a DB-level enum or CHECK constraint; that lives in the
     # WU-B14+ review module's writer paths and follows the same pattern as
-    # PlanV2.source / RecommendationV2.status.
-    reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
-
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
+    # PlanV2.source / RecommendationV2.status.
+    reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
 
 class ReviewAttemptV2(Base):
@@ -1085,78 +1098,6 @@ class QuestionKnowledgePointV2(Base):
     annotated_by: Mapped[str] = mapped_column(String(32), nullable=False)
     annotated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
-
-
-class EssayReferenceAnswerV2(Base):
-    __tablename__ = "essay_reference_answer_v2"
-    __table_args__ = (
-        Index("ix_essay_ref_answer_v2_question_status", "question_id", "status"),
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    question_id: Mapped[int] = mapped_column(
-        ForeignKey("questions_v2.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    content: Mapped[str] = mapped_column(Text, nullable=False)
-    source: Mapped[str] = mapped_column(String(32), nullable=False)
-    created_by_user_id: Mapped[int | None] = mapped_column(
-        ForeignKey("users_v2.id", ondelete="SET NULL"),
-        nullable=True,
-    )
-    created_by_admin: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, server_default=false()
-    )
-    likes_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, server_default="0"
-    )
-    favorites_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, server_default="0"
-    )
-    report_count: Mapped[int] = mapped_column(
-        Integer, nullable=False, default=0, server_default="0"
-    )
-    quality_score: Mapped[float] = mapped_column(
-        Float, nullable=False, default=5.0, server_default="5"
-    )
-    status: Mapped[str] = mapped_column(
-        String(32), nullable=False, default="draft", server_default="draft"
-    )
-    published_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    ai_self_audit_passed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
-    ai_generated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=utc_now, onupdate=utc_now, nullable=False
-    )
-
-
-class EssayReferenceFeedbackV2(Base):
-    __tablename__ = "essay_reference_feedback_v2"
-    __table_args__ = (
-        UniqueConstraint(
-            "reference_id",
-            "user_id",
-            "action",
-            name="uq_essay_ref_feedback_v2",
-        ),
-    )
-
-    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    reference_id: Mapped[int] = mapped_column(
-        ForeignKey("essay_reference_answer_v2.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    user_id: Mapped[int] = mapped_column(
-        ForeignKey("users_v2.id", ondelete="CASCADE"),
-        nullable=False,
-        index=True,
-    )
-    action: Mapped[str] = mapped_column(String(32), nullable=False)
-    note: Mapped[str | None] = mapped_column(String(512), nullable=True)
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class ProfileInfoV2(Base):
