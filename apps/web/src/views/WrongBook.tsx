@@ -42,8 +42,8 @@ import type {
 // SIKAO Wave 4 Phase 2D · 错题本主页重写 (接 W1 bdfe4f2 7 endpoint).
 //
 // 主页轻量化 (master 拍板 IA): Hero + Standout + FiltersPanel (7 chip viewFilter)
-// + 6-col grid list. 详情移到 DetailA full-screen (/wrong-book/:questionId),
-// 重做移到 DetailB (/wrong-book/:questionId/redo).
+// + 6-col grid list. 详情移到 DetailA full-screen (/review/items/:questionId),
+// 重做移到 DetailB (/review/items/:questionId/redo).
 //
 // view filter → mastery 映射: todo/danger/new → not_mastered, doing → reviewing,
 // ok → mastered; meek (蒙对) BE 暂无, 当 danger proxy.
@@ -251,7 +251,7 @@ function WrongBookDesktop() {
   const onSelectCard = useCallback(
     (qid: number) => {
       setSelectedId(qid);
-      navigate(`/wrong-book/${qid}`);
+      navigate(`/review/items/${qid}`);
     },
     [navigate],
   );
@@ -384,7 +384,7 @@ function WrongBookDesktop() {
               />
               <button
                 type="button"
-                onClick={() => navigate('/wrong-book/smart-review')}
+                onClick={() => navigate('/review/smart')}
                 className="bg-ink text-white p-6 flex flex-col gap-3 text-left transition-colors duration-fast hover:bg-ink-1 rounded-card"
                 data-testid="wrong-book-smart-review-cta"
                 aria-label="进入智能复盘"

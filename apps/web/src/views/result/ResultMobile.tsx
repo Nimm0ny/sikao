@@ -319,7 +319,7 @@ export function ResultMobile() {
     enabled: sessionId !== undefined,
   });
 
-  const onBackHome = useCallback(() => navigate('/app'), [navigate]);
+  const onBackHome = useCallback(() => navigate('/'), [navigate]);
   const paperCode = query.data?.session?.paperCode ?? null;
   const onRetry = useCallback(() => {
     if (paperCode === null) return;
@@ -327,7 +327,7 @@ export function ResultMobile() {
   }, [paperCode, navigate]);
   const onViewWrong = useCallback(() => {
     if (paperCode === null) return;
-    navigate(`/wrong-book?paperCode=${encodeURIComponent(paperCode)}`);
+    navigate(`/review?paperCode=${encodeURIComponent(paperCode)}`);
   }, [paperCode, navigate]);
 
   if (query.isLoading) return <ResultPageSkeleton />;

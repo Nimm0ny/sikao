@@ -36,7 +36,7 @@ import type { MasteryLevel } from '@sikao/api-client/types/api';
  * + smart-review CTA + 7-chip FiltersPanel + 6-col grid; mobile 走聚焦
  * "今天该练什么 + 一题一题翻", 完整 dashboard 推 desktop / detail view.
  * Handoff §5.1 "list 类跳独立 page" 铁线对齐 — 跳错题详情走全屏 detail
- * (/wrong-book/:questionId).
+ * (/review/items/:questionId).
  *
  * Italic 政策合规: CJK 禁 italic. wb-row__qn / __meta 走 font-serif default
  * 不带 italic.
@@ -146,7 +146,7 @@ export function WrongBookMobile() {
 
   const handleRowClick = useCallback(
     (questionId: number) => {
-      navigate(`/wrong-book/${questionId}`);
+      navigate(`/review/items/${questionId}`);
     },
     [navigate],
   );
@@ -209,7 +209,7 @@ export function WrongBookMobile() {
             type="button"
             className="m-app-head__icon-btn"
             aria-label="智能复盘"
-            onClick={() => navigate('/wrong-book/smart-review')}
+            onClick={() => navigate('/review/smart')}
             data-testid="wrong-book-mobile-smart-review"
           >
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">

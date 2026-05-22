@@ -54,7 +54,7 @@ export function StandoutGraduation({
             <button
               key={c.questionId}
               type="button"
-              onClick={() => navigate(`/wrong-book/${c.questionId}/redo`)}
+              onClick={() => navigate(`/review/items/${c.questionId}/redo`)}
               className="grid grid-cols-[auto_1fr_auto] gap-3 items-center px-3 py-2 bg-surface border border-line text-left transition-colors duration-fast hover:bg-ok-bg hover:border-ok rounded-tiny"
               data-testid={`wrong-book-grad-${c.questionId}`}
               aria-label={`立做：${c.stem}`}
@@ -99,7 +99,7 @@ export function StandoutGraduation({
             variant="secondary"
             size="sm"
             onClick={() =>
-              navigate(`/wrong-book/${candidates[0]?.questionId ?? 0}/redo`)
+              navigate(`/review/items/${candidates[0]?.questionId ?? 0}/redo`)
             }
             data-testid="wrong-book-grad-batch"
           >
