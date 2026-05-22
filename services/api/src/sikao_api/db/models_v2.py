@@ -807,6 +807,111 @@ class NoteLinkV2(Base):
     link_target_id: Mapped[str] = mapped_column(String(64), nullable=False)
 
 
+class PracticeStatsSnapshotV2(Base):
+    __tablename__ = "practice_stats_snapshot_v2"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "scope",
+            "category_key",
+            "type",
+            name="uq_practice_stats_v2_scope",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    scope: Mapped[str] = mapped_column(String(32), nullable=False)
+    category_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    type: Mapped[str] = mapped_column(String(32), nullable=False)
+    total_questions: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    correct_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    accuracy: Mapped[float] = mapped_column(
+        Float, nullable=False, default=0.0, server_default="0"
+    )
+    total_sessions: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    total_minutes: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    average_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    recent_trend: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'"),
+    )
+    last_practiced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    percentile_rank: Mapped[float | None] = mapped_column(Float, nullable=True)
+    percentile_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+
+class QuestionFavoriteV2(Base):
+    __tablename__ = "question_favorite_v2"
+    __table_args__ = (
+        UniqueConstraint("user_id", "question_id", name="uq_qfav_v2_user_question"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    note: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+
+class QuestionFlagV2(Base):
+    __tablename__ = "question_flag_v2"
+    __table_args__ = (
+        Index(
+            "uq_qflag_v2_active_user_question",
+            "user_id",
+            "question_id",
+            unique=True,
+            sqlite_where=text("resolved_at IS NULL"),
+            postgresql_where=text("resolved_at IS NULL"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    reason: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("practice_sessions_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
 class ProfileInfoV2(Base):
     __tablename__ = "profile_infos_v2"
     __table_args__ = (
