@@ -62,7 +62,7 @@ export function DiagnosisReport({ diagnosis }: DiagnosisReportProps) {
           </Button>
           <Button
             variant="quiet"
-            onClick={() => navigate('/dashboard')}
+            onClick={() => navigate('/')}
           >
             去看首页推荐
           </Button>

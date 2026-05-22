@@ -4,15 +4,15 @@ import { screen } from '@testing-library/react';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { AppShell } from '../AppShell';
 
-function renderShell(initialEntries: readonly string[] = ['/dashboard']) {
+function renderShell(initialEntries: readonly string[] = ['/']) {
   return renderWithProviders(
     <Routes>
       <Route element={<AppShell />}>
-        <Route path="/dashboard" element={<div data-testid="page-dashboard">dashboard</div>} />
-        <Route path="/practice/center" element={<div data-testid="page-practice">practice</div>} />
-        <Route path="/wrong-book" element={<div data-testid="page-wrong-book">wrong</div>} />
+        <Route path="/" element={<div data-testid="page-home">home</div>} />
+        <Route path="/practice" element={<div data-testid="page-practice">practice</div>} />
+        <Route path="/review" element={<div data-testid="page-review">review</div>} />
         <Route path="/notes" element={<div data-testid="page-notes">notes</div>} />
-        <Route path="/plan" element={<div data-testid="page-plan">plan</div>} />
+        <Route path="/profile" element={<div data-testid="page-profile">profile</div>} />
       </Route>
     </Routes>,
     { initialEntries },
@@ -24,19 +24,19 @@ describe('AppShell MVP layout', () => {
     renderShell();
 
     expect(await screen.findByTestId('mvp-shell')).toBeInTheDocument();
-    expect(screen.getByTestId('mvp-brand')).toHaveAttribute('href', '/dashboard');
-    expect(screen.getByTestId('page-dashboard')).toBeInTheDocument();
+    expect(screen.getByTestId('mvp-brand')).toHaveAttribute('href', '/');
+    expect(screen.getByTestId('page-home')).toBeInTheDocument();
     expect(screen.queryByTestId('app-sidebar')).not.toBeInTheDocument();
   });
 
   it('renders primary MVP navigation links', async () => {
-    renderShell(['/practice/center']);
+    renderShell(['/practice']);
 
-    expect(await screen.findByTestId('mvp-nav-dashboard')).toHaveAttribute('href', '/dashboard');
-    expect(screen.getByTestId('mvp-nav-practice')).toHaveAttribute('href', '/practice/center');
-    expect(screen.getByTestId('mvp-nav-wrong-book')).toHaveAttribute('href', '/wrong-book');
+    expect(await screen.findByTestId('mvp-nav-home')).toHaveAttribute('href', '/');
+    expect(screen.getByTestId('mvp-nav-practice')).toHaveAttribute('href', '/practice');
+    expect(screen.getByTestId('mvp-nav-review')).toHaveAttribute('href', '/review');
     expect(screen.getByTestId('mvp-nav-notes')).toHaveAttribute('href', '/notes');
-    expect(screen.getByTestId('mvp-nav-plan')).toHaveAttribute('href', '/plan');
+    expect(screen.getByTestId('mvp-nav-profile')).toHaveAttribute('href', '/profile');
     expect(screen.queryByRole('link', { name: '考试日历' })).not.toBeInTheDocument();
     expect(screen.getByTestId('page-practice')).toBeInTheDocument();
   });

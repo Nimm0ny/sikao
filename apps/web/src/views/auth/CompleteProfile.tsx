@@ -125,7 +125,7 @@ export default function CompleteProfile() {
         setSession({ ...user, ...resp.user }, 0);
       }
       toast.info(AUTH_COPY.bindPhone.successTitle);
-      navigate('/app', { replace: true });
+      navigate('/', { replace: true });
     } catch (err) {
       logger.error('auth.complete.phone.failed', { err: String(err) });
       const next = classifyPhoneErr(err);

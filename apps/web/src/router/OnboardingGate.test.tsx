@@ -6,11 +6,11 @@ import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { server } from '@sikao/test-utils/server';
 import { OnboardingGate } from './OnboardingGate';
 
-function renderGate(initialEntries: readonly string[] = ['/dashboard']) {
+function renderGate(initialEntries: readonly string[] = ['/']) {
   return renderWithProviders(
     <Routes>
       <Route
-        path="/dashboard"
+        path="/"
         element={
           <OnboardingGate>
             <div data-testid="protected-page">protected</div>
@@ -83,7 +83,7 @@ describe('OnboardingGate', () => {
             </OnboardingGate>
           }
         />
-        <Route path="/dashboard" element={<div data-testid="dashboard-page">dashboard</div>} />
+        <Route path="/" element={<div data-testid="dashboard-page">dashboard</div>} />
       </Routes>,
       { initialEntries: ['/study/onboarding'] },
     );

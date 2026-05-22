@@ -4,14 +4,16 @@ from datetime import date
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Query
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from sikao_api.db.models_v2 import UserV2
+from sikao_api.db.models_v2 import ProfileGoalV2, UserV2
 from sikao_api.db.schemas_v2 import (
     AccountDeletionRequestV2,
     AccountDeletionResponseV2,
     BindPhoneRequestV2,
     LearningRecordListResponseV2,
+    OnboardingStatusV2,
     ProfileGoalsResponseV2,
     ProfileGoalsUpdateRequestV2,
     ProfileInfoResponseV2,
@@ -30,6 +32,29 @@ from sikao_api.modules.profile_v2.application.service import ProfileServiceV2
 from sikao_api.modules.record.application.service import build_learning_record_list
 
 router = APIRouter(prefix="/api/v2/profile", tags=["profile-v2"])
+me_router = APIRouter(prefix="/api/v2/me", tags=["me-v2"])
+
+
+@me_router.get("/onboarding-status", response_model=OnboardingStatusV2)
+def get_onboarding_status(
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> OnboardingStatusV2:
+    goal = session.scalar(select(ProfileGoalV2).where(ProfileGoalV2.user_id == user.id))
+    has_goal = goal is not None and any(
+        value is not None
+        for value in (
+            goal.target_exam if goal is not None else None,
+            goal.target_score if goal is not None else None,
+            goal.weekly_target_hours if goal is not None else None,
+        )
+    )
+    has_exam = goal is not None and len(goal.exam_targets) > 0
+    return OnboardingStatusV2(
+        has_goal=has_goal,
+        has_exam=has_exam,
+        is_onboarded=has_goal and has_exam,
+    )
 
 
 @router.get("/overview", response_model=ProfileOverviewResponseV2)

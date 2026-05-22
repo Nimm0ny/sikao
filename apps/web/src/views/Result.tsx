@@ -33,7 +33,7 @@ interface UseResultActionsArgs {
 }
 
 function useResultActions({ sessionData, navigate }: UseResultActionsArgs) {
-  const onBackHome = useCallback(() => navigate('/dashboard'), [navigate]);
+  const onBackHome = useCallback(() => navigate('/'), [navigate]);
   const paperCode = sessionData?.session?.paperCode ?? null;
   const onRetry = useCallback(() => {
     if (paperCode === null) return;
@@ -41,7 +41,7 @@ function useResultActions({ sessionData, navigate }: UseResultActionsArgs) {
   }, [paperCode, navigate]);
   const onViewWrong = useCallback(() => {
     if (paperCode === null) return;
-    navigate(`/wrong-book?paperCode=${encodeURIComponent(paperCode)}`);
+    navigate(`/review?paperCode=${encodeURIComponent(paperCode)}`);
   }, [paperCode, navigate]);
 
   return {
@@ -306,7 +306,7 @@ function ResultBody({
             <CompactAction
               label="学习计划"
               icon={<ClipboardList className="h-4 w-4" aria-hidden="true" />}
-              onClick={() => navigate('/plan')}
+              onClick={() => navigate('/')}
               testId="result-go-plan"
             />
             <CompactAction
@@ -383,7 +383,7 @@ function ResultBody({
           title="计划"
           description="把薄弱项放入计划"
           actionLabel="调整计划"
-          onAction={() => navigate('/plan')}
+          onAction={() => navigate('/')}
           testId="result-plan-action"
         />
         <MvpActionCard

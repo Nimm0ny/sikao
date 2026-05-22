@@ -136,7 +136,7 @@ export default function PracticeSession() {
             action={
               <Button
                 variant="secondary"
-                onClick={() => navigate('/app')}
+                onClick={() => navigate('/practice')}
                 data-testid="session-back-home"
               >
                 返回题库
@@ -344,7 +344,7 @@ function PracticeSessionBody({
   }, [currentVisible.displayNo, flatQuestions, handleSelectQuestion]);
   const handleExit = useCallback(() => {
     clearSession();
-    onNavigate('/app');
+    onNavigate('/practice');
   }, [clearSession, onNavigate]);
 
   // 当前题 derived label / id (scratch col 空状态文案 + sourceLabel)

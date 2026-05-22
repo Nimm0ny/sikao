@@ -1,8 +1,9 @@
 import { lazy, Suspense, type ReactElement } from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { createBrowserRouter, Navigate, type RouteObject } from 'react-router-dom';
 import { AppShell } from '@/layouts/AppShell';
 import { RedirectGuard } from '@/components/auth/RedirectGuard';
 import { RedirectPreserveQuery } from './RedirectPreserveQuery';
+import { LegacyWrongBookItemRedirect, RootRoute } from './RouteHosts';
 
 const pages = {
   // PR-2 MVP (2026-05-14): /app → /study/today 今日提分任务首页.
@@ -26,6 +27,7 @@ const pages = {
   smartReview: lazy(() => import('@/views/SmartReviewView')),
   dashboard: lazy(() => import('@/views/Dashboard')),
   profileLearning: lazy(() => import('@/views/ProfileLearning')),
+  profileRecords: lazy(() => import('@/views/ProfileRecords')),
   profile: lazy(() => import('@/views/Profile')),
   examCalendar: lazy(() => import('@/views/ExamCalendar')),
   conversationsHistory: lazy(() => import('@/views/ConversationsHistory')),
@@ -100,13 +102,20 @@ function routeElement(element: ReactElement): ReactElement {
 // children 用绝对 path。RedirectGuard 做 redirect-if-authed / require-auth
 // 两档保护。
 
-export const router = createBrowserRouter([
+export const appRoutes: RouteObject[] = [
   {
     path: '/',
     element: routeElement(
-      <RedirectGuard mode="redirect-if-authed">
-        <pages.marketing />
-      </RedirectGuard>,
+      <RootRoute
+        guest={<pages.marketing />}
+        authenticated={
+          <RedirectGuard mode="require-auth">
+            <AppShell>
+              <pages.dashboard />
+            </AppShell>
+          </RedirectGuard>
+        }
+      />,
     ),
   },
   {
@@ -171,6 +180,66 @@ export const router = createBrowserRouter([
     path: '/health',
     element: routeElement(<pages.health />),
   },
+  {
+    path: '/app',
+    element: <Navigate to="/" replace />,
+  },
+  {
+    path: '/study/today',
+    element: <Navigate to="/" replace />,
+  },
+  {
+    path: '/dashboard',
+    element: <Navigate to="/profile/learning" replace />,
+  },
+  {
+    path: '/me',
+    element: <Navigate to="/profile" replace />,
+  },
+  {
+    path: '/plan',
+    element: <Navigate to="/" replace />,
+  },
+  {
+    path: '/progress',
+    element: <Navigate to="/profile/learning" replace />,
+  },
+  {
+    path: '/practice/center',
+    element: <Navigate to="/practice" replace />,
+  },
+  {
+    path: '/practice/center/xingce/categories',
+    element: <Navigate to="/practice/xingce/categories" replace />,
+  },
+  {
+    path: '/practice/center/xingce/papers',
+    element: <Navigate to="/practice/xingce/papers" replace />,
+  },
+  {
+    path: '/practice/center/essay/categories',
+    element: <Navigate to="/practice/essay/categories" replace />,
+  },
+  {
+    path: '/practice/center/essay/papers',
+    element: <Navigate to="/practice/essay/papers" replace />,
+  },
+  {
+    path: '/wrong-book',
+    element: <RedirectPreserveQuery to="/review" />,
+  },
+  {
+    path: '/wrong-book/smart-review',
+    element: <Navigate to="/review/smart" replace />,
+  },
+  {
+    path: '/wrong-book/:questionId',
+    element: routeElement(<LegacyWrongBookItemRedirect />),
+  },
+  {
+    path: '/wrong-book/:questionId/redo',
+    element: routeElement(<LegacyWrongBookItemRedirect suffix="/redo" />),
+  },
   // 2026-05-21 PR-M1: 法律页 — 完全公开 (无 RedirectGuard), 不进 AppShell.
   // 已登录 / 未登录用户均可访问 (注册流程中需阅读, 已登录用户也可能想查看).
   {
@@ -202,9 +271,6 @@ export const router = createBrowserRouter([
       </RedirectGuard>,
     ),
     children: [
-      // PR-2 MVP (2026-05-14): /app canonical 到今日提分任务首页.
-      // /dashboard 仍保留为学情数据页, 老书签 / 外链自动跳转, 0 页面 404.
-      { path: '/app', element: <Navigate to="/practice/center" replace /> },
       // PR16 (2026-05-13, lhr 用户价值 supreme): 行测/申论 4 入口合并为
       // /practice/center 单一 hub. 顶层 view 行测/申论 tab + 2 大入口 (分类/套卷),
       // sub-route 复用现有 Papers/CategoryTree/EssayPapers/EssaySpecialty 4 view
@@ -221,52 +287,52 @@ export const router = createBrowserRouter([
       // /papers / /essay/papers 带 query (?region=&year=&paperType=&page=) 走
       // RedirectPreserveQuery 保留 search string; 其余 view 不消费 query 用普通
       // Navigate 即可.
-      { path: '/practice/center', element: routeElement(<pages.practiceCenter />) },
+      { path: '/practice', element: routeElement(<pages.practiceCenter />) },
       {
-        path: '/practice/center/xingce/categories',
+        path: '/practice/xingce/categories',
         element: routeElement(<pages.categoryTree />),
       },
       {
-        path: '/practice/center/xingce/papers',
+        path: '/practice/xingce/papers',
         element: routeElement(<pages.papers />),
       },
       {
-        path: '/practice/center/essay/categories',
+        path: '/practice/essay/categories',
         element: routeElement(<pages.essaySpecialty />),
       },
       {
-        path: '/practice/center/essay/papers',
+        path: '/practice/essay/papers',
         element: routeElement(<pages.essayPapers />),
       },
       // 老路径 redirect (PR16 整合后保留兼容):
       {
         path: '/papers',
-        element: <RedirectPreserveQuery to="/practice/center/xingce/papers" />,
+        element: <RedirectPreserveQuery to="/practice/xingce/papers" />,
       },
       {
         path: '/xingce/specialty',
-        element: <Navigate to="/practice/center/xingce/categories" replace />,
+        element: <Navigate to="/practice/xingce/categories" replace />,
       },
       {
         path: '/categories',
-        element: <Navigate to="/practice/center/xingce/categories" replace />,
+        element: <Navigate to="/practice/xingce/categories" replace />,
       },
       { path: '/practice/custom/start', element: routeElement(<pages.customPracticeStart />) },
       { path: '/practice/:paperCode/start', element: routeElement(<pages.practiceStart />) },
       { path: '/practice/sessions/:sessionId', element: routeElement(<pages.practiceSession />) },
       { path: '/practice/result/:sessionId', element: routeElement(<pages.result />) },
-      { path: '/wrong-book', element: routeElement(<pages.wrongBook />) },
+      { path: '/review', element: routeElement(<pages.wrongBook />) },
       // SIKAO Wave 4 Phase 2D · 错题本 3 子路由 (放紧挨 /wrong-book 之后):
       //   /wrong-book/smart-review    智能复盘 view (5 mode + Flashcard + 日历)
       //   /wrong-book/:questionId     错题详情 DetailA 纵堆 collapsible
       //   /wrong-book/:questionId/redo 错题重做 DetailB 分栏挑战 + 计时器 + 蒙对检测
       // smart-review 必须在 :questionId 之前注册, 避免 'smart-review' 被当 questionId 解析.
-      { path: '/wrong-book/smart-review', element: routeElement(<pages.smartReview />) },
-      { path: '/wrong-book/:questionId', element: routeElement(<pages.wrongQuestionDetail />) },
-      { path: '/wrong-book/:questionId/redo', element: routeElement(<pages.wrongQuestionRedo />) },
-      { path: '/dashboard', element: routeElement(<pages.dashboard />) },
+      { path: '/review/smart', element: routeElement(<pages.smartReview />) },
+      { path: '/review/items/:questionId', element: routeElement(<pages.wrongQuestionDetail />) },
+      { path: '/review/items/:questionId/redo', element: routeElement(<pages.wrongQuestionRedo />) },
       { path: '/profile', element: routeElement(<pages.profile />) },
       { path: '/profile/learning', element: routeElement(<pages.profileLearning />) },
+      { path: '/profile/records', element: routeElement(<pages.profileRecords />) },
       // Identity v2 (commit #6n): bind email (登录后绑定/换邮箱). path 跟
       // backend `frontend_base_url + /bind-email?token=...` 对齐 (中划线非斜线).
       { path: '/bind-email', element: routeElement(<pages.bindEmail />) },
@@ -282,7 +348,7 @@ export const router = createBrowserRouter([
       // /essay/papers/:paperCode (单卷详情) 不在合并范围内 — 它是详情 view, 不是入口.
       {
         path: '/essay/papers',
-        element: <RedirectPreserveQuery to="/practice/center/essay/papers" />,
+        element: <RedirectPreserveQuery to="/practice/essay/papers" />,
       },
       { path: '/essay/papers/:paperCode', element: routeElement(<pages.essayPaperDetail />) },
       { path: '/essay/grades/:recordId', element: routeElement(<pages.essayGradingResult />) },
@@ -301,7 +367,7 @@ export const router = createBrowserRouter([
       // /essay/specialty/:questionId 是 destination view, 不在合并范围内.
       {
         path: '/essay/specialty',
-        element: <Navigate to="/practice/center/essay/categories" replace />,
+        element: <Navigate to="/practice/essay/categories" replace />,
       },
       { path: '/essay/specialty/:questionId', element: routeElement(<pages.essaySpecialtyExam />) },
       // PR13 (2026-05-13): 申论双模考场 — device-aware shell dispatcher.
@@ -314,17 +380,14 @@ export const router = createBrowserRouter([
       // SIKAO Wave 4 (2026-05-12): /essay/categories 老路径 (旧 5 卡简化版退役)
       // 二次 redirect 到 PR16 新 canonical /practice/center/essay/categories.
       // EssayCategoryTree.tsx + 测试推后续清理, 暂保留.
-      { path: '/essay/categories', element: <Navigate to="/practice/center/essay/categories" replace /> },
+      { path: '/essay/categories', element: <Navigate to="/practice/essay/categories" replace /> },
       // SIKAO Wave 3 PR0 (2026-05-11): /plan 周视图 view (07 hifi). 旧
       // /study-plan/history* 路由 redirect 到 /plan 兼容老书签 / 外链.
-      { path: '/plan', element: <Navigate to="/dashboard" replace /> },
-      { path: '/study-plan/history', element: <Navigate to="/practice/center" replace /> },
-      { path: '/study-plan/history/:planId', element: <Navigate to="/practice/center" replace /> },
+      { path: '/study-plan/history', element: <Navigate to="/practice" replace /> },
+      { path: '/study-plan/history/:planId', element: <Navigate to="/practice" replace /> },
       // MVP AI 公考提分闭环 (PR-1/2/6): 用户引导 + 今日任务 + 进度看板
       { path: '/study/onboarding', element: routeElement(<pages.studyOnboarding />) },
-      { path: '/study/diagnosis-result', element: <Navigate to="/practice/center" replace /> },
-      { path: '/study/today', element: <Navigate to="/practice/center" replace /> },
-      { path: '/progress', element: <Navigate to="/practice/center" replace /> },
+      { path: '/study/diagnosis-result', element: <Navigate to="/practice" replace /> },
       // SIKAO Wave 4 Phase 2D (2026-05-12): /notes 主页 + /notes/:noteId 编辑器.
       // /notes/new 走同一 NoteEditor 组件 (内部 isNew = (noteId === 'new')). 集成
       // 入口推 Phase 5.
@@ -336,4 +399,6 @@ export const router = createBrowserRouter([
       { path: '*', element: routeElement(<pages.notFound />) },
     ],
   },
-]);
+];
+
+export const router = createBrowserRouter(appRoutes);

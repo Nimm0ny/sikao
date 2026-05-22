@@ -1625,6 +1625,8 @@ export interface components {
         };
         /** LearningRecordItemV2 */
         LearningRecordItemV2: {
+            /** Href */
+            href: string;
             /** Id */
             id: string;
             /** Kind */

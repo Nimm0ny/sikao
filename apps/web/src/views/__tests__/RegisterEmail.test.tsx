@@ -36,7 +36,7 @@ describe('RegisterEmail', () => {
     await waitFor(() => {
       expect(useAuthStore.getState().user?.email).toBe('newuser@example.com');
     });
-    expect(navigateSpy).toHaveBeenCalledWith('/app', { replace: true });
+    expect(navigateSpy).toHaveBeenCalledWith('/', { replace: true });
     expect(screen.queryByTestId('register-email-form-error')).not.toBeInTheDocument();
   });
 

@@ -4,7 +4,7 @@
  * spec: design/SIKAO/handoff/modules/xingce-wrongbook/xingce-wrongbook.html
  *       .det-wrap DetailA.
  *
- * 路由: /wrong-book/:questionId.
+ * 路由: /review/items/:questionId.
  *
  * 主体: 4 段 collapsible (题干 / 选项 / 解析 / 错因分析). 默认全开.
  * 顶部 banner: 已错 N 次 + 标记 chip + "标记已掌握" CTA.
@@ -91,7 +91,7 @@ export default function WrongQuestionDetailView() {
       {
         onSuccess: () => {
           toast.info('已标记为已掌握', '本题从错题本毕业');
-          navigate('/wrong-book');
+          navigate('/review');
         },
         onError: (err) => {
           logger.error('wrong-book.mark-mastered.failed', { err: String(err) });
@@ -103,7 +103,7 @@ export default function WrongQuestionDetailView() {
 
   useEffect(() => {
     if (!Number.isFinite(questionId) || questionId <= 0) {
-      navigate('/wrong-book', { replace: true });
+      navigate('/review', { replace: true });
     }
   }, [questionId, navigate]);
 
@@ -127,7 +127,7 @@ export default function WrongQuestionDetailView() {
           title="未找到这道错题"
           description="可能已被移出错题本, 或链接已过期."
           action={
-            <Button variant="primary" onClick={() => navigate('/wrong-book')}>
+            <Button variant="primary" onClick={() => navigate('/review')}>
               返回错题本
             </Button>
           }
@@ -145,7 +145,7 @@ export default function WrongQuestionDetailView() {
     >
       <Breadcrumb
         items={[
-          { label: '错题本', href: '/wrong-book' },
+          { label: '复盘', href: '/review' },
           { label: item.subject ?? '错题' },
           { label: `#${item.questionId}` },
         ]}
@@ -346,7 +346,7 @@ export default function WrongQuestionDetailView() {
                 size="sm"
                 onClick={() =>
                   navigate(
-                    `/wrong-book?subject=${encodeURIComponent(item.subject ?? '')}${
+                    `/review?subject=${encodeURIComponent(item.subject ?? '')}${
                       item.subtype != null
                         ? `&subtype=${encodeURIComponent(item.subtype)}`
                         : ''
@@ -367,7 +367,7 @@ export default function WrongQuestionDetailView() {
           <div className="flex gap-3 mt-6">
             <Button
               variant="secondary"
-              onClick={() => navigate('/wrong-book')}
+              onClick={() => navigate('/review')}
               data-testid="wrong-detail-back"
             >
               <span className="font-serif italic mr-1" aria-hidden="true">
@@ -386,7 +386,7 @@ export default function WrongQuestionDetailView() {
             </Button>
             <Button
               variant="secondary"
-              onClick={() => navigate(`/wrong-book/${item.questionId}/redo`)}
+              onClick={() => navigate(`/review/items/${item.questionId}/redo`)}
               data-testid="wrong-detail-redo-strict"
             >
               空白重答
@@ -459,7 +459,7 @@ export default function WrongQuestionDetailView() {
             </div>
             <button
               type="button"
-              onClick={() => navigate('/wrong-book/smart-review')}
+              onClick={() => navigate('/review/smart')}
               className="block w-full text-center bg-white text-ink py-3 mt-4 font-mono text-xs uppercase tracking-wider font-medium hover:bg-paper-3 transition-colors duration-fast"
             >
               险题专项 · 开始 →

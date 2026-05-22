@@ -9,7 +9,8 @@
 
 ---
 
-> **2026-05-22 restart baseline**：前端 runtime 轨已在 `main` 上显式重启，`WU-F1`、`WU-F2`、`WU-F3`、`WU-F4`、`WU-F5` 与 `WU-F6` 已落地主干。当前只剩 `WU-F7-F8`：route-shell convergence、`/profile/records`、e2e / a11y / Chrome MCP 最终验收。
+> **2026-05-22 restart baseline**：前端 runtime 轨已在 `main` 上显式重启，`WU-F1`、`WU-F2`、`WU-F3`、`WU-F4`、`WU-F5` 与 `WU-F6` 已落地主干。
+> **2026-05-23 closeout**：`WU-F7-F8` 已完成，canonical `"/"` Home、`/profile/records`、route-shell convergence、redirect cleanup、`vitest-axe` 覆盖与 Browser smoke 已落地主干。
 ---
 
 ## 0. WU 总览
@@ -26,7 +27,7 @@
 | WU-F8 | E2E + MSW + a11y test | 1,200 | 4 | F7 |
 | **合计** | | **12,700** | **44** | |
 
-> 前端总量上调（原 8,500），原因：补 loading/empty/error/skeleton 状态、a11y、`/profile/learning` 完整页面、stores 拆分、错误边界。2026-05-22 restart 后，`WU-F1-F6` 已落地主干；`WU-F7-F8` 保留为后续 UI tranche 规格。
+> 前端总量上调（原 8,500），原因：补 loading/empty/error/skeleton 状态、a11y、`/profile/learning` 完整页面、stores 拆分、错误边界。2026-05-22 restart 后，`WU-F1-F6` 已落地主干；`WU-F7-F8` 已于 2026-05-23 完成收口。
 
 ---
 

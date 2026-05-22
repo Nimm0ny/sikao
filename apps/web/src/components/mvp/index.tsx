@@ -1,9 +1,7 @@
 import type { ButtonHTMLAttributes, CSSProperties, ReactNode } from 'react';
 import { NavLink, Outlet, useLocation } from 'react-router-dom';
 import {
-  BarChart3,
   BookOpen,
-  ClipboardList,
   Home,
   NotebookPen,
   RefreshCcw,
@@ -247,30 +245,31 @@ export function MvpPage({
 }
 
 const primaryNav = [
-  { to: '/dashboard', label: '首页', icon: Home, testId: 'mvp-nav-dashboard' },
-  { to: '/practice/center', label: '练习', icon: Target, testId: 'mvp-nav-practice' },
-  { to: '/wrong-book', label: '复盘', icon: RefreshCcw, testId: 'mvp-nav-wrong-book' },
-  { to: '/notes', label: '沉淀', icon: NotebookPen, testId: 'mvp-nav-notes' },
-  { to: '/plan', label: '计划', icon: ClipboardList, testId: 'mvp-nav-plan' },
-  { to: '/progress', label: '进度', icon: BarChart3, testId: 'mvp-nav-progress' },
+  { to: '/', label: '首页', icon: Home, testId: 'mvp-nav-home' },
+  { to: '/practice', label: '练习', icon: Target, testId: 'mvp-nav-practice' },
+  { to: '/review', label: '复盘', icon: RefreshCcw, testId: 'mvp-nav-review' },
+  { to: '/notes', label: '笔记', icon: NotebookPen, testId: 'mvp-nav-notes' },
   { to: '/profile', label: '我的', icon: User, testId: 'mvp-nav-profile' },
 ] as const;
 
 function isActivePath(pathname: string, to: string): boolean {
-  if (to === '/dashboard') return pathname === '/dashboard' || pathname === '/app' || pathname === '/study/today';
-  if (to === '/practice/center') return pathname.startsWith('/practice') || pathname.startsWith('/essay');
-  if (to === '/wrong-book') return pathname.startsWith('/wrong-book');
+  if (to === '/') return pathname === '/' || pathname === '/app' || pathname === '/study/today';
+  if (to === '/practice') return pathname.startsWith('/practice') || pathname.startsWith('/essay');
+  if (to === '/review') return pathname.startsWith('/review') || pathname.startsWith('/wrong-book');
   if (to === '/notes') return pathname.startsWith('/notes');
+  if (to === '/profile') {
+    return pathname.startsWith('/profile') || pathname === '/me';
+  }
   return pathname === to;
 }
 
-export function MvpShell() {
+export function MvpShell({ children }: { readonly children?: ReactNode }) {
   const location = useLocation();
   return (
     <div className="min-h-dvh bg-[#F7F8FB] text-[#111827]" data-testid="mvp-shell">
       <header className="sticky top-0 z-30 border-b border-[#E1E6F0] bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-[1280px] items-center gap-4 px-4 py-3 md:px-8">
-          <NavLink to="/dashboard" className="flex items-center gap-2 text-[#111827]" data-testid="mvp-brand">
+          <NavLink to="/" className="flex items-center gap-2 text-[#111827]" data-testid="mvp-brand">
             <span className="grid h-9 w-9 place-items-center rounded-lg bg-[#2563EB] text-white">
               <BookOpen className="h-5 w-5" aria-hidden="true" />
             </span>
@@ -299,13 +298,13 @@ export function MvpShell() {
         </div>
       </header>
       <main>
-        <Outlet />
+        {children ?? <Outlet />}
       </main>
       <nav
         aria-label="移动主导航"
         className="fixed inset-x-0 bottom-0 z-30 grid grid-cols-5 border-t border-[#E1E6F0] bg-white px-2 pb-[calc(0.5rem+env(safe-area-inset-bottom,0px))] pt-2 lg:hidden"
       >
-        {primaryNav.slice(0, 5).map((item) => {
+        {primaryNav.map((item) => {
           const Icon = item.icon;
           const active = isActivePath(location.pathname, item.to);
           return (

@@ -5,7 +5,7 @@ import { useAuthStore } from '@sikao/domain/auth/useAuthStore';
 // Phase 5.6b — 路由级 auth guard wrapper。两种 mode：
 //
 //   require-auth      : 未登录 → 跳 /login（带 from 参数，登录后回来）
-//   redirect-if-authed: 已登录 → 跳 /app（避免已登录用户再看 Marketing 首屏）
+//   redirect-if-authed: 已登录 → 跳 /（避免已登录用户再看 Marketing 首屏）
 //
 // 用法（router/index.tsx）：
 //   { path: '/', element: <RedirectGuard mode="redirect-if-authed"><Marketing /></RedirectGuard> }
@@ -19,7 +19,7 @@ export type RedirectGuardMode = 'require-auth' | 'redirect-if-authed';
 export interface RedirectGuardProps {
   readonly mode: RedirectGuardMode;
   readonly children: ReactNode;
-  /** 覆盖默认跳转目标。默认 require-auth → /login，redirect-if-authed → /app。 */
+  /** 覆盖默认跳转目标。默认 require-auth → /login，redirect-if-authed → /。 */
   readonly redirectTo?: string;
 }
 
@@ -36,7 +36,7 @@ export function RedirectGuard({ mode, children, redirectTo }: RedirectGuardProps
     return <Navigate to={target} replace state={{ from: location.pathname }} />;
   }
   if (mode === 'redirect-if-authed' && isAuthed) {
-    return <Navigate to={redirectTo ?? '/app'} replace />;
+    return <Navigate to={redirectTo ?? '/'} replace />;
   }
   // commit #6i (Identity v2): 老 user (email 与 phone 都 NULL, 仅 username_legacy)
   // 强制走 /complete-profile 补全至少一个 identifier. backend 派生 needsIdentifier

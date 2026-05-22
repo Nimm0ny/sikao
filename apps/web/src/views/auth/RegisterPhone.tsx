@@ -94,7 +94,7 @@ export default function RegisterPhone() {
     if (response === null) throw new Error('auth.register.phone missing response');
     setSession(response.user, response.expiresIn);
     toast.info('注册成功', '欢迎加入思考');
-    navigate('/app', { replace: true });
+    navigate('/', { replace: true });
   };
 
   return (

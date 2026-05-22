@@ -293,6 +293,12 @@ class ProfileGoalsUpdateRequestV2(CamelModel):
     exam_targets: list[ExamTargetV2] | None = None
 
 
+class OnboardingStatusV2(CamelModel):
+    has_goal: bool
+    has_exam: bool
+    is_onboarded: bool
+
+
 class ProfileInfoResponseV2(CamelModel):
     display_name: str
     real_name: str | None = None
@@ -562,6 +568,7 @@ class LearningRecordItemV2(CamelModel):
     kind: str
     title: str
     status: str
+    href: str
     score: Decimal | None = None
     occurred_at: UtcDatetime
 

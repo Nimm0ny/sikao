@@ -4,7 +4,7 @@
  * spec: design/SIKAO/handoff/modules/xingce-wrongbook/xingce-wrongbook.html
  *       .split DetailB.
  *
- * 路由: /wrong-book/:questionId/redo.
+ * 路由: /review/items/:questionId/redo.
  *
  * 主体: 左原题 + 右答题区 (空白重答 / 计时器 / 蒙对检测 / peek).
  * 蒙对检测: 耗时 > 均时 × 2 + 答对 → bluffDetected=true banner.
@@ -167,7 +167,7 @@ export default function WrongQuestionRedoView() {
 
   useEffect(() => {
     if (!Number.isFinite(questionId) || questionId <= 0) {
-      navigate('/wrong-book', { replace: true });
+      navigate('/review', { replace: true });
     }
   }, [questionId, navigate]);
 
@@ -187,7 +187,7 @@ export default function WrongQuestionRedoView() {
           title="未找到这道错题"
           description="可能已被移出错题本, 或链接已过期."
           action={
-            <Button variant="primary" onClick={() => navigate('/wrong-book')}>
+            <Button variant="primary" onClick={() => navigate('/review')}>
               返回错题本
             </Button>
           }
@@ -340,7 +340,7 @@ export default function WrongQuestionRedoView() {
             <Tooltip label="返回错题列表" side="top">
               <IconBtn
                 aria-label="返回错题列表"
-                onClick={() => navigate('/wrong-book')}
+                onClick={() => navigate('/review')}
                 data-testid="wrong-redo-back"
               >
                 <NavBackIcon size={18} />
@@ -363,7 +363,7 @@ export default function WrongQuestionRedoView() {
             {submitResult !== null ? (
               <Button
                 variant="primary"
-                onClick={() => navigate('/wrong-book')}
+                onClick={() => navigate('/review')}
                 data-testid="wrong-redo-done"
               >
                 <NavSubmitIcon size={18} />

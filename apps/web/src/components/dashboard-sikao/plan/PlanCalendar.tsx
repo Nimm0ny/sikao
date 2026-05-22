@@ -400,62 +400,56 @@ function EventBlock({
   return (
     <div
       ref={setNodeRef}
-      role="button"
-      tabIndex={0}
-      aria-label={`${slice.event.title} ${formatEventTime(slice.event.startAt, slice.event.timezone)} - ${formatEventTime(slice.event.endAt, slice.event.timezone)}`}
       className={cn(
         'absolute rounded-tiny border border-accent bg-accent/10 p-2 text-left shadow-soft',
         isDragging && 'opacity-70',
       )}
       style={style}
-      onClick={() => onEditEvent(slice.event)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onEditEvent(slice.event);
-        }
-      }}
       data-testid={`plan-event-${slice.event.id}`}
     >
-      <div className="mb-1 flex items-center justify-between gap-2">
-        <span className="truncate text-xs font-mono uppercase tracking-wider text-accent">
+      <button
+        type="button"
+        aria-label={`${slice.event.title} ${formatEventTime(slice.event.startAt, slice.event.timezone)} - ${formatEventTime(slice.event.endAt, slice.event.timezone)}`}
+        className="w-full rounded-tiny text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        onClick={() => onEditEvent(slice.event)}
+      >
+        <div className="truncate text-xs font-mono uppercase tracking-wider text-accent">
           {formatEventTime(slice.event.startAt, slice.event.timezone)} - {formatEventTime(slice.event.endAt, slice.event.timezone)}
-        </span>
+        </div>
+        <div className="mt-1 line-clamp-2 text-sm font-semibold text-ink">{slice.event.title}</div>
+      </button>
+      <div className="mt-2 flex items-center justify-between gap-2">
         <button
           type="button"
           aria-label="拖动事件"
           className="inline-flex h-6 w-6 items-center justify-center rounded-tiny text-accent"
-          onClick={(event) => event.stopPropagation()}
           {...listeners}
           {...dragAttributes}
         >
           <GripVerticalIcon className="h-4 w-4 shrink-0 text-accent" />
         </button>
-      </div>
-      <div className="line-clamp-2 text-sm font-semibold text-ink">{slice.event.title}</div>
-      <div className="mt-2 flex gap-1">
-        <Button
-          size="sm"
-          variant="quiet"
-          className="px-0"
-          onClick={(clickEvent) => {
-            clickEvent.stopPropagation();
-            onResizeEvent(slice.event, -15);
-          }}
-        >
-          -15
-        </Button>
-        <Button
-          size="sm"
-          variant="quiet"
-          className="px-0"
-          onClick={(clickEvent) => {
-            clickEvent.stopPropagation();
-            onResizeEvent(slice.event, 15);
-          }}
-        >
-          +15
-        </Button>
+        <div className="flex gap-1">
+          <Button
+            size="sm"
+            variant="quiet"
+            className="px-0"
+            onClick={() => {
+              onResizeEvent(slice.event, -15);
+            }}
+          >
+            -15
+          </Button>
+          <Button
+            size="sm"
+            variant="quiet"
+            className="px-0"
+            onClick={() => {
+              onResizeEvent(slice.event, 15);
+            }}
+          >
+            +15
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -478,17 +472,7 @@ function CompactEventRow({
   return (
     <div
       ref={setNodeRef}
-      role="button"
-      tabIndex={0}
-      aria-label={`${slice.event.title} ${formatEventTime(slice.event.startAt, slice.event.timezone)} - ${formatEventTime(slice.event.endAt, slice.event.timezone)}`}
       className="w-full rounded-tiny border border-line bg-paper-2 p-2 text-left"
-      onClick={() => onEditEvent(slice.event)}
-      onKeyDown={(event) => {
-        if (event.key === 'Enter' || event.key === ' ') {
-          event.preventDefault();
-          onEditEvent(slice.event);
-        }
-      }}
       style={
         transform
           ? { transform: `translate3d(${transform.x}px, ${transform.y}px, 0)` }
@@ -496,18 +480,22 @@ function CompactEventRow({
       }
     >
       <div className="flex items-start justify-between gap-2">
-        <div>
+        <button
+          type="button"
+          aria-label={`${slice.event.title} ${formatEventTime(slice.event.startAt, slice.event.timezone)} - ${formatEventTime(slice.event.endAt, slice.event.timezone)}`}
+          className="min-w-0 flex-1 rounded-tiny text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          onClick={() => onEditEvent(slice.event)}
+        >
           <div className="text-sm font-semibold text-ink">{slice.event.title}</div>
           <div className="text-xs font-mono uppercase tracking-wider text-ink-4">
             {formatEventTime(slice.event.startAt, slice.event.timezone)} - {formatEventTime(slice.event.endAt, slice.event.timezone)}
           </div>
-        </div>
+        </button>
         <div className="flex gap-1">
           <button
             type="button"
             aria-label="拖动事件"
             className="inline-flex h-6 w-6 items-center justify-center rounded-tiny text-ink-4"
-            onClick={(event) => event.stopPropagation()}
             {...listeners}
             {...dragAttributes}
           >
@@ -517,8 +505,7 @@ function CompactEventRow({
             size="sm"
             variant="quiet"
             className="px-0"
-            onClick={(clickEvent) => {
-              clickEvent.stopPropagation();
+            onClick={() => {
               onResizeEvent(slice.event, -15);
             }}
           >
@@ -528,8 +515,7 @@ function CompactEventRow({
             size="sm"
             variant="quiet"
             className="px-0"
-            onClick={(clickEvent) => {
-              clickEvent.stopPropagation();
+            onClick={() => {
               onResizeEvent(slice.event, 15);
             }}
           >

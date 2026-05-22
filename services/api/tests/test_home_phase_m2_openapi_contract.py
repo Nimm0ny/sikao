@@ -31,6 +31,7 @@ def test_home_m2_openapi_exposes_routes_and_link_fields(tmp_path: Path) -> None:
     assert "/api/v2/plans/events" in paths
     assert "/api/v2/plans/adjustments/{adjustment_id}/accept" in paths
     assert "/api/v2/recommendations/refresh" in paths
+    assert "/api/v2/me/onboarding-status" in paths
     assert "/api/v2/profile/records" in paths
 
     practice_session_create = schema["components"]["schemas"]["PracticeSessionCreateRequestV2"]
@@ -38,3 +39,7 @@ def test_home_m2_openapi_exposes_routes_and_link_fields(tmp_path: Path) -> None:
     assert "linkedPlanEventId" in properties
     assert "linkedPlanEventOccurrenceRef" in properties
     assert "linkedRecommendationId" in properties
+
+    learning_record_item = schema["components"]["schemas"]["LearningRecordItemV2"]
+    assert "href" in learning_record_item["properties"]
+    assert "href" in learning_record_item["required"]

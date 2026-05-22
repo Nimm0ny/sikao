@@ -138,13 +138,22 @@ export function ProgressSection() {
               首页只显示 6 张关键指标卡、一个近期趋势与薄弱项摘要。
             </div>
           </div>
-          <Button
-            variant="secondary"
-            onClick={() => navigate('/profile/learning')}
-            data-testid="dashboard-progress-open-learning"
-          >
-            查看详情
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => navigate('/profile/records')}
+              data-testid="dashboard-progress-open-records"
+            >
+              查看记录
+            </Button>
+            <Button
+              variant="secondary"
+              onClick={() => navigate('/profile/learning')}
+              data-testid="dashboard-progress-open-learning"
+            >
+              查看详情
+            </Button>
+          </div>
         </div>
 
         <div className="mt-4 grid gap-4 md:grid-cols-2 xl:grid-cols-3">

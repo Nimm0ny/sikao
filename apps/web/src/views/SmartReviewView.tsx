@@ -4,13 +4,13 @@
  * spec: design/SIKAO/handoff/modules/xingce-wrongbook/xingce-wrongbook.html
  *       .sr-modes / .psh / .cal SmartReview.
  *
- * 路由: /wrong-book/smart-review.
+ * 路由: /review/smart.
  *
  * 主体: hero (4 stat-strip) + 5 mode 卡 + Flashcard + 日历 / 弱点 aside.
  *
  * 数据: useSmartReviewToday (4 stat) + useSmartReviewNext (单题推送).
- * Mode 卡 click: qifei 走 Flashcard 流; single → /wrong-book; similar → /categories;
- * mock → /practice/custom/start; danger → /wrong-book?view=danger.
+ * Mode 卡 click: qifei 走 Flashcard 流; single → /review; similar → /categories;
+ * mock → /practice/custom/start; danger → /review?view=danger.
  */
 import { useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -64,7 +64,7 @@ export default function SmartReviewView() {
             ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
           break;
         case 'single':
-          navigate('/wrong-book');
+          navigate('/review');
           break;
         case 'similar':
           navigate('/categories');
@@ -73,7 +73,7 @@ export default function SmartReviewView() {
           navigate('/practice/custom/start');
           break;
         case 'danger':
-          navigate('/wrong-book?view=danger');
+          navigate('/review?view=danger');
           break;
         default:
           break;
@@ -95,7 +95,7 @@ export default function SmartReviewView() {
   const onSubmit = useCallback(() => {
     // 跳转到重做 view (DetailB 流). flashcard 这里只是 preview, 真做题去 DetailB.
     if (nextQuery.data === undefined) return;
-    navigate(`/wrong-book/${nextQuery.data.questionId}/redo`);
+    navigate(`/review/items/${nextQuery.data.questionId}/redo`);
   }, [nextQuery, navigate]);
 
   if (todayQuery.isLoading) {
@@ -246,7 +246,7 @@ export default function SmartReviewView() {
               <div className="mt-4">
                 <Button
                   variant="primary"
-                  onClick={() => navigate('/wrong-book')}
+                  onClick={() => navigate('/review')}
                 >
                   去错题本看看
                 </Button>
