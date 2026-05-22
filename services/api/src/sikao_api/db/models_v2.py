@@ -912,6 +912,127 @@ class QuestionFlagV2(Base):
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
+class AiGeneratedQuestionRequestV2(Base):
+    __tablename__ = "ai_generated_question_request_v2"
+    __table_args__ = (
+        Index("ix_ai_question_req_v2_user_started", "user_id", "started_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    request_params: Mapped[dict[str, Any]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'"),
+    )
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending", server_default="pending"
+    )
+    pool_question_ids: Mapped[list[int]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'"),
+    )
+    llm_generated_question_ids: Mapped[list[int]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'"),
+    )
+    llm_self_audit_passed_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    llm_call_id: Mapped[int | None] = mapped_column(
+        ForeignKey("llm_call_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class DailyPracticeV2(Base):
+    __tablename__ = "daily_practice_v2"
+    __table_args__ = (
+        UniqueConstraint("user_id", "date", "type", name="uq_daily_practice_v2"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    type: Mapped[str] = mapped_column(String(32), nullable=False)
+    question_ids: Mapped[list[int]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'"),
+    )
+    generation_strategy: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending", server_default="pending"
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    completed_session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("practice_sessions_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    expired_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+
+class QuestionTimingBaselineV2(Base):
+    __tablename__ = "question_timing_baseline_v2"
+    __table_args__ = (
+        Index("ix_qtb_v2_recomputed", "last_recomputed_at"),
+    )
+
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    p50_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    p90_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    p95_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    mean_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    sample_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    last_recomputed_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, nullable=False
+    )
+
+
+class UserPracticePreferencesV2(Base):
+    __tablename__ = "user_practice_preferences_v2"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    payload: Mapped[dict[str, Any]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'"),
+    )
+    schema_version: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, default=1, server_default="1"
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+
 class ProfileInfoV2(Base):
     __tablename__ = "profile_infos_v2"
     __table_args__ = (
