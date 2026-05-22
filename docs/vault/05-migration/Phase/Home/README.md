@@ -12,7 +12,8 @@
 >
 > **2026-05-21 口径重定基线**：`M3 / SIK-34` 的后端 deliverables 已落到 `origin/main`。`SIK-34` 当前保留 `blocked`，仅反映旧 Home 前端 runtime 触发了既有 full typecheck gate；该阻塞不再卡住后端 `M4-M6`，只继续约束旧 Home 前端 `M7-M12 / F1-F8` 参考轨。
 > **2026-05-22 更新**：`M0.5 / SIK-31` 已解锁前端 full typecheck blocker。旧 Home 前端仍未自动重启；`M7-M12` 继续保持 paused reference track，直到新的前端重构计划显式接管。
-> **2026-05-22 restart baseline**：前端 runtime 轨已在 `main` 上显式重启，并已完成 `M7 / SIK-38`、`M8 / SIK-39`、`M9 / SIK-40` 与 `M10 / SIK-41`。当前前端只剩 `M11-M12`：route-shell convergence、`/profile/records` 与最终浏览器/可访问性验收。
+> **2026-05-22 restart baseline**：前端 runtime 轨已在 `main` 上显式重启，并已完成 `M7 / SIK-38`、`M8 / SIK-39`、`M9 / SIK-40` 与 `M10 / SIK-41`。
+> **2026-05-23 closeout**：`M11-M12` 已完成，canonical `"/"` Home、`/profile/records`、5-tab nav、legacy redirect 收口、a11y 自动化与 Browser smoke 已补齐；Home Phase 当前实现面已收口到完成态。
 
 ---
 
@@ -143,7 +144,7 @@ WU 详细：
 - 后端：[03-Backend-WU](./03-Backend-WU.md)
 - 前端：[04-Frontend-WU](./04-Frontend-WU.md)
 - 当前执行主线：`M0.5 / SIK-31` 已移除 legacy frontend full typecheck blocker，`M4 → M5 → M6` 后端链也已完成收口；`SIK-37 / M6` 锁定了 backend Home 契约、OpenAPI 与 records canonical route。
-- 前端轨已于 2026-05-22 在 `main` 上显式重启，`M7 / SIK-38`、`M8 / SIK-39`、`M9 / SIK-40` 与 `M10 / SIK-41` 已落地主干；当前只剩 `M11-M12` 待后续 UI tranche。
+- 前端轨已于 2026-05-22 在 `main` 上显式重启，`M7 / SIK-38`、`M8 / SIK-39`、`M9 / SIK-40` 与 `M10 / SIK-41` 已落地主干；`M11-M12` 已于 2026-05-23 完成收口。
 - 当前代码现实与旧 WU 假设存在漂移：`"/"` 仍是 marketing + authed redirect；`TabBar` / `RailMini` 仍是 4 tab 且 `/me` 仍是已知 bug；`apps/web/src/views/Dashboard.tsx`、`Plan.tsx`、`study/StudyToday.tsx` 已不存在，因此后续前端实现必须以 `A0-Codebase-Reality-Check.md` 的 restart baseline 为准。
 
 ---
@@ -164,8 +165,8 @@ M7   week 8-9        WU-F1：API client 切换 V2（2026-05-22 restart；当前 
 M8   week 9          WU-F2 + WU-F3：stores + calendar-engine（2026-05-22 restart；当前 tranche）
 M9   week 9-11       WU-F4：Section A（2026-05-22 已在 `main` 上落地）
 M10  week 11-12      WU-F5 + WU-F6：Section B/C + `/profile/learning`（2026-05-22 已在 `main` 上落地）
-M11  week 12-13      WU-F7：整合 + 路由收口（待后续 UI tranche）
-M12  week 13-14      WU-F8：e2e + a11y + 浏览器矩阵验收（待后续 UI tranche）
+M11  week 12-13      WU-F7：整合 + 路由收口（2026-05-23 完成）
+M12  week 13-14      WU-F8：e2e + a11y + 浏览器矩阵验收（2026-05-23 完成）
 ```
 
 ---
