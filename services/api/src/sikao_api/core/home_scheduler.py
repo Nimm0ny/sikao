@@ -173,11 +173,11 @@ class HomeScheduler:
             },
         )
 
-    def enqueue_submit_progress_refresh(self, *, user_id: int, request_id: str | None) -> bool:
+    def enqueue_submit_progress_refresh(self, *, user_id: int, session_id: int | None, request_id: str | None) -> bool:
         return self._enqueue_one_shot(
             job_id=f"home.hook.submit_progress_refresh:{uuid4().hex}",
             func=self._job_submit_progress_refresh,
-            kwargs={"user_id": user_id, "request_id": request_id},
+            kwargs={"user_id": user_id, "session_id": session_id, "request_id": request_id},
         )
 
     def enqueue_event_skipped_adjustment_check(
@@ -274,13 +274,14 @@ class HomeScheduler:
         self,
         *,
         user_id: int,
+        session_id: int | None,
         request_id: str | None,
         scheduled_job_id: str | None = None,
     ) -> None:
         del request_id
         job_id = scheduled_job_id or f"home.hook.submit_progress_refresh:{user_id}"
         self._mark_started(job_id)
-        await self._runtime.run_submit_progress_hooks(user_id=user_id)
+        await self._runtime.run_submit_progress_hooks(user_id=user_id, session_id=session_id)
 
     async def _job_skipped_adjustment_check(
         self,

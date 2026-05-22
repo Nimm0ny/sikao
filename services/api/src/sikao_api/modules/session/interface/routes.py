@@ -70,6 +70,7 @@ def submit_session(
         try:
             home_scheduler.enqueue_submit_progress_refresh(
                 user_id=user.id,
+                session_id=practice_session.id,
                 request_id=getattr(request.state, "request_id", None),
             )
             home_scheduler.enqueue_submit_recommender_refresh(

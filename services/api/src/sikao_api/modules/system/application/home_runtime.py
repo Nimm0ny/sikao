@@ -180,13 +180,13 @@ class HomeRuntimeOrchestrator:
         finally:
             session.close()
 
-    async def run_submit_progress_hooks(self, *, user_id: int) -> None:
-        await asyncio.to_thread(self._run_submit_progress_hooks_sync, user_id)
+    async def run_submit_progress_hooks(self, *, user_id: int, session_id: int | None) -> None:
+        await asyncio.to_thread(self._run_submit_progress_hooks_sync, user_id, session_id)
 
-    def _run_submit_progress_hooks_sync(self, user_id: int) -> None:
+    def _run_submit_progress_hooks_sync(self, user_id: int, session_id: int | None) -> None:
         session = self._db.session_factory()
         try:
-            run_progress_submit_hooks(session, user_id=user_id)
+            run_progress_submit_hooks(session, user_id=user_id, session_id=session_id)
             session.commit()
         except Exception:
             session.rollback()
