@@ -3,8 +3,8 @@ import { act, cleanup, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { MaterialsPanel } from '../panels/MaterialsPanel';
-import { useExamSession } from '../hooks/useExamSession';
-import { mockPaper } from '../data/essayExamMock';
+import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
+import { mockPaper } from '@sikao/test-utils/essayExamMock';
 
 afterEach(() => {
   cleanup();

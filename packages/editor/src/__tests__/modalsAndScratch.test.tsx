@@ -6,8 +6,8 @@ import { ExamShell } from '../ExamShell';
 import { ScratchPanel } from '../panels/ScratchPanel';
 import { PrestartModal } from '../modals/PrestartModal';
 import { SubmitDialog } from '../modals/SubmitDialog';
-import { useExamSession } from '../hooks/useExamSession';
-import { mockPaper } from '../data/essayExamMock';
+import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
+import { mockPaper } from '@sikao/test-utils/essayExamMock';
 
 afterEach(() => {
   cleanup();

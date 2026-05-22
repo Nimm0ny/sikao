@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { mapBackendEssayPaper, type BackendEssayQuestion } from '../lib/mapBackendPaper';
+import {
+  mapBackendEssayPaper,
+  type BackendEssayQuestion,
+} from '@sikao/domain/shenlun/mapBackendPaper';
 
 describe('mapBackendEssayPaper', () => {
   it('maps existing backend essay question contract into exam Paper', () => {

@@ -26,6 +26,9 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true, // expose describe/it/expect without explicit imports
+    // Workspace-wide runs in this monorepo can push a few user-event heavy auth
+    // tests past the 5s default even when behavior is correct.
+    testTimeout: 15000,
     setupFiles: ['./src/setupTests.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
     coverage: {

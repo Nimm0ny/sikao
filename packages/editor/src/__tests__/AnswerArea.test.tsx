@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { AnswerArea } from '../panels/AnswerArea';
-import { useExamSession } from '../hooks/useExamSession';
-import { mockPaper } from '../data/essayExamMock';
+import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
+import { mockPaper } from '@sikao/test-utils/essayExamMock';
 
 afterEach(() => {
   cleanup();

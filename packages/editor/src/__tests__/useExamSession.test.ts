@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { AnswerSession } from '@sikao/domain/shenlun/types';
-import { mockPaper } from '../data/essayExamMock';
-import { useExamSession } from '../hooks/useExamSession';
+import { mockPaper } from '@sikao/test-utils/essayExamMock';
+import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
 
 describe('useExamSession', () => {
   beforeEach(() => {

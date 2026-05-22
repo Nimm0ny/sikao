@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { computeWeightedTotal } from '../lib/examScore';
+import { computeWeightedTotal } from '@sikao/answer-engine/scoring/shenlun';
 
 describe('computeWeightedTotal', () => {
   it('weights by fullScore — large-essay tanking gives correct 60 (not 80)', () => {

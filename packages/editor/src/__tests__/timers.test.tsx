@@ -3,8 +3,8 @@ import { act, cleanup, render, screen } from '@testing-library/react';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { ExamShell } from '../ExamShell';
 import { PrestartModal } from '../modals/PrestartModal';
-import { useExamSession } from '../hooks/useExamSession';
-import { mockPaper } from '../data/essayExamMock';
+import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
+import { mockPaper } from '@sikao/test-utils/essayExamMock';
 
 // Time-driven behaviour that the rest of the suite couldn't cover with
 // real timers — the autosave 1.5s debounce, the 5min warn-once gate, and

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QuestionPeek } from '../pieces/QuestionPeek';
-import { mockPaper } from '../data/essayExamMock';
+import { mockPaper } from '@sikao/test-utils/essayExamMock';
 
 afterEach(cleanup);
 

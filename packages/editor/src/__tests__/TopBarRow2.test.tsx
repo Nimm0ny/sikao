@@ -2,8 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { act, cleanup, fireEvent, screen } from '@testing-library/react';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { ExamShell } from '../ExamShell';
-import { useExamSession } from '../hooks/useExamSession';
-import { mockPaper } from '../data/essayExamMock';
+import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
+import { mockPaper } from '@sikao/test-utils/essayExamMock';
 
 afterEach(() => {
   cleanup();
@@ -89,6 +89,9 @@ describe('TopBar Row 2 (PR4) — question rings + 题干 peek', () => {
     setup(0);
     renderWithProviders(<ExamShell onSubmit={() => {}} />);
     const target = mockPaper.questions[0].minWords;
+    if (target === undefined) {
+      throw new Error('expected mockPaper.questions[0].minWords to be defined');
+    }
     act(() => {
       useExamSession.getState().setText(0, '字'.repeat(target));
     });

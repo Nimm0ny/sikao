@@ -141,7 +141,7 @@ describe('useHighlightStore', () => {
     localStorage.setItem('sikao.fb-highlights-v1', '{not valid json');
     // 动态 import 触发模块初始化时的 parse + warn (vitest 隔离 module 缓存)
     vi.resetModules();
-    const loggerModule = await import('@/lib/logger');
+    const loggerModule = await import('@sikao/shared-utils');
     const warnSpy = vi.spyOn(loggerModule.logger, 'warn');
     await import('../useHighlightStore');
     expect(warnSpy).toHaveBeenCalled();

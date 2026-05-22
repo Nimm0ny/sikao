@@ -5,8 +5,8 @@ import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { MaterialsPanel } from '../panels/MaterialsPanel';
 import { HighlightRail } from '../panels/HighlightRail';
 import { MaterialOverview } from '../pieces/MaterialOverview';
-import { useExamSession } from '../hooks/useExamSession';
-import { mockPaper } from '../data/essayExamMock';
+import { useExamSession } from '@sikao/domain/shenlun/useExamSession';
+import { mockPaper } from '@sikao/test-utils/essayExamMock';
 
 afterEach(() => {
   cleanup();

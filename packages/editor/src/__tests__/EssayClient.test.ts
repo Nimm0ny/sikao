@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { http, HttpResponse } from 'msw';
 import { server } from '@sikao/test-utils/server';
-import { realEssayClient } from '../lib/EssayClient';
-import type { BackendEssayQuestion } from '../lib/mapBackendPaper';
+import { realEssayClient } from '@sikao/api-client/essay-client';
+import type { BackendEssayQuestion } from '@sikao/domain/shenlun/mapBackendPaper';
 import type { AnswerSession, Question } from '@sikao/domain/shenlun/types';
 
 describe('realEssayClient', () => {
