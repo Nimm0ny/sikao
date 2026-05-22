@@ -1087,6 +1087,78 @@ class QuestionKnowledgePointV2(Base):
     confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 
+class EssayReferenceAnswerV2(Base):
+    __tablename__ = "essay_reference_answer_v2"
+    __table_args__ = (
+        Index("ix_essay_ref_answer_v2_question_status", "question_id", "status"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    source: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_by_admin: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    likes_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    favorites_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    report_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    quality_score: Mapped[float] = mapped_column(
+        Float, nullable=False, default=5.0, server_default="5"
+    )
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="draft", server_default="draft"
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    ai_self_audit_passed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    ai_generated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+
+class EssayReferenceFeedbackV2(Base):
+    __tablename__ = "essay_reference_feedback_v2"
+    __table_args__ = (
+        UniqueConstraint(
+            "reference_id",
+            "user_id",
+            "action",
+            name="uq_essay_ref_feedback_v2",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    reference_id: Mapped[int] = mapped_column(
+        ForeignKey("essay_reference_answer_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    action: Mapped[str] = mapped_column(String(32), nullable=False)
+    note: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+
 class ProfileInfoV2(Base):
     __tablename__ = "profile_infos_v2"
     __table_args__ = (
