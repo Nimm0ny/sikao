@@ -18,6 +18,7 @@ from sikao_api.modules.llm.application.llm import (
     build_llm_provider,
 )
 from sikao_api.modules.llm.application.llm.openai_compatible import OpenAICompatibleProvider
+from sikao_api.modules.llm.application.llm._stub import StubLLMProvider
 from sikao_api.modules.llm.application.llm.prompts import SYSTEM_TONE_PREFIX, with_tone
 
 
@@ -58,6 +59,37 @@ def test_build_llm_provider_raises_when_api_key_missing(monkeypatch: pytest.Monk
     settings = _make_settings(llm_api_key=None)
     with pytest.raises(LLMConfigError, match="LLM_API_KEY not configured"):
         build_llm_provider(settings)
+
+
+def test_build_llm_provider_uses_stub_in_test_env_without_real_key(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("sikao_api.core.config._read_apikey_file_default", lambda: None)
+    settings = _make_settings(app_env="test", llm_api_key=None)
+    provider, label = build_llm_provider(settings)
+    assert isinstance(provider, StubLLMProvider)
+    assert label == "mock"
+
+
+def test_build_llm_provider_uses_stub_in_test_env_even_with_real_key() -> None:
+    settings = _make_settings(app_env="test", llm_api_key="sk-real-looking")
+    provider, label = build_llm_provider(settings)
+    assert isinstance(provider, OpenAICompatibleProvider)
+    assert label == "system"
+
+
+def test_build_llm_provider_test_env_ignores_user_byom_path() -> None:
+    settings = _make_settings(app_env="test", llm_api_key=None)
+    provider, label = build_llm_provider(settings, db=object(), user_id=123)
+    assert isinstance(provider, StubLLMProvider)
+    assert label == "mock"
+
+
+def test_build_llm_provider_uses_mock_label_for_fake_key() -> None:
+    settings = _make_settings(llm_api_key="fake-local-smoke")
+    provider, label = build_llm_provider(settings)
+    assert isinstance(provider, StubLLMProvider)
+    assert label == "mock"
 
 
 def test_system_tone_prefix_bans_cheerleading() -> None:
