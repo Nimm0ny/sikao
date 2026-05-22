@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Iterator
 
@@ -18,6 +18,7 @@ from sikao_api.main import create_app
 def build_client(tmp_path: Path) -> Iterator[tuple[TestClient, FastAPI]]:
     settings = Settings(
         app_env="test",
+        llm_provider="mock",
         database_url=f"sqlite:///{(tmp_path / 'home-m2-recommendations.db').as_posix()}",
         upload_dir=tmp_path / "uploads",
         import_tmp_dir=tmp_path / "imports",
@@ -73,6 +74,7 @@ def test_refresh_replay_accept_and_reject(tmp_path: Path) -> None:
     with build_client(tmp_path) as (client, app):
         _register(client)
         user = _seed_active_plan(app)
+        future_expiry = datetime.utcnow() + timedelta(days=1)
 
         missing_key = client.post("/api/v2/recommendations/refresh")
         assert missing_key.status_code == 422
@@ -138,7 +140,7 @@ def test_refresh_replay_accept_and_reject(tmp_path: Path) -> None:
                     cta="Continue",
                     action_type="continue",
                     payload={"session_template": {"track": "xingce", "entry_kind": "manual"}},
-                    expires_at=datetime(2026, 5, 22, 0, 0),
+                    expires_at=future_expiry,
                     source_signals={"in_progress_session_id": existing_session_id},
                 )
             )
@@ -151,7 +153,7 @@ def test_refresh_replay_accept_and_reject(tmp_path: Path) -> None:
                     cta="Plan it",
                     action_type="review",
                     payload={},
-                    expires_at=datetime(2026, 5, 22, 0, 0),
+                    expires_at=future_expiry,
                     source_signals={},
                 )
             )
@@ -164,7 +166,7 @@ def test_refresh_replay_accept_and_reject(tmp_path: Path) -> None:
                     cta="Skip",
                     action_type="rest",
                     payload={"rest_minutes": 15},
-                    expires_at=datetime(2026, 5, 22, 0, 0),
+                    expires_at=future_expiry,
                     source_signals={},
                 )
             )
