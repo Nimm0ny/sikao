@@ -10,6 +10,7 @@ from sqlalchemy import (
     CheckConstraint,
     Date,
     DateTime,
+    Float,
     ForeignKey,
     Index,
     Integer,
@@ -287,6 +288,62 @@ class QuestionV2(Base):
     # holds across the migration.
     category_l1: Mapped[str] = mapped_column(String(32), nullable=False, default="uncategorized")
     category_l2: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
+    # Phase-Practice WU-B10.2 (Tab 2): quality signals + dedup key + AI-source
+    # back-reference.
+    #
+    # historical_accuracy: rolling correct ratio across all PracticeSessionAnswerV2
+    #   submissions for this question, in [0.0, 1.0]. The legacy seed value 0.0
+    #   simply means "no data yet"; the WU-B17 stats aggregator overwrites it
+    #   on every session.submit. We do not seed legacy rows with 0.5 (the spec
+    #   median fallback) because the column is read inside the recommender as
+    #   a sortable signal — a synthetic 0.5 would distort early picks until the
+    #   first real submissions arrive.
+    historical_accuracy: Mapped[float] = mapped_column(
+        Float, nullable=False, default=0.0, server_default="0"
+    )
+    # answer_count: lifetime number of answers (correct + wrong + skipped). The
+    # stats module increments this on every session.submit per-question.
+    answer_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    # quality_score: only meaningful for source != real_exam. Range [0.0, 5.0];
+    # the WU-D-Q9 LLM self-audit + user-feedback loop adjusts this. Real-exam
+    # rows keep the seed value 5.0 (top quality assumption) so they never get
+    # filtered out by quality_score < threshold rules.
+    quality_score: Mapped[float] = mapped_column(
+        Float, nullable=False, default=5.0, server_default="5"
+    )
+    # report_count: only meaningful for source != real_exam. Auto-disable
+    # threshold lives in WU-B30 question_report; field is here so the picker
+    # can sort it out cheaply.
+    report_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    # is_active: false = retired (low quality_score / many reports / explicit
+    # admin disable). Retired questions remain readable for users who already
+    # answered them but never appear in new picks. index=True so the picker's
+    # WHERE is_active filter stays cheap on large catalogs.
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=text("1"), index=True
+    )
+    # content_hash: BLAKE2b(stem + sorted options + correct_answer); 32 chars
+    # hex. Used to dedup both AI re-generations against existing real exams and
+    # repeated real-exam imports. Nullable in WU-B10.2 because legacy rows are
+    # backfilled in WU-B10.3, after which the UNIQUE constraint is added.
+    content_hash: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # ai_source_question_id: self-FK back to the real-exam question that an AI
+    # item was adapted from. ondelete=SET NULL keeps AI items if the source
+    # real-exam row is hard-deleted, since users may already have answered them.
+    ai_source_question_id: Mapped[int | None] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="SET NULL"), nullable=True
+    )
+    # ai_self_audit_passed: WU-B22 question_self_audit prompt result. Three
+    # states: True (passed) / False (rejected, do not show) / None (real exam,
+    # not applicable).
+    ai_self_audit_passed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    # ai_generated_at: provenance timestamp; NULL for real-exam rows.
+    ai_generated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
