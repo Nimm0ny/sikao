@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
 from decimal import Decimal
 from typing import Any, Literal
@@ -8,6 +9,16 @@ from typing import Any, Literal
 from pydantic import Field, field_validator
 
 from sikao_api.core.schemas import CamelModel, UtcDatetime
+
+
+_ABILITY_DIMENSIONS = {
+    "comprehension",
+    "reasoning",
+    "calculation",
+    "memory",
+    "application",
+}
+_KNOWLEDGE_TAG_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
 class ActionLinkV2(CamelModel):
@@ -148,6 +159,53 @@ class PracticeSessionCreateRequestV2(CamelModel):
     linked_plan_event_id: int | None = None
     linked_plan_event_occurrence_ref: str | None = Field(default=None, max_length=64)
     linked_recommendation_id: int | None = None
+
+
+class QuestionMetadataPreviewV2(CamelModel):
+    ability_dimensions: list[str] = Field(default_factory=list)
+    complexity_level: int | None = None
+    knowledge_tags: list[str] = Field(default_factory=list)
+    heat_score: float = 0.0
+
+    @field_validator("ability_dimensions")
+    @classmethod
+    def validate_ability_dimensions(cls, values: list[str]) -> list[str]:
+        invalid = sorted({value for value in values if value not in _ABILITY_DIMENSIONS})
+        if invalid:
+            raise ValueError(
+                "ability_dimensions contains unsupported values: "
+                + ", ".join(invalid)
+            )
+        return values
+
+    @field_validator("complexity_level")
+    @classmethod
+    def validate_complexity_level(cls, value: int | None) -> int | None:
+        if value is None:
+            return value
+        if not 1 <= value <= 5:
+            raise ValueError("complexity_level must be between 1 and 5")
+        return value
+
+    @field_validator("knowledge_tags")
+    @classmethod
+    def validate_knowledge_tags(cls, values: list[str]) -> list[str]:
+        invalid = sorted({value for value in values if not _KNOWLEDGE_TAG_PATTERN.match(value)})
+        if invalid:
+            raise ValueError(
+                "knowledge_tags must be snake_case: " + ", ".join(invalid)
+            )
+        return values
+
+
+class QuestionEnvelopeV2(CamelModel):
+    id: int
+    question_key: str
+    prompt: str
+    answer_kind: str
+    status: str
+    content: dict[str, Any] = Field(default_factory=dict)
+    metadata_preview: QuestionMetadataPreviewV2 | None = None
 
 
 class PracticeSessionItemV2(CamelModel):

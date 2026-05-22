@@ -261,6 +261,12 @@ class QuestionV2(Base):
         # are allowed by both PG and SQLite, so dedup losers can keep their
         # row by NULLing this field.
         UniqueConstraint("content_hash", name="uq_questions_v2_content_hash"),
+        Index("ix_questions_v2_heat", "heat_score"),
+        CheckConstraint(
+            "complexity_level IS NULL OR (complexity_level >= 1 AND complexity_level <= 5)",
+            name="ck_q_v2_complexity_range",
+        ),
+        CheckConstraint("heat_score >= 0.0", name="ck_q_v2_heat_non_negative"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -354,6 +360,25 @@ class QuestionV2(Base):
     ai_self_audit_passed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     # ai_generated_at: provenance timestamp; NULL for real-exam rows.
     ai_generated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    # Phase-1 question_metadata reserve fields. Phase 1 only lands the schema;
+    # Phase 2 will populate / expose them through dedicated services.
+    ability_dimensions: Mapped[list[str]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'"),
+    )
+    discrimination_index: Mapped[float | None] = mapped_column(Float, nullable=True)
+    heat_score: Mapped[float] = mapped_column(
+        Float, nullable=False, default=0.0, server_default="0"
+    )
+    complexity_level: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    knowledge_tags: Mapped[list[str]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'"),
+    )
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
