@@ -411,7 +411,7 @@
   2. admin 强制重新批改
   3. EssayReportV2 已写入但 reference 范文缺失时的补生成
 - 同一 submission_id 的并发 grade 调用走 IdempotencyKeyV2（继承 Phase-Home AI-8）+ EssaySubmissionV2.status 状态机：仅当 status ∈ {pending_grading, failed} 才允许触发，graded 直接 200 返回现有结果。
-- session.submit 内的 hook **不抛错**：批改触发失败仅写 audit + metric，不影响 session.submit 主流程。
+- session.submit 内的 hook **不抛错**：批改触发失败仅写 audit + metric，不影响 session.submit 主流程（fail-fast 例外登记于 [`essay-grading-trigger-hook`](../../../engineering/fail-fast-exceptions.md#essay-grading-trigger-hook)，AGENTS-H7 合规）。
 
 **影响章节**：
 - [01-Boundary-Rules §4 PR8](./01-Boundary-Rules.md) 修订为"立即创建 EssaySubmissionV2(status=pending_grading) → submit hook 触发后台 grade → 写 EssayReportV2 → 更新 status=graded/failed"。
