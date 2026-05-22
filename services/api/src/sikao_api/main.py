@@ -12,12 +12,14 @@ from fastapi.responses import JSONResponse
 from sikao_api.core.config import Settings, get_settings
 from sikao_api.db.session import DatabaseManager
 from sikao_api.modules.content.interface import routes as content_v2
+from sikao_api.modules.favorites.interface import routes as favorites_v2
 from sikao_api.modules.identity.interface import routes as identity_v2
 from sikao_api.modules.notes_v2.interface import routes as notes_v2_skeleton
 from sikao_api.modules.planning.interface import routes as planning_v2
 from sikao_api.modules.plans.interface import routes as plans_v2
 from sikao_api.modules.profile_v2.interface import routes as profile_v2
 from sikao_api.modules.progress.interface import routes as progress_v2_skeleton
+from sikao_api.modules.question_flags.interface import routes as question_flags_v2
 from sikao_api.modules.recommendations.interface import routes as recommendations_v2
 from sikao_api.modules.review.interface import routes as review_v2
 from sikao_api.modules.session.interface import routes as session_v2
@@ -127,6 +129,8 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
     app.include_router(progress_v2_skeleton.router)
     app.include_router(recommendations_v2.router)
     app.include_router(content_v2.router)
+    app.include_router(favorites_v2.router)
+    app.include_router(question_flags_v2.router)
     app.include_router(session_v2.router)
     app.include_router(review_v2.router)
     app.include_router(notes_v2_skeleton.router)
