@@ -19,7 +19,9 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
+    false,
     text,
+    true,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -333,7 +335,7 @@ class QuestionV2(Base):
     # answered them but never appear in new picks. index=True so the picker's
     # WHERE is_active filter stays cheap on large catalogs.
     is_active: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=True, server_default=text("1"), index=True
+        Boolean, nullable=False, default=True, server_default=true(), index=True
     )
     # content_hash: BLAKE2b(stem + sorted options + correct_answer); 32 chars
     # hex. Used to dedup both AI re-generations against existing real exams and
@@ -488,10 +490,10 @@ class PracticeSessionAnswerV2(Base):
     # still exists on every row so the post-submit result page can render the
     # "you peeked at N solutions" stat uniformly.
     flagged: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, server_default=text("0")
+        Boolean, nullable=False, default=False, server_default=false()
     )
     viewed_solution: Mapped[bool] = mapped_column(
-        Boolean, nullable=False, default=False, server_default=text("0")
+        Boolean, nullable=False, default=False, server_default=false()
     )
     view_solution_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 

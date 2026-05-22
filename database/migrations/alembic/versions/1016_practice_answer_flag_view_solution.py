@@ -39,7 +39,7 @@ def upgrade() -> None:
                 "flagged",
                 sa.Boolean(),
                 nullable=False,
-                server_default=sa.text("0"),
+                server_default=sa.false(),
             )
         )
         batch_op.add_column(
@@ -47,7 +47,7 @@ def upgrade() -> None:
                 "viewed_solution",
                 sa.Boolean(),
                 nullable=False,
-                server_default=sa.text("0"),
+                server_default=sa.false(),
             )
         )
         batch_op.add_column(sa.Column("view_solution_at", sa.DateTime(), nullable=True))
