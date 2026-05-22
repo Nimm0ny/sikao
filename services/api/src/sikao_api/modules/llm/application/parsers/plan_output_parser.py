@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator
+from pydantic import BaseModel, ConfigDict, Field, ValidationInfo, field_validator, model_validator
 
 from sikao_api.modules.llm.application.llm.json_parser import parse_with_recovery
 
@@ -22,6 +22,22 @@ class GeneratedPlanEvent(BaseModel):
     end_at: datetime
     notes: str = Field(default="", max_length=200)
     target_id: int | None = None
+
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_bailian_shape(cls, value: Any) -> Any:
+        if not isinstance(value, dict):
+            return value
+        data = dict(value)
+        if "start_at" not in data and "start" in data:
+            data["start_at"] = data.pop("start")
+        if "end_at" not in data and "end" in data:
+            data["end_at"] = data.pop("end")
+        if "notes" not in data and isinstance(data.get("description"), str):
+            data["notes"] = data.pop("description")
+        if "target_id" not in data and "targetId" in data:
+            data["target_id"] = data.pop("targetId")
+        return data
 
     @field_validator("category")
     @classmethod
