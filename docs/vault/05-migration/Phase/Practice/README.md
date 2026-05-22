@@ -149,10 +149,25 @@ B10 (QuestionV2) ───┬─→ B14 (content)
                     ├─→ B18 (ai_questions)        ◄── B22
                     │   依赖：B10 / B12 / B22
                     │
-                    └─→ B21 (真题 import)
-                        依赖：B10
+                    ├─→ B21 (真题 import)
+                    │   依赖：B10
+                    │
+                    ├─→ B29 (question_metadata 仅 schema)
+                    │   依赖：B10
+                    │
+                    └─→ B30 (question_report)
+                        依赖：B10 + B23.1 (cron hook)
 
-B11 (Session/Note/Review 扩展) ──→ B15 / B16 / B17
+B11 (Session/Note/Review 扩展) ──┬─→ B15 / B16 / B17
+                                 │
+                                 ├─→ B25 (timing 模块)
+                                 │   依赖：B11
+                                 │
+                                 ├─→ B26 (session_lifecycle 模块)
+                                 │   依赖：B11
+                                 │
+                                 └─→ B27 (mock_exam 模块)
+                                     依赖：B11 / B26（state_machine + start hook）
 
 B12 (新表 5 个) ──┬─→ B15 / B16 / B17 / B18 / B19
                   │
@@ -161,11 +176,20 @@ B13 (申论范文 2 表)─┴─→ B20 (essay_grading)  ◄── B22
 
 B17 ─→ B19 (daily_practice)
 
-B14 ~ B22 全部完成 ─→ B23 (cron 扩展)
+B28 (practice_preferences 模块)
+  依赖：Phase-Home 用户体系（独立模块，无 Tab 2 内部强依赖）
+  下游：B27 mock_exam create / B19 daily_practice 读偏好作为默认值
+
+B14 ~ B22 全部完成 ─→ B23 (cron 扩展，仅基础 4 cron + 1 hook)
                      依赖：B17 / B18 / B19 / B20
+
+B25 / B26 / B27 / B30 各自的 cron 在自己 WU 内实现
+（baseline / cleanup / expire / auto_submit / ai_cleanup hook）
 
 B23 ─→ B24 (E2E + OpenAPI 锁定)
        依赖：B10-B23
+
+B25 / B26 / B27 / B28 / B29 / B30 完工 ─→ B24 同步含其 e2e
 
 B24 ─→ F9 (api-client + queries)
        │
@@ -176,19 +200,27 @@ F9 ─→ F10 (stores) ─┐
                      ├─→ F13 (Section C 套卷)
                      ├─→ F14 (自定义刷题)
                      ├─→ F15 (AI 等待 + 答题扩展)
-                     └─→ F16 (申论批改)
+                     ├─→ F16 (申论批改)
+                     ├─→ F19 (timing 上报与展示)
+                     │   依赖：B25
+                     ├─→ F20 (session-lifecycle 与 active session)
+                     │   依赖：B26
+                     ├─→ F21 (mock-exam 模考 UI)
+                     │   依赖：B27
+                     └─→ F22 (practice-preferences UI)
+                         依赖：B28
                             │
                             ↓
                           F17 (整合 + 老 view 删除)
                             │
                             ↓
-                          F18 (E2E + a11y)
+                          F18 (E2E + a11y，含 F19-F22 模块场景)
 ```
 
 WU 详细：
 - 后端：[03-Backend-WU](./03-Backend-WU.md)
 - 前端：[04-Frontend-WU](./04-Frontend-WU.md)
-- 后端依赖详细矩阵：[03-Backend-WU §18](./03-Backend-WU.md#18-与-phase-home-wu-的依赖图详)
+- 后端依赖详细矩阵：[03-Backend-WU §26](./03-Backend-WU.md#26-与-phase-home-wu-的依赖图详)
 
 ---
 

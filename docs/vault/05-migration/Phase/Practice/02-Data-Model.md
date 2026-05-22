@@ -750,6 +750,115 @@ class QuestionKnowledgePointV2(Base):
 
 ---
 
+### 3.12 QuestionReportV2
+
+详见 [03-Backend-WU §24（WU-B30）](./03-Backend-WU.md#24-wu-b30-question_report-模块新建)。用户对**真题或 AI 题**任一道题发起内容纠错（题干错字 / 选项缺失 / 答案存疑 / 解析错误等），由 admin 闭环处理。
+
+```python
+class QuestionReportV2(Base):
+    __tablename__ = "question_report_v2"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("user_v2.id", ondelete="CASCADE"), index=True
+    )
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("question_v2.id"), index=True
+    )
+
+    # 报告分类
+    category: Mapped[QuestionReportCategory]
+    # stem_typo / option_missing / answer_disputed / explanation_wrong /
+    # formatting / other（详见枚举）
+
+    description: Mapped[str] = mapped_column(String(1000))
+    # 用户填写的描述（最长 1000 字符）
+
+    # 上下文（非必填）
+    source_session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("practice_session_v2.id"), nullable=True
+    )
+    # 在哪次 session 中发现的；用于关联用户当时的答题上下文
+
+    selected_answer_at_report: Mapped[str | None] = mapped_column(
+        String(64), nullable=True
+    )
+    # 报告时用户选的答案（用于"答案存疑"类报告分析）
+
+    # 处理状态
+    status: Mapped[QuestionReportStatus] = mapped_column(
+        default=QuestionReportStatus.PENDING, index=True
+    )
+    # pending / acknowledged / resolved_fixed / resolved_invalid / resolved_duplicate
+
+    # admin 处理
+    handled_by_admin_id: Mapped[int | None] = mapped_column(
+        ForeignKey("user_v2.id"), nullable=True
+    )
+    handled_at: Mapped[datetime | None]
+    admin_response: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    # 给用户的回复（resolved_* 状态时必填）
+
+    duplicate_of_report_id: Mapped[int | None] = mapped_column(
+        ForeignKey("question_report_v2.id"), nullable=True
+    )
+    # status=resolved_duplicate 时指向首报告
+
+    # 处理动作（仅 resolved_fixed 时填）
+    applied_fix: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    # {"field": "stem|options|correct_answer|explanation", "before": "...", "after": "..."}
+    # 仅记录最后一次有效修复；详细审计走 AuditLogV2
+
+    created_at: Mapped[datetime] = mapped_column(default=func.now())
+
+    __table_args__ = (
+        # 同一用户对同一题同一类的活跃 report 唯一（防灌水；resolved 后允许新建）
+        Index(
+            "uq_report_active_per_user_question_category",
+            "user_id", "question_id", "category",
+            unique=True,
+            postgresql_where=text("status IN ('pending', 'acknowledged')"),
+        ),
+        Index("ix_report_status_created", "status", "created_at"),
+    )
+
+
+class QuestionReportCategory(StrEnum):
+    STEM_TYPO = "stem_typo"                    # 题干错字 / 排版错误
+    OPTION_MISSING = "option_missing"          # 选项缺失或重复
+    ANSWER_DISPUTED = "answer_disputed"        # 答案存疑
+    EXPLANATION_WRONG = "explanation_wrong"    # 解析错误
+    FORMATTING = "formatting"                  # 格式 / 图片显示问题
+    OTHER = "other"
+
+
+class QuestionReportStatus(StrEnum):
+    PENDING = "pending"                        # 待 admin 审阅
+    ACKNOWLEDGED = "acknowledged"              # admin 已查看（未处理）
+    RESOLVED_FIXED = "resolved_fixed"          # 已修正（终态）
+    RESOLVED_INVALID = "resolved_invalid"      # 报告不成立（终态）
+    RESOLVED_DUPLICATE = "resolved_duplicate"  # 重复报告（终态，关联 duplicate_of_report_id）
+```
+
+**关键约束**（B30 实施）：
+
+- `description` 长度 ∈ [10, 1000]（防灌水 + 防滥提）
+- `applied_fix` 仅在 `status=resolved_fixed` 时非空；其他 status 必为 NULL
+- `duplicate_of_report_id` 仅在 `status=resolved_duplicate` 时非空
+- `handled_at`、`handled_by_admin_id`、`admin_response` 在 status ∈ resolved_* 时必填（CHECK 约束）
+
+**与 AI 题质量信号的协同**：
+
+- AI 题（`source ∈ {ai_generated, ai_modified}`）的 `report_count` 不再依赖 `EssayReferenceFeedbackV2` 那种类型的简单计数，而是改由 cron 同步 `QuestionReportV2.status='pending'+'acknowledged'` 的当前活跃报告数（详见 09 §2.1 metrics `question_report.aggregated_per_question`）。
+- 真题（`source=real_exam`）原本无 `report_count` 用途，B30 起也累积同一指标，便于 admin 后台按"被报告最多的题"排序处理。
+
+**自动下线触发**（仅 AI 题 + 边界规则 PR4 扩展）：
+
+- `report_count >= MAX_REPORTS`（默认 5，覆盖 PR4 现有阈值）
+- 触发 cron 同步 `QuestionV2.is_active=false`（详见 01 §17 PR-Report-AutoDeactivate）
+
+---
+
 ## 4. 索引策略汇总
 
 | 表 | 索引 | 用途 |
@@ -773,6 +882,8 @@ class QuestionKnowledgePointV2(Base):
 | QuestionTimingBaselineV2 | last_recomputed_at | cron 增量重算 |
 | KnowledgePointV2 | code UNIQUE; (category_l1, category_l2) | Phase 2 查询树 |
 | QuestionKnowledgePointV2 | UNIQUE(question_id, knowledge_point_id) | Phase 2 关联唯一 |
+| QuestionReportV2 | UNIQUE(user_id, question_id, category) WHERE status IN (pending, acknowledged) | 防同一用户对同一题同类灌水 |
+| QuestionReportV2 | (status, created_at) | admin 后台按状态/时间分页 |
 
 ---
 
@@ -916,6 +1027,52 @@ ALTER TABLE question_v2
     ability_dimensions IS NULL
     OR (ability_dimensions::jsonb <@ '["comprehension", "reasoning", "calculation", "memory", "application"]'::jsonb)
   );
+```
+
+### 5.8 QuestionReportV2 状态一致性 CHECK
+
+```sql
+ALTER TABLE question_report_v2
+  ADD CONSTRAINT report_description_length CHECK (
+    char_length(description) >= 10 AND char_length(description) <= 1000
+  );
+
+ALTER TABLE question_report_v2
+  ADD CONSTRAINT report_resolved_requires_admin CHECK (
+    (status NOT IN ('resolved_fixed', 'resolved_invalid', 'resolved_duplicate'))
+    OR (handled_by_admin_id IS NOT NULL AND handled_at IS NOT NULL AND admin_response IS NOT NULL)
+  );
+
+ALTER TABLE question_report_v2
+  ADD CONSTRAINT report_fix_only_when_fixed CHECK (
+    (status = 'resolved_fixed' AND applied_fix IS NOT NULL)
+    OR (status != 'resolved_fixed' AND applied_fix IS NULL)
+  );
+
+ALTER TABLE question_report_v2
+  ADD CONSTRAINT report_dup_only_when_duplicate CHECK (
+    (status = 'resolved_duplicate' AND duplicate_of_report_id IS NOT NULL)
+    OR (status != 'resolved_duplicate' AND duplicate_of_report_id IS NULL)
+  );
+```
+
+### 5.9 QuestionReportV2 终态不可变 trigger
+
+```sql
+CREATE OR REPLACE FUNCTION protect_report_terminal_state_v2()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF OLD.status IN ('resolved_fixed', 'resolved_invalid', 'resolved_duplicate')
+     AND OLD.status IS DISTINCT FROM NEW.status THEN
+    RAISE EXCEPTION 'Terminal report status is immutable (was %)', OLD.status;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER report_v2_terminal_protect
+BEFORE UPDATE ON question_report_v2
+FOR EACH ROW EXECUTE FUNCTION protect_report_terminal_state_v2();
 ```
 
 ---
@@ -1190,7 +1347,7 @@ class PracticePreferencesResponseV2(CamelModel):
 
 ## 7. Migration 顺序
 
-新增 12 个 Alembic migration（B10-B13 + B25-B29 范围）：
+新增 14 个 Alembic migration（B10-B13 + B25-B30 范围）：
 
 ```
 revision_id                   | depends_on              | 描述
@@ -1226,11 +1383,17 @@ revision_id                   | depends_on              | 描述
 20260521_xx_ai_request        | <prev>                  | AiGeneratedQuestionRequestV2
 20260521_xx_daily             | <prev>                  | DailyPracticeV2
 20260521_xx_user_pref         | <prev>                  | UserPracticePreferencesV2
+20260521_xx_question_report   | <prev>                  | QuestionReportV2 + 4 个 CHECK 约束
+                              |                         | + 终态不可变 trigger
+                              |                         | + 活跃 report 唯一索引
 ```
 
 每个 migration 必须支持 `alembic downgrade -1`（CI 必跑往返）。
 
-**注意**：以上 13 个 migration 在物理顺序上需保证 `session_lifecycle` 在 `session_timing` 与 `session_mock_exam` 之前（后两者依赖 lifecycle 字段已就绪）。`question_meta_p1` 可与其他 migration 并行只要 `question_v2` 已建。
+**注意**：以上 14 个 migration 在物理顺序上需保证：
+1. `session_lifecycle` 在 `session_timing` 与 `session_mock_exam` 之前（后两者依赖 lifecycle 字段已就绪）
+2. `question_v2`、`question_meta_p1` 在 `question_report` 之前（report.question_id FK 需 question_v2 存在）
+3. `question_meta_p1` 可与其他 migration 并行只要 `question_v2` 已建
 
 ---
 
@@ -1256,6 +1419,7 @@ revision_id                   | depends_on              | 描述
 | **MockExam-* (00-Decisions §16)** | **PracticeSessionV2.exam_mode / time_limit_minutes / auto_submit_at / allow_pause / delayed_review_until** |
 | **Pref-* (00-Decisions §17)** | **UserPracticePreferencesV2** |
 | **QMeta-* (00-Decisions §18) Phase 1** | **QuestionV2 ability_dimensions / discrimination_index / heat_score / complexity_level / knowledge_tags + KnowledgePointV2（空表） + QuestionKnowledgePointV2（空表）** |
+| **PR-Report-* (01-Boundary-Rules §17) / B30** | **QuestionReportV2 + applied_fix（仅 resolved_fixed） + duplicate_of_report_id（仅 resolved_duplicate） + 终态不可变 trigger** |
 
 ---
 
@@ -1299,6 +1463,10 @@ PracticePreferencesPatchV2, PracticePreferencesResetRequestV2
 
 # Phase-1 schema 预留（Phase 2 才用）
 QuestionMetadataPreviewV2  # 暴露给 QuestionEnvelopeV2.metadata_preview 字段
+
+# B30 question_report
+QuestionReportCreateRequestV2, QuestionReportEnvelopeV2
+QuestionReportListResponseV2, QuestionReportAdminUpdateRequestV2
 ```
 
 完整 Pydantic 定义在 [03-Backend-WU §B10-B17 + §B25-B29](./03-Backend-WU.md) 各 PR 内。

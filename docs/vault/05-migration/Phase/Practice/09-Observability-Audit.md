@@ -43,6 +43,38 @@
 | 每日一练生成 | system | DailyPracticeV2 | action=daily.generate |
 | 每日一练开始 | user | DailyPracticeV2 | action=daily.start |
 | session 整组模式严格闭卷违规尝试 | user | PracticeSessionV2 | action=session.closed_book_violation（403 拒绝时记） |
+| **B25 timing 模块** | | | |
+| 题目耗时基线重算完成 | system | QuestionTimingBaselineV2 | action=timing.baseline_recomputed（reason=`updated N baselines`） |
+| 时间事件批量整体被拒（升序违规 / stale / payload 过大） | user | PracticeSessionV2 | action=timing.events_rejected（reason=code） |
+| session.submit 时检测到异常长区间被截断 | system | PracticeSessionV2 | action=timing.session_clamped_intervals |
+| **B26 session_lifecycle 模块** | | | |
+| session 状态转换（任意非创建首态） | user/cron/system | PracticeSessionV2 | action=session.transition；before / after 含 status / paused_at；reason=trigger（详见 12 §13.1） |
+| 心跳超时进 PAUSED | system | PracticeSessionV2 | action=session.heartbeat_timeout_paused（cron 触发） |
+| 24h 无活动放弃 | system | PracticeSessionV2 | action=session.no_activity_abandoned |
+| force_submit | system | PracticeSessionV2 | action=session.force_submitted；reason ∈ {mock_exam_timeout / admin_action / recovery_unknown} |
+| 用户主动废弃 | user | PracticeSessionV2 | action=session.user_discarded |
+| DRAFT 2h 无活动放弃 | system | PracticeSessionV2 | action=session.draft_abandoned |
+| daily session 当日 23:55 expired | system | PracticeSessionV2 | action=session.daily_expired |
+| admin 强制操作 | admin | PracticeSessionV2 | action=session.admin_force_action |
+| **B27 mock_exam 模块** | | | |
+| 创建模考 | user | PracticeSessionV2 | action=mock_exam.created |
+| 模考开始（DRAFT → IN_PROGRESS，写入 auto_submit_at） | user | PracticeSessionV2 | action=mock_exam.started；reason=`time_limit=Nmin` |
+| 倒计时归零自动提交 | system | PracticeSessionV2 | action=mock_exam.force_submitted；reason='mock_exam_timeout'（与 session.force_submitted 同条事件，按 mock_exam.* 命名空间额外加一条便于按模块筛选） |
+| 模考期间 pause 被拒 | user | PracticeSessionV2 | action=mock_exam.pause_attempt_blocked |
+| 模考期间题级笔记创建被拒 | user | PracticeSessionV2 | action=mock_exam.notes_attempt_blocked |
+| 提交后 < delayed_review_until 看解析被拒 | user | PracticeSessionV2 | action=mock_exam.delayed_review_blocked |
+| **B28 practice_preferences 模块**（写入策略：白名单 AUDIT_TRACKED_PATHS） | | | |
+| 偏好首次创建 | user | UserPracticePreferencesV2 | action=practice_preferences.created |
+| 偏好关键字段更新 | user | UserPracticePreferencesV2 | action=practice_preferences.updated；before/after 含变更字段（高频字段如 font_size 不写） |
+| 偏好重置 | user | UserPracticePreferencesV2 | action=practice_preferences.reset；reason='user_reset'；sections=[...] |
+| schema 升级（lazy upgrade 触发） | system | UserPracticePreferencesV2 | action=practice_preferences.schema_upgraded |
+| **B30 question_report 模块** | | | |
+| 用户提交题目纠错 | user | QuestionReportV2 | action=question_report.created |
+| 用户撤回 / 改 description | user | QuestionReportV2 | action=question_report.updated_by_user / question_report.deleted_by_user |
+| admin 状态切换（pending → acknowledged / resolved_*） | admin | QuestionReportV2 | action=question_report.status_changed；before/after status |
+| admin 应用修复（resolved_fixed） | admin | QuestionReportV2 | action=question_report.fix_applied；同时写一条 `question.field_updated` audit（PR-Report-Fix-Audit-Question-Mutation invariant） |
+| admin 标记重复 | admin | QuestionReportV2 | action=question_report.dup_marked |
+| AI 题阈值触发自动下线（cron 同步） | system | QuestionV2 | action=ai_question.auto_offline；reason=`report_count >= 5`（与既有 ai_question.auto_offline 同事件） |
 
 ### 2.2 audit 字段约定（继承 Phase-Home）
 
@@ -86,6 +118,11 @@ purpose:
   - question_audit        (Tab 2 新增)
   - essay_grading         (Tab 2 新增)
   - reference_generation  (Tab 2 新增)
+  # B25-B30 不直接调 LLM（timing / lifecycle / mock_exam / preferences / question_metadata Phase1 / question_report 都是确定性逻辑）；
+  # 后续 Phase 2 question_metadata 会引入：
+  #   - knowledge_point_extraction  (Phase 2)
+  #   - complexity_estimation       (Phase 2)
+  #   - ability_dim_classification  (Phase 2)
 ```
 
 字段（继承）：
@@ -195,6 +232,55 @@ session.closed_book_violations_total{reason}             # ui_bypass | direct_ap
 # 配额 / 限流
 quota.exceeded_total{purpose, user_id}
 ratelimit.hit_total{endpoint}
+
+# B25 timing
+timing.events.received_total{source}
+timing.events.rejected_total{reason}                     # event_order_violation / stale_event / payload_too_large
+timing.events.batch_size_histogram
+timing.session.active_seconds_histogram
+timing.session.overtime_questions_count_histogram
+timing.baseline.recompute_duration_seconds
+timing.baseline.questions_updated_total
+timing.baseline.questions_skipped_total{reason}          # insufficient_samples / dirty_data
+
+# B26 session_lifecycle
+session.transition_total{from, to, trigger}
+session.heartbeat_received_total
+session.heartbeat_rejected_total{reason}
+session.cleanup.in_progress_to_paused_total
+session.cleanup.paused_to_abandoned_total
+session.cleanup.draft_to_abandoned_total
+session.daily_expired_total
+session.force_submit_total{reason}
+session.user_discard_total
+session.active_count{status}                             # gauge
+session.heartbeat_latency_seconds                        # histogram
+
+# B27 mock_exam
+mock_exam.created_total{paper_code}
+mock_exam.started_total
+mock_exam.force_submitted_total{reason}
+mock_exam.user_submitted_total
+mock_exam.duration_seconds_histogram
+mock_exam.unfinished_questions_count_histogram
+mock_exam.completion_rate                                # 完成 / 创建（gauge）
+mock_exam.countdown_query_total
+mock_exam.cron.auto_submitted_total
+
+# B28 practice_preferences
+practice_preferences.read_total{is_default}
+practice_preferences.write_total{op}                     # put / patch / reset
+practice_preferences.validation_failure_total{field}
+practice_preferences.schema_upgrade_total{from_version, to_version}
+practice_preferences.cache_hit_total
+practice_preferences.cache_miss_total
+
+# B30 question_report
+question_report.created_total{category}
+question_report.status_changed_total{from, to}
+question_report.fix_applied_total
+question_report.dup_marked_total
+question_report.aggregated_per_question{question_id, source}  # gauge：单题活跃 report 数（cron 同步给 QuestionV2.report_count）
 ```
 
 ### 5.2 Histogram
@@ -360,6 +446,10 @@ dev 模式下：
 ## 11. 关联文档
 
 - [Phase-Home 09-Observability-Audit](../Home/09-Observability-Audit.md) - 通用观测体系
-- [02-Data-Model §3.6](./02-Data-Model.md#36-aigeneratedquestionrequestv2) - AI 请求审计表
-- [03-Backend-WU §17 / §10 / §12](./03-Backend-WU.md) - cron / ai_questions / essay 模块
+- [02-Data-Model §3.6 / §3.12](./02-Data-Model.md) - AI 请求审计表 / 题目纠错表
+- [03-Backend-WU §15.1 / §10 / §12 / §19-§24](./03-Backend-WU.md) - cron 表 / ai_questions / essay / B25-B30 各模块 audit / metrics 触发点
 - [05-LLM-Module §9](./05-LLM-Module.md#9-审计与可观测) - LLM 审计要求
+- [11-Timing §10](./11-Timing-Engine.md#10-审计与可观测) - timing 模块 audit / metrics
+- [12-Session-Lifecycle §13](./12-Session-Lifecycle.md#13-审计与可观测) - session_lifecycle 模块 audit / metrics
+- [13-Mock-Exam §11](./13-Mock-Exam.md#11-审计与可观测) - mock_exam 模块 audit / metrics
+- [14-Practice-Preferences §12](./14-Practice-Preferences.md#12-审计与可观测) - preferences 模块 audit / metrics

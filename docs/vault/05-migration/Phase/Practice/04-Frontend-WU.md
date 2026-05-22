@@ -21,9 +21,14 @@
 | WU-F16 | 申论答题 view + 异步批改流程 | 1,800 | 5 | F9 |
 | WU-F17 | PracticeCenter 整合 + 老 view 删除 | 1,200 | 4 | F11-F16 |
 | WU-F18 | E2E + MSW + a11y test | 1,500 | 4 | F17 |
-| **合计** | | **12,500** | **39** | |
+| WU-F19 | timing 上报与展示（含 buffer hook + 报告 + 分析） | 1,200 | 4 | F9 / F10 / B25 |
+| WU-F20 | session-lifecycle 与 active session（含心跳 + 继续上次 + 主动废弃） | 1,000 | 4 | F9 / F10 / B26 |
+| WU-F21 | mock-exam 模考 UI（含倒计时 + auto submit + 历史对比） | 1,200 | 4 | F9 / F10 / B27 |
+| WU-F22 | practice-preferences UI（含 6 子树设置 + 快捷键编辑 + reset） | 700 | 3 | F9 / B28 |
+| **合计** | | **16,600** | **54** | |
 
 > 前端总量上调（README 估算 10,500），原因：补 loading/empty/error/skeleton 状态、a11y、bundle 控制、错误边界。
+> **2026-05-21 重定基线**：合计上调至 16,600 行 / 54 PR，新增 F19-F22 四个模块前端 WU（对应后端 B25-B28 的 timing / session_lifecycle / mock_exam / practice_preferences 四个 MUST 模块）。F19-F22 与 F11-F16 平行，由 F17 整合并由 F18 总体 e2e 回归。
 
 ---
 
@@ -738,7 +743,380 @@ redirect:
 
 ---
 
-## 12. 引用矩阵
+## 12. WU-F19 · timing 上报与展示
+
+**目标**：把 [11-Timing-Engine](./11-Timing-Engine.md) 的事件批量上报协议落地到答题 view，并在结果页 / 分析页消费 timing 数据。
+
+**对应后端**：[03-Backend-WU §19（B25）](./03-Backend-WU.md#19-wu-b25-timing-模块新建)。
+
+### 12.1 文件清单
+
+```
+packages/domain/src/practice/
+  useTimingEventBuffer.ts                       ← buffer + flush 调度
+  useTimingEventCollector.ts                    ← DOM 事件采集（hook 进 PracticeSession）
+
+packages/api-client/src/queries/
+  timingQueries.ts                              ← useRecordTimingEvents / useStatsTiming /
+                                                  useQuestionTimingBaseline / useSessionTimingReport
+
+apps/web/src/components/practice/timing/
+  SessionTimingReport.tsx                       ← 结果页：逐题耗时表 + summary
+  TimingOvertimeBadge.tsx                       ← 单题超时标记（基于 baseline）
+  PacingPatternIndicator.tsx                    ← 答题节奏画像 chip
+
+apps/web/src/views/PracticeStatsTimingView.tsx  ← /practice/stats/timing 时间分析独立视图
+```
+
+### 12.2 PR 拆分
+
+#### F19.1 useTimingEventBuffer + flush 策略 + IndexedDB 兜底
+
+文件：
+- `packages/domain/src/practice/useTimingEventBuffer.ts`：
+  - 内存 buffer，按 ts 升序保持
+  - flush 触发：buffer ≥ 50 events / 距上次 flush > 15s / question_leave / submit pre-hook / pause pre-hook（详见 11 §3.3）
+  - 失败重试 3 次（指数退避 1s/2s/4s）→ 仍失败写 IndexedDB → 下次重连补传
+  - 单 batch ≤ 200 events（超过 = 分两批）
+- `packages/domain/src/practice/__tests__/useTimingEventBuffer.test.ts`
+- `packages/api-client/src/queries/timingQueries.ts`：useRecordTimingEvents（mutation，含 client_clock_skew_ms 自动注入）
+- MSW handler
+
+行数 ~340。
+
+#### F19.2 useTimingEventCollector + 接入 PracticeSession
+
+文件：
+- `packages/domain/src/practice/useTimingEventCollector.ts`：
+  - 监听 currentQuestionId 变化 → 推 question_leave / question_enter
+  - 监听 selectedAnswer 变化 → 推 answer_change（含 from / to）
+  - **不**推 heartbeat / pause / resume（这三个走 lifecycle 端点，由 F20 处理；详见 00-Decisions Timing-4 修订与 11 §3.1）
+- `apps/web/src/views/PracticeSession.tsx` 增量：mount 时启动 collector，submit pre-hook 调 buffer.flush
+- 测试：模拟用户答 5 题切换的事件序列校验
+
+行数 ~280。
+
+#### F19.3 SessionTimingReport + 结果页集成
+
+文件：
+- `apps/web/src/components/practice/timing/SessionTimingReport.tsx`：
+  - 拉取 GET /sessions/:id/timing-report
+  - 顶部 summary：total_active / total_wall / paused_total + overtime_count + fastest/slowest
+  - 逐题表格：question / time_spent_ms / baseline_p50/p95 / is_overtime chip / answer_change_count / visit_count
+- `apps/web/src/components/practice/timing/TimingOvertimeBadge.tsx`：标 is_overtime（baseline 不足时降级为 "—"）
+- `apps/web/src/views/SessionResult.tsx` 增量：在结果页加 timing tab
+- 4 状态（loading/empty/error/data）+ axe-core 测试
+
+行数 ~320。
+
+#### F19.4 PracticeStatsTimingView + 时间分析
+
+文件：
+- `apps/web/src/views/PracticeStatsTimingView.tsx`：路由 `/practice/stats/timing`
+  - period 选择器（7d/30d/90d）
+  - overall 卡片（total_minutes / avg_seconds_per_question / vs_baseline_ratio）
+  - by_category_l1 + by_difficulty 双向条形图（recharts，懒加载）
+  - overtime_questions top-5 列表（点击跳到题目详情）
+- `apps/web/src/components/practice/timing/PacingPatternIndicator.tsx`：steady / fast_start_slow_end / slow_start_fast_end / irregular 4 状态 chip
+- 限流 backoff 处理（429 时 toast + 退避 retry）
+
+行数 ~260。
+
+**估算**：1,200 行 / 4 PR
+**依赖**：F9 / F10 / B25
+**验收**：
+- buffer flush 触发完整；IndexedDB 兜底 e2e 通过（断网重连）
+- timing 端点不接受 heartbeat 类型（前端契约层不发送，由 lint 保证）
+- a11y：vs_baseline_ratio 字段附 aria-label "比基线慢/快 X%"；recharts 图表附备选数据 table
+
+---
+
+## 13. WU-F20 · session-lifecycle 与 active session
+
+**目标**：把 [12-Session-Lifecycle](./12-Session-Lifecycle.md) 的 heartbeat / pause / resume / discard / active query 落地到前端。
+
+**对应后端**：[03-Backend-WU §20（B26）](./03-Backend-WU.md#20-wu-b26-session_lifecycle-模块新建)。
+
+### 13.1 文件清单
+
+```
+packages/domain/src/practice/
+  useHeartbeatLoop.ts                           ← 30s 心跳循环 + visibilitychange
+  useActiveSessions.ts                          ← /sessions/active 查询
+
+packages/api-client/src/queries/
+  sessionLifecycleQueries.ts                    ← pause/resume/heartbeat/discard/start/lifecycle
+
+apps/web/src/components/practice/lifecycle/
+  PauseResumeButton.tsx                         ← 答题工具栏 pause/resume
+  DiscardSessionDialog.tsx                      ← 主动废弃确认
+  LifecycleTimelineView.tsx                     ← 结果页 transitions 链
+  ContinueLastButton.tsx                        ← QuickActionsBar 的"继续上次"
+  ActiveSessionItem.tsx                         ← 多 active session 列表条目
+```
+
+### 13.2 PR 拆分
+
+#### F20.1 useHeartbeatLoop + 客户端状态对齐
+
+文件：
+- `packages/domain/src/practice/useHeartbeatLoop.ts`：
+  - 30s 间隔（继承 00 §15 Session-LC-3）
+  - `document.visibilitychange`：hidden 暂停定时器；visible 立即一次心跳并恢复
+  - 心跳响应中比对 status 字段：
+    - 服务端返回 PAUSED 但本地是 IN_PROGRESS → refetch session（多端竞争场景）
+    - 服务端返回 IN_PROGRESS 但本地是 PAUSED → 本地状态切回 IN_PROGRESS（PAUSED → IN_PROGRESS 隐式 resume，决策 LC-3a）
+    - 服务端返回 SUBMITTED/ABANDONED/EXPIRED → 跳 result/abandoned 页（终态防卡死）
+  - 网络失败：静默重试 5s 一次（不打扰用户）；连续 3 次失败仅 console.warn
+  - **不**唤醒 DRAFT（决策 LC-2 / Heartbeat-No-Draft-Wake invariant）：DRAFT session 通常用户在配置页，不应启动 heartbeat loop
+- `packages/api-client/src/queries/sessionLifecycleQueries.ts`：useHeartbeat / useStartSession（含 mutation）+ useLifecycleQuery（含 transitions 链）
+- 测试：mock 各状态心跳响应，验证客户端状态对齐
+
+行数 ~280。
+
+#### F20.2 ContinueLastButton + ActiveSessionsCard
+
+文件：
+- `packages/domain/src/practice/useActiveSessions.ts`：useQuery /sessions/active；refetchOnWindowFocus + staleTime=30s
+- `apps/web/src/components/practice/lifecycle/ContinueLastButton.tsx`：替换 F11.1 中 QuickActionsBar 占位的"继续上次"按钮，data 有值时高亮 + 显示进度（`5/10 · 已暂停`）
+- `apps/web/src/components/practice/lifecycle/ActiveSessionItem.tsx`：多 active session 时弹列表（≤ 10）
+- 状态四态全覆盖（loading / empty=隐藏按钮 / error=fallback 静态按钮 / data）
+
+行数 ~240。
+
+#### F20.3 PauseResumeButton + DiscardSessionDialog + Toolbar 集成
+
+文件：
+- `apps/web/src/components/practice/lifecycle/PauseResumeButton.tsx`：
+  - 根据 session.status 显示"暂停"或"恢复"
+  - allow_pause=false（mock_exam 默认）时禁用 + tooltip "模考模式不支持暂停"
+  - 点击立即 mutation + optimistic update
+- `apps/web/src/components/practice/lifecycle/DiscardSessionDialog.tsx`：confirm 对话框
+  - "废弃后无法恢复，已答题不计入实绩"
+  - 确认后调 mutation + 跳 /practice
+- 集成到 `SessionToolbar.tsx`（F15.2 已建）
+
+行数 ~280。
+
+#### F20.4 LifecycleTimelineView + 结果页集成
+
+文件：
+- `apps/web/src/components/practice/lifecycle/LifecycleTimelineView.tsx`：
+  - 拉取 GET /sessions/:id/lifecycle
+  - 渲染 transitions 链（from/to/trigger/actor/ts/reason）
+  - 时间轴可视化（vertical timeline，每个节点 chip 显示 trigger）
+  - force_submitted=true 时高亮 + 显示 force_submitted_reason
+- `apps/web/src/views/SessionResult.tsx` 增量：admin 用户或用户自己点"查看历史"时展开
+
+行数 ~200。
+
+**估算**：1,000 行 / 4 PR
+**依赖**：F9 / F10 / B26
+**验收**：
+- 心跳 30s 准确；切换 tab 暂停 / 恢复正确；终态心跳不卡死
+- PAUSED 心跳被服务端隐式 resume 时本地状态对齐
+- DRAFT session 不启动 heartbeat loop（lint 测试）
+- pause/resume/discard mutation 失败回滚正确
+- a11y：transitions 时间轴用 `<ol>` 语义化结构 + aria-label
+
+---
+
+## 14. WU-F21 · mock-exam 模考 UI
+
+**目标**：把 [13-Mock-Exam](./13-Mock-Exam.md) 的全程考场体验（创建 / 倒计时 / 自动提交 / 历史对比）落地。
+
+**对应后端**：[03-Backend-WU §21（B27）](./03-Backend-WU.md#21-wu-b27-mock_exam-模块新建)。
+
+### 14.1 路由与文件清单
+
+```
+apps/web/src/views/MockExamStartView.tsx        ← /practice/mock-exam/start
+apps/web/src/views/MockExamHistoryView.tsx      ← /practice/mock-exam/history
+apps/web/src/views/MockExamComparisonView.tsx   ← /practice/mock-exam/:session_id/comparison
+
+packages/api-client/src/queries/
+  mockExamQueries.ts                            ← createMockExam / countdown / history / comparison
+
+packages/domain/src/practice/
+  useMockExamCountdown.ts                       ← drift 修正 + tick
+
+apps/web/src/components/practice/mock-exam/
+  MockExamConfigForm.tsx                        ← 套卷选择 + time_limit / delayed_review_minutes
+  MockExamStartConfirmDialog.tsx                ← 显式确认对话框
+  MockExamCountdownBar.tsx                      ← sticky 顶部倒计时
+  MockExamForcedSubmitBanner.tsx                ← 时间到 banner
+  MockExamHistoryItem.tsx
+  MockExamSelfRanking.tsx                       ← rank_in_self + improvement_trend
+```
+
+### 14.2 PR 拆分
+
+#### F21.1 MockExamStartView + 配置 + 显式确认
+
+文件：
+- `apps/web/src/views/MockExamStartView.tsx`：
+  - 套卷选择器（复用 PaperList from F13）
+  - time_limit_minutes 输入框（默认根据 paper.type，行测 120 / 申论 180；范围 [10, 360]）
+  - delayed_review_minutes 输入框（可选 0-1440）
+  - 提交按钮 → POST /practice/mock-exams（带 Idempotency-Key）→ 跳 `/practice/sessions/:id` (DRAFT) → 弹 MockExamStartConfirmDialog
+- `apps/web/src/components/practice/mock-exam/MockExamStartConfirmDialog.tsx`：
+  - 文案"模考一旦开始无法暂停 / 加笔记 / 看答案，确定开始吗？"
+  - 用户确认后调 POST /sessions/:id/start
+- `packages/api-client/src/queries/mockExamQueries.ts`：useCreateMockExam（含 Idempotency-Key）/ useStartMockExam
+- 422 处理：PAPER_NOT_MOCK_ELIGIBLE / INVALID_TIME_LIMIT 表单内联报错
+
+行数 ~340。
+
+#### F21.2 useMockExamCountdown + MockExamCountdownBar
+
+文件：
+- `packages/domain/src/practice/useMockExamCountdown.ts`：
+  - 进入 session 立即调 GET /countdown 拿 server_now → 算 driftMs
+  - setInterval 每 1s 算 remaining = (auto_submit_at - (Date.now() - driftMs)) / 1000
+  - 每 5min 调一次校准；剩余 < 5min 时改为每 30s 一次
+  - 归零前 1s 触发 onTimeUp 回调
+- `apps/web/src/components/practice/mock-exam/MockExamCountdownBar.tsx`：
+  - sticky 顶部 HH:MM:SS（时分秒）
+  - 颜色阶梯：> 10min 默认 / < 10min 橙 + 闪烁 / < 1min 红 + tick 声音（用户偏好可关闭，与 F22 协同）
+  - aria-live="polite"，每分钟更新一次（防屏幕阅读器刷屏）
+- 测试：drift 模拟 / 客户端时钟篡改 / 5min 校准
+
+行数 ~340。
+
+#### F21.3 模考期间 UI 限制 + 自动提交触发
+
+文件：
+- `apps/web/src/views/PracticeSession.tsx` 增量：检测 session.exam_mode → 隐藏：
+  - PauseResumeButton（依赖 allow_pause；后端拦截 MOCK_PAUSE_FORBIDDEN 422 仅作兜底）
+  - QuestionNoteSheet 入口（后端拦截 MOCK_NOTES_FORBIDDEN 422 仅作兜底）
+  - SolutionPanel "看解析"按钮（status != submitted 时整组模式已隐藏；submitted 但 < delayed_review_until 时显示锁定 placeholder + 倒计时；后端拦截 DELAYED_REVIEW_LOCKED 403 仅作兜底）
+- `apps/web/src/components/practice/mock-exam/MockExamForcedSubmitBanner.tsx`：onTimeUp 回调触发
+  - 立即 disable 所有 input（用户最后 1s 不能再答题）
+  - 调 POST /sessions/:id/submit（不弹确认）
+  - 跳 result 页 + 顶部 banner "时间到，已自动提交"
+- 测试：每个限制端点的前端隐藏 + 后端兜底双校验场景
+
+行数 ~280。
+
+#### F21.4 MockExamHistoryView + ComparisonView
+
+文件：
+- `apps/web/src/views/MockExamHistoryView.tsx`：路由 `/practice/mock-exam/history`
+  - period 选择器（30d / 90d / all）+ paper_code 过滤
+  - 列表：MockExamHistoryItem.tsx（时间 / 套卷 / actual_active / accuracy / total_score / is_force_submitted chip / rank_in_self）
+  - aggregate 顶部卡：total_count / best_accuracy → best_session_id 链接 / avg_accuracy / improvement_trend chip
+- `apps/web/src/views/MockExamComparisonView.tsx`：路由 `/practice/mock-exam/:session_id/comparison`
+  - self vs self_history 折线图（recharts 懒加载）
+  - paper_baseline 区域：Stage 1 显示 "未启用，待 Stage 2 多用户阶段"
+- `apps/web/src/components/practice/mock-exam/MockExamSelfRanking.tsx`：用户在自己同套卷历次的排名 + 趋势
+
+行数 ~240。
+
+**估算**：1,200 行 / 4 PR
+**依赖**：F9 / F10 / B27
+**验收**：
+- 倒计时 drift 修正（设置客户端时钟前后偏移 60s 仍正确）
+- 客户端崩溃 / 关页面后 cron 60s 内必 force_submit（与 B27 cron 联调）
+- 模考期间所有禁止操作前端隐藏 + 后端 422/403 兜底双校验
+- 历史 / 对比视图 4 状态全覆盖
+- a11y：倒计时 < 5min 阶段每分钟才公布（避免屏幕阅读器刷屏）
+
+---
+
+## 15. WU-F22 · practice-preferences UI
+
+**目标**：把 [14-Practice-Preferences](./14-Practice-Preferences.md) 的 6 子树偏好设置 + 快捷键编辑落地。
+
+**对应后端**：[03-Backend-WU §22（B28）](./03-Backend-WU.md#22-wu-b28-practice_preferences-模块新建)。
+
+### 15.1 文件清单
+
+```
+apps/web/src/views/PracticePreferencesView.tsx  ← /profile/practice-preferences
+
+packages/api-client/src/queries/
+  practicePreferencesQueries.ts                 ← GET / PUT / PATCH / RESET
+
+apps/web/src/components/practice/preferences/
+  UiSection.tsx                                 ← font_size / line_height / theme / panel_position
+  PacingSection.tsx                             ← default_practice_mode / auto_advance / confirm
+  AutoSaveSection.tsx                           ← enabled / interval / save_to_local_storage
+  KeyboardSection.tsx                           ← bindings 编辑 + 移动端隐藏
+  RemindersSection.tsx                          ← daily / weekly / overtime / break
+  CustomPracticeSection.tsx                     ← last_used_*（与 F10 useSessionConfigStore 对齐）
+  KeyBindingEditor.tsx                          ← 单条按键捕获 + 唯一性校验
+  ResetSectionDialog.tsx                        ← 部分 / 全部重置
+  SchemaVersionMismatchAlert.tsx                ← 422 处理
+```
+
+### 15.2 PR 拆分
+
+#### F22.1 PracticePreferencesView 主页 + 6 子树骨架 + GET/PUT
+
+文件：
+- `apps/web/src/views/PracticePreferencesView.tsx`：
+  - 路由 `/profile/practice-preferences`
+  - 顶部 schemaVersion 显示 + isDefault chip（用户从未保存时显示"使用默认值"）
+  - 6 个 Section 组件折叠展开
+  - 全量保存按钮（PUT）
+  - 高频字段（font_size / autosave 等）→ 自动 PATCH（debounce 5s）
+- `packages/api-client/src/queries/practicePreferencesQueries.ts`：
+  - usePreferences（staleTime 5min, refetchOnWindowFocus）
+  - useUpdatePreferences（PUT，全量）
+  - usePatchPreferences（PATCH，部分）
+  - useResetPreferences
+  - localStorage 即时缓存 + invalidate
+- 6 个 Section 骨架（仅渲染对应字段，无复杂逻辑）
+- 测试
+
+行数 ~340。
+
+#### F22.2 KeyboardSection + KeyBindingEditor + 唯一性校验
+
+文件：
+- `apps/web/src/components/practice/preferences/KeyboardSection.tsx`：
+  - 11 个 binding 条目（select_a-d / next / prev / flag / favorite / note / submit）
+  - 每条用 KeyBindingEditor 编辑
+  - 移动端检测（matchMedia 或 device store）→ 整个 Section 隐藏（不影响 DB 存储；Pref-14 决策）
+- `apps/web/src/components/practice/preferences/KeyBindingEditor.tsx`：
+  - 点击进入捕获模式 → 监听 keydown → 显示按键组合
+  - 实时检测与其他 binding 的冲突（KeyBinding-Unique invariant 客户端预校验）
+  - 冲突时红色边框 + 提示哪个 action 已使用该键
+  - ESC 取消捕获
+- 测试：含 11 条 binding 的 happy path + 多种冲突 case
+
+行数 ~240。
+
+#### F22.3 SchemaVersionMismatchAlert + ResetSectionDialog + 高频字段不写 audit 验证
+
+文件：
+- `apps/web/src/components/practice/preferences/SchemaVersionMismatchAlert.tsx`：
+  - 422 SCHEMA_VERSION_MISMATCH 时弹 alert
+  - "服务端偏好结构已升级，您的本地配置已过期。" + "刷新并重新加载"按钮 → invalidateQueries + refetch
+  - 自动 retry 一次（用最新 schemaVersion 重提交，如果客户端 payload 兼容）
+- `apps/web/src/components/practice/preferences/ResetSectionDialog.tsx`：
+  - sections 多选（6 子树之一或多）+ "全部重置"快捷
+  - confirm 后调 useResetPreferences
+- 测试：
+  - 422 处理 e2e
+  - reset 单/多 section 正确
+  - PATCH 高频字段（font_size 滑动 5 次）→ 后端 audit 不写入（Pref-No-Audit-High-Frequency invariant 通过 audit log 行数核对）
+
+行数 ~120。
+
+**估算**：700 行 / 3 PR
+**依赖**：F9 / B28
+**验收**：
+- 6 子树字段全覆盖；GET / PUT / PATCH / RESET 4 端点闭环
+- KeyBinding 客户端唯一性校验与服务端 422 一致
+- schemaVersion mismatch 自动恢复路径通过
+- localStorage 缓存 + TanStack Query staleTime 协同正确（页面刷新不抖动）
+- 移动端 Keyboard Section 完全隐藏（不影响 DB）
+- a11y：每个 Section 顶部 `<h2>`，每条字段含 `<label>` + aria-describedby 说明文本
+
+---
+
+## 16. 引用矩阵
 
 | WU | 决策依据 | 边界规则 | 数据契约 | 测试 |
 |---|---|---|---|---|
@@ -752,23 +1130,43 @@ redirect:
 | F16 | Q4 / D-Q4 / D-Q16 / Essay-* | PR8 / Essay-Reference | grading-status / reference list | F18.4 |
 | F17 | D7 脱壳 + Phase-Home D1 | - | 路由表 | F18.* |
 | F18 | 全部 invariant | 全部 | - | - |
+| **F19** | **Timing-* / 00 §14** | **§12 Timing-* (10 条)** | **§6.6 SessionTimingReportV2 / §6.7 PracticeStatsTimingResponseV2 / TimingEventBatchV2** | **F18.x e2e + module unit** |
+| **F20** | **Session-LC-* / 00 §15** | **§13 Session-LC-* (12 条)** | **§6.8 SessionLifecycleResponseV2 / ActiveSessionsResponseV2 / HeartbeatResponseV2** | **F18.x e2e + module unit** |
+| **F21** | **MockExam-* / 00 §16** | **§14 MockExam-* (12 条)** | **§6.9 MockExamCountdownResponseV2 / History / Comparison** | **F18.x e2e + module unit** |
+| **F22** | **Pref-* / 00 §17** | **§15 Pref-* (10 条)** | **§6.10 PracticePreferencesResponseV2 + PayloadV1（14 §3.1 唯一规格源）** | **F18.x e2e + module unit** |
 
 ---
 
-## 13. 与 Phase-Home WU 的依赖
+## 17. 与 Phase-Home WU 的依赖
 
 ```
 Phase-Home WU-F1 (api-client + queries 基础)  ─→ Tab 2 WU-F9 (扩展 + 新建 9 query 文件)
 Phase-Home WU-F3 (calendar-engine)           ─→ Tab 2 WU-F11 (用 calendar-engine 显示首页"继续上次"，已由 Phase-Home 处理)
 Phase-Home WU-F7 (AppShell 5 tab + 老 view 清理) ─→ Tab 2 WU-F17 (本 Phase 仅清理练习相关 11 个 view + ShenlunSession)
 Phase-Home WU-F8 (e2e + MSW 基础)            ─→ Tab 2 WU-F18 (扩展 MSW handlers + 新增 e2e)
+
+Tab 2 内部新增前端 WU 依赖（F19-F22 与 F11-F16 平行）:
+  WU-F9 + WU-F10 ─→ F19 (timing 上报与展示)            依赖后端 B25
+                ─→ F20 (session-lifecycle + active session) 依赖后端 B26
+                ─→ F21 (mock-exam 模考 UI)             依赖后端 B27
+                ─→ F22 (practice-preferences UI)       依赖后端 B28
+
+  F19 buffer flush hook 接入 PracticeSession（与 F15.2 共用 Toolbar）
+  F20 PauseResumeButton / DiscardSessionDialog 集成进 F15.2 SessionToolbar
+  F21 模考期间 UI 限制 hook 进 F15.5 SolutionPanel + F15.4 QuestionNoteSheet（前端隐藏）
+  F22 与 F10 useSessionConfigStore 对齐 custom_practice 子树
+
+  F17 整合时一并把 F19/F20/F21/F22 view 接入 PracticeCenter 顶级路由
+  F18 e2e 增加 4 模块各自 happy path 场景（mock_exam force_submit / heartbeat 唤醒 PAUSED / preferences PATCH 高频字段不写 audit / timing buffer flush 触发）
 ```
 
 ⚠️ Phase-Home WU-F7 已经完成大部分老 view 清理工作，Tab 2 仅清理练习相关。
 
+⚠️ **F19-F22 严格依赖各自后端 WU 完工**（B25-B28）；如后端尚未完工，前端 WU 可先做 query / store 骨架（用 mock data），module 集成与 e2e 推到后端就绪后。
+
 ---
 
-## 14. 进度跟踪与 PR review checklist
+## 18. 进度跟踪与 PR review checklist
 
 每个 PR description 必须包含：
 - [ ] 决策依据（00-Decisions 对应条目）

@@ -57,6 +57,70 @@ CI 跑 `vite-bundle-visualizer` 输出报告。
 | 后台批改任务（不在 HTTP latency 内） | 30s | 60s | 90s |
 | GET /practice/essay/questions/:id/reference-answers | 60ms | 150ms | 300ms |
 
+#### B25 timing 模块（详见 11 §8）
+
+| 端点 | p50 | p95 | p99 |
+|---|---|---|---|
+| POST /practice/sessions/:id/timing/events（200 events） | 80ms | 200ms | 400ms |
+| GET /practice/stats/timing | 150ms | 400ms | 800ms |
+| GET /practice/questions/:id/timing-baseline | 20ms | 50ms | 100ms |
+| GET /practice/sessions/:id/timing-report | 100ms | 250ms | 500ms |
+
+#### B26 session_lifecycle 模块（详见 12 §11）
+
+| 端点 | p50 | p95 | p99 |
+|---|---|---|---|
+| POST /practice/sessions/:id/start | 60ms | 150ms | 300ms |
+| POST /practice/sessions/:id/pause | 50ms | 120ms | 250ms |
+| POST /practice/sessions/:id/resume | 50ms | 120ms | 250ms |
+| POST /practice/sessions/:id/heartbeat | 30ms | 80ms | 150ms |
+| POST /practice/sessions/:id/discard | 50ms | 120ms | 250ms |
+| GET /practice/sessions/active | 80ms | 200ms | 400ms |
+| GET /practice/sessions/:id/lifecycle | 100ms | 250ms | 500ms |
+
+#### B27 mock_exam 模块（详见 13 §9）
+
+| 端点 | p50 | p95 | p99 |
+|---|---|---|---|
+| POST /practice/mock-exams | 100ms | 250ms | 500ms |
+| GET /practice/sessions/:id/countdown | 20ms | 50ms | 100ms |
+| GET /practice/mock-exams/history | 80ms | 200ms | 400ms |
+| GET /practice/mock-exams/:id/comparison | 150ms | 400ms | 800ms |
+
+#### B28 practice_preferences 模块（详见 14 §9）
+
+| 端点 | p50 | p95 | p99 |
+|---|---|---|---|
+| GET /profile/practice-preferences | 30ms | 80ms | 150ms |
+| PUT /profile/practice-preferences | 80ms | 200ms | 400ms |
+| PATCH /profile/practice-preferences | 80ms | 200ms | 400ms |
+| POST /profile/practice-preferences/reset | 80ms | 200ms | 400ms |
+
+#### B30 question_report 模块（用户端 + admin 端）
+
+| 端点 | p50 | p95 | p99 |
+|---|---|---|---|
+| POST /practice/questions/:qid/reports | 60ms | 150ms | 300ms |
+| GET /practice/questions/:qid/reports | 30ms | 80ms | 150ms |
+| PATCH /practice/reports/:rid（用户改 description） | 50ms | 120ms | 250ms |
+| DELETE /practice/reports/:rid（撤回） | 40ms | 100ms | 200ms |
+| GET /admin/practice/reports（含 filter + paging） | 100ms | 300ms | 600ms |
+| PATCH /admin/practice/reports/:rid（status 切换） | 80ms | 200ms | 400ms |
+| POST /admin/practice/reports/:rid/apply-fix（事务内含 question 字段更新） | 200ms | 500ms | 1.0s |
+
+#### Cron 任务执行预算
+
+| Cron | 完成时间 | 候选规模 | 备注 |
+|---|---|---|---|
+| recompute_question_accuracy（B23.1，每日 04:00） | < 10min | 数千-数万题 | batch 化 |
+| cleanup_low_quality_ai_questions（B23.1，每日 04:30） | < 5min | 仅 AI 题 | 含 B30 hook 同步 report_count |
+| compute_reference_quality（B23.2，每日 05:00） | < 5min | 万级范文 | 评分计算 |
+| generate_daily_practice（B23.3，每日 04:00） | < 30min | 全活跃用户 | 失败用户记 audit 不阻塞 |
+| recompute_question_timing_baseline（B25.3，周一 03:00） | 1k 题 < 5min；10k 题 < 30min | 90d 窗口 | percentile 计算 |
+| cleanup_stale_sessions（B26.4，每 5 分钟） | < 30s | ≤ 500 行/类型 | 单实例足够；幂等 |
+| expire_daily_sessions（B26.4，每日 23:55） | < 1min | 当日 daily session | 仅 source_mode=daily |
+| mock_exam_auto_submit_cron（B27.3，每分钟） | < 5s | 仅过去 1 分钟到期 | 兜底场景；最大延迟 60s |
+
 ### 1.4 数据库 query 性能
 
 关键 query 必须用 EXPLAIN 验证：
