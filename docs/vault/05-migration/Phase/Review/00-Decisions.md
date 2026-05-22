@@ -329,7 +329,7 @@ else:
 | 引用方 | 引用条目 |
 |---|---|
 | README.md §3 | 关键决策速查（摘录） |
-| 01-Boundary-Rules | PR-R1~R11 逐条引 R/D-R/SRS/Debt/Confidence |
+| 01-Boundary-Rules | PR-R1~R11 逐条引 R/D-R/SRS/Debt/Confidence/Taxonomy |
 | 02-Data-Model | source_kind 枚举 / SRS 字段 / AiCauseAnalysisV2 结构 / cause_tag_v2 / version 列 |
 | 03-Backend-WU | 全部 WU 的决策依据 |
 | 04-Frontend-WU | 全部 WU-FR 的决策依据 |

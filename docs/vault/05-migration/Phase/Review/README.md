@@ -24,8 +24,8 @@
 | [00-Decisions](./00-Decisions.md) | 任何 PR 开工前；决策冲突时以本文档为准（路径冲突时以 A0 为准） |
 | [01-Boundary-Rules](./01-Boundary-Rules.md) | 写 review / SRS / 错因分析 / 跨 tab 联动逻辑前 |
 | [02-Data-Model](./02-Data-Model.md) | WU-R1~R3 / WU-FR1 类型生成 |
-| [03-Backend-WU](./03-Backend-WU.md) | 后端 12 个 PR 的总盘 |
-| [04-Frontend-WU](./04-Frontend-WU.md) | 前端 12 个 PR 的总盘 |
+| [03-Backend-WU](./03-Backend-WU.md) | 后端 14 个 PR 的总盘 |
+| [04-Frontend-WU](./04-Frontend-WU.md) | 前端 14 个 PR 的总盘 |
 | [05-SRS-Engine](./05-SRS-Engine.md) | WU-R3 + 任何写 SRS 状态机的代码 |
 | [06-AI-Cause-Analysis](./06-AI-Cause-Analysis.md) | WU-R5 + LLM prompt 调用方 |
 | [07-Smart-Review-Aggregation](./07-Smart-Review-Aggregation.md) | WU-FR5 智能三卡前端聚合 |
@@ -33,11 +33,14 @@
 | [09-Cross-Tab-Wiring](./09-Cross-Tab-Wiring.md) | 任何动 Practice / Notes / Home 接口的 PR |
 | [10-NonFunctional](./10-NonFunctional.md) | 性能 / 限流 / 部署 |
 | [11-Testing](./11-Testing.md) | invariant + e2e + 跨 Phase 集成测试 |
+| [12-Debt-Management](./12-Debt-Management.md) | WU-R14 / WU-FR14 + 任何写 daily_limit / 打散 / ramp-up / is_hard 的代码 |
+| [13-Cause-Taxonomy](./13-Cause-Taxonomy.md) | WU-R13 / WU-FR9 修订 + LLM cause-analysis prompt 改造 |
+| [14-Confidence-Rating](./14-Confidence-Rating.md) | WU-FR13 + 任何写 confidence × recall × SRS 路径的代码 |
 
 阅读建议：
 - 所有 agent：A0 → 00 → 01
-- 后端 agent：A0 → 00 → 01 → 02 → 03 → 05/06/09/10/11（按 PR 范围）
-- 前端 agent：A0 → 00 → 01 → 02 §6 → 04 → 07/08/09/11（按 PR 范围）
+- 后端 agent：A0 → 00 → 01 → 02 → 03 → 05/06/09/10/11/12/13/14（按 PR 范围）
+- 前端 agent：A0 → 00 → 01 → 02 §6 → 04 → 07/08/09/11/12/13/14（按 PR 范围）
 
 ---
 
@@ -129,13 +132,17 @@
 详见 [01-Boundary-Rules](./01-Boundary-Rules.md)。
 
 ```
-PR-R1  入队多源（5 种 source_kind），同题可有多条历史行
-PR-R2  source_kind 不可变（一旦写入 immutable）
-PR-R3  已下线 AI 题（QuestionV2.is_active=false）允许重做不允许重出
-PR-R4  复盘 session 强制 per_question pace（前后端双校验，与 Practice Pace-Closed-Book 解耦）
-PR-R5  graduated 后再错重新入队（新行 source_kind=re_failed），不覆盖原行
-PR-R6  AI 错因失败不阻塞列表（503 + 文案兜底）
-PR-R7  ReviewItemV2.question_id 与 metadata_json.source_note_id 互斥（CHECK 约束）
+PR-R1   入队多源（5 种 source_kind），同题可有多条历史行
+PR-R2   source_kind 不可变（一旦写入 immutable）
+PR-R3   已下线 AI 题（QuestionV2.is_active=false）允许重做不允许重出
+PR-R4   复盘 session 强制 per_question pace（前后端双校验，与 Practice Pace-Closed-Book 解耦）
+PR-R5   graduated 后再错重新入队（新行 source_kind=re_failed），不覆盖原行
+PR-R6   AI 错因失败不阻塞列表（503 + 文案兜底）
+PR-R7   ReviewItemV2.question_id 与 metadata_json.source_note_id 互斥（CHECK 约束）
+PR-R8   Cause Tag Enum + Override Audit（slug 必须在 cause_tag_v2 内 + parser 兜底 + override 写 audit）
+PR-R9   Debt Management Invariants（daily_limit 不可绕过 / 打散不动 streak / ramp-up 与打散互斥 / hard cap multiplier）
+PR-R10  SRS Optimistic Lock（任何 SRS 状态变更走 version CAS + Fail-Fast）
+PR-R11  Confidence Rating Semantics（guess 不进毕业 / unsure 阻毕业 / certain+错 forced cause / ramp-up 隐藏 certain）
 ```
 
 ---
@@ -144,12 +151,12 @@ PR-R7  ReviewItemV2.question_id 与 metadata_json.source_note_id 互斥（CHECK 
 
 | 维度 | 估算 |
 |---|---|
-| 总行数（新增 + 删除） | ~12,000 |
-| Backend / Frontend | 5,200 / 6,800 |
-| PR 总数 | 24（R 12 + FR 12） |
-| Backend 阶段 | 3-4 周 |
-| Frontend 阶段 | 4-5 周 |
-| 全程 | 7-9 周 |
+| 总行数（新增 + 删除） | ~14,000 |
+| Backend / Frontend | 6,200 / 7,800 |
+| PR 总数 | 28（R 14 + FR 14） |
+| Backend 阶段 | 4-5 周 |
+| Frontend 阶段 | 5-6 周 |
+| 全程 | 9-11 周 |
 
 ---
 
@@ -157,17 +164,18 @@ PR-R7  ReviewItemV2.question_id 与 metadata_json.source_note_id 互斥（CHECK 
 
 ```
 WU-R1 ────────────────┐
-                      ├─→ WU-R2 ─→ WU-R6 ─→ WU-R5 ──┐
-                      ├─→ WU-R3 ─────────────────────┤─→ WU-R10 ─→ WU-R11 ─→ WU-R12 ─→ WU-FR1
-                      ├─→ WU-R4 ─────────────────────┤
-                      ├─→ WU-R7 ─────────────────────┤
-                      ├─→ WU-R8 ─────────────────────┤
-                      └─→ WU-R9 ─────────────────────┘
+                      ├─→ WU-R2 ─→ WU-R6 ─→ WU-R5 ─→ WU-R13 ─┐
+                      ├─→ WU-R3 ──┐                            │
+                      ├─→ WU-R4 ──┴─→ WU-R14 ──────────────────┤─→ WU-R10 ─→ WU-R11 ─→ WU-R12 ─→ WU-FR1
+                      ├─→ WU-R7 ──────────────────────────────┤
+                      ├─→ WU-R8 ──────────────────────────────┤
+                      └─→ WU-R9 ──────────────────────────────┘
 
-WU-FR1 ─→ WU-FR2 ──┐
-                    ├─→ WU-FR3 ─→ WU-FR4 ─→ WU-FR5 ──┐
-                    ├─→ WU-FR6 / FR7 / FR8 / FR9 ─────┼─→ WU-FR10 ─→ WU-FR11 ─→ WU-FR12
-                    └──────────────────────────────────┘
+WU-FR1 ─→ WU-FR2 ─┬─→ WU-FR3 ─→ WU-FR4 ─→ WU-FR5 ──────────┐
+                  │           └─→ WU-FR14 ───────────────────┤
+                  ├─→ WU-FR6 / FR7 / FR8 / FR9 ──────────────┤─→ WU-FR10 ─→ WU-FR11 ─→ WU-FR12
+                  │                  └→ WU-FR13 ─────────────┤
+                  └────────────────────────────────────────────┘
 ```
 
 WU 详细：
@@ -181,20 +189,24 @@ WU 详细：
 ```
 M0   week 0          启动；本 plan 与子文档全部 review 通过
 M1   week 1          WU-R1 完工：ReviewItemV2 完整化 + AiCauseAnalysisV2 建表
-M2   week 2          WU-R2 + WU-R3：review CRUD + SRS engine
+M2   week 2          WU-R2 + WU-R3：review CRUD + SRS engine（4 档间隔 + probationary + 乐观锁 version）
 M3   week 2-3        WU-R4：跨 tab hook（Practice session.commit 写入 wrong_answer / re_failed）
-M4   week 3          WU-R5 + WU-R6：cause-analysis 模块 + LLM prompt
+M4   week 3          WU-R5 + WU-R6：cause-analysis 模块 + LLM prompt（含 evolution_context 注入位）
 M5   week 3-4        WU-R7 + WU-R8 + WU-R9：weekly cron + insights 端点 + audit
-M6   week 4          WU-R10 + WU-R11 + WU-R12：scheduler + e2e + OpenAPI
+M5b  week 4          WU-R13：Cause Taxonomy（cause_tag_v2 表 + seed + parser + override + admin invalidate）
+M5c  week 4-5        WU-R14：Debt Management（snapshot / redistribute / ramp-up / hard 三 cron + re_fail_count hook）
+M6   week 5          WU-R10 + WU-R11 + WU-R12：scheduler + e2e（11 PR-R + Debt + Taxonomy + Confidence invariant）+ OpenAPI
 ─────────────────────────────────────────────
-M7   week 4-5        WU-FR1：API client + types
-M8   week 5          WU-FR2 + WU-FR3：domain stores + queries
-M9   week 5-6        WU-FR4：默认视图（周回顾条 + SRS 队列 + 三卡）
-M10  week 6-7        WU-FR5 + WU-FR6 + WU-FR7：智能三卡聚合 + 全部错题视图 + 数据洞察
-M11  week 7-8        WU-FR8：题目中枢页 `/q/:id`（跨 tab）
-M12  week 8          WU-FR9 + WU-FR10：错因 UI + 加入计划 CTA
-M13  week 8-9        WU-FR11：legacy wrong-book 路由 redirect + 组件去留清理
-M14  week 9          WU-FR12：e2e + a11y + 浏览器矩阵验收
+M7   week 5-6        WU-FR1：API client + types
+M8   week 6          WU-FR2 + WU-FR3：domain stores + queries
+M9   week 6-7        WU-FR4：默认视图（周回顾条 + SRS 队列 + 三卡）
+M10  week 7-8        WU-FR5 + WU-FR6 + WU-FR7：智能三卡聚合 + 全部错题视图 + 数据洞察
+M11  week 8-9        WU-FR8：题目中枢页 `/q/:id`（跨 tab）
+M12  week 9          WU-FR9 + WU-FR10：错因 UI（含 dimension override + EvolutionTimeline）+ 加入计划 CTA
+M12b week 9-10       WU-FR13：Confidence Rating UI（4 档 prompt + badge + mismatch banner + session 状态机）
+M12c week 10         WU-FR14：Debt Management UI（DebtBar 5 模式 + RampupBanner + HardQuestionBadge + Profile slider）
+M13  week 10-11      WU-FR11：legacy wrong-book 路由 redirect + 组件去留清理
+M14  week 11         WU-FR12：e2e（含 review-confidence + review-debt）+ a11y + 浏览器矩阵验收
 ```
 
 ---
@@ -204,19 +216,20 @@ M14  week 9          WU-FR12：e2e + a11y + 浏览器矩阵验收
 详见各 WU 文档与 [11-Testing §6](./11-Testing.md#6-完工-gate)。
 
 ### 8.1 后端 M6
-- [ ] pytest 全绿（含 invariant / e2e / audit / observability / scheduler）
-- [ ] alembic upgrade head 干净（往返通过）
-- [ ] OpenAPI drift 测试 0 diff
-- [ ] LLM mock provider 跑通 cause_analysis_single / cause_analysis_group
-- [ ] 真 provider 手动跑通 cause-analysis 端到端
+- [ ] pytest 全绿（含 11 PR-R invariant / Debt / Taxonomy / Confidence / e2e / audit / observability / scheduler）
+- [ ] alembic upgrade head 干净（往返通过；含 0033 cause_tag seed 16 行）
+- [ ] OpenAPI drift 测试 0 diff（含 Cause Override / Debt 4 端点 / cause-tags list）
+- [ ] LLM mock provider 跑通 cause_analysis_single / cause_analysis_group / cause_analysis_forced / cause_analysis_deep
+- [ ] 真 provider 手动跑通 cause-analysis 端到端 + parser fallback 触发 metric
+- [ ] 3 个新 cron job（debt_severity_evaluator / hard_question_detector / rampup_phase_advancer）幂等通过
 
 ### 8.2 前端 M14
-- [ ] vitest 全绿（含 e2e + a11y）
+- [ ] vitest 全绿（含 e2e + a11y + review-confidence + review-debt）
 - [ ] tsc strict 0 errors
 - [ ] 9 lint:* 全过
 - [ ] bundle 预算未超
 - [ ] 桌面 + 移动 viewport e2e 全过
-- [ ] axe-core 0 violation
+- [ ] axe-core 0 violation（含 DebtBar 5 模式 / ConfidencePrompt / HardQuestionBadge）
 - [ ] 暗色模式 smoke
 - [ ] /wrong-book/* / /review/items/* / /practice/questions/* 老路径 redirect 全部测试覆盖
 
@@ -228,7 +241,7 @@ M14  week 9          WU-FR12：e2e + a11y + 浏览器矩阵验收
 |---|---|---|
 | [Phase/Home](../Home/README.md) 完工 | ACCEPTED · 详细规格完成 | 必须 M0 之前完工（ReviewItemV2 audit / RecommendationV2 / WeaknessSnapshotV2 / LLM 模块基础设施） |
 | [Phase/Practice](../Practice/README.md) 完工 | ACCEPTED · 详细规格完成 | 必须 M0 之前完工（QuestionV2 source/category 字段 / PracticeSessionV2 source_mode / QuestionFlagV2 / Flag-AutoReview hook） |
-| [Phase/Notes](../Notes/README.md) NoteV2 schema | TBD（占位）| Phase-Practice 已提前升级 NoteV2.linked_question_id；本 Phase 仅消费，不再升 schema |
+| [Phase/Notes](../Notes/README.md) NoteV2 schema | ACCEPTED · 详细规格完成 | Phase-Practice 已提前升级 NoteV2.linked_question_id；本 Phase 仅消费，不再升 schema |
 | 4→5 tab 升级 | Phase-Home WU-F7 范围 | 必须 M7 之前完工（否则 `/review` 路由不能成 tab） |
 
 > **本 Phase 的 schema 改动只动 review_items_v2 / review_attempts_v2 / 新建 ai_cause_analysis_v2**，不再动 question_v2 / practice_session_v2 / note_v2（Phase-Practice 已扩展完毕）。
