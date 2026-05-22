@@ -38,8 +38,6 @@ import type {
 import { useAdjustmentBannerStore } from '@sikao/domain/dashboard/useAdjustmentBannerStore';
 import { usePlanStore, type SelectedDateRange } from '@sikao/domain/plan/usePlanStore';
 
-import { MvpPage } from '@/components/mvp';
-
 import { PlanAdjustmentBanner } from './PlanAdjustmentBanner';
 import { PlanAiDialog } from './PlanAiDialog';
 import { PlanCalendar } from './PlanCalendar';
@@ -462,138 +460,130 @@ export function PlanSection() {
   }
 
   return (
-    <MvpPage
-      title="首页"
-      eyebrow="Home Phase M9"
-      subtitle="Section A 临时挂在 /dashboard；Today / Week / Month、事件编辑、AI 生成和 adjustment 全部从这里进入。"
-      action={
-        <div className="flex flex-wrap gap-3">
-          <Button
-            variant="secondary"
-            leftIcon={<ChevronLeftIcon className="h-4 w-4" />}
-            onClick={() => setCurrentDate(shiftAnchorDate(currentDate, currentView, -1))}
-          >
-            上一段
-          </Button>
-          <Button
-            variant="secondary"
-            rightIcon={<ChevronRightIcon className="h-4 w-4" />}
-            onClick={() => setCurrentDate(shiftAnchorDate(currentDate, currentView, 1))}
-          >
-            下一段
-          </Button>
-          <Button
-            variant="secondary"
-            leftIcon={<CalendarRangeIcon className="h-4 w-4" />}
-            onClick={() => setSelectedRange(null)}
-          >
-            清空圈选
-          </Button>
-          <Button
-            variant="secondary"
-            leftIcon={<Trash2Icon className="h-4 w-4" />}
-            onClick={() => setBulkDeleteOpen(true)}
-          >
-            Bulk reset
-          </Button>
-          <Button
-            variant="primary"
-            leftIcon={<SparklesIcon className="h-4 w-4" />}
-            onClick={() => setAiMode('generate')}
-          >
-            AI 制定计划
-          </Button>
-          <Button
-            variant="accent"
-            leftIcon={<RefreshCwIcon className="h-4 w-4" />}
-            onClick={() => setAiMode('regenerate')}
-          >
-            AI 重生成范围
-          </Button>
-        </div>
-      }
-      testId="dashboard-home-plan-view"
-    >
-      <div className="space-y-5">
-        <PlanAdjustmentBanner
-          adjustment={currentAdjustment}
-          isSubmitting={acceptAdjustmentMutation.isPending || rejectAdjustmentMutation.isPending}
-          onAccept={acceptCurrentAdjustment}
-          onReject={rejectCurrentAdjustment}
-          onDismiss={() => {
-            if (currentAdjustment) dismissAdjustment(currentAdjustment.id);
-          }}
-        />
-
-        <Card padding="md" className="space-y-4">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <div className="text-xs font-mono uppercase tracking-wider text-ink-4">
-                Section A host
-              </div>
-              <div className="mt-1 font-serif text-3xl text-ink">
-                {activePlan?.name ?? 'Home plan runtime'}
-              </div>
-              <div className="mt-2 text-sm text-ink-3">
-                {planWindowQuery.data
-                  ? formatAnchorLabel(currentView, planWindowQuery.data.from, planWindowQuery.data.to)
-                  : currentDate}
-              </div>
-            </div>
-            <Tabs
-              value={currentView}
-              onChange={(next) => setCurrentView(next as HomePlanView)}
-              variant="pill"
-              ariaLabel="Plan calendar views"
-              items={[
-                { value: 'today', label: 'Today', testId: 'plan-view-today' },
-                { value: 'week', label: 'Week', testId: 'plan-view-week' },
-                { value: 'month', label: 'Month', testId: 'plan-view-month' },
-              ]}
-            />
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            {activePlan ? (
-              <>
-                <Chip>{`目标 ${activePlan.targetExamId}`}</Chip>
-                <Chip>{`考试日 ${activePlan.targetExamDate}`}</Chip>
-                <Chip>{`日目标 ${activePlan.dailyMinutesTarget} min`}</Chip>
-              </>
-            ) : null}
-            {selectedOrWindowRange ? (
-              <Chip>{`当前范围 ${selectedOrWindowRange.from} - ${selectedOrWindowRange.to}`}</Chip>
-            ) : null}
-            {profileInfoQuery.data ? (
-              <Chip>
-                {profileInfoQuery.data.aiAdjustEnabled ? 'AI adjust on' : 'AI adjust off'}
-              </Chip>
-            ) : null}
-          </div>
-
-          {surfaceError ? (
-            <div className="rounded-tiny border border-err bg-err-bg p-3 text-sm text-err">
-              {surfaceError}
-            </div>
-          ) : null}
-
-          {renderWindowState({
-            activePlan,
-            query: planWindowQuery,
-            events: mergedEvents,
-            currentView,
-            selectedRange,
-            detailDay,
-            onSelectDay: toggleRangeDay,
-            onOpenDayDetail: setDetailDay,
-            onCloseDayDetail: () => setDetailDay(null),
-            onCreateEvent: openCreateDrawer,
-            onEditEvent: openEditDrawer,
-            onMoveEvent: (event, fromDay, toDay) => void moveEvent(event, fromDay, toDay),
-            onResizeEvent: (event, delta) => void resizeEvent(event, delta),
-          })}
-        </Card>
+    <section className="space-y-5" data-testid="dashboard-home-plan-view">
+      <div className="flex flex-wrap gap-3">
+        <Button
+          variant="secondary"
+          leftIcon={<ChevronLeftIcon className="h-4 w-4" />}
+          onClick={() => setCurrentDate(shiftAnchorDate(currentDate, currentView, -1))}
+        >
+          上一段
+        </Button>
+        <Button
+          variant="secondary"
+          rightIcon={<ChevronRightIcon className="h-4 w-4" />}
+          onClick={() => setCurrentDate(shiftAnchorDate(currentDate, currentView, 1))}
+        >
+          下一段
+        </Button>
+        <Button
+          variant="secondary"
+          leftIcon={<CalendarRangeIcon className="h-4 w-4" />}
+          onClick={() => setSelectedRange(null)}
+        >
+          清空圈选
+        </Button>
+        <Button
+          variant="secondary"
+          leftIcon={<Trash2Icon className="h-4 w-4" />}
+          onClick={() => setBulkDeleteOpen(true)}
+        >
+          Bulk reset
+        </Button>
+        <Button
+          variant="primary"
+          leftIcon={<SparklesIcon className="h-4 w-4" />}
+          onClick={() => setAiMode('generate')}
+        >
+          AI 制定计划
+        </Button>
+        <Button
+          variant="accent"
+          leftIcon={<RefreshCwIcon className="h-4 w-4" />}
+          onClick={() => setAiMode('regenerate')}
+        >
+          AI 重生成范围
+        </Button>
       </div>
+
+      <PlanAdjustmentBanner
+        adjustment={currentAdjustment}
+        isSubmitting={acceptAdjustmentMutation.isPending || rejectAdjustmentMutation.isPending}
+        onAccept={acceptCurrentAdjustment}
+        onReject={rejectCurrentAdjustment}
+        onDismiss={() => {
+          if (currentAdjustment) dismissAdjustment(currentAdjustment.id);
+        }}
+      />
+
+      <Card padding="md" className="space-y-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div>
+            <div className="text-xs font-mono uppercase tracking-wider text-ink-4">
+              Section A
+            </div>
+            <div className="mt-1 font-serif text-3xl text-ink">
+              {activePlan?.name ?? 'Home plan runtime'}
+            </div>
+            <div className="mt-2 text-sm text-ink-3">
+              {planWindowQuery.data
+                ? formatAnchorLabel(currentView, planWindowQuery.data.from, planWindowQuery.data.to)
+                : currentDate}
+            </div>
+          </div>
+          <Tabs
+            value={currentView}
+            onChange={(next) => setCurrentView(next as HomePlanView)}
+            variant="pill"
+            ariaLabel="Plan calendar views"
+            items={[
+              { value: 'today', label: 'Today', testId: 'plan-view-today' },
+              { value: 'week', label: 'Week', testId: 'plan-view-week' },
+              { value: 'month', label: 'Month', testId: 'plan-view-month' },
+            ]}
+          />
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          {activePlan ? (
+            <>
+              <Chip>{`目标 ${activePlan.targetExamId}`}</Chip>
+              <Chip>{`考试日 ${activePlan.targetExamDate}`}</Chip>
+              <Chip>{`日目标 ${activePlan.dailyMinutesTarget} min`}</Chip>
+            </>
+          ) : null}
+          {selectedOrWindowRange ? (
+            <Chip>{`当前范围 ${selectedOrWindowRange.from} - ${selectedOrWindowRange.to}`}</Chip>
+          ) : null}
+          {profileInfoQuery.data ? (
+            <Chip>
+              {profileInfoQuery.data.aiAdjustEnabled ? 'AI adjust on' : 'AI adjust off'}
+            </Chip>
+          ) : null}
+        </div>
+
+        {surfaceError ? (
+          <div className="rounded-tiny border border-err bg-err-bg p-3 text-sm text-err">
+            {surfaceError}
+          </div>
+        ) : null}
+
+        {renderWindowState({
+          activePlan,
+          query: planWindowQuery,
+          events: mergedEvents,
+          currentView,
+          selectedRange,
+          detailDay,
+          onSelectDay: toggleRangeDay,
+          onOpenDayDetail: setDetailDay,
+          onCloseDayDetail: () => setDetailDay(null),
+          onCreateEvent: openCreateDrawer,
+          onEditEvent: openEditDrawer,
+          onMoveEvent: (event, fromDay, toDay) => void moveEvent(event, fromDay, toDay),
+          onResizeEvent: (event, delta) => void resizeEvent(event, delta),
+        })}
+      </Card>
 
       {drawerMode ? (
         <PlanEventDrawer
@@ -641,7 +631,7 @@ export function PlanSection() {
         onClose={() => setBulkDeleteOpen(false)}
         onConfirm={() => void submitBulkDelete()}
       />
-    </MvpPage>
+    </section>
   );
 }
 
