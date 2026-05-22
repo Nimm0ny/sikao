@@ -418,6 +418,36 @@ class PracticeSessionV2(Base):
         nullable=True,
     )
 
+    # Phase-Practice WU-B11.1 (Tab 2): how the user is answering this session
+    # and what selected the question set. Both fields are conceptually
+    # immutable post-create; the DB-level enforcement lives in WU-B26
+    # (session_lifecycle terminal-state trigger) once that module ships.
+    #
+    # practice_mode controls the answering UX:
+    #   per_question  user sees solution after each answer
+    #   full_set      strict closed-book; solutions only after submit (D-Q15)
+    #
+    # source_mode records how the question list was assembled. Picker
+    # implementations live in WU-B15 by-mode dispatchers; here we just store
+    # the audit-grade label so /sessions/:id results can recreate the user's
+    # original intent.
+    practice_mode: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="full_set", server_default="full_set"
+    )
+    source_mode: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="paper", server_default="paper"
+    )
+    # config_snapshot holds the resolved config the picker actually ran with —
+    # category filters, year ranges, exclude-already-done flags, AI request
+    # ids, etc. The application layer decides the inner shape per source_mode;
+    # we keep it as opaque JSON here so future pickers do not require a
+    # schema migration each time they add a knob. server_default '{}' on PG;
+    # SQLite tolerates the same literal because the column type is JSON
+    # (stored as TEXT) and JSON('{}') parses cleanly on both backends.
+    config_snapshot: Mapped[dict[str, Any]] = mapped_column(
+        JSONB_COMPAT, nullable=False, default=dict, server_default=text("'{}'")
+    )
+
 
 class PracticeSessionAnswerV2(Base):
     __tablename__ = "practice_session_answers_v2"
