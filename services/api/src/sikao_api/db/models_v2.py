@@ -14,6 +14,7 @@ from sqlalchemy import (
     Index,
     Integer,
     Numeric,
+    SmallInteger,
     String,
     Text,
     UniqueConstraint,
@@ -238,6 +239,17 @@ class QuestionV2(Base):
     __table_args__ = (
         UniqueConstraint("revision_id", "item_no", name="uq_questions_v2_item_no"),
         Index("ix_questions_v2_subject", "subject_kind"),
+        # Phase-Practice WU-B10.1 (Tab 2): twin-axis category index for category
+        # browsing endpoints; (l1, l2) covers both l1-only and l1+l2 lookups.
+        Index("ix_questions_v2_category", "category_l1", "category_l2"),
+        # Phase-Practice WU-B10.1: (year, region, exam_type) covers the typical
+        # paper filter combo on /practice/xingce/papers and /practice/essay/papers.
+        Index(
+            "ix_questions_v2_year_region_exam",
+            "year",
+            "region",
+            "exam_type",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -253,6 +265,29 @@ class QuestionV2(Base):
     answer_kind: Mapped[str] = mapped_column(String(32), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
     content_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+
+    # Phase-Practice WU-B10.1 (Tab 2): question source + exam classification.
+    # Source distinguishes real_exam vs ai_generated/ai_modified items so the
+    # session picker, recommender, and stats aggregator can treat them
+    # consistently while remaining auditable. Allowed values are enforced in
+    # application layer (no DB enum, matching PlanV2.source convention) and the
+    # value is logically immutable post-create — the DB-level immutable trigger
+    # is added in WU-B10.3 once content_hash backfill completes.
+    source: Mapped[str] = mapped_column(String(32), nullable=False, default="real_exam")
+    # year / region intentionally nullable: AI-generated items have no
+    # provenance year and not every official paper carries a region (e.g. 国考).
+    year: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    region: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    # exam_type values: national / provincial / institution / xuandiao / other.
+    exam_type: Mapped[str] = mapped_column(String(32), nullable=False, default="other")
+    # category_l1 stores the top-level taxonomy key (e.g. 'verbal', 'numeric').
+    # category_l2 is optional sub-category. Exact value space is defined by the
+    # WU-B14 content service's category aggregator and the WU-B21 import script;
+    # legacy rows are seeded with 'uncategorized' so the NOT NULL invariant
+    # holds across the migration.
+    category_l1: Mapped[str] = mapped_column(String(32), nullable=False, default="uncategorized")
+    category_l2: Mapped[str | None] = mapped_column(String(64), nullable=True)
+
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
