@@ -413,9 +413,11 @@ class PracticeSessionV2(Base):
     __tablename__ = "practice_sessions_v2"
     __table_args__ = (
         Index("ix_practice_sessions_v2_user_started", "user_id", "started_at"),
+        Index("ix_practice_sessions_v2_user_started", "user_id", "started_at"),
         Index("ix_practice_sessions_v2_linked_plan_event", "linked_plan_event_id"),
         Index("ix_practice_sessions_v2_linked_recommendation", "linked_recommendation_id"),
         Index("ix_practice_sessions_v2_user_status_activity", "user_id", "status", "last_activity_at"),
+        Index("ix_practice_sessions_v2_mock_auto_submit", "exam_mode", "status", "auto_submit_at"),
         CheckConstraint(
             "(status = 'paused' AND paused_at IS NOT NULL) OR "
             "(status != 'paused' AND paused_at IS NULL)",
@@ -428,6 +430,22 @@ class PracticeSessionV2(Base):
         CheckConstraint(
             "(force_submitted = false) OR (force_submitted_reason IS NOT NULL)",
             name="ck_ps_v2_force_submit_reason",
+        ),
+        CheckConstraint(
+            "(exam_mode = false) OR (time_limit_minutes IS NOT NULL)",
+            name="ck_ps_v2_mock_time_limit",
+        ),
+        CheckConstraint(
+            "(exam_mode = false) OR (practice_mode = 'full_set')",
+            name="ck_ps_v2_mock_full_set",
+        ),
+        CheckConstraint(
+            "(exam_mode = false) OR (source_mode = 'paper')",
+            name="ck_ps_v2_mock_paper_source",
+        ),
+        CheckConstraint(
+            "time_limit_minutes IS NULL OR (time_limit_minutes >= 10 AND time_limit_minutes <= 360)",
+            name="ck_ps_v2_mock_time_range",
         ),
     )
 
@@ -512,6 +530,18 @@ class PracticeSessionV2(Base):
     )
     first_question_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     last_activity_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    exam_mode: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    time_limit_minutes: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    auto_submit_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    allow_review_during: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    allow_pause: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=true()
+    )
+    delayed_review_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class PracticeSessionAnswerV2(Base):
