@@ -137,6 +137,18 @@ class CatalogItemV2(CamelModel):
     subtitle: str | None = None
     status: str
     href: str
+    count: int | None = None
+    category_l1: str | None = None
+    category_l2: str | None = None
+    paper_code: str | None = None
+    year: int | None = None
+    region: str | None = None
+    exam_type: str | None = None
+    question_count: int | None = None
+    difficulty: str | None = None
+    is_completed: bool = False
+    best_score: float | None = None
+    last_attempt_at: UtcDatetime | None = None
 
 
 class CatalogListResponseV2(CamelModel):
