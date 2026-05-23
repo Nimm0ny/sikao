@@ -6,6 +6,7 @@ from .types import (
     QUESTION_REPORT_DESCRIPTION_MIN_LENGTH,
     TERMINAL_QUESTION_REPORT_STATUSES,
     QuestionReportCategory,
+    QuestionReportFixField,
     QuestionReportStatus,
 )
 
@@ -18,5 +19,6 @@ __all__ = [
     "QUESTION_REPORT_DUPLICATE_PENDING",
     "TERMINAL_QUESTION_REPORT_STATUSES",
     "QuestionReportCategory",
+    "QuestionReportFixField",
     "QuestionReportStatus",
 ]

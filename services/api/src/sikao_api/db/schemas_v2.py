@@ -13,6 +13,7 @@ from sikao_api.modules.question_reports.domain.types import (
     QUESTION_REPORT_DESCRIPTION_MAX_LENGTH,
     QUESTION_REPORT_DESCRIPTION_MIN_LENGTH,
     QuestionReportCategory,
+    QuestionReportFixField,
     QuestionReportStatus,
 )
 
@@ -766,6 +767,71 @@ class QuestionReportEnvelopeV2(CamelModel):
 class QuestionReportListResponseV2(CamelModel):
     items: list[QuestionReportEnvelopeV2]
     total: int
+    page: int
+    page_size: int
+
+
+class QuestionReportOptionFixEntryV2(CamelModel):
+    key: str = Field(min_length=1, max_length=16)
+    text: str = Field(min_length=1, max_length=2000)
+
+
+class QuestionReportAdminUpdateRequestV2(CamelModel):
+    status: Literal[
+        QuestionReportStatus.ACKNOWLEDGED,
+        QuestionReportStatus.RESOLVED_INVALID,
+        QuestionReportStatus.RESOLVED_DUPLICATE,
+    ]
+    admin_response: str | None = Field(default=None, min_length=1, max_length=1000)
+    duplicate_of_report_id: int | None = None
+
+
+class QuestionReportApplyFixRequestV2(CamelModel):
+    field: QuestionReportFixField
+    admin_response: str = Field(min_length=1, max_length=1000)
+    text_after: str | None = Field(default=None, min_length=1, max_length=4000)
+    options_after: list[QuestionReportOptionFixEntryV2] = Field(default_factory=list)
+
+    @field_validator("options_after")
+    @classmethod
+    def validate_options_after(
+        cls,
+        values: list[QuestionReportOptionFixEntryV2],
+    ) -> list[QuestionReportOptionFixEntryV2]:
+        seen: set[str] = set()
+        for item in values:
+            if item.key in seen:
+                raise ValueError("options_after must not repeat option keys")
+            seen.add(item.key)
+        return values
+
+
+class QuestionReportAdminItemV2(CamelModel):
+    id: int
+    question_id: int
+    category: QuestionReportCategory
+    description: str
+    status: QuestionReportStatus
+    reporter_user_id: int
+    reporter_display_name: str | None = None
+    question_prompt: str
+    question_source: str
+    question_is_active: bool
+    active_report_count: int
+    admin_response: str | None = None
+    duplicate_of_report_id: int | None = None
+    applied_fix: dict[str, Any] | None = None
+    source_session_id: int | None = None
+    selected_answer_at_report: Any | None = None
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
+    handled_at: UtcDatetime | None = None
+
+
+class QuestionReportAdminListResponseV2(CamelModel):
+    items: list[QuestionReportAdminItemV2]
+    total: int
+    pending_count: int
     page: int
     page_size: int
 

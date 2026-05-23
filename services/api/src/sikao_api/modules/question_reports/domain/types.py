@@ -20,6 +20,13 @@ class QuestionReportStatus(StrEnum):
     RESOLVED_DUPLICATE = "resolved_duplicate"
 
 
+class QuestionReportFixField(StrEnum):
+    STEM = "stem"
+    OPTIONS = "options"
+    CORRECT_ANSWER = "correct_answer"
+    EXPLANATION = "explanation"
+
+
 QUESTION_REPORT_DESCRIPTION_MIN_LENGTH = 10
 QUESTION_REPORT_DESCRIPTION_MAX_LENGTH = 1000
 QUESTION_REPORT_DAILY_LIMIT = 20
