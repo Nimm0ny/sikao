@@ -98,7 +98,7 @@ def test_ai_question_feedback_floor_recomputes_after_submit_without_scheduler(tm
             assert question.quality_score == 3.5
 
 
-def test_submit_rolls_back_when_sync_progress_hooks_fail(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+def test_submit_keeps_submitted_session_when_sync_progress_fallback_fails(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     with build_client(tmp_path) as client:
         user_id = register_user(client)
         source_ids = seed_paper(
@@ -161,14 +161,14 @@ def test_submit_rolls_back_when_sync_progress_hooks_fail(tmp_path: Path, monkeyp
             raise RuntimeError("hook boom")
 
         monkeypatch.setattr(
-            "sikao_api.modules.session.interface.routes.run_progress_submit_hooks",
+            "sikao_api.modules.session.application.hooks.run_progress_submit_hooks",
             _raise_hooks,
         )
 
-        with pytest.raises(RuntimeError, match="hook boom"):
-            client.post(f"/api/v2/practice/sessions/{session_id}/submit")
+        submitted = client.post(f"/api/v2/practice/sessions/{session_id}/submit")
+        assert submitted.status_code == 200, submitted.text
 
         with factory() as session:
             practice_session = session.get(PracticeSessionV2, session_id)
             assert practice_session is not None
-            assert practice_session.status != "submitted"
+            assert practice_session.status == "submitted"
