@@ -1,0 +1,18 @@
+/*
+ * Popover — V5 D.3.20 overlay (skeleton).
+ * Why: floating panel anchored at coords computed in TS. Position absolute
+ *      against page (top/left in document space). Visual tokens follow
+ *      design.md §D.3.20 (--shadow-l3 + --radius-12 + --space-2 padding).
+ */
+.panel {
+  position: absolute;
+  z-index: var(--z-popover);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-l3);
+  border-radius: var(--radius-12);
+  padding: var(--space-2);
+  border: 1px solid var(--color-border-subtle);
+  /* min-width keeps the panel from collapsing to its content edge while
+   * width: auto, but does not enforce a touch-target hit-area contract. */
+  min-width: 120px;
+}
