@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+DELAYED_REVIEW_LOCKED = "DELAYED_REVIEW_LOCKED"
 IDEMPOTENCY_KEY_REQUIRED = "idempotency_key_required"
 MOCK_EXAM_NOT_STARTED = "mock_exam_not_started"
 MOCK_PAUSE_FORBIDDEN = "MOCK_PAUSE_FORBIDDEN"
