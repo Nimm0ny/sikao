@@ -31,7 +31,7 @@ from sikao_api.modules.system.application.errors import LLMParseError, Validatio
 
 
 def _settings() -> Settings:
-    return Settings(app_env="test")
+    return Settings(_env_file=None, app_env="test", llm_provider="mock")  # type: ignore[call-arg]
 
 
 class _SequenceProvider:
@@ -78,7 +78,7 @@ def test_build_reference_answer_self_audit_messages_include_candidate() -> None:
     assert len(messages) == 2
     assert messages[0].content == REFERENCE_ANSWER_SELF_AUDIT_SYSTEM_MESSAGE
     assert candidate["content"] in messages[1].content
-    assert "开篇点题" in messages[1].content
+    assert candidate["structure_outline"][0] in messages[1].content
     assert "900 字" in messages[1].content
 
 
@@ -101,20 +101,7 @@ def test_parse_reference_answer_audit_returns_structured_result() -> None:
     assert not audit.issues
 
 
-def test_generate_reference_answer_with_trace_runs_generation_and_audit(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    provider = _SequenceProvider(
-        [
-            well_formed_reference_answer_payload(),
-            well_formed_reference_audit_payload(),
-        ]
-    )
-    monkeypatch.setattr(
-        "sikao_api.modules.llm.application.reference_answer_generator.build_llm_provider",
-        lambda *_args, **_kwargs: (provider, "mock"),
-    )
-
+def test_generate_reference_answer_with_trace_uses_builtin_stub_provider() -> None:
     trace = asyncio.run(
         generate_reference_answer_with_trace(
             settings=_settings(),
@@ -129,6 +116,7 @@ def test_generate_reference_answer_with_trace_runs_generation_and_audit(
     assert trace.audit_provider == "mock"
     assert trace.result.ai_self_audit_passed is True
     assert trace.result.audit_reason
+    assert len(trace.result.content) == 950
     assert len(trace.result.structure_outline) == 3
     assert len(trace.result.key_points) == 3
 
