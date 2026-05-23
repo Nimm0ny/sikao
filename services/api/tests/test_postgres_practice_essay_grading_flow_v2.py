@@ -14,7 +14,7 @@ from _helpers.essay_grading_route_v2_support import (
     seed_essay_question,
 )
 from _helpers.practice_content_support import build_postgres_client, register_user
-from sikao_api.db.models_v2 import EssayReportV2, EssaySubmissionV2
+from sikao_api.db.models_v2 import AuditLogV2, EssayReportV2, EssaySubmissionV2
 from sikao_api.modules.llm.application.essay_grader import EssayGradingTrace
 
 
@@ -85,7 +85,9 @@ def test_postgres_practice_essay_grading_roundtrip(
         assert body["report"]["totalScore"] == 77.0
         assert body["report"]["llmCallId"] > 0
         assert len(body["report"]["dimensions"]) == 5
-        assert body["referenceAnswers"] == []
+        assert len(body["referenceAnswers"]) == 1
+        assert body["referenceAnswers"][0]["source"] == "ai_generated"
+        assert body["referenceAnswers"][0]["status"] == "public"
         assert grade_calls["count"] == 1
 
         replay = client.post(
@@ -101,10 +103,16 @@ def test_postgres_practice_essay_grading_roundtrip(
             report = session.query(EssayReportV2).filter_by(
                 submission_id=submission_id
             ).one()
+            audits = list(
+                session.query(AuditLogV2)
+                .filter(AuditLogV2.action == "reference.generate.auto")
+                .order_by(AuditLogV2.id.asc())
+            )
             assert submission is not None
             assert submission.status == "graded"
             assert report.status == "completed"
             assert float(report.score or 0) == pytest.approx(77.0)
+            assert len(audits) == 1
 
 
 @pytest.mark.skipif(
