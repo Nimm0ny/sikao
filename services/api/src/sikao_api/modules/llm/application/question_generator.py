@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from sikao_api.core.config import Settings
 from sikao_api.modules.llm.application.llm import build_llm_provider
+from sikao_api.modules.llm.application.llm.json_parser import LlmJsonParseError
 from sikao_api.modules.llm.application.llm.prompts.question_generate import (
     PROMPT_VERSION as QUESTION_GENERATE_PROMPT_VERSION,
     build_question_generate_messages,
@@ -208,6 +209,17 @@ async def generate_questions_with_trace(
             count=count,
             generated_questions=generated_questions,
         )
+    except LlmJsonParseError as exc:
+        raise _annotate_llm_error(
+            LLMParseError(str(exc)),
+            prompt_version=QUESTION_GENERATE_PROMPT_VERSION,
+            provider=provider_label,
+            model=result.model,
+            messages=serialized_messages,
+            raw_text=result.content,
+            usage=usage,
+            parse_status="invalid_json",
+        ) from exc
     except PydanticValidationError as exc:
         raise _annotate_llm_error(
             LLMParseError("question generation response schema invalid"),
@@ -228,7 +240,7 @@ async def generate_questions_with_trace(
             messages=serialized_messages,
             raw_text=result.content,
             usage=usage,
-            parse_status="invalid_json",
+            parse_status="schema_violation",
         ) from exc
     except ValueError as exc:
         raise _annotate_llm_error(
