@@ -12,11 +12,11 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '@sikao/ui': resolve(__dirname, '../../packages/ui/src'),
       '@sikao/design-system': resolve(__dirname, '../../packages/design-system/src'),
       '@sikao/api-client': resolve(__dirname, '../../packages/api-client/src'),
       '@sikao/domain': resolve(__dirname, '../../packages/domain/src'),
       '@sikao/answer-engine': resolve(__dirname, '../../packages/answer-engine/src'),
+      '@sikao/calendar-engine': resolve(__dirname, '../../packages/calendar-engine/src'),
       '@sikao/editor': resolve(__dirname, '../../packages/editor/src'),
       '@sikao/shared-utils': resolve(__dirname, '../../packages/shared-utils/src'),
       '@sikao/config': resolve(__dirname, '../../packages/config/src'),
@@ -26,6 +26,10 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     globals: true, // expose describe/it/expect without explicit imports
+    // V5-M0.5 (2026-05-24): apps/web 业务层 big-bang 删除后, src/ 下没有
+    // 测试文件; 直到 V5-M3 (35 组件骨架) 才开始重建. 加 passWithNoTests
+    // 让 monorepo `npm test --workspaces` 通过空集合.
+    passWithNoTests: true,
     // Workspace-wide runs in this monorepo can push a few user-event heavy auth
     // tests past the 5s default even when behavior is correct.
     testTimeout: 15000,
