@@ -211,32 +211,31 @@ def _build_result(
     )
 
 
-async def generate_reference_answer(
+def build_reference_answer_trace(
     *,
-    settings: Settings,
-    question_stem: str,
-    materials: list[str],
-    word_limit: int,
-    db: Session | None = None,
-    user_id: int | None = None,
-    model: str | None = None,
-    audit_model: str | None = None,
-) -> ReferenceAnswer:
-    return (
-        await generate_reference_answer_with_trace(
-            settings=settings,
-            question_stem=question_stem,
-            materials=materials,
-            word_limit=word_limit,
-            db=db,
-            user_id=user_id,
-            model=model,
-            audit_model=audit_model,
-        )
-    ).result
+    draft: ReferenceAnswerDraftTrace,
+    audit: ReferenceAnswerAuditTrace,
+) -> ReferenceAnswerTrace:
+    return ReferenceAnswerTrace(
+        result=_build_result(payload=draft.payload, audit=audit.result),
+        generation_payload=draft.payload,
+        audit_result=audit.result,
+        raw_text=draft.raw_text,
+        audit_raw_text=audit.raw_text,
+        usage=draft.usage,
+        audit_usage=audit.usage,
+        provider=draft.provider,
+        model=draft.model,
+        messages=draft.messages,
+        prompt_version=draft.prompt_version,
+        audit_provider=audit.provider,
+        audit_model=audit.model,
+        audit_messages=audit.messages,
+        audit_prompt_version=audit.prompt_version,
+    )
 
 
-async def generate_reference_answer_with_trace(
+async def generate_reference_answer_draft_with_trace(
     *,
     settings: Settings,
     question_stem: str,
