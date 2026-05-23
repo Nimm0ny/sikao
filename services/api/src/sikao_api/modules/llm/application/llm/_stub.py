@@ -38,6 +38,26 @@ _QUESTION_AUDIT_PAYLOAD: dict[str, object] = {
     "reason": "Answer, stem, and options are internally consistent.",
     "issues": [],
 }
+_REFERENCE_ANSWER_PAYLOAD: dict[str, object] = {
+    "content": "A" * 950,
+    "structure_outline": [
+        "Opening thesis",
+        "Body analysis",
+        "Closing summary",
+    ],
+    "key_points": [
+        "Grounded in materials",
+        "Clear argument",
+        "Complete structure",
+    ],
+    "estimated_score": 86.0,
+}
+_REFERENCE_ANSWER_AUDIT_PAYLOAD: dict[str, object] = {
+    "passed": True,
+    "confidence": 0.93,
+    "reason": "Grounded in the materials and structurally sound.",
+    "issues": [],
+}
 
 
 class StubLLMProvider:
@@ -96,6 +116,16 @@ class StubLLMProvider:
 
     def _build_payload(self, *, messages: list[LLMMessage]) -> dict[str, object]:
         prompt = "\n".join(message.content for message in messages)
+        if self._is_reference_answer_self_audit_prompt(prompt):
+            return _REFERENCE_ANSWER_AUDIT_PAYLOAD
+        if self._is_reference_answer_prompt(prompt):
+            return _REFERENCE_ANSWER_PAYLOAD
+        if self._is_question_self_audit_prompt(prompt):
+            return _QUESTION_AUDIT_PAYLOAD
+        if self._is_question_generation_prompt(prompt):
+            return self._build_question_generation_payload(prompt)
+        if self._is_essay_grading_prompt(prompt):
+            return _ESSAY_PAYLOAD
         if "题目质量审核员" in prompt:
             return _QUESTION_AUDIT_PAYLOAD
         if "题目生成器" in prompt:
@@ -107,6 +137,42 @@ class StubLLMProvider:
         if "today recommender" in prompt.lower() or "recommendation cards" in prompt.lower():
             return self._build_recommendation_payload()
         return _ESSAY_PAYLOAD
+
+    @staticmethod
+    def _is_reference_answer_prompt(prompt: str) -> bool:
+        return (
+            "structure_outline" in prompt
+            and "key_points" in prompt
+            and "estimated_score" in prompt
+        )
+
+    @staticmethod
+    def _is_reference_answer_self_audit_prompt(prompt: str) -> bool:
+        return "grounding" in prompt and "coverage" in prompt and "issues" in prompt
+
+    @staticmethod
+    def _is_question_generation_prompt(prompt: str) -> bool:
+        return (
+            "SourceQuestionId:" in prompt
+            and "TargetDifficultyRange:" in prompt
+            and "options" in prompt.lower()
+        )
+
+    @staticmethod
+    def _is_question_self_audit_prompt(prompt: str) -> bool:
+        return (
+            "answer_correctness" in prompt
+            and "stem_clarity" in prompt
+            and "CorrectAnswer:" in prompt
+        )
+
+    @staticmethod
+    def _is_essay_grading_prompt(prompt: str) -> bool:
+        return (
+            "sample_answer" in prompt
+            and "evaluation" in prompt
+            and "dimensions" in prompt
+        )
 
     def _build_question_generation_payload(self, prompt: str) -> dict[str, object]:
         source_ids = [int(value) for value in re.findall(r"SourceQuestionId:\s*(\d+)", prompt)]
