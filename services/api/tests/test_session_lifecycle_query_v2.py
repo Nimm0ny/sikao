@@ -4,11 +4,21 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
+from fastapi.testclient import TestClient
+
 from _helpers.practice_content_support import build_client, register_user
 from sikao_api.db.models_v2 import AuditLogV2, PracticeSessionAnswerV2, PracticeSessionV2
 
 
-def _seed_session(client, *, user_id: int, track: str, status: str, started_at: datetime, last_activity_at: datetime | None) -> int:
+def _seed_session(
+    client: TestClient,
+    *,
+    user_id: int,
+    track: str,
+    status: str,
+    started_at: datetime,
+    last_activity_at: datetime | None,
+) -> int:
     app = cast(Any, client.app)
     factory = app.state.db.session_factory
     with factory() as session:
@@ -89,8 +99,11 @@ def test_session_lifecycle_active_query_and_lifecycle_owner_scope(tmp_path: Path
 
         lifecycle = client.get(f"/api/v2/practice/sessions/{paused_id}/lifecycle")
         assert lifecycle.status_code == 200, lifecycle.text
-        assert lifecycle.json()["status"] == "paused"
-        triggers = [item["trigger"] for item in lifecycle.json()["transitions"]]
+        lifecycle_payload = lifecycle.json()
+        assert lifecycle_payload["status"] == "paused"
+        assert lifecycle_payload["lastActivityAt"] is not None
+        assert lifecycle_payload["pausedCount"] == 0
+        triggers = [item["trigger"] for item in lifecycle_payload["transitions"]]
         assert "user_pause" in triggers
         assert "session.timeout_pause" in triggers
 

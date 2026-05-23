@@ -11,6 +11,7 @@ from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, PlanEventV2, Practi
 from sikao_api.db.schemas_v2 import ActionLinkV2, PracticeAnswerPayloadV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionItemV2, PracticeSessionResultResponseV2, SectionCardV2, SummaryMetricV2
 from sikao_api.modules.session.application.answer_flag_ops import promote_flagged_answers
 from sikao_api.modules.session.application.mode_dispatcher import resolve_session_selection
+from sikao_api.modules.session_lifecycle.application.transition_support import apply_transition
 from sikao_api.modules.plans.domain.rrule_subset import build_occurrence_ref, end_of_local_day, expand_occurrences, parse_occurrence_ref, start_of_local_day
 from sikao_api.modules.system.application.errors import ConflictError, NotFoundError, ValidationError
 
@@ -89,8 +90,13 @@ class SessionServiceV2:
         return practice_session
 
     def save_answers(
-        self, *, practice_session: PracticeSessionV2, answers: list[PracticeAnswerPayloadV2]
+        self,
+        *,
+        practice_session: PracticeSessionV2,
+        answers: list[PracticeAnswerPayloadV2],
+        request_id: str | None = None,
     ) -> None:
+        self._ensure_session_not_terminal(practice_session)
         self._ensure_distinct_answer_keys(answers)
         if not answers:
             self._ensure_session_not_submitted(practice_session.id)
@@ -126,8 +132,28 @@ class SessionServiceV2:
                 row.answered_at = datetime.now(UTC).replace(tzinfo=None)
                 self.session.add(row)
 
-        if existing:
+        if practice_session.status == "draft":
+            apply_transition(
+                self.session,
+                practice_session=practice_session,
+                trigger="first_answer",
+                actor="user",
+                actor_id=str(practice_session.user_id),
+                request_id=request_id,
+            )
+        elif practice_session.status == "paused":
+            apply_transition(
+                self.session,
+                practice_session=practice_session,
+                trigger="answer_during_paused",
+                actor="user",
+                actor_id=str(practice_session.user_id),
+                request_id=request_id,
+            )
+        elif existing:
             self._mark_session_in_progress(practice_session.id)
+        practice_session.last_activity_at = datetime.now(UTC).replace(tzinfo=None)
+        self.session.add(practice_session)
 
     def submit(self, *, practice_session: PracticeSessionV2) -> None:
         submitted_at = datetime.now(UTC).replace(tzinfo=None)
@@ -318,6 +344,13 @@ class SessionServiceV2:
             raise ConflictError(
                 "practice session already submitted",
                 code="practice_session_submitted",
+            )
+
+    def _ensure_session_not_terminal(self, practice_session: PracticeSessionV2) -> None:
+        if practice_session.status in {"abandoned", "expired"}:
+            raise ConflictError(
+                "practice session is not writable",
+                code="SESSION_NOT_WRITABLE",
             )
 
     def _load_existing_answers(

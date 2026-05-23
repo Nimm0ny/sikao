@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import AuditLogV2, PracticeSessionV2, UserV2
 from sikao_api.db.schemas_v2 import LifecycleTransition, SessionLifecycleResponseV2
+from sikao_api.modules.session_lifecycle.application.serializer import serialize_lifecycle
 from sikao_api.modules.system.application.errors import NotFoundError
 
 
@@ -50,15 +51,4 @@ def build_session_lifecycle(
                 reason=metadata.get("reason") if isinstance(metadata.get("reason"), str) else None,
             )
         )
-    return SessionLifecycleResponseV2(
-        status=practice_session.status,
-        paused_at=practice_session.paused_at,
-        paused_count=practice_session.paused_count,
-        last_heartbeat_at=practice_session.last_heartbeat_at,
-        expires_at=practice_session.expires_at,
-        abandoned_at=practice_session.abandoned_at,
-        abandoned_reason=practice_session.abandoned_reason,
-        force_submitted=practice_session.force_submitted,
-        force_submitted_reason=practice_session.force_submitted_reason,
-        transitions=transitions,
-    )
+    return serialize_lifecycle(practice_session, transitions=transitions)

@@ -57,13 +57,18 @@ def get_session(
 @router.post("/{session_id}/answers", response_model=OperationAckV2, dependencies=[Depends(verify_csrf_v2)])
 def save_answers(
     session_id: int,
+    request: Request,
     payload: PracticeAnswerUpsertRequestV2,
     user: Annotated[UserV2, Depends(get_current_user_v2)],
     session: Annotated[Session, Depends(get_db_session)],
 ) -> OperationAckV2:
     service = SessionServiceV2(session)
     practice_session = service.get_session(user=user, session_id=session_id)
-    service.save_answers(practice_session=practice_session, answers=payload.answers)
+    service.save_answers(
+        practice_session=practice_session,
+        answers=payload.answers,
+        request_id=getattr(request.state, "request_id", None),
+    )
     session.commit()
     return OperationAckV2(ok=True, status="saved")
 

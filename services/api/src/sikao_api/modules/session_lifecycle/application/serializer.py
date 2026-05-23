@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
+
 from sikao_api.db.models_v2 import PracticeSessionV2
-from sikao_api.db.schemas_v2 import SessionLifecycleResponseV2
+from sikao_api.db.schemas_v2 import LifecycleTransition, SessionLifecycleResponseV2
 
 
 def serialize_lifecycle(
     practice_session: PracticeSessionV2,
     *,
-    transitions=None,
+    transitions: Sequence[LifecycleTransition] | None = None,
 ) -> SessionLifecycleResponseV2:
     return SessionLifecycleResponseV2(
         status=practice_session.status,

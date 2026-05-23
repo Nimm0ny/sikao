@@ -4,11 +4,19 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
+from fastapi.testclient import TestClient
+
 from _helpers.practice_content_support import build_client, register_user
 from sikao_api.db.models_v2 import AuditLogV2, PracticeSessionV2
 
 
-def _seed_session(client, *, user_id: int, status: str, paused_at: datetime | None = None) -> int:
+def _seed_session(
+    client: TestClient,
+    *,
+    user_id: int,
+    status: str,
+    paused_at: datetime | None = None,
+) -> int:
     app = cast(Any, client.app)
     factory = app.state.db.session_factory
     with factory() as session:
@@ -33,7 +41,7 @@ def test_session_start_pause_resume_write_audit_and_timing(tmp_path: Path) -> No
 
         started = client.post(f"/api/v2/practice/sessions/{draft_id}/start")
         assert started.status_code == 200, started.text
-        assert started.json()["status"] == "inProgress"
+        assert started.json()["status"] == "in_progress"
         assert started.json()["firstQuestionAt"] is not None
 
         paused = client.post(f"/api/v2/practice/sessions/{draft_id}/pause")
@@ -43,7 +51,7 @@ def test_session_start_pause_resume_write_audit_and_timing(tmp_path: Path) -> No
 
         resumed = client.post(f"/api/v2/practice/sessions/{draft_id}/resume")
         assert resumed.status_code == 200, resumed.text
-        assert resumed.json()["status"] == "inProgress"
+        assert resumed.json()["status"] == "in_progress"
         assert resumed.json()["pausedTotalSeconds"] >= 0
 
         app = cast(Any, client.app)
