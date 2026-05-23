@@ -1,8 +1,8 @@
 # IA-V2 Phase 落地文档
 
 > **Status**: ACCEPTED
-> **Last Updated**: 2026-05-21
-> **Scope**: 把 [Frontend-IA-V2.md](../Frontend-IA-V2.md) 的 IA 决策按一级导航 / 层（layer）分组，每组对应一个 Phase 子目录。
+> **Last Updated**: 2026-05-23
+> **Scope**: 把 [Frontend-IA-V2.md](../Frontend-IA-V2.md) 的 IA 决策按一级导航 / 层（layer）分组，每组对应一个 Phase 子目录；横切的视觉基础设施单列一个 Phase。
 > **Convention**: 每个 Phase 子目录至少含一份 `README.md`（索引/分阶段实施文档）；落地内容多时拆 00~99 子文档。
 
 ---
@@ -39,6 +39,7 @@
 | Onboarding（Gate 层） | [Onboarding/](./Onboarding/) | TBD（占位） | [Onboarding/README.md](./Onboarding/README.md) | 含 DiagnosisResult |
 | Auth（鉴权层） | [Auth/](./Auth/) | TBD（占位） | [Auth/README.md](./Auth/README.md) | |
 | Marketing（公开层） | [Marketing/](./Marketing/) | **DONE** — v1 上线就绪 | [Marketing/README.md](./Marketing/README.md) | Landing + 法律 3 页 + Footer + 路由；P1 follow-up: SEO / ICP 真号 / About |
+| **Style-Guide-V5**（横切视觉基础） | [Style-Guide-V5/](./Style-Guide-V5/) | SPEC LOCKED — 待 Phase 1 实施 | [Style-Guide-V5/README.md](./Style-Guide-V5/README.md) | Spec 三件套已落（[`.kiro/specs/frontend-style-guide-v5/`](../../../.kiro/specs/frontend-style-guide-v5/)）；token 三层 + 35 组件 + 6 lint + V4→V5 双轨期 2026-05-23→06-06；跨 tab 共用基础设施 |
 
 ---
 
