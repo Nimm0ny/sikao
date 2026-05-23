@@ -19,11 +19,6 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-
-def _run(coro: Awaitable) -> None:
-    """asyncio.run wrapper — 跟 test_llm_provider.py 同 pattern (避免加 pytest-asyncio)."""
-    asyncio.run(coro)  # type: ignore[arg-type]
-
 from sikao_api.core.config import Settings
 from sikao_api.db.base import Base
 from sikao_api.db.models import (
@@ -43,6 +38,11 @@ from sikao_api.modules.essay.application.essay_grading import (
     grade_essay_record_async,
 )
 from sikao_api.modules.llm.application.llm.provider import ChatCompletionResult
+
+
+def _run(coro: Awaitable) -> None:
+    """asyncio.run wrapper — 跟 test_llm_provider.py 同 pattern (避免加 pytest-asyncio)."""
+    asyncio.run(coro)  # type: ignore[arg-type]
 
 # ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -484,8 +484,11 @@ class _StubProvider:
 
 def _patch_build_provider(monkeypatch, provider_obj, label: str = "system") -> None:
     monkeypatch.setattr(
-        "sikao_api.modules.essay.application.essay_grading.build_llm_provider",
-        lambda settings, db=None, user_id=None: (provider_obj, label),
+        "sikao_api.modules.llm.application.essay_grader.build_llm_provider",
+        lambda settings, db=None, user_id=None, timeout_seconds_override=None: (
+            provider_obj,
+            label,
+        ),
     )
 
 
@@ -546,11 +549,11 @@ def test_grade_essay_provider_build_failed_marks_failed(
     )
     sess.commit()
 
-    def _raise(settings, db=None, user_id=None):
+    def _raise(settings, db=None, user_id=None, timeout_seconds_override=None):
         raise LLMServiceError("api_key not configured", code="llm_config_missing")
 
     monkeypatch.setattr(
-        "sikao_api.modules.essay.application.essay_grading.build_llm_provider", _raise
+        "sikao_api.modules.llm.application.essay_grader.build_llm_provider", _raise
     )
     _run(grade_essay_record_async(session_factory, settings, record.id))
 

@@ -136,11 +136,14 @@ def _seed_essay_question_via_app(client: TestClient) -> int:
 
 
 def _patch_provider(monkeypatch, content: str | None = None) -> None:
-    """patch essay_grading.build_llm_provider 返 shared stub + 'system' label."""
+    """Patch essay_grader.build_llm_provider to return the shared stub."""
     payload = content or well_formed_essay_payload()
     monkeypatch.setattr(
-        "sikao_api.modules.essay.application.essay_grading.build_llm_provider",
-        lambda settings, db=None, user_id=None: (StubLlmProvider(payload), "system"),
+        "sikao_api.modules.llm.application.essay_grader.build_llm_provider",
+        lambda settings, db=None, user_id=None, timeout_seconds_override=None: (
+            StubLlmProvider(payload),
+            "system",
+        ),
     )
 
 

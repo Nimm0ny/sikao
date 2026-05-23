@@ -9,7 +9,7 @@ test_cross_feature_smoke.py 各自维护 _StubProvider + well_formed_essay_paylo
 - StubLlmProvider 实现 LlmProvider Protocol 结构 (不继承). 测试方按需 import,
   不绑死单 provider.
 - well_formed_essay_payload() 返一份过 essay sanity check 的 JSON. 调用方按
-  需 monkeypatch sikao_api.modules.essay.application.essay_grading.build_llm_provider.
+  需 monkeypatch sikao_api.modules.llm.application.essay_grader.build_llm_provider.
 """
 from __future__ import annotations
 
