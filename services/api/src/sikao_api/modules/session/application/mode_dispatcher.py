@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import QuestionV2, UserV2
 from sikao_api.db.schemas_v2 import PracticeSessionCreateRequestV2
+from sikao_api.modules.session.application.ai_generated_picker import pick_ai_generated_questions
 from sikao_api.modules.session.application.category_picker import pick_category_questions
 from sikao_api.modules.session.application.custom_picker import pick_custom_questions
 from sikao_api.modules.session.application.daily_picker import pick_daily_questions
@@ -53,5 +54,15 @@ def resolve_session_selection(
         )
         return SessionSelection(source_mode="wrong_redo", questions=questions, config_snapshot=snapshot)
     if mode == "ai_generated":
-        raise ValidationError("ai_generated mode is blocked until B22 lands", code="practice_session_mode_blocked")
+        questions, snapshot = pick_ai_generated_questions(
+            session,
+            user_id=user.id,
+            track=payload.track,
+            config=payload.config,
+        )
+        return SessionSelection(
+            source_mode="ai_generated",
+            questions=questions,
+            config_snapshot=snapshot,
+        )
     raise ValidationError("unsupported session mode", code="practice_session_mode_invalid")
