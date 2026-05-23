@@ -1,0 +1,29 @@
+/*
+ * Tag — V5 D.3.8 atom (skeleton).
+ * Why: piggybacks on Badge's variant/size visuals via composition; this file
+ *      only owns the remove-button affordance specific to Tag/Chip.
+ */
+.removeBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  margin-left: var(--space-1);
+  border: none;
+  border-radius: var(--radius-999);
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font-size: 12px;
+  line-height: 1;
+}
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: lint regex only matches single-feature @media queries; the compound `(hover: hover) and (pointer: fine)` query above is the canonical hover-capable form */
+  .removeBtn:hover { background: color-mix(in oklch, currentColor 18%, transparent); }
+}
+.removeBtn:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px;
+}

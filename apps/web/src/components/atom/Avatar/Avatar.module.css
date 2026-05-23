@@ -1,0 +1,54 @@
+/*
+ * Avatar — V5 D.3.18 atom (skeleton).
+ * Why: token-driven user avatar; size selectors via data-size; status dot
+ *      via data-status; 2px surface ring keeps the dot legible on any bg.
+ */
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-text-primary);
+  color: var(--color-bg-surface);
+  font-weight: var(--font-weight-semibold);
+  user-select: none;
+  flex-shrink: 0;
+}
+.root[data-shape='circle'] { border-radius: var(--radius-999); }
+.root[data-shape='square'] { border-radius: var(--radius-12); }
+.root[data-size='xs'] { width: 24px; height: 24px; font-size: var(--font-tiny); }
+.root[data-size='sm'] { width: 28px; height: 28px; font-size: var(--font-tiny); }
+.root[data-size='md'] { width: 32px; height: 32px; font-size: var(--font-meta); }
+.root[data-size='lg'] { width: 44px; height: 44px; font-size: var(--font-body); }
+.root[data-size='xl'] { width: 64px; height: 64px; font-size: var(--font-card); }
+
+.image {
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  object-fit: cover;
+  display: block;
+}
+.fallback {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+}
+.dot {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 28%;
+  height: 28%;
+  min-width: 8px;
+  min-height: 8px;
+  border-radius: var(--radius-999);
+  border: 2px solid var(--color-bg-surface);
+}
+.dot[data-status='online']  { background: var(--color-state-ok); }
+.dot[data-status='offline'] { background: var(--color-text-meta); }
+.dot[data-status='busy']    { background: var(--color-state-err); }
+.dot[data-status='away']    { background: var(--color-state-warn); }

@@ -1,0 +1,42 @@
+/*
+ * Badge — V5 D.3.8 atom (skeleton).
+ * Why: token-driven static label. Variant maps to brand / state / categorical
+ *      soft-bg + text colors; size buckets sm (h 18) / md (h 22).
+ *      Categorical variants use color-mix() to derive a soft tint from the
+ *      cat-* primitive (no dedicated soft token in V5 §2.5).
+ */
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-radius: var(--radius-999);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  line-height: 1;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+}
+.root[data-size='sm'] {
+  padding: 0 var(--space-2);
+  font-size: var(--font-tiny);
+  height: 18px;
+}
+.root[data-size='md'] {
+  padding: 0 var(--space-3);
+  font-size: var(--font-meta);
+  height: 22px;
+}
+
+.root[data-variant='brand'] { background: var(--color-brand-soft); color: var(--color-text-on-brand); }
+.root[data-variant='ok']    { background: var(--color-state-ok-soft); color: var(--color-state-ok); }
+.root[data-variant='warn']  { background: var(--color-state-warn-soft); color: var(--color-state-warn); }
+.root[data-variant='err']   { background: var(--color-state-err-soft); color: var(--color-state-err); }
+.root[data-variant='info']  { background: var(--color-state-info-soft); color: var(--color-state-info); }
+
+.root[data-variant='cat-yanyu']    { background: color-mix(in oklch, var(--color-cat-yanyu)    16%, transparent); color: var(--color-cat-yanyu); }
+.root[data-variant='cat-shuliang'] { background: color-mix(in oklch, var(--color-cat-shuliang) 16%, transparent); color: var(--color-cat-shuliang); }
+.root[data-variant='cat-panduan']  { background: color-mix(in oklch, var(--color-cat-panduan)  20%, transparent); color: var(--color-text-primary); }
+.root[data-variant='cat-ziliao']   { background: color-mix(in oklch, var(--color-cat-ziliao)   16%, transparent); color: var(--color-cat-ziliao); }
+.root[data-variant='cat-shenlun']  { background: color-mix(in oklch, var(--color-cat-shenlun)  16%, transparent); color: var(--color-cat-shenlun); }
+
+.leading { display: inline-flex; align-items: center; }
