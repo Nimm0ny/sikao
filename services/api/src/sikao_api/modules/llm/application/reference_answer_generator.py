@@ -292,14 +292,82 @@ async def generate_reference_answer_draft_with_trace(
     try:
         payload = parse_reference_answer(result.content)
     except LlmJsonParseError as exc:
-        raise LLMParseError(str(exc)) from exc
+        raise _annotate_llm_error(
+            LLMParseError(str(exc)),
+            prompt_version=REFERENCE_ANSWER_PROMPT_VERSION,
+            provider=provider_label,
+            model=result.model,
+            messages=[asdict(message) for message in messages],
+            raw_text=result.content,
+            usage={
+                "prompt_tokens": result.prompt_tokens,
+                "prompt_cache_hit_tokens": result.prompt_cache_hit_tokens,
+                "prompt_cache_miss_tokens": result.prompt_cache_miss_tokens,
+                "completion_tokens": result.completion_tokens,
+            },
+            parse_status="invalid_json",
+        ) from exc
     except PydanticValidationError as exc:
-        raise LLMParseError("reference answer response schema invalid") from exc
+        raise _annotate_llm_error(
+            LLMParseError("reference answer response schema invalid"),
+            prompt_version=REFERENCE_ANSWER_PROMPT_VERSION,
+            provider=provider_label,
+            model=result.model,
+            messages=[asdict(message) for message in messages],
+            raw_text=result.content,
+            usage={
+                "prompt_tokens": result.prompt_tokens,
+                "prompt_cache_hit_tokens": result.prompt_cache_hit_tokens,
+                "prompt_cache_miss_tokens": result.prompt_cache_miss_tokens,
+                "completion_tokens": result.completion_tokens,
+            },
+            parse_status="schema_violation",
+        ) from exc
     except ValueError as exc:
-        raise LLMParseError(str(exc)) from exc
+        raise _annotate_llm_error(
+            LLMParseError(str(exc)),
+            prompt_version=REFERENCE_ANSWER_PROMPT_VERSION,
+            provider=provider_label,
+            model=result.model,
+            messages=[asdict(message) for message in messages],
+            raw_text=result.content,
+            usage={
+                "prompt_tokens": result.prompt_tokens,
+                "prompt_cache_hit_tokens": result.prompt_cache_hit_tokens,
+                "prompt_cache_miss_tokens": result.prompt_cache_miss_tokens,
+                "completion_tokens": result.completion_tokens,
+            },
+            parse_status="schema_violation",
+        ) from exc
+    return ReferenceAnswerDraftTrace(
+        payload=payload,
+        raw_text=result.content,
+        usage={
+            "prompt_tokens": result.prompt_tokens,
+            "prompt_cache_hit_tokens": result.prompt_cache_hit_tokens,
+            "prompt_cache_miss_tokens": result.prompt_cache_miss_tokens,
+            "completion_tokens": result.completion_tokens,
+        },
+        provider=provider_label,
+        model=result.model,
+        messages=[asdict(message) for message in messages],
+        prompt_version=REFERENCE_ANSWER_PROMPT_VERSION,
+    )
 
+
+async def self_audit_reference_answer_with_trace(
+    *,
+    settings: Settings,
+    question_stem: str,
+    materials: list[str],
+    word_limit: int,
+    candidate: ReferenceAnswerPayload,
+    db: Session | None = None,
+    user_id: int | None = None,
+    model: str | None = None,
+) -> ReferenceAnswerAuditTrace:
     try:
-        audit_provider, audit_provider_label = build_llm_provider(
+        provider, provider_label = build_llm_provider(
             settings,
             db=db,
             user_id=user_id,
