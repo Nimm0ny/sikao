@@ -43,6 +43,7 @@ class _RecordingRuntime:
         self.login_called = asyncio.Event()
         self.raise_login = False
         self.calls: list[tuple[str, int, str | None]] = []
+        self.mock_exam_auto_submit_payloads: list[tuple[int, int]] = []
 
     async def run_daily_progress_snapshot(self) -> int:
         return 0
@@ -67,6 +68,9 @@ class _RecordingRuntime:
 
     async def run_daily_session_expire(self) -> int:
         return 0
+
+    async def run_mock_exam_auto_submit(self) -> list[tuple[int, int]]:
+        return list(self.mock_exam_auto_submit_payloads)
 
     async def run_login_adjustment_check(self, *, user_id: int, request_id: str | None) -> bool:
         self.calls.append(("login", user_id, request_id))
@@ -158,3 +162,34 @@ def test_create_app_lifespan_starts_home_scheduler(tmp_path: Path) -> None:
         assert scheduler is not None
         assert scheduler.is_running is True
     assert scheduler.is_running is False
+
+
+def test_home_scheduler_registers_mock_exam_auto_submit_job(tmp_path: Path) -> None:
+    settings = _make_settings(tmp_path)
+    db = _make_db(settings)
+    scheduler = HomeScheduler(db, settings=settings, runtime=_RecordingRuntime())
+
+    scheduler.schedule_recurring_jobs()
+    job_ids = {job.id for job in scheduler._scheduler.get_jobs()}
+    assert "home.mock_exam.auto_submit" in job_ids
+
+
+@pytest.mark.asyncio
+async def test_mock_exam_auto_submit_job_enqueues_recommender_refresh(tmp_path: Path) -> None:
+    settings = _make_settings(tmp_path)
+    db = _make_db(settings)
+    runtime = _RecordingRuntime()
+    runtime.mock_exam_auto_submit_payloads = [(9, 42)]
+    scheduler = HomeScheduler(db, settings=settings, runtime=runtime)
+    recorded: list[tuple[int, int, str | None]] = []
+
+    def _record_enqueue(*, user_id: int, session_id: int, request_id: str | None) -> bool:
+        recorded.append((user_id, session_id, request_id))
+        return True
+
+    scheduler.enqueue_submit_recommender_refresh = _record_enqueue  # type: ignore[method-assign]
+
+    result = await scheduler._job_mock_exam_auto_submit()
+
+    assert result == 1
+    assert recorded == [(9, 42, None)]

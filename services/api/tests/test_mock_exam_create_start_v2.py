@@ -179,6 +179,10 @@ def test_mock_exam_rejects_answers_before_start_and_pause_after_start(tmp_path: 
         assert blocked_answer.status_code == 409, blocked_answer.text
         assert blocked_answer.json()["code"] == "mock_exam_not_started"
 
+        blocked_submit = client.post(f"/api/v2/practice/sessions/{session_id}/submit")
+        assert blocked_submit.status_code == 409, blocked_submit.text
+        assert blocked_submit.json()["code"] == "INVALID_TRANSITION"
+
         started = client.post(f"/api/v2/practice/sessions/{session_id}/start")
         assert started.status_code == 200, started.text
 
