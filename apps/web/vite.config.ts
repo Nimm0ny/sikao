@@ -39,7 +39,6 @@ export default defineConfig({
   resolve: {
     alias: {
       '@': resolve(__dirname, 'src'),
-      '@sikao/ui': resolve(__dirname, '../../packages/ui/src'),
       '@sikao/design-system': resolve(__dirname, '../../packages/design-system/src'),
       '@sikao/api-client': resolve(__dirname, '../../packages/api-client/src'),
       '@sikao/domain': resolve(__dirname, '../../packages/domain/src'),

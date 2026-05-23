@@ -9,8 +9,6 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "@sikao/ui": ["../../packages/ui/src/index.ts"],
-      "@sikao/ui/*": ["../../packages/ui/src/*"],
       "@sikao/design-system": ["../../packages/design-system/src/index.ts"],
       "@sikao/design-system/*": ["../../packages/design-system/src/*"],
       "@sikao/api-client": ["../../packages/api-client/src/index.ts"],
