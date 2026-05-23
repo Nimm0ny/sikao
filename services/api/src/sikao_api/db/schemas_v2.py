@@ -464,8 +464,11 @@ class LifecycleTransition(CamelModel):
 
 class SessionLifecycleResponseV2(CamelModel):
     status: str
+    first_question_at: UtcDatetime | None = None
+    last_activity_at: UtcDatetime | None = None
     paused_at: UtcDatetime | None = None
     paused_count: int = 0
+    paused_total_seconds: int = 0
     last_heartbeat_at: UtcDatetime | None = None
     expires_at: UtcDatetime | None = None
     abandoned_at: UtcDatetime | None = None
@@ -473,6 +476,10 @@ class SessionLifecycleResponseV2(CamelModel):
     force_submitted: bool = False
     force_submitted_reason: str | None = None
     transitions: list[LifecycleTransition] = Field(default_factory=list)
+
+
+class SessionDiscardRequestV2(CamelModel):
+    reason: str | None = Field(default=None, max_length=64)
 
 
 class ActiveSessionProgress(CamelModel):
