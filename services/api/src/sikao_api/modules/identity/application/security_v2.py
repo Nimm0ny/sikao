@@ -201,6 +201,7 @@ def get_current_auth_context(
     now = datetime.now(UTC).replace(tzinfo=None)
     if auth_session.expires_at <= now:
         raise UnauthorizedError("session expired", code="session_expired")
+    request.state.current_user_v2_id = user.id
     return AuthContextV2(user=user, auth_session=auth_session)
 
 
