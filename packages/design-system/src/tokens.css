@@ -1,63 +1,78 @@
 /*
- * Design tokens — Sikao Frontend Style Guide v1 (2026-05-19 蓝白主色修订).
+ * Design tokens — Sikao Frontend Style Guide.
  *
  * **SSOT** (CLAUDE.md §4 硬约束): 本文件是 sikao 设计 token 的单一权威源.
  * 运行时由 apps/web/src/styles/tokens.css shim 通过 @import 注入到 React app.
  *
- * 规范本体: docs/vault/04-design/Frontend Style Guide.html (2026-05-12 交付).
+ * ═══════════════════════════════════════════════════════════════════════
+ *  2026-05-23 V5 HARD-CUT (lhr 2026-05-23 拍板)
  *
- * v1 核心改动 (lhr 2026-05-19 批准蓝白主色, 完全按规范走不许创新):
- *   - primary brand/action 改为 blue-white: accent blue owns CTA / active / focus
- *   - type scale 全站压缩 ~45% (display 88→44 / h1 56→32 / h2 36→24 / h3 22→18 / body 15→14)
- *   - button radius 10 → 4 (--r-tiny, alias 经 --r-btn 走过)
- *   - paper / ink → neutral paper / cool gray ink
- *   - dark mode 改为深蓝黑夜间模式
- *   - --r-pill 9999 → 999 (数学等价)
+ *  全工程视觉语言由 V1 蓝白主色硬切到 V5 yellow-brand 系统:
+ *  - V1 region (本文件 :root + [data-theme='dark'/'night']) 现在仅作
+ *    V4 alias 兼容层存活, 通过 var(--color-*) 间接引用 V5 token.
+ *  - V5 region (文件后段 §1-§7) 是新 SSOT, 三层架构 (primitive / semantic
+ *    / component) + 多端断点 + Rail 折叠.
+ *  - Sunset 硬日期 2026-06-06 (R1/Q6 决策): V1 alias region 在该日期
+ *    后由 task 21.3 删除.
+ *  - V1 视觉效果 (蓝色 CTA / 14px body / 蓝色 focus ring) 在硬切后立即
+ *    停用; 全工程 hover/active/CTA 视觉为 V5 yellow-brand `#FFD200`.
  *
- * Alias 兼容层 (本文件末尾): 把旧 token 名 (--brand / --paper-deep / --ink-muted / --line /
- * --success / --shadow-card / --r-btn / --tracking-* …) 全部映射到新 token,
- * 防止现有代码 import token 时出现未定义变量 → 渲染破图. PR2 grep-replace 后会清理.
+ *  原 v1 (2026-05-19 蓝白主色) 的核心改动列表保留作历史记录:
+ *    - primary brand/action: blue-white (V1) → yellow-brand `#FFD200` (V5)
+ *    - type scale: 全站压缩 ~45% 已是 V1 方案; V5 进一步把 body 14→13
+ *    - button radius: V1 已收敛到 4px; V5 改为 10px (--btn-radius-md)
+ *    - paper / ink → V5 --color-bg-* / --color-text-*
+ *    - dark mode 改为 V5 [data-v5-theme='dark']; V1 [data-theme='dark'/
+ *      'night'] 在硬切区段保留, 但对应 token 已 alias 到 V5 dark 值.
+ *    - --r-pill 9999 → 999 (数学等价)
  *
- * Themes:
- *   :root              default (white/blue primary + gray reading ladder)
- *   [data-theme="pure"]   素白 alias (same white/blue palette)
- *   [data-theme="dark"]   深蓝黑夜间模式 (blue action accent, 取代 night)
- *   [data-theme="night"]  alias 到 dark (兼容旧 toggle)
+ * ═══════════════════════════════════════════════════════════════════════
  *
- * Density / reading-size:
- *   [data-density="compact"|"cozy"]   行间距与卡片 padding
- *   [data-reading="md"|"lg"|"xl"]      阅读区字号
+ * Themes (硬切后):
+ *   :root              V5 yellow-brand light (default)
+ *   [data-theme='pure']   no-op alias to default :root
+ *   [data-theme='dark']   V5 dark via V1 alias (reuses V5 §3 dark palette)
+ *   [data-theme='night']  alias to dark (legacy toggle compatibility)
+ *   [data-v5-theme='dark'] V5 native dark trigger (preferred for new code)
+ *
+ * Density / reading-size (V1 keep, 与视觉换代正交):
+ *   [data-density='compact'|'cozy']   行间距与卡片 padding
+ *   [data-reading='md'|'lg'|'xl']      阅读区字号
  */
 
 :root {
-  /* ── paper (surface ladder, neutral white) ────────────────────────── */
-  --paper-1: #FFFFFF;
-  --paper-2: #F7F9FC;
-  --paper-3: #EEF2F7;
+  /* ── paper (surface ladder) — V4 alias to V5 §2.1 surface tokens ─── */
+  --paper-1: var(--color-bg-surface);
+  --paper-2: var(--color-bg-elevated);
+  --paper-3: var(--color-bg-sunken);
 
-  /* ── ink (text ladder) ────────────────────────────────────────────── */
-  --ink-1: #111827;
-  --ink-2: #374151;
-  --ink-3: #6B7280;
-  --ink-4: #9CA3AF;
+  /* ── ink (text ladder) — V4 alias to V5 §2.2 text tokens ─────────── */
+  --ink-1: var(--color-text-primary);
+  --ink-2: var(--color-text-secondary);
+  --ink-3: var(--color-text-meta);
+  --ink-4: var(--color-text-disabled);
 
-  /* ── line (border ladder) ─────────────────────────────────────────── */
-  --line-1: #E5E7EB;
-  --line-2: #D1D5DB;
-  --line-3: #CBD5E1;
+  /* ── line (border ladder) — V4 alias to V5 §2.3 border tokens ───── */
+  --line-1: var(--color-border-subtle);
+  --line-2: var(--color-border-default);
+  --line-3: var(--color-border-strong);
 
-  /* ── accent (primary brand/action blue) ───────────────────────────── */
-  --accent-1:  #2563EB;
-  --accent-2:  #1D4ED8;
-  --accent-50: #EFF6FF;
+  /* ── accent — V4 alias to V5 brand-yellow (HARD-CUT from V1 blue)
+   * @deprecated 2026-05-23 — sunset 2026-06-06. V1 #2563EB blue CTA palette
+   * is replaced by V5 #FFD200 brand-yellow per INV-2 invariant. All apps
+   * consuming --accent-* will visually shift from blue to yellow at this
+   * commit. Surface-level migration to --color-brand-* lands in Phase 6. */
+  --accent-1:  var(--color-brand-primary);
+  --accent-2:  var(--color-brand-hover);
+  --accent-50: var(--color-brand-soft);
 
-  /* ── semantic (functional only · never decoration) ────────────────── */
-  --ok:      #15803D;
-  --ok-50:   #F0FDF4;
-  --warn:    #D97706;
-  --warn-50: #FFFBEB;
-  --err:     #DC2626;
-  --err-50:  #FEF2F2;
+  /* ── semantic — V4 alias to V5 §2.4 state tokens ─────────────────── */
+  --ok:      var(--color-state-ok);
+  --ok-50:   var(--color-state-ok-soft);
+  --warn:    var(--color-state-warn);
+  --warn-50: var(--color-state-warn-soft);
+  --err:     var(--color-state-err);
+  --err-50:  var(--color-state-err-soft);
 
   /* exam-accent — 答题"当前题/做题状态"信号色, 跟 --err (错误语义) 解耦.
      来源: design/design_handoff_xingce_exam/TOKENS.md §1 建议. lhr 2026-05-11 批准. */
@@ -77,44 +92,46 @@
   --data-4: #3B82F6;
   --data-5: #1D4ED8;
 
-  /* ── spacing (8px base · also 4 / 12 / 16 / 24 / 32 / 48 / 64 / 96) ─ */
-  --sp-1: 4px;
-  --sp-2: 8px;
-  --sp-3: 12px;
-  --sp-4: 16px;
-  --sp-5: 24px;
-  --sp-6: 32px;
-  --sp-7: 48px;
-  --sp-8: 64px;
-  --sp-9: 96px;
+  /* ── spacing — V4 alias to V5 §1.2 space scale ──────────────────── */
+  --sp-1: var(--space-1);
+  --sp-2: var(--space-2);
+  --sp-3: var(--space-3);
+  --sp-4: var(--space-4);
+  --sp-5: var(--space-5);
+  --sp-6: var(--space-6);
+  --sp-7: var(--space-7);
+  --sp-8: var(--space-8);
+  --sp-9: 96px;  /* V5 has no --space-9; keep V1 value as-is */
 
-  /* ── radius (enforced by lint:radius-token) ───────────────────────── */
+  /* ── radius — V4 alias to V5 §1.3 radius scale + §4.1 card radius ─ */
   --r-1:       2px;
-  --r-tiny:    4px;
+  --r-tiny:    var(--btn-radius-md);
   --r-2:       6px;
-  --r-card:    10px;
-  --r-card-lg: 14px;
-  --r-pill:    999px;
+  --r-card:    var(--card-radius);
+  --r-card-lg: var(--card-radius-lg);
+  --r-pill:    var(--radius-999);
 
-  /* ── shadow (only on elevated cards · no decoration shadow) ───────── */
-  --shadow-card: 0 1px 0 rgba(17,24,39,.04), 0 8px 24px -14px rgba(17,24,39,.18);
-  --shadow-pop:  0 16px 40px -18px rgba(17,24,39,.28);
+  /* ── shadow — V4 alias to V5 §1.6 shadow scale ──────────────────── */
+  --shadow-card: var(--shadow-l1);
+  --shadow-pop:  var(--shadow-l3);
 
-  /* ── type scale ───────────────────────────────────────────────────── */
-  --t-display: 44px;
-  --t-h1:      32px;
-  --t-h2:      24px;
-  --t-h3:      18px;
-  --t-body:    14px;
-  --t-small:   13px;
-  --t-meta:    12px;
-  --t-tiny:    11px;
+  /* ── type scale — V4 alias to V5 §1.4 font size scale ─────────────
+   * V5 reduces display 44→40 and body 14→13. Other sizes match V1.
+   * Surface-level adoption of --font-* lands in Phase 6. */
+  --t-display: var(--font-display);
+  --t-h1:      var(--font-h1);
+  --t-h2:      var(--font-h2);
+  --t-h3:      var(--font-h3);
+  --t-body:    var(--font-card);    /* V1 14px maps to --font-card (16/14 mobile) */
+  --t-small:   var(--font-body);    /* V1 13px maps to --font-body */
+  --t-meta:    var(--font-meta);
+  --t-tiny:    var(--font-tiny);
 
-  /* ── z-index (single ladder) ──────────────────────────────────────── */
-  --z-nav:     20;
-  --z-popover: 40;
-  --z-modal:   60;
-  --z-toast:   80;
+  /* ── z-index — V4 alias to V5 §4.6 z-index ladder ───────────────── */
+  --z-nav:     var(--z-rail);    /* V1 nav covers both rail + topbar; alias to lower z */
+  --z-popover: var(--z-popover);
+  --z-modal:   var(--z-modal);
+  --z-toast:   var(--z-toast);
 
   /* ── font families ────────────────────────────────────────────────── */
   --font-serif: 'Source Serif 4', 'Songti SC', serif;
@@ -181,30 +198,25 @@
 }
 
 /*
- * ── Focus ring (global a11y, Frontend Style Guide v1) ────────────────
- * 任何 interactive element 在键盘 focus 时显示 2px deep blue ring + 2px offset.
+ * ── Focus ring (global a11y, V5 hardcut to --color-focus-ring) ───────
+ * @deprecated 2026-05-23 — V1 used --accent-2 (deep blue); V5 uses
+ * --color-focus-ring (still blue #2B6CFF light / #7BA8FF dark).
  */
 *:focus-visible {
-  outline: 2px solid var(--accent-2);
+  outline: 2px solid var(--color-focus-ring);
   outline-offset: 2px;
 }
 
-/* THEME · pure (素白 — same white/blue palette) */
+/*
+ * THEME · pure (素白 alias to default :root, kept for backward-compat toggle)
+ *
+ * @deprecated 2026-05-23 — sunset 2026-06-06. V1 had a separate "pure" theme
+ * but its values were identical to default :root anyway. V5 default :root
+ * already provides the white/yellow palette, so [data-theme='pure'] is now
+ * a no-op alias preserved only for existing toggle code paths.
+ */
 [data-theme='pure'] {
-  --paper-1: #FFFFFF;
-  --paper-2: #F7F9FC;
-  --paper-3: #EEF2F7;
-  --line-1:  #E5E7EB;
-  --line-2:  #D1D5DB;
-  --line-3:  #CBD5E1;
-  --ink-1:   #111827;
-  --ink-2:   #374151;
-  --ink-3:   #6B7280;
-  --ink-4:   #9CA3AF;
-  --accent-1:  #2563EB;
-  --accent-2:  #1D4ED8;
-  --accent-50: #EFF6FF;
-  --font-serif: 'Source Serif 4', Georgia, serif;
+  /* intentionally empty — inherits V5 default :root tokens */
 }
 
 /* THEME · dark (深蓝黑夜间模式, 取代旧 night, Frontend Style Guide v1) */
