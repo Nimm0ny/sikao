@@ -219,81 +219,26 @@
   /* intentionally empty — inherits V5 default :root tokens */
 }
 
-/* THEME · dark (深蓝黑夜间模式, 取代旧 night, Frontend Style Guide v1) */
-[data-theme='dark'], :root[data-theme='dark'] {
-  --paper-1: #0F172A;
-  --paper-2: #111827;
-  --paper-3: #1E293B;
-  --ink-1:   #F8FAFC;
-  --ink-2:   #E2E8F0;
-  --ink-3:   #CBD5E1;
-  --ink-4:   #94A3B8;
-  --line-1:  #1E293B;
-  --line-2:  #334155;
-  --line-3:  #475569;
-  --accent-1:  #60A5FA;
-  --accent-2:  #93C5FD;
-  --accent-50: #172554;
-
-  /* semantic 反相微调 (dark 上 ok/warn/err 提亮) */
-  --ok:      #86EFAC;
-  --ok-50:   #052E16;
-  --warn:    #FBBF24;
-  --warn-50: #451A03;
-  --err:     #F87171;
-  --err-50:  #450A0A;
-
-  /* data scale 反相: 深蓝灰 → 亮行动蓝 */
-  --data-0: #1E293B;
-  --data-1: #1E3A8A;
-  --data-2: #1D4ED8;
-  --data-3: #2563EB;
-  --data-4: #60A5FA;
-  --data-5: #93C5FD;
-
-  /* shadow alpha 在暗底要更深 */
-  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 0 rgb(0 0 0 / 0.4);
-  --shadow-pop:  0 10px 30px -10px rgb(0 0 0 / 0.6);
-
-  /* semantic surface tints (dark 真值跟 light tone 不同, light bg-* 提亮反相) */
-  --ok-bg:   var(--ok-50);
-  --warn-bg: var(--warn-50);
-  --bad-bg:  var(--err-50);
-}
-
-/*
- * THEME · night (旧 frontend night theme 的兼容入口, alias 到 dark)
- *
- * 历史 toggle 用 [data-theme='night'] 切夜读; v1 后统一 dark, night 保留 alias.
+/* THEME · dark (V1 dark trigger, post-hard-cut)
+ * @deprecated 2026-05-23 — sunset 2026-06-06. V5 §3 above already activates
+ * for [data-theme='dark'], aliasing V1 names to V5 dark palette. This block
+ * keeps ONLY V1-exclusive tokens that V5 has no concept of:
+ *   - data scale 反相 (heatmap visualization)
+ *   - bg/ok-bg/warn-bg/bad-bg semantic surface tint aliases
+ * All V1 paper/ink/line/accent/ok/warn/err/shadow dark overrides are removed —
+ * they now follow V5 dark via the var() alias bridge in :root.
  */
+[data-theme='dark'], :root[data-theme='dark'],
 [data-theme='night'] {
-  --paper-1: #0F172A;
-  --paper-2: #111827;
-  --paper-3: #1E293B;
-  --ink-1:   #F8FAFC;
-  --ink-2:   #E2E8F0;
-  --ink-3:   #CBD5E1;
-  --ink-4:   #94A3B8;
-  --line-1:  #1E293B;
-  --line-2:  #334155;
-  --line-3:  #475569;
-  --accent-1:  #60A5FA;
-  --accent-2:  #93C5FD;
-  --accent-50: #172554;
-  --ok:      #86EFAC;
-  --ok-50:   #052E16;
-  --warn:    #FBBF24;
-  --warn-50: #451A03;
-  --err:     #F87171;
-  --err-50:  #450A0A;
+  /* data scale 反相: 深蓝灰 → 亮行动蓝 (V1-only, no V5 equivalent yet) */
   --data-0: #1E293B;
   --data-1: #1E3A8A;
   --data-2: #1D4ED8;
   --data-3: #2563EB;
   --data-4: #60A5FA;
   --data-5: #93C5FD;
-  --shadow-card: 0 1px 2px 0 rgb(0 0 0 / 0.3), 0 1px 3px 0 rgb(0 0 0 / 0.4);
-  --shadow-pop:  0 10px 30px -10px rgb(0 0 0 / 0.6);
+
+  /* semantic surface tint aliases (V1-only naming convention) */
   --ok-bg:   var(--ok-50);
   --warn-bg: var(--warn-50);
   --bad-bg:  var(--err-50);
@@ -608,15 +553,19 @@ em, i { font-style: normal; }
 }
 
 /* ── §3 V5 Semantic layer — dark override ───────────────────────────────────
- * Activated by `[data-v5-theme='dark']` on <html>.
- * Note: V5 uses a distinct attribute `data-v5-theme` (not the V1 `data-theme`)
- * so V5 dark mode does NOT collide with the existing V1 `[data-theme='dark']`
- * / `[data-theme='night']` toggles. V1 and V5 dark themes can coexist during
- * the dual-track period (until 2026-06-06 sunset).
+ * Activated by ANY of:
+ *   [data-v5-theme='dark']   — V5 native trigger (preferred for new code)
+ *   [data-theme='dark']      — V1 legacy toggle, alias-bridged here
+ *   [data-theme='night']     — V1 legacy toggle, alias-bridged here
+ * After 2026-05-23 hard-cut, V1 dark/night toggles activate V5 dark palette
+ * directly. V1 token names (--paper-* / --ink-* / etc.) are var()-aliased to
+ * V5 names in :root, so they automatically follow the V5 dark switch here.
  * Sourced from design.md §C.2.1 to §C.2.5 dark column.
  * ─────────────────────────────────────────────────────────────────────────── */
 
-[data-v5-theme='dark'] {
+[data-v5-theme='dark'],
+[data-theme='dark'],
+[data-theme='night'] {
   /* §2.1 surface — dark */
   --color-bg-page:     #0E0F11;
   --color-bg-app:      #16181B;
