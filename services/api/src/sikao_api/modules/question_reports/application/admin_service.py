@@ -145,6 +145,11 @@ class QuestionReportAdminService:
             self.session.commit()
             return load_admin_item_or_raise(self.session, report_id=report.id)
 
+        raise ValidationError(
+            "unsupported admin status transition",
+            code="question_report_admin_status_invalid",
+        )
+
     def apply_fix(
         self,
         *,
@@ -170,7 +175,7 @@ class QuestionReportAdminService:
         report.status = QuestionReportStatus.RESOLVED_FIXED.value
         report.handled_by_admin_id = admin_user.id
         report.handled_at = _utc_now()
-        report.admin_response = payload.admin_response
+        report.admin_response = require_admin_response(payload.admin_response)
         report.duplicate_of_report_id = None
         report.applied_fix = {
             "field": payload.field.value,
@@ -274,6 +279,9 @@ class QuestionReportAdminService:
             duplicate_of is None
             or duplicate_of.deleted_at is not None
             or duplicate_of.question_id != report.question_id
+            or duplicate_of.status
+            not in ACTIVE_QUESTION_REPORT_STATUSES
+            | {QuestionReportStatus.RESOLVED_DUPLICATE.value}
         ):
             raise ValidationError(
                 "duplicate target is invalid",

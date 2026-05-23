@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from sqlalchemy import select
@@ -9,6 +10,8 @@ from sikao_api.db.models_v2 import QuestionOptionV2, QuestionV2
 from sikao_api.db.schemas_v2 import QuestionReportApplyFixRequestV2
 from sikao_api.modules.question_reports.domain.types import QuestionReportFixField
 from sikao_api.modules.system.application.errors import ValidationError
+
+_ANSWER_SPLIT_RE = re.compile(r"[,，、/\s]+")
 
 
 def apply_fix_to_question(
@@ -48,18 +51,23 @@ def apply_fix_to_question(
 
     if payload.field == QuestionReportFixField.CORRECT_ANSWER:
         text_after = require_text_after(payload)
+        normalized_answer = normalize_answer_text_against_option_keys(
+            session,
+            question=question,
+            text_after=text_after,
+        )
         if "correct_answer" in question.content_json:
             before_correct_answer: Any = question.content_json.get("correct_answer")
             content_json = dict(question.content_json)
-            content_json["correct_answer"] = text_after
+            content_json["correct_answer"] = normalized_answer
             question.content_json = content_json
-            return before_correct_answer, text_after
+            return before_correct_answer, normalized_answer
         if "answerText" in question.content_json:
             before_answer_text: Any = question.content_json.get("answerText")
             content_json = dict(question.content_json)
-            content_json["answerText"] = text_after
+            content_json["answerText"] = normalized_answer
             question.content_json = content_json
-            return before_answer_text, text_after
+            return before_answer_text, normalized_answer
         raise ValidationError(
             "question does not expose answer payload",
             code="question_report_fix_field_missing",
@@ -181,3 +189,58 @@ def _apply_option_fix(
         }
         question.content_json = content_json
     return before_options, desired
+
+
+def normalize_answer_text_against_option_keys(
+    session: Session,
+    *,
+    question: QuestionV2,
+    text_after: str,
+) -> str:
+    option_keys = _load_option_keys(session, question=question)
+    if not option_keys:
+        return text_after.strip()
+    parsed_keys = _parse_answer_keys(text_after=text_after, option_keys=option_keys)
+    if (
+        not parsed_keys
+        or any(key not in option_keys for key in parsed_keys)
+        or len(set(parsed_keys)) != len(parsed_keys)
+    ):
+        raise ValidationError(
+            "correct answer must reference existing option keys",
+            code="question_report_fix_answer_invalid",
+        )
+    if all(len(key) == 1 and key.isalnum() for key in option_keys):
+        return "".join(sorted(parsed_keys))
+    if len(parsed_keys) == 1:
+        return parsed_keys[0]
+    return ",".join(parsed_keys)
+
+
+def _load_option_keys(session: Session, *, question: QuestionV2) -> set[str]:
+    row_keys = set(
+        session.scalars(
+            select(QuestionOptionV2.option_key).where(
+                QuestionOptionV2.question_id == question.id
+            )
+        )
+    )
+    if row_keys:
+        return {str(key) for key in row_keys}
+    raw_options = question.content_json.get("options")
+    if isinstance(raw_options, dict):
+        return {str(key) for key in raw_options}
+    return set()
+
+
+def _parse_answer_keys(*, text_after: str, option_keys: set[str]) -> list[str]:
+    normalized = text_after.strip()
+    if normalized in option_keys:
+        return [normalized]
+    parts = [part for part in _ANSWER_SPLIT_RE.split(normalized) if part]
+    if len(parts) > 1:
+        return parts
+    if all(len(key) == 1 and key.isalnum() for key in option_keys):
+        collapsed = _ANSWER_SPLIT_RE.sub("", normalized)
+        return list(collapsed)
+    return [normalized]
