@@ -30,6 +30,8 @@ from sikao_api.modules.system.application.errors import ConflictError, NotFoundE
 
 VerificationPurpose = Literal["register", "reset_password", "login", "bind"]
 TargetKind = Literal["email", "phone"]
+_RESERVED_ADMIN_EMAIL_PREFIX = "__admin__."
+_RESERVED_ADMIN_EMAIL_DOMAIN = "@system.local"
 
 
 class IdentityServiceV2:
@@ -38,6 +40,11 @@ class IdentityServiceV2:
 
     def register_email(self, *, email: str, password: str, display_name: str) -> tuple[UserV2, AuthSessionV2, str]:
         normalized = normalize_email(email)
+        if _is_reserved_admin_email(normalized):
+            raise ValidationError(
+                "email namespace is reserved",
+                code="reserved_email_namespace",
+            )
         if self.session.scalar(select(EmailContactV2).where(EmailContactV2.email == normalized)) is not None:
             raise ConflictError("email already registered", code="email_taken")
         user = UserV2(display_name=display_name)
@@ -97,6 +104,11 @@ class IdentityServiceV2:
         normalized = normalize_email(target_value) if target_kind == "email" else normalize_phone(target_value)
         if not normalized:
             raise ValidationError("invalid target value", code="invalid_target")
+        if target_kind == "email" and _is_reserved_admin_email(normalized):
+            raise ValidationError(
+                "email namespace is reserved",
+                code="reserved_email_namespace",
+            )
         code = generate_verification_code()
         token = VerificationTokenV2(
             target_kind=target_kind,
@@ -168,3 +180,9 @@ class IdentityServiceV2:
             auth_session.revoked_at = revoked_at
             self.session.add(auth_session)
         return user
+
+
+def _is_reserved_admin_email(value: str) -> bool:
+    return value.startswith(_RESERVED_ADMIN_EMAIL_PREFIX) and value.endswith(
+        _RESERVED_ADMIN_EMAIL_DOMAIN
+    )

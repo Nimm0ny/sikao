@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from sikao_api.db.models_v2 import QuestionV2
-from sikao_api.modules.ai_questions.application.feedback import refresh_ai_question_quality
+from sikao_api.db.models_v2 import AuditLogV2, QuestionReportV2, QuestionV2
+from sikao_api.modules.ai_questions.application.feedback import recompute_quality_score
+from sikao_api.modules.question_reports.domain.types import (
+    ACTIVE_QUESTION_REPORT_STATUSES,
+)
 from sikao_api.modules.system.application.audit_v2 import add_audit_log
 
 _AI_SOURCES = ("ai_generated", "ai_modified")
+_AI_FEEDBACK_ACTION_PREFIX = "ai_question.feedback."
 
 
 def cleanup_low_quality_ai_questions(
@@ -18,28 +20,56 @@ def cleanup_low_quality_ai_questions(
     min_quality: float = 2.5,
     max_reports: int = 5,
 ) -> int:
+    active_report_counts = _aggregate_active_report_counts(session)
+    question_ids_to_refresh = set(active_report_counts)
+    question_ids_to_refresh.update(
+        session.scalars(select(QuestionV2.id).where(QuestionV2.source.in_(_AI_SOURCES)))
+    )
+    question_ids_to_refresh.update(
+        session.scalars(select(QuestionV2.id).where(QuestionV2.report_count > 0))
+    )
+    if not question_ids_to_refresh:
+        return 0
+
     questions = list(
         session.scalars(
             select(QuestionV2)
-            .where(
-                QuestionV2.source.in_(_AI_SOURCES),
-                QuestionV2.is_active.is_(True),
-            )
+            .where(QuestionV2.id.in_(question_ids_to_refresh))
             .with_for_update()
         )
     )
     if not questions:
         return 0
 
-    _refresh_ai_question_quality(session, questions=questions)
+    like_counts = _aggregate_feedback_counts(
+        session,
+        question_ids=[question.id for question in questions if question.source in _AI_SOURCES],
+        action="like",
+    )
+    legacy_report_counts = _aggregate_feedback_counts(
+        session,
+        question_ids=[question.id for question in questions if question.source in _AI_SOURCES],
+        action="report",
+    )
+    _refresh_question_quality_from_reports(
+        questions=questions,
+        active_report_counts=active_report_counts,
+        like_counts=like_counts,
+        legacy_report_counts=legacy_report_counts,
+    )
 
     deactivated = 0
     for question in questions:
+        session.add(question)
+        if question.source not in _AI_SOURCES:
+            continue
         if not _should_deactivate(
             question,
             min_quality=min_quality,
             max_reports=max_reports,
         ):
+            continue
+        if question.is_active is False:
             continue
         before = {
             "is_active": True,
@@ -75,14 +105,70 @@ def cleanup_low_quality_ai_questions(
     return deactivated
 
 
-def _refresh_ai_question_quality(
-    session: Session,
+def _refresh_question_quality_from_reports(
     *,
-    questions: Sequence[QuestionV2],
+    questions: list[QuestionV2],
+    active_report_counts: dict[int, int],
+    like_counts: dict[int, int],
+    legacy_report_counts: dict[int, int],
 ) -> None:
     for question in questions:
-        refresh_ai_question_quality(session, question=question)
-        session.add(question)
+        report_count_from_reports = active_report_counts.get(question.id, 0)
+        if question.source not in _AI_SOURCES:
+            question.report_count = report_count_from_reports
+            continue
+        aggregated_report_count = max(
+            legacy_report_counts.get(question.id, 0),
+            report_count_from_reports,
+        )
+        question.report_count = aggregated_report_count
+        question.quality_score = recompute_quality_score(
+            answer_count=question.answer_count,
+            like_count=like_counts.get(question.id, 0),
+            report_count=aggregated_report_count,
+        )
+
+
+def _aggregate_active_report_counts(session: Session) -> dict[int, int]:
+    rows = session.execute(
+        select(
+            QuestionReportV2.question_id,
+            func.count(QuestionReportV2.id),
+        )
+        .where(
+            QuestionReportV2.deleted_at.is_(None),
+            QuestionReportV2.status.in_(ACTIVE_QUESTION_REPORT_STATUSES),
+        )
+        .group_by(QuestionReportV2.question_id)
+    ).all()
+    return {int(question_id): int(count) for question_id, count in rows}
+
+
+def _aggregate_feedback_counts(
+    session: Session,
+    *,
+    question_ids: list[int],
+    action: str,
+) -> dict[int, int]:
+    if not question_ids:
+        return {}
+    rows = session.execute(
+        select(
+            AuditLogV2.target_id,
+            func.count(AuditLogV2.id),
+        )
+        .where(
+            AuditLogV2.action == f"{_AI_FEEDBACK_ACTION_PREFIX}{action}",
+            AuditLogV2.target_type == "question_v2",
+            AuditLogV2.target_id.in_(question_ids),
+        )
+        .group_by(AuditLogV2.target_id)
+    ).all()
+    return {
+        int(target_id): int(count)
+        for target_id, count in rows
+        if target_id is not None
+    }
 
 
 def _should_deactivate(
