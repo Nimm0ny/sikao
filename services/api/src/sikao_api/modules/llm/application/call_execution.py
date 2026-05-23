@@ -76,6 +76,7 @@ async def call_json_completion(
         model=model,
         max_tokens=service.settings.llm_max_tokens,
         temperature=service.settings.llm_temperature,
+        response_format="json_object",
     )
     del purpose, prompt_version
     return result.content, {

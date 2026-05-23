@@ -26,6 +26,7 @@ import json
 import logging
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -34,11 +35,19 @@ from sikao_api.modules.llm.application.llm.provider import (
     ChatCompletionChunk,
     ChatCompletionResult,
     LLMMessage,
+    ResponseFormat,
 )
 
 logger = logging.getLogger(__name__)
 
 DEFAULT_TIMEOUT_SECONDS = 120.0
+_JSON_RESPONSE_FORMAT_HOSTS = frozenset(
+    {
+        "api.openai.com",
+        "api.deepseek.com",
+        "dashscope.aliyuncs.com",
+    }
+)
 
 
 @dataclass(frozen=True)
@@ -71,11 +80,13 @@ def _build_messages_payload(messages: list[LLMMessage]) -> list[dict[str, str]]:
 
 def _build_completion_payload(
     *,
+    base_url: str,
     messages: list[LLMMessage],
     model: str,
     max_tokens: int | None,
     temperature: float,
     stream: bool,
+    response_format: ResponseFormat | None,
 ) -> dict[str, object]:
     """OpenAI chat/completions request payload. stream=True 时加 stream_options
     让最后 chunk 带 usage (OpenAI 2024-04 加的, DeepSeek V4 行为未承诺稳定 → R9 fallback)."""
@@ -86,10 +97,19 @@ def _build_completion_payload(
     }
     if max_tokens is not None:
         payload["max_tokens"] = max_tokens
+    if response_format == "json_object" and _supports_json_response_format(
+        base_url=base_url
+    ):
+        payload["response_format"] = {"type": "json_object"}
     if stream:
         payload["stream"] = True
         payload["stream_options"] = {"include_usage": True}
     return payload
+
+
+def _supports_json_response_format(*, base_url: str) -> bool:
+    host = urlsplit(base_url).hostname or ""
+    return host in _JSON_RESPONSE_FORMAT_HOSTS
 
 
 class OpenAICompatibleProvider:
@@ -125,13 +145,16 @@ class OpenAICompatibleProvider:
         model: str,
         max_tokens: int | None = None,
         temperature: float = 0.7,
+        response_format: ResponseFormat | None = None,
     ) -> ChatCompletionResult:
         payload = _build_completion_payload(
+            base_url=self._config.base_url,
             messages=messages,
             model=model,
             max_tokens=max_tokens,
             temperature=temperature,
             stream=False,
+            response_format=response_format,
         )
         owns_client = self._client is None
         client = self._client or httpx.AsyncClient(timeout=self._config.timeout_seconds)
@@ -162,13 +185,16 @@ class OpenAICompatibleProvider:
         model: str,
         max_tokens: int | None = None,
         temperature: float = 0.7,
+        response_format: ResponseFormat | None = None,
     ) -> AsyncIterator[ChatCompletionChunk]:
         payload = _build_completion_payload(
+            base_url=self._config.base_url,
             messages=messages,
             model=model,
             max_tokens=max_tokens,
             temperature=temperature,
             stream=True,
+            response_format=response_format,
         )
         owns_client = self._client is None
         client = self._client or httpx.AsyncClient(timeout=self._config.timeout_seconds)

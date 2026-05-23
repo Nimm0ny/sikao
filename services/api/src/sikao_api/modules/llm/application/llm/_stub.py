@@ -12,6 +12,7 @@ from sikao_api.modules.llm.application.llm.provider import (
     ChatCompletionChunk,
     ChatCompletionResult,
     LLMMessage,
+    ResponseFormat,
 )
 
 _UTC = timezone.utc
@@ -70,8 +71,9 @@ class StubLLMProvider:
         model: str,
         max_tokens: int | None = None,
         temperature: float = 0.7,
+        response_format: ResponseFormat | None = None,
     ) -> ChatCompletionResult:
-        del max_tokens, temperature
+        del max_tokens, response_format, temperature
         await asyncio.sleep(0.05)
         content = json.dumps(self._build_payload(messages=messages), ensure_ascii=False)
         return ChatCompletionResult(
@@ -91,8 +93,9 @@ class StubLLMProvider:
         model: str,
         max_tokens: int | None = None,
         temperature: float = 0.7,
+        response_format: ResponseFormat | None = None,
     ) -> AsyncIterator[ChatCompletionChunk]:
-        del model, max_tokens, temperature
+        del max_tokens, model, response_format, temperature
         await asyncio.sleep(0.02)
         full_content = json.dumps(self._build_payload(messages=messages), ensure_ascii=False)
         yield ChatCompletionChunk(

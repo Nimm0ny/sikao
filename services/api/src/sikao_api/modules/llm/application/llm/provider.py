@@ -15,7 +15,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import Protocol
+from typing import Literal, Protocol
 
 
 @dataclass(frozen=True)
@@ -80,6 +80,9 @@ FINISH_REASON_KNOWN = frozenset({
 })
 
 
+ResponseFormat = Literal["json_object"]
+
+
 class LLMProvider(Protocol):
     """OpenAI ChatCompletions-compatible. DeepSeek/OpenAI/通义/etc 通用."""
 
@@ -90,6 +93,7 @@ class LLMProvider(Protocol):
         model: str,
         max_tokens: int | None = None,
         temperature: float = 0.7,
+        response_format: ResponseFormat | None = None,
     ) -> ChatCompletionResult:
         """Sync-style call (内部 await httpx). 失败 raise (httpx.HTTPStatusError /
         httpx.TimeoutException). 调用方决定 retry-with-fallback 还是 surface."""
@@ -102,6 +106,7 @@ class LLMProvider(Protocol):
         model: str,
         max_tokens: int | None = None,
         temperature: float = 0.7,
+        response_format: ResponseFormat | None = None,
     ) -> AsyncIterator[ChatCompletionChunk]:
         """Async streaming. 调用方负责 cancel (route 层 request.is_disconnected).
 
