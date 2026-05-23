@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import re
 from collections.abc import AsyncIterator
 from datetime import datetime, timedelta, timezone
 
@@ -32,6 +33,13 @@ _ESSAY_PAYLOAD: dict[str, object] = {
         "Sample essay answer for test and smoke flows only. "
         "This payload is deterministic and should not be treated as a real model output."
     ),
+}
+
+_QUESTION_AUDIT_PAYLOAD: dict[str, object] = {
+    "passed": True,
+    "confidence": 0.91,
+    "reason": "Answer, stem, and options are internally consistent.",
+    "issues": [],
 }
 
 
@@ -91,6 +99,10 @@ class StubLLMProvider:
 
     def _build_payload(self, *, messages: list[LLMMessage]) -> dict[str, object]:
         prompt = "\n".join(message.content for message in messages)
+        if "题目质量审核员" in prompt:
+            return _QUESTION_AUDIT_PAYLOAD
+        if "题目生成器" in prompt:
+            return self._build_question_generation_payload(prompt)
         if "plan generator" in prompt.lower() or "generate plan" in prompt.lower():
             return self._build_plan_payload()
         if "plan adjuster" in prompt.lower() or "adjustment proposal" in prompt.lower():
@@ -98,6 +110,38 @@ class StubLLMProvider:
         if "today recommender" in prompt.lower() or "recommendation cards" in prompt.lower():
             return self._build_recommendation_payload()
         return _ESSAY_PAYLOAD
+
+    def _build_question_generation_payload(self, prompt: str) -> dict[str, object]:
+        source_ids = [int(value) for value in re.findall(r"SourceQuestionId:\s*(\d+)", prompt)]
+        if not source_ids:
+            source_ids = [101]
+        count_match = re.search(r"改编生成\s*(\d+)\s*道", prompt)
+        count = int(count_match.group(1)) if count_match else min(2, len(source_ids))
+        questions: list[dict[str, object]] = []
+        for index in range(count):
+            source_id = source_ids[index % len(source_ids)]
+            question_type = "single_choice" if index % 2 == 0 else "multi_choice"
+            correct_answer = "B" if question_type == "single_choice" else "AC"
+            questions.append(
+                {
+                    "source_question_id": source_id,
+                    "type": question_type,
+                    "stem": f"Stub generated question {index + 1} from source {source_id}.",
+                    "options": {
+                        "A": "Option A",
+                        "B": "Option B",
+                        "C": "Option C",
+                        "D": "Option D",
+                    },
+                    "correct_answer": correct_answer,
+                    "explanation": (
+                        f"Stub explanation for generated question {index + 1} "
+                        f"from source {source_id}, detailed enough for parser tests."
+                    ),
+                    "estimated_difficulty": 0.42,
+                }
+            )
+        return {"questions": questions}
 
     def _build_plan_payload(self) -> dict[str, object]:
         base = datetime.now(_UTC).replace(second=0, microsecond=0, minute=0)
