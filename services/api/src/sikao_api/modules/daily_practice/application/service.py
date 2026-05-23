@@ -2,9 +2,12 @@ from __future__ import annotations
 
 from collections import defaultdict
 from datetime import UTC, date, datetime, timedelta
+import hashlib
 from uuid import uuid4
 
+from sqlalchemy import func
 from sqlalchemy import select
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from sikao_api.core.config import Settings
@@ -41,27 +44,66 @@ def get_or_create_daily(
     type_name: str,
 ) -> DailyPracticeResponseV2:
     today = today_cn()
-    row = session.scalar(
-        select(DailyPracticeV2).where(
-            DailyPracticeV2.user_id == user.id,
-            DailyPracticeV2.type == type_name,
-            DailyPracticeV2.date == today,
-        )
+    row, created = ensure_daily_for_date(
+        session,
+        settings=settings,
+        user=user,
+        type_name=type_name,
+        date_value=today,
     )
-    if row is None:
-        row = _generate_daily_row(
-            session,
-            settings=settings,
-            user=user,
-            type_name=type_name,
-            date_value=today,
-        )
+    if created:
         session.commit()
     elif row.status in {"pending", "started"} and row.expired_at <= datetime.now(UTC).replace(tzinfo=None):
         row.status = "expired"
         session.add(row)
         session.commit()
     return _serialize_daily(session, row=row)
+
+
+def ensure_daily_for_date(
+    session: Session,
+    *,
+    settings: Settings,
+    user: UserV2,
+    type_name: str,
+    date_value: date,
+) -> tuple[DailyPracticeV2, bool]:
+    _lock_daily_generation_key(
+        session,
+        user_id=user.id,
+        type_name=type_name,
+        date_value=date_value,
+    )
+    row = session.scalar(
+        select(DailyPracticeV2).where(
+            DailyPracticeV2.user_id == user.id,
+            DailyPracticeV2.type == type_name,
+            DailyPracticeV2.date == date_value,
+        )
+    )
+    if row is not None:
+        return row, False
+    try:
+        row = _generate_daily_row(
+            session,
+            settings=settings,
+            user=user,
+            type_name=type_name,
+            date_value=date_value,
+        )
+    except IntegrityError:
+        session.rollback()
+        row = session.scalar(
+            select(DailyPracticeV2).where(
+                DailyPracticeV2.user_id == user.id,
+                DailyPracticeV2.type == type_name,
+                DailyPracticeV2.date == date_value,
+            )
+        )
+        if row is None:
+            raise
+        return row, False
+    return row, True
 
 
 def start_daily(
@@ -307,6 +349,20 @@ def _find_active_daily_session(
         if candidate.config_snapshot.get("daily_practice_id") == daily_id:
             return candidate
     return None
+
+
+def _lock_daily_generation_key(
+    session: Session,
+    *,
+    user_id: int,
+    type_name: str,
+    date_value: date,
+) -> None:
+    if session.bind is None or session.bind.dialect.name != "postgresql":
+        return
+    payload = f"daily:{user_id}:{type_name}:{date_value.isoformat()}".encode("utf-8")
+    lock_key = int.from_bytes(hashlib.sha256(payload).digest()[:8], byteorder="big", signed=True)
+    session.execute(select(func.pg_advisory_xact_lock(lock_key)))
 
 
 def _serialize_daily(
