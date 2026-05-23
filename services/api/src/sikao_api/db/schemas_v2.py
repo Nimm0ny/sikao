@@ -9,6 +9,12 @@ from typing import Any, Literal
 from pydantic import Field, field_validator
 
 from sikao_api.core.schemas import CamelModel, UtcDatetime
+from sikao_api.modules.question_reports.domain.types import (
+    QUESTION_REPORT_DESCRIPTION_MAX_LENGTH,
+    QUESTION_REPORT_DESCRIPTION_MIN_LENGTH,
+    QuestionReportCategory,
+    QuestionReportStatus,
+)
 
 
 _ABILITY_DIMENSIONS = {
@@ -722,6 +728,46 @@ class PracticePreferencesPatchV2(CamelModel):
 
 class PracticePreferencesResetRequestV2(CamelModel):
     sections: list[str] = Field(default_factory=list)
+
+
+class QuestionReportCreateRequestV2(CamelModel):
+    category: QuestionReportCategory
+    description: str = Field(
+        min_length=QUESTION_REPORT_DESCRIPTION_MIN_LENGTH,
+        max_length=QUESTION_REPORT_DESCRIPTION_MAX_LENGTH,
+    )
+    source_session_id: int | None = None
+    selected_answer_at_report: dict[str, Any] | None = None
+
+
+class QuestionReportUpdateRequestV2(CamelModel):
+    description: str = Field(
+        min_length=QUESTION_REPORT_DESCRIPTION_MIN_LENGTH,
+        max_length=QUESTION_REPORT_DESCRIPTION_MAX_LENGTH,
+    )
+
+
+class QuestionReportEnvelopeV2(CamelModel):
+    id: int
+    question_id: int
+    category: QuestionReportCategory
+    description: str
+    status: QuestionReportStatus
+    admin_response: str | None = None
+    duplicate_of_report_id: int | None = None
+    applied_fix: dict[str, Any] | None = None
+    source_session_id: int | None = None
+    selected_answer_at_report: dict[str, Any] | None = None
+    created_at: UtcDatetime
+    updated_at: UtcDatetime
+    handled_at: UtcDatetime | None = None
+
+
+class QuestionReportListResponseV2(CamelModel):
+    items: list[QuestionReportEnvelopeV2]
+    total: int
+    page: int
+    page_size: int
 
 
 class EssayReferenceAnswerEnvelopeV2(CamelModel):

@@ -27,6 +27,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from sikao_api.db.base import Base
+from sikao_api.modules.question_reports.domain.types import QuestionReportStatus
 from sqlalchemy import JSON
 
 
@@ -923,6 +924,88 @@ class QuestionFlagV2(Base):
     )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class QuestionReportV2(Base):
+    __tablename__ = "question_report_v2"
+    __table_args__ = (
+        Index(
+            "uq_qreport_v2_active_user_q_cat",
+            "user_id",
+            "question_id",
+            "category",
+            unique=True,
+            sqlite_where=text("status IN ('pending', 'acknowledged') AND deleted_at IS NULL"),
+            postgresql_where=text("status IN ('pending', 'acknowledged') AND deleted_at IS NULL"),
+        ),
+        Index("ix_qreport_v2_status_created", "status", "created_at"),
+        CheckConstraint(
+            "length(description) >= 10 AND length(description) <= 1000",
+            name="ck_qreport_v2_desc_len",
+        ),
+        CheckConstraint(
+            "(status NOT IN ('resolved_fixed', 'resolved_invalid', 'resolved_duplicate')) "
+            "OR (handled_by_admin_id IS NOT NULL AND handled_at IS NOT NULL AND admin_response IS NOT NULL)",
+            name="ck_qreport_v2_resolved_admin",
+        ),
+        CheckConstraint(
+            "((status = 'resolved_fixed' AND applied_fix IS NOT NULL) "
+            "OR (status != 'resolved_fixed' AND applied_fix IS NULL))",
+            name="ck_qreport_v2_fix_when_fixed",
+        ),
+        CheckConstraint(
+            "((status = 'resolved_duplicate' AND duplicate_of_report_id IS NOT NULL) "
+            "OR (status != 'resolved_duplicate' AND duplicate_of_report_id IS NULL))",
+            name="ck_qreport_v2_dup_when_dup",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    category: Mapped[str] = mapped_column(String(32), nullable=False)
+    description: Mapped[str] = mapped_column(String(1000), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default=QuestionReportStatus.PENDING.value,
+        server_default=QuestionReportStatus.PENDING.value,
+    )
+    handled_by_admin_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users_v2.id"),
+        nullable=True,
+    )
+    handled_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    admin_response: Mapped[str | None] = mapped_column(String(1000), nullable=True)
+    duplicate_of_report_id: Mapped[int | None] = mapped_column(
+        ForeignKey("question_report_v2.id"),
+        nullable=True,
+    )
+    applied_fix: Mapped[dict[str, Any] | None] = mapped_column(JSONB_COMPAT, nullable=True)
+    source_session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("practice_sessions_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    selected_answer_at_report: Mapped[dict[str, Any] | None] = mapped_column(
+        JSONB_COMPAT,
+        nullable=True,
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=utc_now,
+        onupdate=utc_now,
+        nullable=False,
+    )
 
 
 class EssayReferenceAnswerV2(Base):
