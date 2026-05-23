@@ -565,6 +565,12 @@ class MockExamHistoryResponseV2(CamelModel):
     aggregate: MockExamAggregate
 
 
+class MockExamComparisonResponseV2(CamelModel):
+    self: MockExamHistoryItem
+    self_history: list[MockExamHistoryItem] = Field(default_factory=list)
+    paper_baseline: dict[str, float | int | None] = Field(default_factory=dict)
+
+
 class UiPreferences(CamelModel):
     font_size: Literal["sm", "base", "lg", "xl"] = "base"
     line_height: Literal["compact", "comfortable", "spacious"] = "comfortable"

@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Header, Request, status
+from fastapi import APIRouter, Depends, Header, Query, Request, status
 from fastapi.responses import Response as RawResponse
 from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import UserV2
-from sikao_api.db.schemas_v2 import MockExamCountdownResponseV2, MockExamCreateRequestV2, MockExamCreateResponseV2
+from sikao_api.db.schemas_v2 import MockExamComparisonResponseV2, MockExamCountdownResponseV2, MockExamCreateRequestV2, MockExamCreateResponseV2, MockExamHistoryResponseV2
 from sikao_api.db.session import get_db_session
 from sikao_api.modules.identity.application.security_v2 import get_current_user_v2, verify_csrf_v2
 from sikao_api.modules.mock_exam.application.countdown import get_mock_exam_countdown
-from sikao_api.modules.mock_exam.application.service import create_mock_exam
+from sikao_api.modules.mock_exam.application.service import build_mock_exam_comparison, create_mock_exam, list_mock_exam_history
 from sikao_api.modules.mock_exam.domain.errors import IDEMPOTENCY_KEY_REQUIRED
 from sikao_api.modules.system.application.errors import ValidationError
 from sikao_api.modules.system.application.idempotency import build_request_hash, load_idempotent_response, store_idempotent_response
@@ -77,3 +77,35 @@ def get_session_countdown(
     session: Annotated[Session, Depends(get_db_session)],
 ) -> MockExamCountdownResponseV2:
     return get_mock_exam_countdown(session, user=user, session_id=session_id)
+
+
+@router.get(
+    "/mock-exams/history",
+    response_model=MockExamHistoryResponseV2,
+    dependencies=[Depends(get_current_user_v2)],
+)
+def get_mock_exam_history(
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+    period: str = Query(default="30d"),
+    paper_code: str | None = Query(default=None),
+) -> MockExamHistoryResponseV2:
+    return list_mock_exam_history(
+        session,
+        user=user,
+        period=period,
+        paper_code=paper_code,
+    )
+
+
+@router.get(
+    "/mock-exams/{session_id}/comparison",
+    response_model=MockExamComparisonResponseV2,
+    dependencies=[Depends(get_current_user_v2)],
+)
+def get_mock_exam_comparison(
+    session_id: int,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> MockExamComparisonResponseV2:
+    return build_mock_exam_comparison(session, user=user, session_id=session_id)
