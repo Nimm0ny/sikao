@@ -91,6 +91,12 @@ def test_build_question_generate_messages_embed_sources_and_constraints() -> Non
     assert "改编生成 2 道新题" in messages[1].content
 
 
+def test_question_generate_system_message_exposes_schema_fields() -> None:
+    assert '"questions"' in QUESTION_GENERATE_SYSTEM_MESSAGE
+    assert '"source_question_id"' in QUESTION_GENERATE_SYSTEM_MESSAGE
+    assert '"correct_answer"' in QUESTION_GENERATE_SYSTEM_MESSAGE
+
+
 def test_build_question_self_audit_messages_include_question_and_source() -> None:
     question = {
         "source_question_id": 101,
@@ -131,6 +137,23 @@ def test_parse_question_generation_rejects_invalid_single_choice_answer() -> Non
     """
     with pytest.raises(Exception):
         parse_question_generation(raw)
+
+
+def test_parse_question_generation_accepts_single_question_object() -> None:
+    raw = """
+    {
+      "source_question_id": 101,
+      "type": "single_choice",
+      "stem": "This stem is long enough to validate the single-object compatibility path.",
+      "options": {"A": "a", "B": "b", "C": "c", "D": "d"},
+      "correct_answer": "B",
+      "explanation": "This explanation is deliberately long enough to pass length validation and mimic a real provider output."
+    }
+    """
+    questions = parse_question_generation(raw)
+    assert len(questions) == 1
+    assert questions[0].source_question_id == 101
+    assert questions[0].correct_answer == "B"
 
 
 def test_parse_question_generation_rejects_duplicate_answer_letters() -> None:
@@ -180,6 +203,50 @@ def test_generate_questions_uses_stub_provider_and_preserves_source_ids() -> Non
     assert [question.source_question_id for question in questions] == [101, 202]
     assert questions[0].type == "single_choice"
     assert questions[1].type == "multi_choice"
+
+
+def test_generate_questions_requests_json_object_response_format(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class CaptureProvider:
+        def __init__(self) -> None:
+            self.kwargs: dict[str, object] | None = None
+
+        async def chat_completion(self, **kwargs: object) -> ChatCompletionResult:
+            self.kwargs = kwargs
+            return ChatCompletionResult(
+                content=(
+                    '{"questions": [{"source_question_id": 101, "type": "single_choice", '
+                    '"stem": "This stem is long enough to validate.", '
+                    '"options": {"A": "a", "B": "b", "C": "c", "D": "d"}, '
+                    '"correct_answer": "B", '
+                    '"explanation": "This explanation is deliberately long enough to pass length validation."}]}'
+                ),
+                prompt_tokens=10,
+                prompt_cache_hit_tokens=0,
+                prompt_cache_miss_tokens=10,
+                completion_tokens=20,
+                model="fake-model",
+                finish_reason="stop",
+            )
+
+    provider = CaptureProvider()
+    monkeypatch.setattr(
+        "sikao_api.modules.llm.application.question_generator.build_llm_provider",
+        lambda *_args, **_kwargs: (provider, "mock"),
+    )
+
+    asyncio.run(
+        generate_questions(
+            settings=_settings(),
+            sources=[_sources()[0]],
+            target_difficulty=(0.2, 0.4),
+            count=1,
+        )
+    )
+
+    assert provider.kwargs is not None
+    assert provider.kwargs["response_format"] == "json_object"
 
 
 def test_generate_questions_fail_fast_on_invalid_request() -> None:
