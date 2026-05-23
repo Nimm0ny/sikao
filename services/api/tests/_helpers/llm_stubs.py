@@ -65,3 +65,44 @@ def well_formed_essay_payload(*, sample_chars: int = 950) -> str:
         },
         ensure_ascii=False,
     )
+
+
+def well_formed_reference_answer_payload(*, content_chars: int = 950) -> str:
+    return json.dumps(
+        {
+            "content": "甲" * content_chars,
+            "structure_outline": [
+                "开篇点题",
+                "主体展开",
+                "总结升华",
+            ],
+            "key_points": [
+                "紧扣材料",
+                "论点清晰",
+                "结构完整",
+            ],
+            "estimated_score": 86.0,
+        },
+        ensure_ascii=False,
+    )
+
+
+def well_formed_reference_audit_payload(
+    *,
+    passed: bool = True,
+    reason: str = "Grounded in the materials and structurally sound.",
+) -> str:
+    issues: list[dict[str, str]] = []
+    confidence = 0.93
+    if not passed:
+        issues = [{"dimension": "coverage", "description": "Misses one required angle."}]
+        confidence = 0.41
+    return json.dumps(
+        {
+            "passed": passed,
+            "confidence": confidence,
+            "reason": reason,
+            "issues": issues,
+        },
+        ensure_ascii=False,
+    )
