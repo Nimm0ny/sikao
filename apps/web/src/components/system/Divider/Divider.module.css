@@ -1,0 +1,29 @@
+/*
+ * Divider — V5 D.3.34 (2026-05-24).
+ * Why: token-driven separator; horizontal = 1px tall, vertical = 1px wide.
+ */
+.divider {
+  flex-shrink: 0;
+  background: var(--color-border-default);
+}
+.horizontal {
+  width: 100%;
+  height: 1px;
+}
+.vertical {
+  width: 1px;
+  align-self: stretch;
+}
+.variant-subtle {
+  background: var(--color-border-subtle);
+}
+.variant-default {
+  background: var(--color-border-default);
+}
+.variant-strong {
+  background: var(--color-border-strong);
+}
+.inset {
+  margin-inline: var(--space-4);
+  width: auto;
+}

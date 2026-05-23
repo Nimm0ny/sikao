@@ -1,0 +1,19 @@
+/*
+ * VisuallyHidden — V5-M3 D.3.34 a11y skeleton (2026-05-24).
+ *
+ * Why: classic visually-hidden pattern (W3C-recommended) — content remains
+ *      readable by screen readers while collapsing to 1px and clipped from
+ *      the viewport. Used by IconButton aria-label, Form helper text, etc.
+ */
+.hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px; /* spacing-allow: classic visually-hidden offset, not a layout step */
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border-width: 0;
+}
