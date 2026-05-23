@@ -541,3 +541,120 @@ em, i { font-style: normal; }
     --dur-slow: 0ms;
   }
 }
+
+/* ── §2 V5 Semantic layer — light (default) ────────────────────────────────
+ * Light theme is the default :root state. Dark theme overrides only this layer
+ * (CP.2 invariant: primitive & component layers MUST be theme-stable).
+ * Sourced from design.md §C.2.1 to §C.2.5.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* §2.1 surface (paper / bg) — light */
+  --color-bg-page:     #F4F5F7;
+  --color-bg-app:      #ECEEF1;
+  --color-bg-surface:  #FFFFFF;
+  --color-bg-elevated: #F8F9FA;
+  --color-bg-sunken:   #EEF0F3;
+  --color-bg-overlay:  rgba(26, 29, 32, .42);
+
+  /* §2.2 text (ink) — light */
+  --color-text-primary:    #1A1D20;
+  --color-text-secondary:  #495057;
+  --color-text-meta:       #6B7280;
+  --color-text-meta-soft:  #868E96;  /* decorative only — REQ-10.2 */
+  --color-text-disabled:   #ADB5BD;
+  --color-text-on-brand:   #1A1D20;  /* black text on yellow brand bg */
+
+  /* §2.3 border — light */
+  --color-border-subtle:  #E9ECEF;
+  --color-border-default: #DEE2E6;
+  --color-border-strong:  #CED4DA;
+
+  /* §2.4 brand & state & focus — light */
+  --color-brand-primary: #FFD200;
+  --color-brand-hover:   #E6BD00;
+  --color-brand-soft:    #FFF4B3;
+
+  --color-state-ok:        #1F7A4D;
+  --color-state-ok-soft:   #E8F4EE;
+  --color-state-warn:      #B45309;
+  --color-state-warn-soft: #FDF2DA;
+  --color-state-err:       #DC2626;
+  --color-state-err-soft:  #FCE8E8;
+  --color-state-info:      #2B6CFF;
+  --color-state-info-soft: #E5EEFF;
+
+  --color-focus-ring: #2B6CFF;
+
+  /* §2.5 categorical — categorical question-type colors (light)
+   * Strict isolation from semantic state colors — never interchange. */
+  --color-cat-yanyu:    #7373FF;
+  --color-cat-shuliang: #FF8573;
+  --color-cat-panduan:  #FFDD55;
+  --color-cat-ziliao:   #2F95FF;
+  --color-cat-shenlun:  #15803D;
+}
+
+/* ── §3 V5 Semantic layer — dark override ───────────────────────────────────
+ * Activated by `[data-v5-theme='dark']` on <html>.
+ * Note: V5 uses a distinct attribute `data-v5-theme` (not the V1 `data-theme`)
+ * so V5 dark mode does NOT collide with the existing V1 `[data-theme='dark']`
+ * / `[data-theme='night']` toggles. V1 and V5 dark themes can coexist during
+ * the dual-track period (until 2026-06-06 sunset).
+ * Sourced from design.md §C.2.1 to §C.2.5 dark column.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+[data-v5-theme='dark'] {
+  /* §2.1 surface — dark */
+  --color-bg-page:     #0E0F11;
+  --color-bg-app:      #16181B;
+  --color-bg-surface:  #1C1F23;
+  --color-bg-elevated: #22262B;
+  --color-bg-sunken:   #2A2F35;
+  --color-bg-overlay:  rgba(0, 0, 0, .6);
+
+  /* §2.2 text — dark */
+  --color-text-primary:    #F2F4F7;
+  --color-text-secondary:  #C8CDD4;
+  --color-text-meta:       #8C949E;
+  --color-text-meta-soft:  #6F7780;
+  --color-text-disabled:   #545B63;
+  --color-text-on-brand:   #1A1D20;  /* still black on yellow */
+
+  /* §2.3 border — dark */
+  --color-border-subtle:  rgba(255, 255, 255, .06);
+  --color-border-default: rgba(255, 255, 255, .10);
+  --color-border-strong:  rgba(255, 255, 255, .16);
+
+  /* §2.4 brand & state & focus — dark */
+  --color-brand-primary: #FFEB38;
+  --color-brand-hover:   #FFD200;
+  --color-brand-soft:    rgba(255, 235, 56, .16);
+
+  --color-state-ok:        #4CC38A;
+  --color-state-ok-soft:   rgba(76, 195, 138, .14);
+  --color-state-warn:      #E0A23B;
+  --color-state-warn-soft: rgba(224, 162, 59, .14);
+  --color-state-err:       #F36F77;
+  --color-state-err-soft:  rgba(243, 111, 119, .14);
+  --color-state-info:      #7BA8FF;
+  --color-state-info-soft: rgba(123, 168, 255, .14);
+
+  --color-focus-ring: #7BA8FF;
+
+  /* §2.5 categorical — dark */
+  --color-cat-yanyu:    #9999FF;
+  --color-cat-shuliang: #FF9F8F;
+  --color-cat-panduan:  #FFE680;
+  --color-cat-ziliao:   #5FB0FF;
+  --color-cat-shenlun:  #4CC38A;
+
+  /* §1.6 shadow — dark override (deeper alpha for dark backgrounds)
+   * Note: shadow is a primitive, but the visual semantic of "elevation depth"
+   * needs theme-specific alpha. CP.2 allows this because the token NAME
+   * doesn't change between themes — only the rgba alpha values inside. */
+  --shadow-l1: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 1px 2px rgba(0, 0, 0, .4);
+  --shadow-l2: 0 1px 0 rgba(255, 255, 255, .04) inset, 0 12px 28px rgba(0, 0, 0, .4);
+  --shadow-l3: 0 16px 40px rgba(0, 0, 0, .5);
+  --shadow-l4: 0 24px 56px rgba(0, 0, 0, .6);
+}
