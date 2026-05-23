@@ -15,7 +15,7 @@ from sikao_api.modules.essay_grading.application.reference_query import (
 )
 from sikao_api.modules.llm.application.service import HomeLlmService
 from sikao_api.modules.system.application.audit_v2 import add_audit_log
-from sikao_api.modules.system.application.errors import NotFoundError
+from sikao_api.modules.system.application.errors import NotFoundError, ValidationError
 
 logger = logging.getLogger(__name__)
 
@@ -167,6 +167,7 @@ def _load_question_or_raise(session: Session, question_id: int) -> QuestionV2:
     question = session.get(QuestionV2, question_id)
     if question is None:
         raise NotFoundError("question not found", code="question_not_found")
+    _assert_essay_question(question)
     return question
 
 
@@ -178,7 +179,16 @@ def _load_question_for_update_or_raise(session: Session, question_id: int) -> Qu
     )
     if question is None:
         raise NotFoundError("question not found", code="question_not_found")
+    _assert_essay_question(question)
     return question
+
+
+def _assert_essay_question(question: QuestionV2) -> None:
+    if question.subject_kind != "essay":
+        raise ValidationError(
+            "essay reference answers require an essay question",
+            code="essay_question_expected",
+        )
 
 
 def _extract_materials(payload: dict[str, Any]) -> list[str]:

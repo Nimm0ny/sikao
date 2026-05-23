@@ -402,12 +402,14 @@ def post_generate_reference_answer(
         )
         session.commit()
     except Exception:
-        release_idempotency_claim(
-            session,
-            user_id=user.id,
-            endpoint="practice.essay_reference.generate",
-            idempotency_key=idempotency_key or "",
-            request_hash=request_hash,
-        )
+        session.rollback()
+        with request.app.state.db.session_factory() as recovery_session:
+            release_idempotency_claim(
+                recovery_session,
+                user_id=user.id,
+                endpoint="practice.essay_reference.generate",
+                idempotency_key=idempotency_key or "",
+                request_hash=request_hash,
+            )
         raise
     return response

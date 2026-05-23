@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import EssayReferenceAnswerV2, QuestionV2
 from sikao_api.db.schemas_v2 import EssayReferenceAnswerEnvelopeV2
-from sikao_api.modules.system.application.errors import NotFoundError
+from sikao_api.modules.system.application.errors import NotFoundError, ValidationError
 
 
 def list_public_reference_answers(
@@ -16,6 +16,11 @@ def list_public_reference_answers(
     question = session.get(QuestionV2, question_id)
     if question is None:
         raise NotFoundError("question not found", code="question_not_found")
+    if question.subject_kind != "essay":
+        raise ValidationError(
+            "essay reference answers require an essay question",
+            code="essay_question_expected",
+        )
 
     rows = list(
         session.scalars(
