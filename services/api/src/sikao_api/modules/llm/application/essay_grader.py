@@ -32,6 +32,27 @@ class EssayGradingTrace:
     prompt_version: str
 
 
+def _annotate_llm_error(
+    exc: Exception,
+    *,
+    prompt_version: str,
+    provider: str,
+    model: str,
+    messages: list[dict[str, str]],
+    raw_text: str,
+    usage: dict[str, int | None],
+    parse_status: str,
+) -> Exception:
+    setattr(exc, "prompt_version_value", prompt_version)
+    setattr(exc, "provider_label", provider)
+    setattr(exc, "model_used", model)
+    setattr(exc, "messages_payload", messages)
+    setattr(exc, "raw_text_payload", raw_text)
+    setattr(exc, "usage_payload", usage)
+    setattr(exc, "parse_status", parse_status)
+    return exc
+
+
 async def grade_essay(
     *,
     settings: Settings,
@@ -117,11 +138,53 @@ async def grade_essay_with_trace(
     try:
         parsed = parse_grading_output(result.content)
     except LlmJsonParseError as exc:
-        raise LLMParseError(str(exc)) from exc
+        raise _annotate_llm_error(
+            LLMParseError(str(exc)),
+            prompt_version=ESSAY_GRADING_PROMPT_VERSION,
+            provider=provider_label,
+            model=result.model,
+            messages=[asdict(message) for message in messages],
+            raw_text=result.content,
+            usage={
+                "prompt_tokens": result.prompt_tokens,
+                "prompt_cache_hit_tokens": result.prompt_cache_hit_tokens,
+                "prompt_cache_miss_tokens": result.prompt_cache_miss_tokens,
+                "completion_tokens": result.completion_tokens,
+            },
+            parse_status="invalid_json",
+        ) from exc
     except PydanticValidationError as exc:
-        raise LLMParseError("essay grading response schema invalid") from exc
+        raise _annotate_llm_error(
+            LLMParseError("essay grading response schema invalid"),
+            prompt_version=ESSAY_GRADING_PROMPT_VERSION,
+            provider=provider_label,
+            model=result.model,
+            messages=[asdict(message) for message in messages],
+            raw_text=result.content,
+            usage={
+                "prompt_tokens": result.prompt_tokens,
+                "prompt_cache_hit_tokens": result.prompt_cache_hit_tokens,
+                "prompt_cache_miss_tokens": result.prompt_cache_miss_tokens,
+                "completion_tokens": result.completion_tokens,
+            },
+            parse_status="schema_violation",
+        ) from exc
     except ValueError as exc:
-        raise LLMParseError(str(exc)) from exc
+        raise _annotate_llm_error(
+            LLMParseError(str(exc)),
+            prompt_version=ESSAY_GRADING_PROMPT_VERSION,
+            provider=provider_label,
+            model=result.model,
+            messages=[asdict(message) for message in messages],
+            raw_text=result.content,
+            usage={
+                "prompt_tokens": result.prompt_tokens,
+                "prompt_cache_hit_tokens": result.prompt_cache_hit_tokens,
+                "prompt_cache_miss_tokens": result.prompt_cache_miss_tokens,
+                "completion_tokens": result.completion_tokens,
+            },
+            parse_status="schema_violation",
+        ) from exc
     return EssayGradingTrace(
         payload=parsed,
         raw_text=result.content,
