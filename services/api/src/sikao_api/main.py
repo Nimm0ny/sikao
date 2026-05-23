@@ -24,6 +24,7 @@ from sikao_api.modules.profile_v2.interface import routes as profile_v2
 from sikao_api.modules.progress.interface import routes as progress_v2_skeleton
 from sikao_api.modules.practice_stats.interface import routes as practice_stats_v2
 from sikao_api.modules.question_flags.interface import routes as question_flags_v2
+from sikao_api.modules.question_reports.interface import routes as question_reports_v2
 from sikao_api.modules.recommendations.interface import routes as recommendations_v2
 from sikao_api.modules.review.interface import routes as review_v2
 from sikao_api.modules.mock_exam.interface import routes as mock_exam_v2
@@ -145,6 +146,7 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
     app.include_router(ai_questions_v2.router)
     app.include_router(mock_exam_v2.router)
     app.include_router(practice_preferences_v2.router)
+    app.include_router(question_reports_v2.router)
     app.include_router(session_lifecycle_v2.router)
     app.include_router(timing_v2.router)
     app.include_router(session_v2.router)
