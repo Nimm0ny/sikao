@@ -171,6 +171,14 @@ class HomeScheduler:
             max_instances=1,
             coalesce=True,
         )
+        self._scheduler.add_job(
+            self._job_timing_baseline_recompute,
+            trigger=CronTrigger(day_of_week="mon", hour=3, minute=0, timezone="UTC"),
+            id="home.timing.baseline_recompute",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
         self._scheduled = True
 
     def enqueue_login_adjustment_check(self, *, user_id: int, request_id: str | None) -> bool:
@@ -285,6 +293,11 @@ class HomeScheduler:
                 request_id=None,
             )
         return len(submitted)
+
+    async def _job_timing_baseline_recompute(self) -> int:
+        job_id = "home.timing.baseline_recompute"
+        self._mark_started(job_id)
+        return await self._runtime.run_timing_baseline_recompute()
 
     async def _job_login_adjustment_check(
         self,

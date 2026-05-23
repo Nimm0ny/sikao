@@ -40,6 +40,7 @@ from sikao_api.modules.session_lifecycle.application.cleanup import (
     cleanup_stale_sessions,
     expire_daily_sessions,
 )
+from sikao_api.modules.timing.application.baseline_computer import recompute_question_timing_baseline
 from sikao_api.modules.system.application.audit_v2 import add_audit_log
 
 
@@ -198,6 +199,9 @@ class HomeRuntimeOrchestrator:
     async def run_mock_exam_auto_submit(self) -> list[tuple[int, int]]:
         return await asyncio.to_thread(self._run_mock_exam_auto_submit_sync)
 
+    async def run_timing_baseline_recompute(self) -> int:
+        return await asyncio.to_thread(self._run_timing_baseline_recompute_sync)
+
     def _run_submit_progress_hooks_sync(self, user_id: int, session_id: int | None) -> None:
         session = self._db.session_factory()
         try:
@@ -239,6 +243,18 @@ class HomeRuntimeOrchestrator:
             submitted = auto_submit_expired_mock_exams(session)
             session.commit()
             return submitted
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_timing_baseline_recompute_sync(self) -> int:
+        session = self._db.session_factory()
+        try:
+            updated = recompute_question_timing_baseline(session)
+            session.commit()
+            return updated
         except Exception:
             session.rollback()
             raise
