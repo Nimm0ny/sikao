@@ -148,6 +148,22 @@ class HomeScheduler:
             coalesce=True,
         )
         self._scheduler.add_job(
+            self._job_question_accuracy_recompute,
+            trigger=CronTrigger(hour=4, minute=0, timezone=self._settings.home_scheduler_timezone),
+            id="practice.question_accuracy.recompute",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+        self._scheduler.add_job(
+            self._job_ai_question_cleanup,
+            trigger=CronTrigger(hour=4, minute=30, timezone=self._settings.home_scheduler_timezone),
+            id="practice.ai_questions.cleanup",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+        self._scheduler.add_job(
             self._job_session_lifecycle_cleanup,
             trigger=CronTrigger(minute="*/5", timezone=self._settings.home_scheduler_timezone),
             id="home.session_lifecycle.cleanup",
@@ -271,6 +287,16 @@ class HomeScheduler:
         job_id = "home.plan_adjust.daily"
         self._mark_started(job_id)
         return await self._runtime.run_daily_plan_adjust()
+
+    async def _job_question_accuracy_recompute(self) -> int:
+        job_id = "practice.question_accuracy.recompute"
+        self._mark_started(job_id)
+        return await self._runtime.run_question_accuracy_recompute()
+
+    async def _job_ai_question_cleanup(self) -> int:
+        job_id = "practice.ai_questions.cleanup"
+        self._mark_started(job_id)
+        return await self._runtime.run_ai_question_cleanup()
 
     async def _job_session_lifecycle_cleanup(self) -> dict[str, int]:
         job_id = "home.session_lifecycle.cleanup"

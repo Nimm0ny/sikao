@@ -12,6 +12,8 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from sikao_api.core.config import Settings
+from sikao_api.cron.ai_cleanup_cron import cleanup_low_quality_ai_questions
+from sikao_api.cron.question_accuracy_cron import recompute_question_accuracy
 from sikao_api.db.models_v2 import (
     AuditLogV2,
     PlanAdjustmentV2,
@@ -190,6 +192,12 @@ class HomeRuntimeOrchestrator:
     async def run_submit_progress_hooks(self, *, user_id: int, session_id: int | None) -> None:
         await asyncio.to_thread(self._run_submit_progress_hooks_sync, user_id, session_id)
 
+    async def run_question_accuracy_recompute(self) -> int:
+        return await asyncio.to_thread(self._run_question_accuracy_recompute_sync)
+
+    async def run_ai_question_cleanup(self) -> int:
+        return await asyncio.to_thread(self._run_ai_question_cleanup_sync)
+
     async def run_session_lifecycle_cleanup(self) -> dict[str, int]:
         return await asyncio.to_thread(self._run_session_lifecycle_cleanup_sync)
 
@@ -207,6 +215,30 @@ class HomeRuntimeOrchestrator:
         try:
             run_progress_submit_hooks(session, user_id=user_id, session_id=session_id)
             session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_question_accuracy_recompute_sync(self) -> int:
+        session = self._db.session_factory()
+        try:
+            updated = recompute_question_accuracy(session)
+            session.commit()
+            return updated
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_ai_question_cleanup_sync(self) -> int:
+        session = self._db.session_factory()
+        try:
+            cleaned = cleanup_low_quality_ai_questions(session)
+            session.commit()
+            return cleaned
         except Exception:
             session.rollback()
             raise
