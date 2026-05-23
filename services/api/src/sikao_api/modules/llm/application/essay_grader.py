@@ -1,6 +1,6 @@
-﻿from __future__ import annotations
+from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 
 from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session
@@ -8,11 +8,18 @@ from sqlalchemy.orm import Session
 from sikao_api.core.config import Settings
 from sikao_api.modules.llm.application.llm import build_llm_provider
 from sikao_api.modules.llm.application.llm.json_parser import LlmJsonParseError
-from sikao_api.modules.llm.application.llm.prompts.essay_grading import build_essay_grading_messages
-from sikao_api.modules.llm.application.parsers.grading_parser import EssayGradingPayload, parse_grading_output
+from sikao_api.modules.llm.application.llm.prompts.essay_grading import (
+    PROMPT_VERSION as ESSAY_GRADING_PROMPT_VERSION,
+    build_essay_grading_messages,
+)
+from sikao_api.modules.llm.application.parsers.grading_parser import (
+    EssayGradingPayload,
+    parse_grading_output,
+)
 from sikao_api.modules.system.application.errors import LLMParseError, LLMServiceError
 
 ESSAY_GRADING_TIMEOUT_SECONDS = 60.0
+
 
 @dataclass(frozen=True)
 class EssayGradingTrace:
@@ -21,6 +28,37 @@ class EssayGradingTrace:
     usage: dict[str, int]
     provider: str
     model: str
+    messages: list[dict[str, str]]
+    prompt_version: str
+
+
+async def grade_essay(
+    *,
+    settings: Settings,
+    question_stem: str,
+    materials: list[str],
+    user_answer: str,
+    word_limit_min: int | None,
+    word_limit_max: int | None,
+    full_score: int | None,
+    db: Session | None = None,
+    user_id: int | None = None,
+    model: str | None = None,
+) -> EssayGradingPayload:
+    return (
+        await grade_essay_with_trace(
+            settings=settings,
+            question_stem=question_stem,
+            materials=materials,
+            user_answer=user_answer,
+            word_limit_min=word_limit_min,
+            word_limit_max=word_limit_max,
+            full_score=full_score,
+            db=db,
+            user_id=user_id,
+            model=model,
+        )
+    ).payload
 
 
 async def grade_essay_with_trace(
@@ -48,6 +86,10 @@ async def grade_essay_with_trace(
             f"essay grading provider build failed: {type(exc).__name__}: {exc.message}",
             code=exc.code,
         ) from exc
+    except Exception as exc:  # noqa: BLE001 - caller maps to failed grading state
+        raise LLMServiceError(
+            f"essay grading provider build failed: {type(exc).__name__}: {exc}"
+        ) from exc
     messages = build_essay_grading_messages(
         question_stem=question_stem,
         materials=materials,
@@ -63,6 +105,16 @@ async def grade_essay_with_trace(
             max_tokens=settings.llm_max_tokens,
             temperature=0.3,
         )
+    except LLMServiceError as exc:
+        raise LLMServiceError(
+            f"essay grading chat completion failed: {type(exc).__name__}: {exc.message}",
+            code=exc.code,
+        ) from exc
+    except Exception as exc:  # noqa: BLE001 - caller maps to failed grading state
+        raise LLMServiceError(
+            f"essay grading chat completion failed: {type(exc).__name__}: {exc}"
+        ) from exc
+    try:
         parsed = parse_grading_output(result.content)
     except LlmJsonParseError as exc:
         raise LLMParseError(str(exc)) from exc
@@ -70,10 +122,6 @@ async def grade_essay_with_trace(
         raise LLMParseError("essay grading response schema invalid") from exc
     except ValueError as exc:
         raise LLMParseError(str(exc)) from exc
-    except Exception as exc:
-        raise LLMServiceError(
-            f"essay grading chat completion failed: {type(exc).__name__}: {exc}"
-        ) from exc
     return EssayGradingTrace(
         payload=parsed,
         raw_text=result.content,
@@ -85,7 +133,15 @@ async def grade_essay_with_trace(
         },
         provider=provider_label,
         model=result.model,
+        messages=[asdict(message) for message in messages],
+        prompt_version=ESSAY_GRADING_PROMPT_VERSION,
     )
 
 
-__all__ = ["ESSAY_GRADING_TIMEOUT_SECONDS", "EssayGradingTrace", "grade_essay_with_trace"]
+__all__ = [
+    "ESSAY_GRADING_PROMPT_VERSION",
+    "ESSAY_GRADING_TIMEOUT_SECONDS",
+    "EssayGradingTrace",
+    "grade_essay",
+    "grade_essay_with_trace",
+]
