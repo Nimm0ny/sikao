@@ -35,6 +35,8 @@ def _sources() -> list[SourceQuestion]:
     return [
         SourceQuestion(
             id=101,
+            revision_id=11,
+            subject_kind="xingce",
             type="single_choice",
             stem="Source question one asks about logical consistency in a short passage.",
             options={
@@ -53,6 +55,8 @@ def _sources() -> list[SourceQuestion]:
         ),
         SourceQuestion(
             id=202,
+            revision_id=22,
+            subject_kind="xingce",
             type="multi_choice",
             stem="Source question two asks for multiple valid policy trade-offs.",
             options={
