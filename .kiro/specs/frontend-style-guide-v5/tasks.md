@@ -1,8 +1,22 @@
 # Implementation Plan: Frontend Style Guide V5
 
+> **2026-05-24 UPDATE — V5-M0.5 Big-Bang Rebuild**
+>
+> lhr 拍板 big-bang 重建。tasks 影响：
+> - **任务 1.7（V4 token alias 层）ARCHIVED**：tokens.css §8 V4 alias 在 V5-M0.5 commit ② 一并删除
+> - **Phase 6 任务 21.x（整页 surface 切换 + sunset）整段 ARCHIVED**：21.1a-g、21.2、21.3、21.3a 全部失效
+> - **任务 23.1（V5 Baseline Report）ARCHIVED 部分**：扫描 V4 现存 HTML 章节失效；保留对 V5 实现源码的 lint 统计
+> - **任务 8（lint-v4-token-residual）改为可选**：big-bang 后 V4 token 名零残留是删除事实保证的，lint 仅作 regression guard
+> - **Wave 21–24 ARCHIVED**：从依赖图移除
+> - 其他 wave / Phase 1–5 / Phase 7（除 23.1 部分）/ Phase 8 全部不变
+>
+> V5 主线收敛：原 13 milestone 砍到 8 个：M0 / M0.5(NEW) / M1 / M2 / M3 / M4 / M9（兜底+视觉回归 baseline）/ M11（文档同步）。原 M5..M8（surface 切换）+ M10（sunset）作废，由各业务 Phase（Home/Practice/Notes/Review）直接消费 V5 spec。
+>
+> 详见 [11-Implementation-Plan.md](../../../docs/vault/05-migration/Phase/Style-Guide-V5/11-Implementation-Plan.md) §V5-M0.5 章节。
+
 ## Overview
 
-把 `requirements.md`（12 REQ + 12 Resolved Decisions）+ `design.md`（三层 token + 35 个组件契约 D.3.1–D.3.35 + 6 桌面页 + Mobile Shell + 10 Correctness Properties + V4→V5 mapping）落地为可执行 commit 序列。
+把 `requirements.md`（12 REQ + 12 Resolved Decisions，REQ-12 ARCHIVED）+ `design.md`（三层 token + 35 个组件契约 D.3.1–D.3.35 + 6 桌面页 + Mobile Shell + 10 Correctness Properties；§C.6 V4→V5 mapping ARCHIVED）落地为可执行 commit 序列。
 
 **模式**：Runner Mode（前端视觉 phase，按 AGENT-H5 进入需 review gate；每个 sub-task 完成后由独立 reviewer 兜底）。
 **事实来源**：`packages/design-system/src/tokens.css`（token SSOT）+ `docs/vault/04-design/Design-System.md`（规范镜像）+ `apps/web/src/components/**`（V5 组件骨架落点）。
@@ -62,12 +76,11 @@
     - 回滚：`git revert <sha>`。
     - _Requirements: 9.1, 10.1, 10.3_
 
-  - [ ] 1.7 V4 token alias 层 + @deprecated 标注（双轨期开始）
+  - [ ] 1.7 ~~V4 token alias 层 + @deprecated 标注（双轨期开始）~~ — **ARCHIVED 2026-05-24（V5-M0.5 big-bang）**
     - 依赖：1.4。
-    - 产出物：tokens.css §8 V4 alias 区块——所有 V4 token 名通过 `var(--v5-name)` 间接引用；每条带 `/* @deprecated 2026-05-23 — sunset 2026-06-06 */` 注释。
-    - 验收：V4 现存页面（`apps/web/src/views/**`）继续渲染无视觉差；diff `apps/web` 跑通本地 dev (port 18080) 能 build。
-    - 回滚：`git revert <sha>`，回到无 V5 token 双轨期前状态。
-    - _Requirements: 1.6, 12.1, 12.2_
+    - **作废原因**：big-bang 重建后无 V4 surface 需要兼容；tokens.css §8 V4 alias 区块在 V5-M0.5 commit ② 一并删除。
+    - 历史产出物：~~tokens.css §8 V4 alias 区块——所有 V4 token 名通过 `var(--v5-name)` 间接引用~~（已删除）。
+    - 替代规则：V4 token 名 (`--paper-* / --ink-* / --brand-yellow / --r-*` 等) 在 V5 SSOT 全部消失，达成 REQ-1.6 字面要求。
 
 - [ ] 2. Phase 1 检查点 — Token 落地后人工 review
   - 跑 `node packages/design-system/scripts/check-theme-keys.mjs`、本地 `pnpm --filter @sikao/design-system build`、本地 `pnpm --filter @sikao/web dev`（port 18080），人工验证 V4 页面无视觉退化。
@@ -145,13 +158,14 @@
     - **Validates: Requirements 8.1, 10.1**
     - _Requirements: 8.1, 10.1_
 
-- [ ] 8. lint-v4-token-residual.mjs
-  - 依赖：1.7。
-  - 产出物：`apps/web/scripts/lint-v4-token-residual.mjs` + 接入 `pnpm lint:v4-residual`（默认 warn，sunset 日 2026-06-06 起切到 error）。
+- [ ] 8. lint-v4-token-residual.mjs（**降级 OPTIONAL，2026-05-24 V5-M0.5**）
+  - 依赖：~~1.7~~（已 ARCHIVED）；改为依赖 V5-M0.5 commit ② 完成。
+  - 产出物：`apps/web/scripts/lint-v4-token-residual.mjs` + 接入 `pnpm lint:v4-residual`（默认 error，big-bang 后必须 0 命中）。
   - 行为：扫 V4 token 名（`--paper-*` / `--ink-*` / `--brand-yellow*` / `--ok` / `--warn` / `--err` / `--info` / `--r-*` / `--sp-*` / `--t-*` / `--h-xs..lg` / `--row-h` 等）出现位置；在 `apps/**/src/**` 命中即记录。
-  - 验收：合规样本通过；故意写 `var(--paper-1)` 拦截。
+  - **2026-05-24 调整**：big-bang 后 V4 token 残留是"删除事实保证"，本 lint 改为 regression guard（防止后续误引入 V4 名）；不再有 sunset 时间约束。
+  - 验收：合规样本（V5-M0.5 commit ⑤ 后空仓）通过；故意写 `var(--paper-1)` 拦截。
   - 回滚：`git revert <sha>`。
-  - _Requirements: 1.6, 12.1, 12.2_
+  - _Requirements: 1.6, ~~12.1, 12.2~~（REQ-12 ARCHIVED）_
 
   - [ ]* 8.1 Property test for V4 residual lint
     - **Property 8: V4 Token Residual Convergence**
@@ -570,9 +584,17 @@
 - [ ] 20. Phase 5 检查点 — SVG 资产全绿
   - 跑 `pnpm --filter @sikao/web lint`（含 lint-icon-style / lint-practice-svg-only / lint-no-emoji-as-icon）必须全 PASS；浏览器目检 sprite。问 user 进入 Phase 6。
 
-### Phase 6 — V4→V5 Token 迁移 + 残留扫描（2 周双轨期：2026-05-23 → 2026-06-06）
+### Phase 6 — ~~V4→V5 Token 迁移 + 残留扫描~~ — **ARCHIVED 2026-05-24（V5-M0.5 big-bang rebuild）**
 
-- [ ] 21.1 全量替换 V4 token 引用（按页面 surface 整页切换，不允许局部混用，REQ-12.4）
+> **整章作废**：lhr 拍板 big-bang 重建，apps/web 业务层与 packages/ui 整包删除，没有 V4 surface 需要切换、没有 V4 alias 需要 sunset。
+>
+> 替代规则：V5 spec 落地后，业务 Phase（Home / Practice / Notes / Review / Profile / Marketing）直接消费 V5 规范从零实现，不走"surface 切换"中间步骤。
+>
+> 影响 sub-task：21.1a-g、21.2、21.3、21.3a 全部 ARCHIVED。
+>
+> 历史内容保留作记录，**不作为 V5 实现的输入**。
+
+- [ ] ~~21.1 全量替换 V4 token 引用（按页面 surface 整页切换，不允许局部混用，REQ-12.4）~~ — ARCHIVED
   - 依赖：1.7, 17.x。
   - 产出物：把 `apps/web/src/{styles,views,components,layouts}/**` 中的 V4 token 引用（`var(--paper-1)` / `var(--ink-2)` / `var(--brand-yellow)` 等）替换为 V5 名（`var(--color-bg-surface)` / `var(--color-text-secondary)` / `var(--color-brand-primary)`）；按 surface 拆 commit（每 surface 一个 commit，≤15 文件）：
     - 21.1a `apps/web/src/styles/**` 全局样式替换
@@ -614,9 +636,10 @@
 
 ### Phase 7 — V5 Baseline Report + 视觉验证（playwright 截图回归 6 档断点）
 
-- [ ] 23.1 V5 Baseline Report（REQ-11.4 / §T.2）
-  - 依赖：8（lint-v4-residual）, 21.3。
-  - 产出物：`apps/web/v5-baseline-report.md`（按 §T.2 模板：扫描范围 / 违规统计 / Top 5 修复优先级 / 迁移阻塞）；扫描对象 = `.tmp_review/out/*.html`（V4 现存 10 文件）+ V5 落地后 `apps/web/src/views/**`。
+- [ ] 23.1 V5 Baseline Report（REQ-11.4 / §T.2，**2026-05-24 调整**）
+  - 依赖：~~8（lint-v4-residual）, 21.3~~ → V5-M0.5 commit ⑦ 完成（lint 全绿） + Phase 4 桌面页骨架完成。
+  - 产出物：`apps/web/v5-baseline-report.md`（按 §T.2 模板：扫描范围 / 违规统计 / Top 5 修复优先级 / ~~迁移阻塞~~（已无 V4 surface））。
+  - **2026-05-24 调整**：扫描对象去掉 `.tmp_review/out/*.html`（V4 现存原型）章节；只保留 V5 落地后 `apps/web/src/views/**` + `apps/web/src/components/**` 的 lint 统计作 V5 基线。
   - 验收：报告生成可被 `cat apps/web/v5-baseline-report.md` 读取；每条 lint 违规数与实际跑 lint 输出一致。
   - 回滚：`git revert <sha>` 删除报告。
   - _Requirements: 11.4_
@@ -706,6 +729,8 @@
 
 ## Task Dependency Graph
 
+> **2026-05-24 V5-M0.5 调整**：wave 4 移除 `1.7`（V4 alias ARCHIVED）；wave 21–24 整段 ARCHIVED；`8.1`（V4 residual property test）从 wave 4 移除（task 8 改可选）；保留 wave 0–20 + 25–28 用于实施。
+
 ```json
 {
   "waves": [
@@ -713,7 +738,7 @@
     { "id": 1, "tasks": ["1.2", "1.3", "3.1", "4.1", "5.1", "6.1", "7.1"] },
     { "id": 2, "tasks": ["1.4"] },
     { "id": 3, "tasks": ["1.5", "8"] },
-    { "id": 4, "tasks": ["1.6", "1.7", "8.1"] },
+    { "id": 4, "tasks": ["1.6"] },
     { "id": 5, "tasks": ["10.1"] },
     { "id": 6, "tasks": ["10.2", "11.1", "11.2", "11.3", "11.4", "11.5"] },
     { "id": 7, "tasks": ["10.3", "12.1"] },
@@ -730,14 +755,16 @@
     { "id": 18, "tasks": ["19.4"] },
     { "id": 19, "tasks": ["19.5"] },
     { "id": 20, "tasks": ["19.6a", "19.6b", "19.7"] },
-    { "id": 21, "tasks": ["21.1a"] },
-    { "id": 22, "tasks": ["21.1b", "21.1c", "21.1d", "21.1e", "21.1f", "21.1g"] },
-    { "id": 23, "tasks": ["21.2"] },
-    { "id": 24, "tasks": ["21.3", "21.3a"] },
     { "id": 25, "tasks": ["23.1", "23.2"] },
     { "id": 26, "tasks": ["23.2a", "23.2b", "23.2c", "23.2d", "23.2e"] },
     { "id": 27, "tasks": ["25.1", "25.2"] },
     { "id": 28, "tasks": ["25.3"] }
+  ],
+  "archived_waves": [
+    { "id": 21, "reason": "V5-M0.5 big-bang: 21.1a styles 切换 ARCHIVED" },
+    { "id": 22, "reason": "V5-M0.5 big-bang: 21.1b-g surface 切换 ARCHIVED" },
+    { "id": 23, "reason": "V5-M0.5 big-bang: 21.2 evidence ARCHIVED" },
+    { "id": 24, "reason": "V5-M0.5 big-bang: 21.3 sunset ARCHIVED + 21.3a property test ARCHIVED" }
   ]
 }
 ```

@@ -1,5 +1,21 @@
 # Requirements Document
 
+> **2026-05-24 UPDATE — V5-M0.5 Big-Bang Rebuild**
+>
+> lhr 拍板：放弃 V4→V5 迁移路径，改为 big-bang 重建。`apps/web/src/{views,components,layouts,lib,utils,router,styles,test-utils,types,assets,__tests__}` 与 `packages/ui` 整包删除；前端业务层在 V5 规范下从零实现。
+>
+> 影响范围：
+> - **REQ-12 整段 ARCHIVED**（不再有"迁移"语义可言）
+> - **R1/Q6 决策（双轨期 2 周）ARCHIVED**
+> - **§C.6 design.md V4→V5 mapping 章节 ARCHIVED**
+> - **`packages/design-system/src/tokens.css` §8 V4 alias 区块同步删除**
+> - REQ-1.6（V4 token 必须有去向）改为：V4 token 名在 V5 全部消失即为达成
+> - REQ-1..REQ-11 全部不变
+> - 不变量 INV-1..7 全部不变
+> - R1/Q1..Q5 + R2/Q1..Q6 全部不变
+>
+> 详见 [11-Implementation-Plan.md](../../../docs/vault/05-migration/Phase/Style-Guide-V5/11-Implementation-Plan.md) §V5-M0.5 章节。
+
 ## Introduction
 
 V4 前端样式规范（`.tmp_review/out/Frontend Style Guide v4.html` 及同目录页面 HTML）是在没有 Figma 交接包的情况下、基于原型截图由 AI 推断而成，颗粒度粗、组件状态不全、token 分层不清。
@@ -149,13 +165,20 @@ V5 必须给出每个已锁定页面的"容器分层规范"——只描述容器
 - **REQ-11.3** IF 某条规则当前没有对应 lint THEN THE SYSTEM SHALL 在 V5 文档明确标注"无自动化、人工 review 兜底"，不允许默认假设有 lint。
 - **REQ-11.4** THE SYSTEM SHALL 要求 V5 规范文档提交时附带"V5 自检报告"——对 V4 现存页面 HTML 跑一遍 V5 lint 集，记录基线违规数，作为后续迁移进度衡量。
 
-### REQ-12 V4 → V5 迁移
+### REQ-12 V4 → V5 迁移 ~~（ARCHIVED 2026-05-24）~~
 
-- **REQ-12.1** THE SYSTEM SHALL 提供"token mapping 表"（V4 token → V5 token），逐条标注 keep / rename / split / deprecate。
-- **REQ-12.2** WHEN token 是 deprecate THE SYSTEM SHALL 给出过渡期 = **2 周**（已由 user 在 Q6/REQ-12.2 拍板，与一个常规迭代周期对齐）；过渡期内 V4 与 V5 token 双轨并存，V4 token 在 `tokens.css` 内必须带 `@deprecated` 注释 + 失效日期；过渡期满后由 Verifier 跑一次"V4 token 残留扫描"，确认 0 引用后从 SSOT 删除。
-- **REQ-12.3** WHEN 视觉变更影响已上线页面 THE SYSTEM SHALL 在 V5 文档给出"页面级迁移清单"——每个 surface 标注 `auto-replace` / `requires-design-review` / `breaking`。
-- **REQ-12.4** THE SYSTEM SHALL 禁止在迁移期出现"V4 + V5 双套 token 同屏"的页面；迁移按 surface 整页切换，不允许局部混用。
-- **REQ-12.5 验收**：V5 文档必须有一节"迁移前/迁移后对照"，至少给出 Home / Practice / Note / Me 四个页面的对照证据。
+> **ARCHIVED 2026-05-24（V5-M0.5 big-bang rebuild 决策）**：本节整段作废。lhr 在 2026-05-24 拍板 big-bang 重建——`apps/web/src/{views,components,layouts,lib,utils,router,styles,test-utils,types,assets,__tests__}` 与 `packages/ui` 整包删除，前端业务层从 V5 规范从零实现，**没有 V4 surface 需要迁移**。Token mapping 表、双轨期、整页 surface 切换、迁移前后对照等机制全部失效。本节保留作历史记录，下游 design / tasks 一并按 ARCHIVED 处理。
+>
+> 替代规则：
+> - V5 spec 三件套与 Phase 文档落地后，业务 Phase（Home / Practice / Notes / Review / Profile / Marketing）在新 V5 框架下从零实现，不再走"V4 → V5 切换"。
+> - V4 token alias 双轨期作废；`packages/design-system/src/tokens.css` §8 V4 alias 区块在 V5-M0.5 一并删除。
+> - 各业务 Phase 前端任务直接消费 V5 规范，不再依赖"V5-M5..M8 surface 切换"中间层（V5 主线已收敛，详见 [11-Implementation-Plan.md](../../../../docs/vault/05-migration/Phase/Style-Guide-V5/11-Implementation-Plan.md)）。
+
+~~- **REQ-12.1** THE SYSTEM SHALL 提供"token mapping 表"（V4 token → V5 token），逐条标注 keep / rename / split / deprecate。~~
+~~- **REQ-12.2** WHEN token 是 deprecate THE SYSTEM SHALL 给出过渡期 = **2 周**……~~
+~~- **REQ-12.3** WHEN 视觉变更影响已上线页面 THE SYSTEM SHALL 在 V5 文档给出"页面级迁移清单"……~~
+~~- **REQ-12.4** THE SYSTEM SHALL 禁止在迁移期出现"V4 + V5 双套 token 同屏"的页面……~~
+~~- **REQ-12.5 验收**：V5 文档必须有一节"迁移前/迁移后对照"，至少给出 Home / Practice / Note / Me 四个页面的对照证据。~~
 
 ## Glossary
 
@@ -191,7 +214,7 @@ V5 requirements 阶段完成需要满足：
 | Q3 | REQ-5.5 | 纯系统字体栈 + 中文回退 | 不引入 DM Sans / Inter / Noto Sans 在线字体；数字展示 `<Numeric>` 用 `tabular-nums`。 |
 | Q4 | REQ-8.4 | **底部导航采用玻璃拟态 + 自动降级**（user 选 A） | 默认 `backdrop-filter: blur(...)`；`@supports not (backdrop-filter)` 时降级到不透明 `paper-2`；该 fallback 必须同时登记到 `docs/engineering/fail-fast-exceptions.md`，含触发条件、降级目标、负责人、复审日期。 |
 | Q5 | REQ-9.5 | V5 只定考试模式所需的 token 与容器钩子 | 具体 layout、resize、计时器、状态机走独立"考试设计 spec"。 |
-| Q6 | REQ-12.2 | V4→V5 迁移过渡期 = 2 周 | 双轨期内 V4 token 标 `@deprecated` + 失效日期；过渡期满后 Verifier 跑残留扫描，0 引用才删除。 |
+| Q6 | REQ-12.2 | ~~V4→V5 迁移过渡期 = 2 周~~ **ARCHIVED 2026-05-24**：V5-M0.5 big-bang rebuild 决策已让双轨期失效，apps/web 业务层一次性删除 + 从零按 V5 实现，无 V4 alias 需要 sunset | ~~双轨期内 V4 token 标 `@deprecated` + 失效日期~~ |
 
 ### 7.2 R2 决策（2026-05-23 通过决策板 `.tmp_review/v5-open-questions-r2.html`）
 

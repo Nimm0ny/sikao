@@ -1,11 +1,21 @@
 # Design Document
 
+> **2026-05-24 UPDATE — V5-M0.5 Big-Bang Rebuild**
+>
+> lhr 拍板 big-bang 重建。受影响章节：
+> - **§C.6 V4 → V5 Token Mapping** — 整段 ARCHIVED（apps/web 业务层与 packages/ui 整包删除，无 V4 token 名残留需要 mapping）
+> - 主线 2 "V4 → V5 token mapping" — ARCHIVED；REQ-1.6 改为"V4 token 名在 SSOT 全部消失即为达成"
+> - 其他 6 条主线（三层 token / 5 类卡片 / 35 组件 / 页面容器树 / a11y i18n / Lint traceability）全部不变
+> - §A / §B / §C.1..C.5 / §D / §E / §F / §T 全部不变
+>
+> 详见 [11-Implementation-Plan.md](../../../docs/vault/05-migration/Phase/Style-Guide-V5/11-Implementation-Plan.md) §V5-M0.5 章节。
+
 ## Overview
 
 本设计文档把 `requirements.md` 中 12 个 REQ 块的"应该是什么"转化为 V5 规范"具体是什么"。设计阶段的产出严格落在以下 7 条主线，并与 user 已拍板的 6 项决策（见 requirements §7 Resolved Decisions）一致：
 
 1. **三层 token 体系的完整值表**：primitive / semantic / component 三层，含 light/dark 双值（覆盖 REQ-1 / REQ-2 / REQ-3 / REQ-4 / REQ-5 / REQ-6）。
-2. **V4 → V5 token mapping**：逐条标注 keep / rename / split / deprecate（覆盖 REQ-1.6 / REQ-12.1）。
+2. ~~**V4 → V5 token mapping**：逐条标注 keep / rename / split / deprecate（覆盖 REQ-1.6 / REQ-12.1）。~~ — **ARCHIVED 2026-05-24**（big-bang，无 V4 残留）
 3. **卡片与容器规范**：5 类卡片 × 9 状态的视觉契约（覆盖 REQ-7）。
 4. **组件状态机 + Prop API 草案**：button / input / tab / list-item / sheet / modal / toast / chip / segmented / numeric 等（覆盖 REQ-8）。
 5. **页面级容器树**：Home / Practice / Note / Me / Question Hub / Review / Exam（占位）（覆盖 REQ-9）。
@@ -507,7 +517,18 @@ V5 强制以下场景**只**接受 SVG 图标，禁止文字符号 / emoji / 图
 - **使用方式**：`<svg><use href="/icons.svg#chevron-left" /></svg>`，配合 `currentColor` 自动取色。
 - **新增图标**：必须先在 design-system 仓提 PR，附 SVG 源文件 + 业务命名 + 用途说明，CI 跑 `lint-icon-style.mjs`<sup>新</sup> 校验风格（viewBox / stroke-width / fill / linecap）。
 
-### C.6 V4 → V5 Token Mapping（REQ-1.6 / REQ-12.1）
+### C.6 V4 → V5 Token Mapping ~~（REQ-1.6 / REQ-12.1）~~ — ARCHIVED 2026-05-24
+
+> **ARCHIVED 2026-05-24（V5-M0.5 big-bang rebuild 决策）**：本章节整段作废。lhr 拍板 big-bang 重建，`apps/web` 业务层与 `packages/ui` 整包删除；`packages/design-system/src/tokens.css` §8 V4 alias 区块同步删除。**没有 V4 token 名残留需要逐条 mapping**——V5 token 名（`--color-bg-* / --color-text-* / --space-* / --radius-* / --font-* / --shadow-l*` 等）是 SSOT 的全部内容。
+>
+> 影响：
+> - 下游 tasks.md 1.7（V4 alias 区块）+ Phase 6（21.x 整页 surface 切换）+ 21.3（sunset）+ 23.1（baseline report 含 V4 残留扫描）整段 ARCHIVED。
+> - REQ-1.6 字面"所有 V4 token 必须有 V5 去向"达成方式改为：V4 token 名在 SSOT 全部不存在即为达成。
+> - 本表保留作历史参考，**不作为 V5 实现的输入**。
+>
+> 替代规则：业务 Phase（Home / Practice / Notes / Review / Profile / Marketing）在新 V5 框架下从零按 §C.1–C.5 token 与 §D.1–D.5 组件契约实现。
+
+下表内容保留作历史参考。
 
 | V4 token | V5 去向 | 处置 | 备注 |
 |---|---|---|---|

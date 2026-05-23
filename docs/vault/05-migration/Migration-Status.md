@@ -2,7 +2,7 @@
 type: migration
 status: active
 owner: lhr
-last-reviewed: 2026-05-21
+last-reviewed: 2026-05-24
 ---
 
 # Migration Status
@@ -18,7 +18,7 @@ last-reviewed: 2026-05-21
 | Legacy Feature Inventory | complete | 顶层盘点 + 单 view 级路由清单 + components 归属表 |
 | ADR | partial | 0001 Monorepo / 0002 Answer-Engine / 0003 Document-Vault 已写；0004 Models 拆分待 R2 |
 | Home Phase（2026-05-23 runtime closeout） | complete | M0-M2 已完成；M0.5 / SIK-31 已解锁前端 full typecheck blocker；M3 后端 deliverables 已落地主干；M4 / SIK-35、M5 / SIK-36、M6 / SIK-37 已完成；backend-first 契约与 scheduler 链已收口；M7 / SIK-38、M8 / SIK-39、M9 / SIK-40、M10 / SIK-41、M11 / route-shell convergence 与 M12 / a11y+browser acceptance 已在 `main` 上完成，`/profile/records`、canonical `"/"` Home、5-tab nav、legacy redirect 收口已落地并通过验证 |
-| **前端代码迁移** | **complete** | **770+ 文件**已搬到正确位置；0 个 MIGRATION_TODO 残留；编码 mojibake 已修复（507 文件 binary-copy 重做）；`tsc -b --noEmit` 0 errors（test exclude）；`vite build` 1.81s 38 chunks pass |
+| **前端代码迁移** | **scrapped 2026-05-24** | **V5-M0.5 big-bang rebuild 决策**：lhr 拍板放弃 V4 → V5 整页 surface 切换；`apps/web/src/{views,components,layouts,lib,utils,router,styles,test-utils,types,assets,__tests__}` 与 `packages/ui/**` 整段删除（commit ③④）；`packages/design-system/src/tokens.css` §8 V4 alias 区块同步删除（commit ②）；前端业务层在 V5 规范下从零实现。**保留**：`apps/web/src/{main.tsx,index.css,setupTests.ts,vite-env.d.ts}` + `packages/{answer-engine,api-client,calendar-engine,config,design-system,domain,editor,shared-utils}` 完整保留。详见 [Phase/Style-Guide-V5/11-Implementation-Plan.md §0](./Phase/Style-Guide-V5/11-Implementation-Plan.md)。|
 | Auth（前端） | partial | views/auth/* + components/auth/* + domain/auth/useAuthStore 已迁；登录页面具体功能未验证 |
 | User（前端） | partial | views/Profile + components/profile 已迁 |
 | Question Bank（前端） | partial | views/{Papers,CategoryTree,EssayPapers,EssayPaperDetail} + components/questions 已迁 |
@@ -38,7 +38,7 @@ last-reviewed: 2026-05-21
 | Exam Events 考试日历（前端） | partial | views/ExamCalendar + api-client/queries/examEventsQueries 已迁 |
 | Admin 后台（前端） | not_started | new_web 无独立 admin 前端 view |
 | Marketing 落地页（前端） | partial | views/marketing/* 整目录已迁（运行功能，非原型） |
-| @sikao/ui | partial | 167 文件（ui + icons + brand + TweaksDrawer），barrel index.ts 就位 |
+| @sikao/ui | **removed 2026-05-24** | **V5-M0.5 big-bang**：167 文件（ui + icons + brand + TweaksDrawer）整包从 monorepo 移除（commit ④）；apps/web/package.json deps + tsconfig paths + vite alias 同步清理；V5 组件落点改为 `apps/web/src/components/{system,atom,form,overlay,nav,layout,business}/`（详见 V5 design.md §D.3 + 03-Components.md）。|
 | @sikao/design-system | partial | tokens.css 已收敛到 `packages/design-system/src/tokens.css`（SSOT，2026-05-13 落地）；apps/web 改 shim 完成；R2 清理 alias 层 |
 | @sikao/api-client | partial | 已有 `request` / `apiQueries` / legacy query 集合；Home `M7 / SIK-38` 已重启，当前要补 canonical `plans/recommendations/progress/dashboard/profile` 模块并收口 Home helper |
 | @sikao/domain | partial | 现有 10 个子领域仍偏 legacy；Home `M8 / SIK-39` 已重启，当前要新增 `plan/usePlanStore` 与 dashboard preference / adjustment / recommendation draft stores |

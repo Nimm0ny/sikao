@@ -42,40 +42,39 @@ V5 全程受 AGENTS.md H1–H10 硬规则约束。下表标出每条硬规则在
 
 ---
 
-## 3. 与其他业务 Phase 的接力
+## 3. 与其他业务 Phase 的接力（2026-05-24 V5-M0.5 调整后）
 
-V5 是水平基础设施，所有业务 Phase 都消费它。每个 Phase 在 V5 落地后需要做的对接动作如下：
+V5 是水平基础设施。**big-bang 重建后，V5 spec + 组件骨架到位即"接力完成"**——各业务 Phase 直接消费 V5 规范从零实现，不再走 V5 子 issue 的"surface 切换"中间步骤。
 
-### 3.1 接力时序
+### 3.1 接力时序（big-bang 后）
 
 ```
-M0 (NOW)  ── V5 spec 三件套 ACCEPTED + Phase 文档落地
-M1        ── V5 Phase 1–5 实施（token / lint / 组件骨架 / 桌面页骨架 / SVG）
-M2        ── V5 Phase 6 V4→V5 整页 surface 切换
-              ├─ 21.1a styles 全局
-              ├─ 21.1b Home   → Phase/Home  消费
-              ├─ 21.1c Practice → Phase/Practice 消费
-              ├─ 21.1d Note   → Phase/Notes  消费
-              ├─ 21.1e Me     → Phase/Profile 消费
-              ├─ 21.1f QuestionHub / Review → Phase/Review 消费
-              └─ 21.1g components / layouts 残余
-M3        ── V5 Phase 7 视觉回归基线（playwright 6 断点 × 6 页 = 36 截图）
-M4        ── V5 Phase 8 文档同步 + spec 关闭
-M5+       ── 业务 Phase 在 V5 之上做新功能；任何 V4 token 残留 fail
+M0    ── done. V5 spec 三件套 ACCEPTED + Phase 文档落地（含 V5-M0.5 决策追加）
+M1    ── done. tokens.css 三层（§8 V4 alias 已被 V5-M0.5 删除）
+M0.5  ── IN PROGRESS. big-bang rebuild + lint 聚合
+M2    ── V5 Phase 2 6 lint 闸门
+M3    ── V5 Phase 3 35 组件骨架
+M4    ── V5 Phase 5 SVG 资产收敛
+M9    ── V5 兜底实施（Me / QuestionHub / Marketing）+ 视觉回归 baseline
+M11   ── V5 Phase 8 文档同步 + spec 关闭
+
+并行（不阻塞 V5）：
+  各业务 Phase 前端任务在 V5 M3+M4 到位后自主决定何时实施；
+  Home (SIK-29 family) / Practice (SIK-26-28) / Notes (SIK-44 family) /
+  Review (SIK-45 family) 直接按 V5 spec 从零实现。
 ```
 
 ### 3.2 各 Phase 对接动作
 
 | 业务 Phase | V5 对接动作 | 时机 |
 |---|---|---|
-| **Home** | 整页 surface 切 V5 token；接 D.4.1 骨架（4 metric-row + Calendar + 底栏 3 卡片）；ListItem hover 必须包在 `@media (hover: hover) and (pointer: fine)`（CP.9） | tasks.md 21.1b |
-| **Practice** | 整页切 V5；ScopeToggle（行测/申论）改用 D.3.3 Tabs `variant="segmented"`，**禁独立 SegmentedControl 实现**（R2/Q2） | tasks.md 21.1c |
-| **Notes** | 整页切 V5；笔记详情由 V4 Modal **改 D.3.21 Drawer**（R2/Q1）；移动端自动转 `<Sheet side="bottom">` | tasks.md 21.1d |
-| **Profile** | 整页切 V5；危险操作 Panel 改 `variant="danger"`，左侧 4px err 条；注销 / 数据删除等不可逆操作走 D.3.22 ConfirmDialog（不可用普通 Modal 拼装） | tasks.md 21.1e |
-| **Review / Question Hub** | 整页切 V5；compact-card 用 `--card-radius-sm` (12px) 提升信息密度；Pagination 紧凑模式 | tasks.md 21.1f |
-| **Onboarding** | 暂无新动作；过渡期内引用 V4 alias 不报错；2026-06-06 起任意 V4 token 残留 fail（CP.8） | sunset 当天兜底 |
-| **Auth** | 同 Onboarding；登录 / 注册表单用 V5 D.3.16 FormField（不允许裸 label + input） | sunset 兜底 |
-| **Marketing** | landing 页 surface 切 V5；不受 `--max-w-workspace=1440` 限制（marketing 用更宽 hero） | Phase 6 后置 |
+| **Home** | 在 V5 框架下重新实现 5 tab + /me + /profile/records + 验收（原 SIK-42/43 deliverable big-bang 删除后重做）；接 D.4.1 骨架；ListItem hover 必须 `@media (hover: hover) and (pointer: fine)`（CP.9） | V5 M3 到位后 |
+| **Practice** | 按 D.4.2 实现；ScopeToggle 用 D.3.3 Tabs `variant="segmented"`（R2/Q2） | V5 M3 + Practice 后端 SIK-25 收尾 |
+| **Notes** | 按 D.4.3 实现；笔记详情用 D.3.21 Drawer（R2/Q1） | V5 M3 + Notes 后端 M0-M6 收尾 |
+| **Profile** | 在 V5-M9 兜底实施 | V5 M3 后 |
+| **Review / Question Hub** | 按 D.4.5 实现；compact-card 用 `--card-radius-sm` (12px) | V5 M3 + Review 后端 M0-M7 收尾 |
+| **Onboarding / Auth** | 在 V5 框架下从零实现，**无 V4 alias 兼容期** | V5 M3 后 |
+| **Marketing** | landing 页用 V5；不受 `--max-w-workspace=1440` 限制 | V5-M9 内 |
 
 ### 3.3 Exam 模式（独立 Phase 未来承接）
 
@@ -99,9 +98,9 @@ R1/Q5 + R2/Q3 + R2/Q6 共同决定：
 - **Commit 拆分**：requirements / design / tasks / Phase 文档各一个原子 commit（推荐，符合 H9 一次一事）；还是合一个并走 H9 例外（需 commit message 写明授权理由）
 - **Working tree 当前还有 3 个无关文档修改**（obsidian workspace + Practice 03/04 WU），commit 时必须只 stage `.kiro/specs/frontend-style-guide-v5/` + 本 Phase 目录，禁 `git add .`
 
-### 4.2 V4→V5 sunset 硬约束 ≥ 2026-06-06
+### 4.2 ~~V4→V5 sunset 硬约束 ≥ 2026-06-06~~ — ARCHIVED 2026-05-24
 
-tasks.md 任务 21.3 删除 V4 alias 的执行时机硬约束 ≥ 2026-06-06。早于该日期 sub-task 保持 `blocked`。如果 Phase 1–5 实施延期，**任何 sunset 顺延都需要在 README §2 进度表 + tasks.md 中显式更新**，禁止隐式延期。
+> **作废**：V5-M0.5 big-bang rebuild 决策让 sunset 失效。tokens.css §8 V4 alias 已在 V5-M0.5 commit ② 删除，无残留 alias 需要 sunset。原 tasks.md 21.3 sub-task ARCHIVED。
 
 ### 4.3 Phase 7 视觉回归基线初次跑通
 

@@ -1,14 +1,22 @@
-# 10 · V4 → V5 Migration（双轨期 + 整页 surface 切换 + sunset）
+---
+status: archived
+archived-on: 2026-05-24
+archived-reason: V5-M0.5 big-bang rebuild decision
+---
 
-> **Status**: LOCKED
-> **Phase 父目录**：[../README.md](../README.md)
-> **来源**：`requirements.md` REQ-12 + `design.md` §C.6 mapping + tasks.md Phase 6
-> **过渡期硬时间**：**2026-05-23 → 2026-06-06**（2 周，R1/Q6 决策）
-> **Last Updated**: 2026-05-23
+# 10 · ~~V4 → V5 Migration（双轨期 + 整页 surface 切换 + sunset）~~ — **ARCHIVED 2026-05-24**
+
+> **本文件整篇作废**。
+>
+> **作废原因**：lhr 在 2026-05-24 拍板 V5-M0.5 big-bang rebuild：`apps/web/src/{views,components,layouts,lib,utils,router,styles,test-utils,types,assets,__tests__}` 与 `packages/ui` 整包删除，前端业务层在 V5 规范下从零实现。**没有 V4 surface 需要迁移、没有双轨期、没有 sunset、没有 21.1a-g 整页切换、没有迁移前后对照截图证据**。
+>
+> **替代规则**：V5 spec 三件套与 Phase 文档落地后，业务 Phase（Home / Practice / Notes / Review / Profile / Marketing）直接消费 V5 规范从零实现。详见 [11-Implementation-Plan.md §V5-M0.5](./11-Implementation-Plan.md)。
+>
+> **保留作历史**：本文件以下内容（双轨期规则、sunset 检查清单、21.1 整页切换流程等）保留作历史记录，**不作为 V5 实现的输入**。任何引用本文件的下游文档应同步标 ARCHIVED。
 
 ---
 
-## 1. 迁移原则（4 条铁律）
+## ~~1. 迁移原则（4 条铁律）~~ — ARCHIVED
 
 | 原则 | 内容 |
 |---|---|

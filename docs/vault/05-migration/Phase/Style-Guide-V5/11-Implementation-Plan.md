@@ -2,20 +2,72 @@
 
 > **Status**: ACTIVE
 > **Phase 父目录**：[../README.md](../README.md)
-> **Last Updated**: 2026-05-23
+> **Last Updated**: 2026-05-24
 > **作用**：把 V5 Phase 1–8 落地节奏与 Multica 子 issue 一一对应；与远端业务 Phase（Home / Practice / Review / Notes）并行节奏的边界声明 SSOT。
 
 ---
 
-## 1. 总览
+## 0. V5-M0.5 Big-Bang Rebuild（2026-05-24 决策）
 
-V5 是水平视觉基础设施 Phase，与远端按 Home → Practice → Review → Notes 顺序推进的业务 Phase **方向正交**。落地策略：
+### 0.1 决策内容
 
-- **Phase 1 / 2 / 3 / 5（基础设施 4 件套）立刻并行启动**——文件落点全是新目录或纯增量，与远端 0 冲突
-- **Phase 4 / 6 / 7（页面骨架 + 整页 token 切换 + 视觉回归）严格尾随远端业务 Phase 节奏**——按 Home → Practice → Review → Notes 顺序追切，0 抢路
-- **Phase 8（文档同步 + spec 关闭）排到最后**——Design-System.md 与 Migration-Status.md 等远端业务 Phase 收尾后再合
-- **sunset 硬日期 2026-06-06**——任何 Phase 1–5 延期都需在 [README §2](./README.md) 进度表 + 本文 §3 时间盒显式更新，禁止隐式延期
-- **feature 分支策略**：开 `spec/frontend-style-guide-v5` 分支，14 天双轨期内不 merge 到 `main`，等远端业务 Phase 阶段性收尾后再分批 rebase + 切 Phase 6
+lhr 在 2026-05-24 拍板：放弃 V4 → V5 整页 surface 切换路径，改为 big-bang 重建。
+
+- `apps/web/src/{views,components,layouts,lib,utils,router,styles,test-utils,types,assets,__tests__}` 整段删除
+- `packages/ui/**` 整包从 monorepo 移除
+- `packages/design-system/src/tokens.css` §8 V4 alias 区块同步删除
+- 前端业务层在 V5 规范下从零实现
+
+### 0.2 主线收敛
+
+原 13 milestone（M0 / M1..M11）砍到 8 个：
+
+| Milestone | 状态 | 说明 |
+|---|---|---|
+| M0 | done（SIK-72） | docs intake |
+| M1 | done（SIK-73） | tokens.css 三层 |
+| **M0.5（NEW）** | **NEW** | big-bang rebuild + lint 聚合 |
+| M2 | in_progress（SIK-74） | 6 lint 闸门 |
+| M3 | backlog（SIK-75） | 35 组件骨架 |
+| M4 | backlog（SIK-76） | SVG 资产收敛 |
+| M9（重命名） | backlog（SIK-81） | V5 兜底实施 + 视觉回归 baseline（合并原 M9 + M10 视觉回归） |
+| M11 | backlog（SIK-83） | 文档同步 + spec 关闭 |
+
+### 0.3 砍掉的 milestone
+
+| 原 issue | 状态 | 处置 |
+|---|---|---|
+| SIK-77 (M5 Home surface 切换) | backlog → cancelled | big-bang 后无 V4 surface；Home 实现归 SIK-29 family / 新 V5 框架 |
+| SIK-78 (M6 Practice surface 切换) | backlog → cancelled | Practice 前端归 SIK-26/27/28 |
+| SIK-79 (M7 Review surface 切换) | backlog → cancelled | Review 前端归 SIK-66-70 |
+| SIK-80 (M8 Notes surface 切换) | backlog → cancelled | Notes 前端归 SIK-53-57 |
+| SIK-82 (M10 sunset + 视觉回归) | backlog → cancelled / 重命名 | sunset 部分 ARCHIVED；视觉回归 baseline 合并到新 M9 |
+| SIK-84 (僵尸重复 issue) | backlog → cancelled | 与 SIK-85 description 完全相同；2026-05-23 误建 |
+
+### 0.4 V5 spec 影响
+
+- `requirements.md` REQ-12 整段 ARCHIVED；R1/Q6 双轨期 ARCHIVED
+- `design.md` §C.6 V4→V5 mapping ARCHIVED
+- `tasks.md` Phase 6（21.x）+ wave 21–24 ARCHIVED；task 1.7 ARCHIVED；task 8 降级可选；task 23.1 V4 扫描章节 ARCHIVED
+- `02-Token-System.md` §7（V4 mapping）+ §7.6（sunset 时间线）ARCHIVED
+- `00-Decisions.md` 加 §0 V5-M0.5 章节
+- `10-Migration.md` 整篇 ARCHIVED
+
+### 0.5 Multica 账本
+
+新建 **SIK-86 V5-M0.5 big-bang rebuild**（child of SIK-71）；cancel SIK-77/78/79/80/82/84；SIK-71 description 更新 milestone map。SIK-29 M11/M12（SIK-42/43）由新 V5 框架重新承接（不在 V5 SIK-71 范围内，归 SIK-29 family 内务）。
+
+---
+
+## 1. 总览（2026-05-24 V5-M0.5 调整后）
+
+V5 是水平视觉基础设施 Phase。**big-bang rebuild 决策后，主线大幅收敛**：
+
+- **Phase 1 / 2 / 3 / 5（基础设施 4 件套）**：M0 / M1 done，M2 / M3 / M4 进行中或 backlog——这些不变
+- **V5-M0.5 big-bang rebuild**：在 M2（lint）进行中插入，一次性删 V4 业务层 + lint 聚合
+- **Phase 4 + 6 + 7（页面骨架 + 整页 token 切换 + 视觉回归）**：原计划 ARCHIVED，由各业务 Phase 直接消费 V5 规范从零实现
+- **Phase 7 视觉回归 baseline**：保留，合并到新 V5-M9
+- **Phase 8 文档同步 + spec 关闭**：保留
 
 ### 1.1 与远端业务 Phase 的冲突域
 
@@ -85,55 +137,53 @@ V5 是水平视觉基础设施 Phase，与远端按 Home → Practice → Review
 - Phase 5 SVG 收敛可以从 Phase 3 后期就开 batch（19.1 依赖 task 6 lint-icon-style，6 在 wave 0）
 - Phase 3 35 组件骨架建议派 3–4 个 Runner subagent batch 并行（system→atom 一组、form→overlay 一组、layout→business 一组）
 
-### 2.3 sunset 顺延规则
+### 2.3 ~~sunset 顺延规则~~ — ARCHIVED 2026-05-24
 
-如 Phase 1–5 延期、或某 surface 整页切换 evidence 不全，**任何 sunset 顺延都需在以下三处显式更新**：
-
-1. [README.md §2](./README.md) 进度表
-2. `.kiro/specs/frontend-style-guide-v5/tasks.md` 任务 21.3 描述
-3. [02-Token-System.md §7.6](./02-Token-System.md) Deprecate 时间线
-
-禁止隐式延期。
+> **作废**：big-bang 后无 sunset 时间约束。原 21.3 sub-task ARCHIVED；02-Token-System.md §7.6 ARCHIVED。
 
 
 ---
 
-## 3. Multica Issue 拆分矩阵
+## 3. Multica Issue 拆分矩阵（2026-05-24 V5-M0.5 调整后）
 
-参照 SIK-44（Notes Phase）/ SIK-45（Review Phase）的"父 issue + Mx 子 issue"模式。Phase-Style-Guide-V5 也是**单层父 / 子结构**：父 issue 1 个 + 子 issue 12 个（M0–M11）。
-
-> **命名约定**：父 issue 标题 `Style-Guide-V5 Phase 全量落地（M0-M11）`；子 issue 标题 `<父 SIK-id>-M<n> <概述>`，与 SIK-44 / SIK-45 一致。
+> **2026-05-24 调整**：原 12 子 issue（M0..M11）→ 调整为 8 个有效 + 6 个 cancelled + 1 个 NEW。详见 §0.3。
 
 ### 3.1 子 issue 矩阵
 
-| Identifier | Milestone | Title | Depends on | Status | 对应 spec task |
-|---|---|---|---|---|---|
-| SIK-71 | — | Style-Guide-V5 Phase 全量落地（M0-M11） | 无（spec 三件套已 ACCEPTED） | in_progress | — |
-| SIK-72 | M0 | V5 docs-only intake + 父子 issue 落档 | 无 | done | 本文 + Phase 文档 8 篇 + spec 三件套 |
-| SIK-73 | M1 | Phase 1 tokens.css 三层 + 多端断点 + V4 alias | M0 | backlog | tasks 1.1 / 1.2 / 1.4 / 1.5 / 1.6 / 1.7 + 检查点 2 |
-| SIK-74 | M2 | Phase 2 6 lint 闸门 + 接入 pnpm lint | M0（不依赖 M1 落地，只依赖 V5 token 名规约） | backlog | tasks 3 / 4 / 5 / 6 / 7 / 8 + 检查点 9 |
-| SIK-75 | M3 | Phase 3 35 组件骨架（含 ExamLayout 钩子） | M1, M2 | backlog | tasks 10.1–15.5 + 检查点 16 |
-| SIK-76 | M4 | Phase 5 SVG 资产收敛（answering 14 + Rail 3 + 状态 8 + cat/nav 10） | M2（lint-icon-style）, M3 部分（Icon 组件 sprite 入口） | backlog | tasks 19.1 / 19.2 / 19.3 / 19.4 / 19.5 / 19.6a / 19.6b + 检查点 20 |
-| SIK-77 | M5 | Phase 4-6 Home surface 整页切换 | M3, 远端 SIK-29-M11 / M12 收尾 | backlog | tasks 17.1 + 21.1a + 21.1b |
-| SIK-78 | M6 | Phase 4-6 Practice surface 整页切换 | M5, 远端 Phase-Practice 前端 Phase 启动 | backlog | tasks 17.2 + 21.1c |
-| SIK-79 | M7 | Phase 4-6 Review surface 整页切换 | M6, 远端 SIK-45 (Review Phase) M9-M11 落地 | backlog | tasks 17.6 + 21.1f（Review 部分） |
-| SIK-80 | M8 | Phase 4-6 Notes surface 整页切换 | M7, 远端 SIK-44 (Notes Phase) M7-M11 落地 | backlog | tasks 17.3 + 21.1d |
-| SIK-81 | M9 | Phase 4-6 Me / QuestionHub / 全局 styles + components 残余 + Marketing 后置 | M8 | backlog | tasks 17.4 + 17.5 + 21.1e + 21.1f（Hub 部分） + 21.1g |
-| SIK-82 | M10 | Phase 6 sunset + Phase 7 视觉回归 baseline + 36 截图 | M9, 日期 ≥ 2026-06-06 | backlog | tasks 21.2 + 21.3 + 23.1 + 23.2 + 检查点 22 / 24 |
-| SIK-83 | M11 | Phase 8 文档同步（Design-System.md + fail-fast 账本 + Migration-Status）+ V5 spec 关闭 | M10 | backlog | tasks 25.1 + 25.2 + 25.3 + 检查点 26 |
+| Identifier | Milestone | Title | Depends on | Status |
+|---|---|---|---|---|
+| SIK-71 | — | Style-Guide-V5 Phase 全量落地（M0-M11，big-bang 调整后） | 无 | in_progress |
+| SIK-72 | M0 | V5 docs-only intake + 父子 issue 落档 | 无 | done |
+| SIK-73 | M1 | Phase 1 tokens.css 三层 + 多端断点 + ~~V4 alias~~ | M0 | done |
+| **SIK-86 (NEW)** | **M0.5** | **V5-M0.5 big-bang rebuild + lint 聚合** | M1 (SIK-73) | in_progress |
+| SIK-74 | M2 | Phase 2 6 lint 闸门 + 接入 pnpm lint | M0.5 | in_progress |
+| SIK-75 | M3 | Phase 3 35 组件骨架（含 ExamLayout 钩子） | M0.5, M1, M2 | backlog |
+| SIK-76 | M4 | Phase 5 SVG 资产收敛 | M2, M3 部分 | backlog |
+| ~~SIK-77~~ | ~~M5~~ | ~~Phase 4-6 Home surface 整页切换~~ | — | **cancelled 2026-05-24** |
+| ~~SIK-78~~ | ~~M6~~ | ~~Phase 4-6 Practice surface 整页切换~~ | — | **cancelled 2026-05-24** |
+| ~~SIK-79~~ | ~~M7~~ | ~~Phase 4-6 Review surface 整页切换~~ | — | **cancelled 2026-05-24** |
+| ~~SIK-80~~ | ~~M8~~ | ~~Phase 4-6 Notes surface 整页切换~~ | — | **cancelled 2026-05-24** |
+| SIK-81 | M9 | V5 兜底实施 + 视觉回归 baseline 合并 | M3, M4, 各业务 Phase 前端基本到位 | backlog |
+| ~~SIK-82~~ | ~~M10~~ | ~~Phase 6 sunset + 视觉回归 baseline + 36 截图~~ | — | **cancelled 2026-05-24**（baseline 合并到 SIK-81） |
+| SIK-83 | M11 | Phase 8 文档同步 + V5 spec 关闭 | M9（新） | backlog |
+| ~~SIK-84~~ | ~~—~~ | ~~Frontend-IA-V2 view 原型补全（与 SIK-85 重复）~~ | — | **cancelled 2026-05-24**（僵尸） |
+| SIK-85 | — | Frontend-IA-V2 view 原型补全（→ 98%） | 无 | done（2026-05-23） |
 
-### 3.2 与远端业务 Phase 父 issue 的依赖矩阵
+### 3.2 与远端业务 Phase 父 issue 的依赖矩阵（2026-05-24 V5-M0.5 调整后）
 
-| V5 子 issue | 阻塞前置（远端） | 备注 |
+> **简化**：big-bang 重建后，V5 不再尾随各业务 Phase 节奏。M0.5 + M2 / M3 / M4 / M9 / M11 全部独立推进；各业务 Phase（Home / Practice / Notes / Review）在 V5 spec + 组件骨架到位后**自主决定**何时实施前端，不需要 V5 子 issue 包装。
+
+| V5 子 issue | 阻塞前置 | 备注 |
 |---|---|---|
-| SIK-72 / SIK-73 / SIK-74 / SIK-75 / SIK-76（M0–M4） | 无远端阻塞 | 基础设施层，与远端业务 Phase 完全正交 |
-| SIK-77（M5） | 远端 SIK-29 (Home Phase 父 issue) M11 / M12 收尾 | 远端 Home runtime 定型后再切 token |
-| SIK-78（M6） | 远端 Practice 前端 Phase 启动后 | 远端 Practice 后端 SIK-25 in_progress；前端 Phase 父 issue 暂未创建，后续等远端拍板 |
-| SIK-79（M7） | 远端 SIK-45 (Review Phase) SIK-67 / SIK-68 / SIK-69 落地 | Review 前端在 SIK-66–SIK-70 链路 |
-| SIK-80（M8） | 远端 SIK-44 (Notes Phase) SIK-53 / SIK-54 / SIK-55 / SIK-56 落地 | Notes 前端 SIK-53–SIK-57 链路 |
-| SIK-81（M9） | M5+M6+M7+M8 全部完成 | 残余 components / styles / Marketing 收尾 |
-| SIK-82（M10） | M9 完成 + 日期 ≥ 2026-06-06 | sunset 硬时间，早一天都 blocked |
-| SIK-83（M11） | M10 完成 | 关闭 V5 spec |
+| SIK-72..73（M0/M1） | 无 | done |
+| SIK-86（M0.5） | M1 (SIK-73 done) | big-bang 一次性删 + 骨架重建 + lint 聚合 |
+| SIK-74（M2） | M0.5 完成 | 6 lint 闸门 |
+| SIK-75（M3） | M0.5, M1, M2 | 35 组件骨架 |
+| SIK-76（M4） | M2, M3 部分 | SVG 资产收敛 |
+| SIK-81（M9） | M3, M4，**各业务 Phase 前端基本到位** | 兜底实施 + 视觉回归 baseline |
+| SIK-83（M11） | M9 | 文档同步 + spec 关闭 |
+
+V5-M5..M8 surface 切换（SIK-77/78/79/80）已 cancel；各业务 Phase 直接消费 V5 规范实现 = 包揽原"surface 切换"内容。SIK-29 M11/M12（SIK-42/43）由新 V5 框架重新承接，归 SIK-29 family 内务。
 
 ### 3.3 issue description 模板
 
