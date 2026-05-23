@@ -904,6 +904,11 @@ POST /api/v2/practice/essay/reference-answers/generate
 
 **目标**：Tab 2 后端完工签收。
 
+> ⚠️ **Latest-doc gate 范围**（与 [README §8.1](./README.md#81-后端-m10) 与本文 §0 总览 / §25 引用矩阵口径一致）：
+> 本 WU 不仅收口 `B10-B23`，**`B25 / B26 / B27 / B28 / B29 / B30` 各自的 invariant / cron / module e2e / contract test 必须一并纳入本 gate**。
+> 在 `B25-B30` 完工后再补充对应 e2e fixture 与 OpenAPI baseline；任何子 issue（含 `SIK-25`）都不得以 "B25-B30 已自带 e2e，不必进 B24" 为由跳过 final drift 检查。
+> `B24.5` OpenAPI 重生成时端点总数预估为 ~30 + `B25-B30` 新增端点共计约 50+；具体差量以重生成结果为准。
+
 ### 16.1 PR 拆分
 
 #### B24.1 content + session 扩展 e2e
@@ -944,8 +949,8 @@ POST /api/v2/practice/essay/reference-answers/generate
 行数 ~250。
 
 **估算**：1,800 行 / 5 PR
-**依赖**：B10-B23 全部完成
-**验收**：CI 全绿；openapi.json 与 spec 一致；invariant test 0 失败。
+**依赖**：B10-B23 全部完成 + `B25-B30` 完工后的增量 e2e / contract 注入
+**验收**：CI 全绿；openapi.json 与 spec 一致；invariant test 0 失败；`B25-B30` 模块场景已显式纳入 final gate（详见本节顶部 latest-doc gate 范围备注）。
 
 ---
 

@@ -690,6 +690,15 @@ redirect:
 
 **目标**：练习 tab 完工签收。
 
+> ⚠️ **Latest-doc gate 范围**（与 [README §8.2](./README.md#82-前端-m19) 与本文 §0 总览 / §16 引用矩阵口径一致）：
+> 本 WU 不仅收口 `F11-F16` 与 `F17`，**`F19 / F20 / F21 / F22` 四个 latest-doc 模块的 e2e + module unit 场景必须一并纳入本 gate**：
+> - `F19` timing buffer flush / IndexedDB 兜底 / lint 不发送 heartbeat-class / SessionTimingReport 4 状态
+> - `F20` 心跳 30s 节奏 / PAUSED 心跳隐式 resume 对齐 / DRAFT 不被心跳唤醒 / 终态心跳不卡死 / discard 流程
+> - `F21` mock-exam 倒计时 drift 修正 / force_submit 双轨（前端归零立即提交 + cron 60s 兜底）/ 模考期间禁笔记 / 禁暂停 / DELAYED_REVIEW_LOCKED
+> - `F22` schema_version mismatch 恢复 / KeyBindings 唯一性 / 高频字段不写 audit / reset 分 section
+>
+> 任何子 issue（含 `SIK-28`）都不得以 "F19-F22 已自带模块测试，不必进 F18" 为由跳过最终 a11y / bundle / browser smoke。
+
 ### 11.1 PR 拆分
 
 #### F18.1 PracticeCenter 整体测试 + segment + Section A
@@ -738,8 +747,8 @@ redirect:
 行数 ~380。
 
 **估算**：1,500 行 / 4 PR
-**依赖**：F17
-**验收**：CI 全绿；vitest --run 全部通过；axe-core 0 violation；bundle 预算未超。
+**依赖**：F17 + `F19 / F20 / F21 / F22` 已完成各自模块 PR（其 e2e 场景注入本 gate；详见本节顶部 latest-doc gate 范围备注）
+**验收**：CI 全绿；vitest --run 全部通过；axe-core 0 violation；bundle 预算未超；`F19-F22` 模块场景已显式纳入最终 e2e。
 
 ---
 
