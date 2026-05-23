@@ -38,12 +38,15 @@ from sikao_api.db.models import (
     Question,
     utc_now,
 )
-from sikao_api.modules.system.application.errors import NotFoundError, ValidationError
-from sikao_api.modules.llm.application.llm import build_llm_provider
-from sikao_api.modules.llm.application.llm.json_parser import LlmJsonParseError, parse_with_recovery
+from sikao_api.modules.system.application.errors import (
+    LLMParseError,
+    LLMServiceError,
+    NotFoundError,
+    ValidationError,
+)
+from sikao_api.modules.llm.application.essay_grader import grade_essay_with_trace
 from sikao_api.modules.llm.application.llm.prompts.essay_grading import (
     ESSAY_DIMENSIONS,
-    build_essay_grading_messages,
 )
 from sikao_api.modules.llm.application.llm.usage_recorder import UsageRecord, record_usage
 
@@ -457,49 +460,43 @@ async def _grade_essay_record_inner(
     word_max = type_payload.get("wordLimitMax")
     full_score = type_payload.get("fullScore")
 
-    messages = build_essay_grading_messages(
-        question_stem=question.stem_text,
-        materials=materials,
-        word_limit_min=word_min if isinstance(word_min, int) else None,
-        word_limit_max=word_max if isinstance(word_max, int) else None,
-        full_score=full_score if isinstance(full_score, int) else None,
-        user_answer=record.answer_text,
-    )
-
     try:
-        provider, label = build_llm_provider(
-            settings, db=session, user_id=record.user_id
+        trace = await grade_essay_with_trace(
+            settings=settings,
+            question_stem=question.stem_text,
+            materials=materials,
+            user_answer=record.answer_text,
+            word_limit_min=word_min if isinstance(word_min, int) else None,
+            word_limit_max=word_max if isinstance(word_max, int) else None,
+            full_score=full_score if isinstance(full_score, int) else None,
+            db=session,
+            user_id=record.user_id,
         )
-    except Exception as exc:  # noqa: BLE001 — provider config / SSRF / etc 都标 failed
+    except LLMServiceError as exc:
         record.status = "failed"
-        record.failure_reason = f"LLM provider build failed: {type(exc).__name__}: {exc}"
+        reason = exc.message
+        if reason.startswith("essay grading provider build failed:"):
+            record.failure_reason = (
+                f"LLM provider build failed: {type(exc).__name__}: {reason}"
+            )
+        elif reason.startswith("essay grading chat completion failed:"):
+            record.failure_reason = f"LLM call failed: {type(exc).__name__}: {reason}"
+        else:
+            record.failure_reason = f"LLM service failed: {type(exc).__name__}: {reason}"
         record.updated_at = utc_now()
         return
-
-    try:
-        result = await provider.chat_completion(
-            messages=messages,
-            model=settings.llm_model_essay,
-            max_tokens=settings.llm_max_tokens,
-            temperature=0.3,  # 评分要稳定, 不发散
+    except LLMParseError as exc:
+        record.status = "failed"
+        record.failure_reason = (
+            f"LLM JSON parse failed: {type(exc).__name__}: {exc.message}"
         )
-    except Exception as exc:  # noqa: BLE001 — httpx / timeout / 4xx-5xx 都标 failed
-        record.status = "failed"
-        record.failure_reason = f"LLM call failed: {type(exc).__name__}: {exc}"
-        record.updated_at = utc_now()
-        return
-
-    try:
-        parsed = parse_with_recovery(result.content)
-    except LlmJsonParseError as exc:
-        record.status = "failed"
-        record.failure_reason = f"LLM JSON parse failed: {exc}"
         record.updated_at = utc_now()
         return
 
     try:
         feedback = _build_feedback_with_sanity_check(
-            parsed, word_limit_max=word_max if isinstance(word_max, int) else None
+            trace.payload.model_dump(mode="python"),
+            word_limit_max=word_max if isinstance(word_max, int) else None,
         )
     except ValueError as exc:
         record.status = "failed"
@@ -515,12 +512,12 @@ async def _grade_essay_record_inner(
             UsageRecord(
                 feature="essay_grading",
                 user_id=record.user_id,
-                provider=label,
-                model=result.model,
-                prompt_tokens=result.prompt_tokens,
-                prompt_cache_hit_tokens=result.prompt_cache_hit_tokens,
-                prompt_cache_miss_tokens=result.prompt_cache_miss_tokens,
-                completion_tokens=result.completion_tokens,
+                provider=trace.provider,
+                model=trace.model,
+                prompt_tokens=trace.usage["prompt_tokens"],
+                prompt_cache_hit_tokens=trace.usage["prompt_cache_hit_tokens"],
+                prompt_cache_miss_tokens=trace.usage["prompt_cache_miss_tokens"],
+                completion_tokens=trace.usage["completion_tokens"],
                 resource_type="essay",
                 resource_id=record.id,
             ),
