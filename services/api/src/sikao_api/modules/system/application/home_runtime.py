@@ -14,6 +14,10 @@ from sqlalchemy.orm import Session
 from sikao_api.core.config import Settings
 from sikao_api.cron.ai_cleanup_cron import cleanup_low_quality_ai_questions
 from sikao_api.cron.question_accuracy_cron import recompute_question_accuracy
+from sikao_api.cron.reference_quality_cron import (
+    ReferenceQualityCronResult,
+    recompute_reference_quality,
+)
 from sikao_api.db.models_v2 import (
     AuditLogV2,
     PlanAdjustmentV2,
@@ -198,6 +202,9 @@ class HomeRuntimeOrchestrator:
     async def run_ai_question_cleanup(self) -> int:
         return await asyncio.to_thread(self._run_ai_question_cleanup_sync)
 
+    async def run_reference_quality_recompute(self) -> ReferenceQualityCronResult:
+        return await asyncio.to_thread(self._run_reference_quality_recompute_sync)
+
     async def run_session_lifecycle_cleanup(self) -> dict[str, int]:
         return await asyncio.to_thread(self._run_session_lifecycle_cleanup_sync)
 
@@ -239,6 +246,18 @@ class HomeRuntimeOrchestrator:
             cleaned = cleanup_low_quality_ai_questions(session)
             session.commit()
             return cleaned
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_reference_quality_recompute_sync(self) -> ReferenceQualityCronResult:
+        session = self._db.session_factory()
+        try:
+            result = recompute_reference_quality(session)
+            session.commit()
+            return result
         except Exception:
             session.rollback()
             raise

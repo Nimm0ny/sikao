@@ -164,6 +164,14 @@ class HomeScheduler:
             coalesce=True,
         )
         self._scheduler.add_job(
+            self._job_reference_quality_recompute,
+            trigger=CronTrigger(hour=5, minute=0, timezone=self._settings.home_scheduler_timezone),
+            id="practice.reference_quality.recompute",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+        self._scheduler.add_job(
             self._job_session_lifecycle_cleanup,
             trigger=CronTrigger(minute="*/5", timezone=self._settings.home_scheduler_timezone),
             id="home.session_lifecycle.cleanup",
@@ -297,6 +305,11 @@ class HomeScheduler:
         job_id = "practice.ai_questions.cleanup"
         self._mark_started(job_id)
         return await self._runtime.run_ai_question_cleanup()
+
+    async def _job_reference_quality_recompute(self) -> Any:
+        job_id = "practice.reference_quality.recompute"
+        self._mark_started(job_id)
+        return await self._runtime.run_reference_quality_recompute()
 
     async def _job_session_lifecycle_cleanup(self) -> dict[str, int]:
         job_id = "home.session_lifecycle.cleanup"
