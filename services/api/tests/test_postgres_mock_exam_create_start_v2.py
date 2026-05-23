@@ -8,7 +8,7 @@ from typing import Any, cast
 import pytest
 
 from _helpers.practice_content_support import build_postgres_client, register_user, seed_paper
-from sikao_api.db.models_v2 import PracticeSessionV2
+from sikao_api.db.models_v2 import PracticeSessionAnswerV2, PracticeSessionV2
 
 
 def _mock_questions() -> list[dict[str, Any]]:
@@ -71,3 +71,75 @@ def test_postgres_mock_exam_create_start_and_countdown(tmp_path: Path) -> None:
             assert practice_session.auto_submit_at is not None
             assert practice_session.first_question_at is not None
             assert practice_session.auto_submit_at - practice_session.first_question_at == timedelta(minutes=120)
+
+
+@pytest.mark.skipif(not os.environ.get("TEST_POSTGRESQL_URL"), reason="TEST_POSTGRESQL_URL is not set")
+def test_postgres_mock_exam_forbids_question_linked_notes(tmp_path: Path) -> None:
+    with build_postgres_client(tmp_path) as client:
+        register_user(client)
+        seed_paper(
+            client,
+            paper_code="XC-MOCK-PG-NOTE-001",
+            title="Mock PG Note Guard",
+            subject_kind="xingce",
+            questions=_mock_questions(),
+        )
+        created = client.post(
+            "/api/v2/practice/mock-exams",
+            json={"paperCode": "XC-MOCK-PG-NOTE-001"},
+            headers={"Idempotency-Key": "mock-create-pg-note-1"},
+        )
+        assert created.status_code == 201, created.text
+
+        session_id = created.json()["sessionId"]
+        app = cast(Any, client.app)
+        factory = app.state.db.session_factory
+        with factory() as session:
+            answer = (
+                session.query(PracticeSessionAnswerV2)
+                .filter_by(session_id=session_id)
+                .order_by(PracticeSessionAnswerV2.display_order.asc())
+                .first()
+            )
+            assert answer is not None
+            question_id = answer.question_id
+
+        allowed_note = client.post(
+            "/api/v2/notes",
+            json={
+                "title": "Allowed note",
+                "body": "before mock exam starts",
+                "linkedQuestionId": question_id,
+                "visibility": "private",
+            },
+        )
+        assert allowed_note.status_code == 200, allowed_note.text
+        note_id = allowed_note.json()["id"]
+
+        started = client.post(f"/api/v2/practice/sessions/{session_id}/start")
+        assert started.status_code == 200, started.text
+
+        blocked_note = client.post(
+            "/api/v2/notes",
+            json={
+                "title": "Blocked note",
+                "body": "during mock exam",
+                "linkedQuestionId": question_id,
+                "visibility": "private",
+            },
+        )
+        assert blocked_note.status_code == 422, blocked_note.text
+        assert blocked_note.json()["code"] == "MOCK_NOTES_FORBIDDEN"
+
+        blocked_update = client.put(
+            f"/api/v2/notes/{note_id}",
+            json={
+                "title": "Allowed note",
+                "body": "edited during mock exam",
+                "status": "active",
+                "linkedQuestionId": question_id,
+                "visibility": "private",
+            },
+        )
+        assert blocked_update.status_code == 422, blocked_update.text
+        assert blocked_update.json()["code"] == "MOCK_NOTES_FORBIDDEN"

@@ -11,6 +11,20 @@ from sikao_api.db.models_v2 import AuditLogV2, PracticeSessionAnswerV2, Practice
 from sikao_api.modules.mock_exam.application.auto_submitter import auto_submit_expired_mock_exams
 
 
+def _mock_exam_questions() -> list[dict[str, Any]]:
+    return [
+        {
+            "prompt": f"Question {index}",
+            "year": 2024,
+            "region": "beijing",
+            "exam_type": "provincial",
+            "category_l1": "verbal",
+            "category_l2": "logic_fill" if index % 2 else "reading",
+        }
+        for index in range(1, 31)
+    ]
+
+
 def _seed_started_session(client: TestClient, *, user_id: int, paper_code: str) -> tuple[int, int]:
     seed_paper(
         client,
@@ -214,10 +228,7 @@ def test_mock_exam_timeout_submit_clips_post_deadline_timing(tmp_path: Path) -> 
             paper_code="XC-TIMING-MOCK-001",
             title="Timing Mock Hook",
             subject_kind="xingce",
-            questions=[
-                {"prompt": "A", "year": 2024, "region": "beijing", "exam_type": "provincial", "category_l1": "verbal", "category_l2": "logic_fill"},
-                {"prompt": "B", "year": 2024, "region": "beijing", "exam_type": "provincial", "category_l1": "verbal", "category_l2": "reading"},
-            ],
+            questions=_mock_exam_questions(),
         )
         created = client.post(
             "/api/v2/practice/mock-exams",

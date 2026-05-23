@@ -108,8 +108,7 @@ def test_postgres_recompute_question_timing_baseline_clears_stale_rows(tmp_path:
             session.commit()
             sessions = list(session.query(PracticeSessionV2).all())
             for practice_session in sessions:
-                practice_session.submitted_at = now - timedelta(days=91)
-                session.add(practice_session)
+                session.delete(practice_session)
             session.commit()
 
         with factory() as session:
