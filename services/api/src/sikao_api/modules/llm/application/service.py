@@ -1,4 +1,4 @@
-﻿"""Facade for Home LLM-backed planning, adjustment, and recommendation flows."""
+"""Facade for Home LLM-backed planning, adjustment, and recommendation flows."""
 
 from __future__ import annotations
 
@@ -48,6 +48,12 @@ from sikao_api.modules.llm.application.essay_grader import (
 )
 from sikao_api.modules.llm.application.recommend_today_flow import run_recommend_today
 from sikao_api.modules.llm.application.recommender import RecommendationContext
+from sikao_api.modules.llm.application.reference_answer_generator import (
+    ReferenceAnswerTrace,
+    build_reference_answer_trace,
+    generate_reference_answer_draft_with_trace,
+    self_audit_reference_answer_with_trace,
+)
 from sikao_api.modules.llm.application.regenerate_range_flow import run_regenerate_range_stream
 from sikao_api.modules.llm.application.request_builders import (
     build_generated_event_request,
@@ -318,6 +324,94 @@ class HomeLlmService:
                 usage=self._nullable_usage(trace.usage),
             )
             return trace
+
+    async def generate_reference_answer(
+        self,
+        *,
+        user: UserV2,
+        question_stem: str,
+        materials: list[str],
+        word_limit: int,
+        model: str | None = None,
+        audit_model: str | None = None,
+    ) -> ReferenceAnswerTrace:
+        async with hold_user_execution_lock(user_id=user.id):
+            self.quotas.check_quota(
+                user_id=user.id,
+                purpose="reference_generation",
+                global_calls_needed=2,
+            )
+            try:
+                draft_trace = await generate_reference_answer_draft_with_trace(
+                    settings=self.settings,
+                    question_stem=question_stem,
+                    materials=materials,
+                    word_limit=word_limit,
+                    db=self.session,
+                    user_id=user.id,
+                    model=model,
+                )
+            except (LLMParseError, LLMServiceError) as exc:
+                self._record_practice_failure(
+                    user_id=user.id,
+                    purpose="reference_generation",
+                    fallback_prompt_version="reference_answer@failed",
+                    fallback_model=model or self.settings.llm_model_essay,
+                    exc=exc,
+                )
+                raise
+            self._persist_practice_success(
+                user_id=user.id,
+                purpose="reference_generation",
+                prompt_version=draft_trace.prompt_version,
+                provider=draft_trace.provider,
+                model=draft_trace.model,
+                messages=[
+                    LLMMessage(role=item["role"], content=item["content"])
+                    for item in draft_trace.messages
+                ],
+                raw_text=draft_trace.raw_text,
+                parsed_output=draft_trace.payload.model_dump(mode="python"),
+                usage=self._nullable_usage(draft_trace.usage),
+            )
+            try:
+                audit_trace = await self_audit_reference_answer_with_trace(
+                    settings=self.settings,
+                    question_stem=question_stem,
+                    materials=materials,
+                    word_limit=word_limit,
+                    candidate=draft_trace.payload,
+                    db=self.session,
+                    user_id=user.id,
+                    model=audit_model or model,
+                )
+            except (LLMParseError, LLMServiceError) as exc:
+                self._record_practice_failure(
+                    user_id=user.id,
+                    purpose="reference_audit",
+                    fallback_prompt_version="reference_audit@failed",
+                    fallback_model=audit_model or model or self.settings.llm_model_essay,
+                    exc=exc,
+                )
+                raise
+            self._persist_practice_success(
+                user_id=user.id,
+                purpose="reference_audit",
+                prompt_version=audit_trace.prompt_version,
+                provider=audit_trace.provider,
+                model=audit_trace.model,
+                messages=[
+                    LLMMessage(role=item["role"], content=item["content"])
+                    for item in audit_trace.messages
+                ],
+                raw_text=audit_trace.raw_text,
+                parsed_output=audit_trace.result.model_dump(mode="python"),
+                usage=self._nullable_usage(audit_trace.usage),
+            )
+            return build_reference_answer_trace(
+                draft=draft_trace,
+                audit=audit_trace,
+            )
 
     async def _collect_stream_text(
         self,
@@ -607,4 +701,3 @@ class HomeLlmService:
             to_date=to_date,
             timezone=_LOCAL_TZ,
         )
-
