@@ -9,7 +9,6 @@ SessionTrigger = Literal[
     "session_create",
     "user_start",
     "first_answer",
-    "first_heartbeat",
     "user_pause",
     "heartbeat_timeout",
     "user_resume",

@@ -482,6 +482,16 @@ class SessionDiscardRequestV2(CamelModel):
     reason: str | None = Field(default=None, max_length=64)
 
 
+class SessionHeartbeatRequestV2(CamelModel):
+    client_ts: UtcDatetime | None = None
+    current_question_id: int | None = None
+
+
+class SessionHeartbeatResponseV2(CamelModel):
+    server_ts: UtcDatetime
+    status: str
+
+
 class ActiveSessionProgress(CamelModel):
     answered: int
     total: int

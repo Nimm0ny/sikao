@@ -7,7 +7,6 @@ from sikao_api.modules.session_lifecycle.domain.types import TransitionAttempt, 
 _TRANSITIONS: dict[tuple[str, str], str] = {
     ("draft", "user_start"): "in_progress",
     ("draft", "first_answer"): "in_progress",
-    ("draft", "first_heartbeat"): "in_progress",
     ("in_progress", "user_pause"): "paused",
     ("in_progress", "heartbeat_timeout"): "paused",
     ("paused", "user_resume"): "in_progress",

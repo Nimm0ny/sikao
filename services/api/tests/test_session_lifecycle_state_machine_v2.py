@@ -13,7 +13,6 @@ from sikao_api.modules.session_lifecycle.domain.types import TransitionAttempt
     [
         (None, "session_create", "draft"),
         ("draft", "first_answer", "in_progress"),
-        ("draft", "first_heartbeat", "in_progress"),
         ("in_progress", "user_pause", "paused"),
         ("in_progress", "heartbeat_timeout", "paused"),
         ("paused", "user_resume", "in_progress"),
@@ -40,7 +39,6 @@ def test_session_lifecycle_state_machine_valid_transitions(from_status: str | No
                 Literal[
                     "session_create",
                     "first_answer",
-                    "first_heartbeat",
                     "user_pause",
                     "heartbeat_timeout",
                     "user_resume",
