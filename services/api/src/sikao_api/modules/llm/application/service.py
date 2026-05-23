@@ -1,9 +1,9 @@
-"""Facade for Home LLM-backed planning, adjustment, and recommendation flows."""
+﻿"""Facade for Home LLM-backed planning, adjustment, and recommendation flows."""
 
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from datetime import date, datetime
 from typing import Any
 
@@ -21,6 +21,7 @@ from sikao_api.modules.llm.application.cache import (
 )
 from sikao_api.modules.llm.application.call_execution import call_json_completion, collect_stream_text, provider_name
 from sikao_api.modules.llm.application.call_recording import persist_failed_call, record_failed_call, record_success_call
+from sikao_api.modules.llm.application.cost_tracker import LlmCallRecord, add_llm_call
 from sikao_api.modules.llm.application.execution_lock import hold_user_execution_lock
 from sikao_api.modules.llm.application.generate_plan_flow import run_generate_plan_stream
 from sikao_api.modules.llm.application.idempotency import (
@@ -294,6 +295,86 @@ class HomeLlmService:
     def _provider_name(self, provider_label: str) -> str:
         return provider_name(self, provider_label=provider_label)
 
+    def _record_practice_failure(
+        self,
+        *,
+        user_id: int,
+        purpose: str,
+        fallback_prompt_version: str,
+        fallback_model: str,
+        exc: Exception,
+    ) -> None:
+        messages_payload = getattr(exc, "messages_payload", [])
+        usage_payload = getattr(
+            exc,
+            "usage_payload",
+            {"prompt_tokens": None, "completion_tokens": None},
+        )
+        with SqlAlchemySession(bind=self.session.get_bind()) as isolated_session:
+            persist_failed_call(
+                session=isolated_session,
+                settings=self.settings,
+                user_id=user_id,
+                purpose=purpose,
+                prompt_version=getattr(
+                    exc,
+                    "prompt_version_value",
+                    fallback_prompt_version,
+                ),
+                provider=getattr(
+                    exc,
+                    "provider_label",
+                    self._provider_name(provider_label="system"),
+                ),
+                model=getattr(exc, "model_used", fallback_model),
+                messages=[
+                    LLMMessage(role=item["role"], content=item["content"])
+                    for item in messages_payload
+                ],
+                raw_text=getattr(exc, "raw_text_payload", ""),
+                usage=usage_payload,
+                error=exc,
+                parse_status=getattr(exc, "parse_status", "failed_before_trace"),
+            )
+            isolated_session.commit()
+
+    def _persist_practice_success(
+        self,
+        *,
+        user_id: int,
+        purpose: str,
+        prompt_version: str,
+        provider: str,
+        model: str,
+        messages: list[LLMMessage],
+        raw_text: str,
+        parsed_output: dict[str, Any],
+        usage: dict[str, int | None],
+    ) -> None:
+        with SqlAlchemySession(bind=self.session.get_bind()) as isolated_session:
+            add_llm_call(
+                isolated_session,
+                settings=self.settings,
+                record=LlmCallRecord(
+                    user_id=user_id,
+                    purpose=purpose,
+                    prompt_version=prompt_version,
+                    provider=provider,
+                    model=model,
+                    input_tokens=usage.get("prompt_tokens"),
+                    output_tokens=usage.get("completion_tokens"),
+                    request_payload={"messages": [asdict(message) for message in messages]},
+                    response_payload={"content": raw_text},
+                    parsed_output=parsed_output,
+                    parse_status="ok",
+                    error_class=None,
+                    error_message=None,
+                    retry_count=0,
+                    latency_ms=0,
+                ),
+            )
+            isolated_session.commit()
+
     def _get_replay(
         self,
         *,
@@ -409,3 +490,4 @@ class HomeLlmService:
             to_date=to_date,
             timezone=_LOCAL_TZ,
         )
+
