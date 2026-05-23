@@ -44,6 +44,7 @@ class _RecordingRuntime:
         self.raise_login = False
         self.calls: list[tuple[str, int, str | None]] = []
         self.mock_exam_auto_submit_payloads: list[tuple[int, int]] = []
+        self.timing_baseline_recompute_result = 0
 
     async def run_daily_progress_snapshot(self) -> int:
         return 0
@@ -71,6 +72,9 @@ class _RecordingRuntime:
 
     async def run_mock_exam_auto_submit(self) -> list[tuple[int, int]]:
         return list(self.mock_exam_auto_submit_payloads)
+
+    async def run_timing_baseline_recompute(self) -> int:
+        return self.timing_baseline_recompute_result
 
     async def run_login_adjustment_check(self, *, user_id: int, request_id: str | None) -> bool:
         self.calls.append(("login", user_id, request_id))
@@ -172,6 +176,20 @@ def test_home_scheduler_registers_mock_exam_auto_submit_job(tmp_path: Path) -> N
     scheduler.schedule_recurring_jobs()
     job_ids = {job.id for job in scheduler._scheduler.get_jobs()}
     assert "home.mock_exam.auto_submit" in job_ids
+    assert "home.timing.baseline_recompute" in job_ids
+
+
+@pytest.mark.asyncio
+async def test_timing_baseline_job_calls_runtime(tmp_path: Path) -> None:
+    settings = _make_settings(tmp_path)
+    db = _make_db(settings)
+    runtime = _RecordingRuntime()
+    runtime.timing_baseline_recompute_result = 7
+    scheduler = HomeScheduler(db, settings=settings, runtime=runtime)
+
+    result = await scheduler._job_timing_baseline_recompute()
+
+    assert result == 7
 
 
 @pytest.mark.asyncio
