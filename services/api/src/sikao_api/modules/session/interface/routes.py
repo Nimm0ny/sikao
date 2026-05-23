@@ -24,8 +24,8 @@ from sikao_api.modules.session.application.answer_flag_ops import (
     create_persistent_flag,
     set_answer_flag,
 )
+from sikao_api.modules.session.application.hooks import on_session_submit
 from sikao_api.modules.session.application.service import SessionServiceV2
-from sikao_api.modules.session.application.submit_hooks import run_progress_submit_hooks
 from sikao_api.modules.session.application.view_solution_ops import mark_view_solution
 from sikao_api.db.models_v2 import UserV2
 
@@ -166,36 +166,17 @@ def submit_session(
             target_type="practice_session_v2",
             target_id=practice_session.id,
             metadata={"reason": force_submitted_reason},
-            request_id=getattr(request.state, "request_id", None),
-            ip=None,
-        )
-    home_scheduler = getattr(request.app.state, "home_scheduler", None)
-    if home_scheduler is not None:
-        session.commit()
-        try:
-            home_scheduler.enqueue_submit_progress_refresh(
-                user_id=user.id,
-                session_id=practice_session.id,
                 request_id=getattr(request.state, "request_id", None),
+                ip=None,
             )
-            home_scheduler.enqueue_submit_recommender_refresh(
-                user_id=user.id,
-                session_id=practice_session.id,
-                request_id=getattr(request.state, "request_id", None),
-            )
-        except Exception:
-            _logger.exception(
-                "home_scheduler.submit_enqueue_failed user_id=%s session_id=%s",
-                user.id,
-                practice_session.id,
-            )
-    else:
-        run_progress_submit_hooks(
-            session,
-            user_id=user.id,
-            session_id=practice_session.id,
-        )
-        session.commit()
+    session.commit()
+    on_session_submit(
+        session_factory=request.app.state.db.session_factory,
+        user_id=user.id,
+        session_id=practice_session.id,
+        request_id=getattr(request.state, "request_id", None),
+        home_scheduler=getattr(request.app.state, "home_scheduler", None),
+    )
     return OperationAckV2(ok=True, status="submitted")
 
 

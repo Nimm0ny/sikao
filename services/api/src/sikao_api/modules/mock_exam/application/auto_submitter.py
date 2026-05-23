@@ -8,7 +8,6 @@ from sqlalchemy.orm import Session
 from sikao_api.db.models_v2 import PracticeSessionV2
 from sikao_api.modules.mock_exam.application.enforcer import resolve_force_submit_reason
 from sikao_api.modules.session.application.service import SessionServiceV2
-from sikao_api.modules.session.application.submit_hooks import run_progress_submit_hooks
 from sikao_api.modules.system.application.audit_v2 import add_audit_log
 from sikao_api.modules.system.application.errors import ConflictError
 
@@ -40,11 +39,6 @@ def auto_submit_expired_mock_exams(
                 service.submit(
                     practice_session=practice_session,
                     force_submitted_reason=reason,
-                )
-                run_progress_submit_hooks(
-                    session,
-                    user_id=practice_session.user_id,
-                    session_id=practice_session.id,
                 )
                 add_audit_log(
                     session,

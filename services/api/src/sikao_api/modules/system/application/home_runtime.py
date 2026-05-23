@@ -45,6 +45,7 @@ from sikao_api.modules.progress.application.snapshot_writer import (
 )
 from sikao_api.modules.recommendations.application.service import RecommendationServiceV2
 from sikao_api.modules.mock_exam.application.auto_submitter import auto_submit_expired_mock_exams
+from sikao_api.modules.session.application.hooks import run_progress_submit_hooks_isolated
 from sikao_api.modules.session.application.submit_hooks import run_progress_submit_hooks
 from sikao_api.modules.session_lifecycle.application.cleanup import (
     cleanup_stale_sessions,
@@ -312,6 +313,12 @@ class HomeRuntimeOrchestrator:
         try:
             submitted = auto_submit_expired_mock_exams(session)
             session.commit()
+            for user_id, session_id in submitted:
+                run_progress_submit_hooks_isolated(
+                    session_factory=self._db.session_factory,
+                    user_id=user_id,
+                    session_id=session_id,
+                )
             return submitted
         except Exception:
             session.rollback()
