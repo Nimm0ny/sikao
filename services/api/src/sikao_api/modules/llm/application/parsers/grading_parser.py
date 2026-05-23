@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 from sikao_api.modules.llm.application.llm.json_parser import parse_with_recovery
 from sikao_api.modules.llm.application.llm.prompts.essay_grading import (
@@ -34,6 +34,15 @@ class EssayEvaluationPayload(BaseModel):
     strengths: list[str] = Field(default_factory=list)
     weaknesses: list[str] = Field(default_factory=list)
     suggestions: list[str] = Field(default_factory=list)
+
+    @model_validator(mode="before")
+    @classmethod
+    def drop_provider_compat_fields(cls, value: object) -> object:
+        if not isinstance(value, dict):
+            return value
+        data = dict(value)
+        data.pop("total_score", None)
+        return data
 
 
 class EssayGradingPayload(BaseModel):

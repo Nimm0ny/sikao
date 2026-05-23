@@ -196,6 +196,7 @@ async def generate_questions_with_trace(
         model=model or settings.llm_model_qa,
         max_tokens=settings.llm_max_tokens,
         temperature=settings.llm_temperature,
+        response_format="json_object",
     )
     usage: dict[str, int | None] = {
         "prompt_tokens": result.prompt_tokens,
@@ -313,6 +314,7 @@ async def self_audit_question_with_trace(
         model=model or settings.llm_model_qa,
         max_tokens=settings.llm_max_tokens,
         temperature=settings.llm_temperature,
+        response_format="json_object",
     )
     return QuestionAuditTrace(
         result=parse_question_audit(result.content),

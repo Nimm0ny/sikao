@@ -69,6 +69,18 @@ class QuestionGenerationPayload(BaseModel):
 
     questions: list[ParsedGeneratedQuestion]
 
+    @model_validator(mode="before")
+    @classmethod
+    def normalize_single_question_object(cls, value: Any) -> Any:
+        if not isinstance(value, dict) or "questions" in value:
+            return value
+        core_keys = {"type", "stem", "options", "explanation"}
+        has_source_id = "source_question_id" in value or "sourceQuestionId" in value
+        has_correct_answer = "correct_answer" in value or "correctAnswer" in value
+        if not core_keys.issubset(value) or not has_source_id or not has_correct_answer:
+            return value
+        return {"questions": [value]}
+
 
 class QuestionAuditIssue(BaseModel):
     model_config = ConfigDict(extra="forbid")

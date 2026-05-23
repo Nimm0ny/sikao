@@ -278,6 +278,7 @@ async def generate_reference_answer_draft_with_trace(
             model=model or settings.llm_model_essay,
             max_tokens=settings.llm_max_tokens,
             temperature=0.4,
+            response_format="json_object",
         )
     except LLMServiceError as exc:
         raise LLMServiceError(
@@ -395,6 +396,7 @@ async def self_audit_reference_answer_with_trace(
             model=model or settings.llm_model_essay,
             max_tokens=settings.llm_max_tokens,
             temperature=0.2,
+            response_format="json_object",
         )
     except LLMServiceError as exc:
         raise LLMServiceError(

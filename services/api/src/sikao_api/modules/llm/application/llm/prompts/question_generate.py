@@ -1,11 +1,12 @@
 from __future__ import annotations
 
+import json
 from typing import Any
 
 from sikao_api.modules.llm.application.llm.prompts._shared import with_tone
 from sikao_api.modules.llm.application.llm.provider import LLMMessage
 
-PROMPT_VERSION = "v1"
+PROMPT_VERSION = "v2"
 
 OUTPUT_SCHEMA: dict[str, Any] = {
     "type": "object",
@@ -55,8 +56,14 @@ OUTPUT_SCHEMA: dict[str, Any] = {
     "additionalProperties": False,
 }
 
+_QUESTION_OUTPUT_SCHEMA_TEXT = json.dumps(
+    OUTPUT_SCHEMA,
+    ensure_ascii=False,
+    indent=2,
+)
+
 QUESTION_GENERATE_SYSTEM_MESSAGE = with_tone(
-    """你是 Sikao 的题目生成器。任务：基于给定真题做改编，不要凭空造题。
+    f"""你是 Sikao 的题目生成器。任务：基于给定真题做改编，不要凭空造题。
 
 硬约束：
 - 只输出严格 JSON，不要附加解释。
@@ -65,6 +72,9 @@ QUESTION_GENERATE_SYSTEM_MESSAGE = with_tone(
 - 单选题 correct_answer 只能有 1 个字母；多选题必须有 2-4 个字母。
 - explanation 必须能解释为什么答案成立，且不能空泛。
 - 保留原题考点，但题干、选项和表达必须是真正改编，不是复制粘贴。
+- 即使只生成 1 道题，也必须返回 {{"questions": [ ... ]}}，不能直接返回单个 question object。
+JSON Schema:
+{_QUESTION_OUTPUT_SCHEMA_TEXT}
 """
 )
 
