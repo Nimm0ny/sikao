@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionFlagV2, QuestionV2, UserV2
 from sikao_api.db.schemas_v2 import ActionLinkV2, PracticeAnswerPayloadV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionItemV2, PracticeSessionResultResponseV2, SectionCardV2, SummaryMetricV2
+from sikao_api.modules.daily_practice.application.state_sync import sync_daily_completion
 from sikao_api.modules.mock_exam.application.enforcer import assert_mock_exam_started
 from sikao_api.modules.session.application.answer_flag_ops import promote_flagged_answers
 from sikao_api.modules.session.application.mode_dispatcher import resolve_session_selection
@@ -238,6 +239,7 @@ class SessionServiceV2:
         practice_session.paused_at = None
         practice_session.paused_total_seconds = paused_total_seconds
         practice_session.last_activity_at = submitted_at
+        sync_daily_completion(self.session, practice_session=practice_session)
         if force_submitted_reason is not None:
             add_audit_log(
                 self.session,
