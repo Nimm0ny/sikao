@@ -28,7 +28,6 @@ def load_essay_facts(session: Session, *, user_id: int) -> list[PracticeStatFact
         .join(QuestionV2, QuestionV2.id == EssaySubmissionV2.question_id)
         .where(
             EssaySubmissionV2.user_id == user_id,
-            EssaySubmissionV2.status == "submitted",
             EssayReportV2.status == "completed",
             EssayReportV2.score.is_not(None),
         )

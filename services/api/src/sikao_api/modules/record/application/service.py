@@ -250,7 +250,7 @@ def build_essay_record(
         kind=ESSAY_RECORD_KIND,
         title=ESSAY_RECORD_TITLE,
         status=normalized_status,
-        href=build_essay_record_href(report=report),
+        href=build_essay_record_href(submission=submission, report=report),
         occurred_at=submission.submitted_at,
         score=report.score if report is not None else None,
         is_completed=normalized_status == RECORD_STATUS_COMPLETED,
@@ -264,8 +264,10 @@ def resolve_essay_record_status(
     report: EssayReportV2 | None,
 ) -> str:
     if report is None:
-        if submission.status == "submitted":
+        if submission.status in {"submitted", "pending_grading"}:
             return RECORD_STATUS_PENDING
+        if submission.status == "failed":
+            return RECORD_STATUS_FAILED
         raise ValueError(f"unsupported essay submission status without report: {submission.status!r}")
     if report.status == "pending":
         return RECORD_STATUS_PENDING
@@ -328,7 +330,11 @@ def build_xingce_record_href(*, session_id: int, status: str) -> str:
     return f"/practice/sessions/{session_id}"
 
 
-def build_essay_record_href(*, report: EssayReportV2 | None) -> str:
-    if report is not None and report.status == "completed":
-        return f"/essay/grades/{report.id}"
-    return "/essay/history"
+def build_essay_record_href(
+    *,
+    submission: EssaySubmissionV2,
+    report: EssayReportV2 | None,
+) -> str:
+    if report is not None and report.status in {"completed", "failed"}:
+        return f"/practice/essay/submissions/{submission.id}/result"
+    return f"/practice/essay/submissions/{submission.id}/grading-status"
