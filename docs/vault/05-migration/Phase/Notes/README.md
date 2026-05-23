@@ -162,3 +162,15 @@ Community P1:   PATCH /notes/{id}/visibility, GET /notes/community
 - [../Practice/README.md](../Practice/README.md) — Phase-Practice（NoteV2 schema 升级）
 - [../Review/README.md](../Review/README.md) — Phase-Review（Cross-Tab Wiring）
 - [../../Frontend-IA-V2.md](../../Frontend-IA-V2.md) — IA 决策 SSOT（§2.4 Tab 4）
+
+---
+
+## 10. 视觉原型参考
+
+| view | 路由 | 原型文件 |
+|---|---|---|
+| Notes 主视图（v2 / v2.1） | `/notes` | [`.tmp_review/out/Tab4-Notes/Note v2.1.html`](../../../../.tmp_review/out/Tab4-Notes/Note%20v2.1.html) |
+| NoteEditor（全屏脱壳，3 列：大纲 / 编辑器 / 元数据） | `/notes/:id` | [`.tmp_review/out/Tab4-Notes/NoteEditor v1.html`](../../../../.tmp_review/out/Tab4-Notes/NoteEditor%20v1.html) |
+| NoteTagsManagement | `/notes/tags` | [`.tmp_review/out/Tab4-Notes/NoteTagsManagement v1.html`](../../../../.tmp_review/out/Tab4-Notes/NoteTagsManagement%20v1.html) |
+
+原型对齐 N-D1（3 segment 结构）、N-D5（编辑器 toolbar），与本 Phase 03-Frontend-WU 落地 React 时直接消费。记账见 SIK-85。

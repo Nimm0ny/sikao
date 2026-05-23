@@ -64,3 +64,14 @@ Phase/Onboarding/
 - [../Home/README.md](../Home/README.md)（AiPlanGenerateDialog 复用）
 - [../Auth/README.md](../Auth/README.md)（登录后跳转逻辑）
 - [../../Frontend-IA-V2.md](../../Frontend-IA-V2.md)
+
+---
+
+## 6. 视觉原型参考
+
+| view | 路由 | 原型文件 |
+|---|---|---|
+| Onboarding | `/onboarding` | [`.tmp_review/out/Layer4-Gate/Onboarding v1.html`](../../../../.tmp_review/out/Layer4-Gate/Onboarding%20v1.html) |
+| Diagnosis（intro / quiz / result 三态） | `/diagnosis` | [`.tmp_review/out/Layer4-Gate/Diagnosis v1.html`](../../../../.tmp_review/out/Layer4-Gate/Diagnosis%20v1.html) |
+
+原型已实现 IA-V2 §3.4 的脱壳结构（无 Rail / 无 TabBar，强制流）。Diagnosis 单文件含 3 个 state，右下角按钮可切换。记账见 SIK-85。

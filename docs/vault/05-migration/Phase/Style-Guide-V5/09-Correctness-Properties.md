@@ -141,7 +141,7 @@ Date: 2026-05-23
 Commit: <sha>
 
 ## 扫描范围
-.tmp_review/out/*.html (10 文件) + V5 落地后 apps/web/src/views/**
+.tmp_review/out/**/*.html（截至 2026-05-23 共 ~36 个 v1/v2 原型，IA-V2 §4 覆盖率 ~98%；详见 SIK-85）+ V5 落地后 apps/web/src/views/**
 
 ## 违规统计
 | Lint | 违规数 | 主要文件 |

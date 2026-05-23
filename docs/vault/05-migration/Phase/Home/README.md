@@ -240,3 +240,20 @@ M12  week 13-14      WU-F8：e2e + a11y + 浏览器矩阵验收（2026-05-23 完
 - [../../../03-tech/Architecture.md](../../../03-tech/Architecture.md) — 技术架构
 - [../../../04-design/Design-System.md](../../../04-design/Design-System.md) — 设计系统硬约束
 - [../../../../../AGENTS.md](../../../../../AGENTS.md) — 顶层硬规则（H1-H10）
+
+---
+
+## 13. 视觉原型参考
+
+落地 Section A/B/C + 日历画廊（Today/Week/Month）+ 两个 Profile 钻取页（V5 token + shell SSOT，记账见 SIK-85）：
+
+| view | 路由 | 原型文件 |
+|---|---|---|
+| Home Dashboard（A/B/C 三段） | `/`（authed） | [`.tmp_review/out/Tab1-Home/Home v2.1.html`](../../../../.tmp_review/out/Tab1-Home/Home%20v2.1.html) |
+| TodayCalendarView | `/today` 或子视图 | [`.tmp_review/out/Tab1-Home/Home Today Calendar v1.html`](../../../../.tmp_review/out/Tab1-Home/Home%20Today%20Calendar%20v1.html) |
+| WeekCalendarView | week 视图 | [`.tmp_review/out/Tab1-Home/Home Week Calendar v1.html`](../../../../.tmp_review/out/Tab1-Home/Home%20Week%20Calendar%20v1.html) |
+| MonthCalendarView | month 视图 | [`.tmp_review/out/Tab1-Home/Home Month Calendar v1.html`](../../../../.tmp_review/out/Tab1-Home/Home%20Month%20Calendar%20v1.html) |
+| ProfileLearning（详细学情，本 Phase WU-F5/F6 钻取目标） | `/profile/learning` | [`.tmp_review/out/Tab5-Profile/Profile Learning v1.html`](../../../../.tmp_review/out/Tab5-Profile/Profile%20Learning%20v1.html) |
+| ProfileRecords（学习记录，本 Phase WU-F7.4 钻取目标） | `/profile/records` | [`.tmp_review/out/Tab5-Profile/Profile Records v1.html`](../../../../.tmp_review/out/Tab5-Profile/Profile%20Records%20v1.html) |
+
+原型对齐 H-Plan-1（日历画廊）、H-Plan-7（详细学情独立 `/profile/learning`，首页 Section B 仅摘要）、Cal-1/Cal-7（小时刻度 / 拖拽 / 跨日）。

@@ -296,3 +296,20 @@ M14  week 11         WU-FR12：e2e（含 review-confidence + review-debt）+ a11
 - [../../../03-tech/Architecture.md](../../../03-tech/Architecture.md) — 技术架构
 - [../../../04-design/Design-System.md](../../../04-design/Design-System.md) — 设计系统硬约束
 - [../../../../../AGENTS.md](../../../../../AGENTS.md) — 顶层硬规则（H1-H10）
+
+---
+
+## 14. 视觉原型参考
+
+落地 `/review` + 4 子路由 + 题目中枢页（V5 token + shell SSOT，记账见 SIK-85）：
+
+| view | 路由 | 原型文件 |
+|---|---|---|
+| ReviewToday（默认 = 今日 + 智能三卡 + 周回顾条） | `/review` | [`.tmp_review/out/Tab3-Review/Review Today v1.html`](../../../../.tmp_review/out/Tab3-Review/Review%20Today%20v1.html) |
+| ReviewAll（4 segment + 题目 table + 分页 + 批量栏） | `/review/all` | [`.tmp_review/out/Tab3-Review/Review All v1.html`](../../../../.tmp_review/out/Tab3-Review/Review%20All%20v1.html) |
+| ReviewInsights（错题趋势 + 错因聚类气泡 + 再做正确率提升 + AI 洞察） | `/review/insights` | [`.tmp_review/out/Tab3-Review/Review Insights v1.html`](../../../../.tmp_review/out/Tab3-Review/Review%20Insights%20v1.html) |
+| ReviewGraduated（毕业卡片墙 + 邮戳） | `/review/graduated` | [`.tmp_review/out/Tab3-Review/Review Graduated v1.html`](../../../../.tmp_review/out/Tab3-Review/Review%20Graduated%20v1.html) |
+| ReviewArchived（归档 table + 归档原因 + 恢复 actions） | `/review/archived` | [`.tmp_review/out/Tab3-Review/Review Archived v1.html`](../../../../.tmp_review/out/Tab3-Review/Review%20Archived%20v1.html) |
+| 题目中枢页（跨 tab 共用） | `/q/:id` | [`.tmp_review/out/_cross/Question Hub v2.html`](../../../../.tmp_review/out/_cross/Question%20Hub%20v2.html) |
+
+历史 V4 一屏混合视图（`Review.html` / `Review v1.html` / `Review Redo v1.html`）保留作版本对照，新实施以上面 v1 子路由原型为准（D-Review-Default-View）。

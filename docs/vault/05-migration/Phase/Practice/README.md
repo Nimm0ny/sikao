@@ -353,3 +353,24 @@ M19  week 14-15      WU-F18：e2e 验收
 - [../../../03-tech/Architecture.md](../../../03-tech/Architecture.md) — 技术架构
 - [../../../04-design/Design-System.md](../../../04-design/Design-System.md) — 设计系统硬约束
 - [../../../../../AGENTS.md](../../../../../AGENTS.md) — 顶层硬规则（H1-H10）
+
+---
+
+## 13. 视觉原型参考
+
+落地 Section A/B/C + 答题闭环 + AI 等待 + 申论批改 + 模考三件套 + 时间分析（V5 token + shell SSOT，记账见 SIK-85）：
+
+| view | 路由 | 原型文件 |
+|---|---|---|
+| Practice 中心（Section A/B/C） | `/practice` | [`.tmp_review/out/Tab2-Practice/Practice v1.html`](../../../../.tmp_review/out/Tab2-Practice/Practice%20v1.html) |
+| 行测答题（V5 对齐 v2） | `/practice/sessions/:id` | [`.tmp_review/out/Tab2-Practice/Exam Xingce v2.html`](../../../../.tmp_review/out/Tab2-Practice/Exam%20Xingce%20v2.html) |
+| 申论答题（V5 双栏材料/作答） | `/practice/sessions/:id`（申论 scope） | [`.tmp_review/out/Tab2-Practice/Exam Shenlun v2.html`](../../../../.tmp_review/out/Tab2-Practice/Exam%20Shenlun%20v2.html) |
+| SessionResult（脱壳 hero ring + 逐题概览 + 下一步） | `/practice/sessions/:id/result` | [`.tmp_review/out/Tab2-Practice/Session Result v1.html`](../../../../.tmp_review/out/Tab2-Practice/Session%20Result%20v1.html) |
+| EssayGradingResult（hero + 4 维分项 + 原文+批注） | `/practice/sessions/:id/grading` | [`.tmp_review/out/Tab2-Practice/Essay Grading Result v1.html`](../../../../.tmp_review/out/Tab2-Practice/Essay%20Grading%20Result%20v1.html) |
+| AiQuestionsGenerating | `/practice/ai-questions/generating` | [`.tmp_review/out/Tab2-Practice/Ai Questions Generating v1.html`](../../../../.tmp_review/out/Tab2-Practice/Ai%20Questions%20Generating%20v1.html) |
+| MockExamStartView | `/practice/mock-exam/start` | [`.tmp_review/out/Tab2-Practice/Mock Exam Start v1.html`](../../../../.tmp_review/out/Tab2-Practice/Mock%20Exam%20Start%20v1.html) |
+| MockExamHistoryView | `/practice/mock-exam/history` | [`.tmp_review/out/Tab2-Practice/Mock Exam History v1.html`](../../../../.tmp_review/out/Tab2-Practice/Mock%20Exam%20History%20v1.html) |
+| MockExamComparisonView | `/practice/mock-exam/:id/comparison` | [`.tmp_review/out/Tab2-Practice/Mock Exam Comparison v1.html`](../../../../.tmp_review/out/Tab2-Practice/Mock%20Exam%20Comparison%20v1.html) |
+| PracticeStatsTimingView | `/practice/stats/timing` | [`.tmp_review/out/Tab2-Practice/Practice Stats Timing v1.html`](../../../../.tmp_review/out/Tab2-Practice/Practice%20Stats%20Timing%20v1.html) |
+
+PracticePreferences（6 子树偏好）实施位置在 `/profile/practice-preferences`，原型见 Phase/Profile §8。Exam Xingce v1 / Shenlun v1 是 V4 时期版本，保留作对照，新实施以 v2 为准。

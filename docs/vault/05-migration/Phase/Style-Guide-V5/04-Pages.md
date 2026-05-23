@@ -10,7 +10,7 @@
 
 ## 1. 桌面端 SaaS Shell（所有页面共享）
 
-V5 页面骨架以 `.tmp_review/out/Home v2.1.html` / `Practice v1.html` / `Note v2.1.html` / `Me v1.html` 等已敲定原型为事实来源。所有页面共用一个**桌面端 SaaS Shell**：
+V5 页面骨架以 `.tmp_review/out/` 下的全 IA 覆盖原型为事实来源（截至 2026-05-23 已覆盖 IA-V2 §4 列出的 layer/tab/子路由约 98%，详见 SIK-85 / [`docs/plan/frontend-ia-prototypes-completion-2026-05-23.md`](../../../../plan/frontend-ia-prototypes-completion-2026-05-23.md)）。新原型走 `<link rel="stylesheet" href="../_shared/v5-base.css" />` 共享 V5 token + shell SSOT，老原型保留作版本对照。所有页面共用一个**桌面端 SaaS Shell**：
 
 ```
 <AppShell display=flex>
@@ -225,4 +225,6 @@ V4 完全没定义移动端，V5 必须 cover。Mobile Shell 在 `--bp-md`（768
 - [03-Components.md](./03-Components.md) — 35 组件契约（页面骨架的组装件）
 - [00-Decisions.md](./00-Decisions.md) — R1/Q5（Exam）/ R2/Q1（Note Drawer）/ R2/Q4（Mobile Shell）落地处
 - [Frontend-IA-V2.md](../../Frontend-IA-V2.md) — IA 决策 SSOT（5 tab 信息架构来源）
+- [`.tmp_review/out/_shared/v5-base.css`](../../../../../.tmp_review/out/_shared/v5-base.css) — 原型共享 V5 token + rail/workspace shell（Phase 4 React 实施前的视觉事实来源）
+- [`docs/plan/frontend-ia-prototypes-completion-2026-05-23.md`](../../../../plan/frontend-ia-prototypes-completion-2026-05-23.md) — `.tmp_review/out` 全 IA 原型覆盖记账（SIK-85）
 - 业务 Phase 接力对应：[Home/](../Home/) / [Practice/](../Practice/) / [Notes/](../Notes/) / [Profile/](../Profile/) / [Review/](../Review/)

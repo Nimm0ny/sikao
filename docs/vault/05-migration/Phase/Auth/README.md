@@ -65,3 +65,19 @@ Phase/Auth/
 - [../Profile/README.md](../Profile/README.md)（绑定流共用）
 - [../../Frontend-IA-V2.md](../../Frontend-IA-V2.md)
 - [../../../03-tech/Auth.md](../../../03-tech/Auth.md)
+
+---
+
+## 6. 视觉原型参考
+
+落地实施前的 surface-level 视觉事实输入（V5 token + shell SSOT）：
+
+| view | 路由 | 原型文件 |
+|---|---|---|
+| Login | `/login` | [`.tmp_review/out/Layer2-Auth/Login v1.html`](../../../../.tmp_review/out/Layer2-Auth/Login%20v1.html) |
+| RegisterEmail | `/register/email` | [`.tmp_review/out/Layer2-Auth/Register Email v1.html`](../../../../.tmp_review/out/Layer2-Auth/Register%20Email%20v1.html) |
+| RegisterPhone | `/register/phone` | [`.tmp_review/out/Layer2-Auth/Register Phone v1.html`](../../../../.tmp_review/out/Layer2-Auth/Register%20Phone%20v1.html) |
+| ForgotPassword | `/forgot` | [`.tmp_review/out/Layer2-Auth/Forgot Password v1.html`](../../../../.tmp_review/out/Layer2-Auth/Forgot%20Password%20v1.html) |
+| ResetPassword | `/reset` | [`.tmp_review/out/Layer2-Auth/Reset Password v1.html`](../../../../.tmp_review/out/Layer2-Auth/Reset%20Password%20v1.html) |
+
+共享样式：[`.tmp_review/out/Layer2-Auth/_auth-shell.css`](../../../../.tmp_review/out/Layer2-Auth/_auth-shell.css)。原型仅作视觉参考，不是 React 实施 spec；记账见 SIK-85。

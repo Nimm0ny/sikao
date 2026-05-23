@@ -119,3 +119,23 @@ Phase/Profile/
 - [../Home/02-Data-Model.md](../Home/02-Data-Model.md) §2.5（ProfileGoalV2 / ProfileInfoV2 字段）
 - [../Auth/README.md](../Auth/README.md)（绑定流共用基础设施）
 - [../../Frontend-IA-V2.md](../../Frontend-IA-V2.md) §2.5（Tab 5 IA 选项）
+
+---
+
+## 8. 视觉原型参考
+
+落地 M-Multi 概览 + 8 子路由：
+
+| view | 路由 | 原型文件 |
+|---|---|---|
+| Profile Goals（多目标管理） | `/profile/goals` | [`.tmp_review/out/Tab5-Profile/Profile Goals v1.html`](../../../../.tmp_review/out/Tab5-Profile/Profile%20Goals%20v1.html) |
+| Profile Info | `/profile/info` | [`.tmp_review/out/Tab5-Profile/Profile Info v1.html`](../../../../.tmp_review/out/Tab5-Profile/Profile%20Info%20v1.html) |
+| Profile Security（含 Bind/Complete 收编 + 设备 + 危险区） | `/profile/security` | [`.tmp_review/out/Tab5-Profile/Profile Security v1.html`](../../../../.tmp_review/out/Tab5-Profile/Profile%20Security%20v1.html) |
+| Profile Settings（AI 开关 / 通知 / 隐私 / 外观 / 数据 / 实验 6 段） | `/profile/settings` | [`.tmp_review/out/Tab5-Profile/Profile Settings v1.html`](../../../../.tmp_review/out/Tab5-Profile/Profile%20Settings%20v1.html) |
+| Profile Preferences（dashboard_preferences） | `/profile/preferences` | [`.tmp_review/out/Tab5-Profile/Profile Preferences v1.html`](../../../../.tmp_review/out/Tab5-Profile/Profile%20Preferences%20v1.html) |
+| Practice Preferences（6 子树） | `/profile/practice-preferences` | [`.tmp_review/out/Tab5-Profile/Practice Preferences v1.html`](../../../../.tmp_review/out/Tab5-Profile/Practice%20Preferences%20v1.html) |
+| Profile Learning（详细学情，已由 Phase-Home 落地路由） | `/profile/learning` | [`.tmp_review/out/Tab5-Profile/Profile Learning v1.html`](../../../../.tmp_review/out/Tab5-Profile/Profile%20Learning%20v1.html) |
+| Profile Records（学习记录，已由 Phase-Home 落地路由） | `/profile/records` | [`.tmp_review/out/Tab5-Profile/Profile Records v1.html`](../../../../.tmp_review/out/Tab5-Profile/Profile%20Records%20v1.html) |
+| Me（M-Multi 概览） | `/profile` | [`.tmp_review/out/Tab5-Profile/Me v1.html`](../../../../.tmp_review/out/Tab5-Profile/Me%20v1.html) |
+
+原型对齐 D-P10（M-Multi 4 路由 + 扩展子页）、D-P3（推荐策略阈值不暴露 → Profile Settings 中无该项）。AI 开关位置见 ADJ-4。记账见 SIK-85。

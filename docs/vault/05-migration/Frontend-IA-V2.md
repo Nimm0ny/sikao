@@ -16,6 +16,8 @@
 > | Phase/Notes/Profile（其他 2 tab） | TBD（占位 README） |
 > | Phase/Auth/Onboarding/Marketing（3 个 layer） | TBD（占位 README） |
 
+> **可视化原型**：本文 §4 总览图列出的 layer/tab/子路由对应原型已落档于 `.tmp_review/out/`，截至 2026-05-23 IA-V2 覆盖率 ~98%。补全任务记账见 SIK-85，详见 [`docs/plan/frontend-ia-prototypes-completion-2026-05-23.md`](../plan/frontend-ia-prototypes-completion-2026-05-23.md) 与 [Phase/Style-Guide-V5/04-Pages.md §1](./Phase/Style-Guide-V5/04-Pages.md)。原型仅作 surface-level 视觉事实输入，不是 React 实施 spec。
+
 ---
 
 ## 0. 用户路径分层（先约定 4 个壳）
