@@ -523,6 +523,15 @@ class MockExamCreateRequestV2(CamelModel):
     delayed_review_minutes: int = Field(default=0, ge=0, le=1440)
 
 
+class MockExamCreateResponseV2(CamelModel):
+    session_id: int
+    paper_code: str
+    time_limit_minutes: int
+    auto_submit_at: UtcDatetime | None = None
+    expires_at: UtcDatetime | None = None
+    status: str
+
+
 class MockExamCountdownResponseV2(CamelModel):
     server_now: UtcDatetime
     auto_submit_at: UtcDatetime

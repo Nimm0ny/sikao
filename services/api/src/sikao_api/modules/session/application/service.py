@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionFlagV2, QuestionV2, UserV2
 from sikao_api.db.schemas_v2 import ActionLinkV2, PracticeAnswerPayloadV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionItemV2, PracticeSessionResultResponseV2, SectionCardV2, SummaryMetricV2
+from sikao_api.modules.mock_exam.domain.errors import MOCK_EXAM_NOT_STARTED
 from sikao_api.modules.session.application.answer_flag_ops import promote_flagged_answers
 from sikao_api.modules.session.application.mode_dispatcher import resolve_session_selection
 from sikao_api.modules.session_lifecycle.application.transition_support import apply_transition
@@ -97,6 +98,7 @@ class SessionServiceV2:
         request_id: str | None = None,
     ) -> None:
         self._ensure_session_not_terminal(practice_session)
+        self._ensure_mock_exam_started(practice_session)
         self._ensure_distinct_answer_keys(answers)
         if not answers:
             self._ensure_session_not_submitted(practice_session.id)
@@ -351,6 +353,13 @@ class SessionServiceV2:
             raise ConflictError(
                 "practice session is not writable",
                 code="SESSION_NOT_WRITABLE",
+            )
+
+    def _ensure_mock_exam_started(self, practice_session: PracticeSessionV2) -> None:
+        if practice_session.exam_mode and practice_session.status == "draft":
+            raise ConflictError(
+                "mock exam has not started",
+                code=MOCK_EXAM_NOT_STARTED,
             )
 
     def _load_existing_answers(

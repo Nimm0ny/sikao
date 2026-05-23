@@ -23,6 +23,7 @@ from sikao_api.modules.practice_stats.interface import routes as practice_stats_
 from sikao_api.modules.question_flags.interface import routes as question_flags_v2
 from sikao_api.modules.recommendations.interface import routes as recommendations_v2
 from sikao_api.modules.review.interface import routes as review_v2
+from sikao_api.modules.mock_exam.interface import routes as mock_exam_v2
 from sikao_api.modules.session.interface import routes as session_v2
 from sikao_api.modules.session_lifecycle.interface import routes as session_lifecycle_v2
 from sikao_api.modules.system.application.errors import ServiceError
@@ -134,6 +135,7 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
     app.include_router(favorites_v2.router)
     app.include_router(question_flags_v2.router)
     app.include_router(practice_stats_v2.router)
+    app.include_router(mock_exam_v2.router)
     app.include_router(session_lifecycle_v2.router)
     app.include_router(session_v2.router)
     app.include_router(review_v2.router)

@@ -5,9 +5,10 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import PracticeSessionV2, UserV2
 from sikao_api.db.schemas_v2 import SessionLifecycleResponseV2
+from sikao_api.modules.mock_exam.domain.errors import MOCK_PAUSE_FORBIDDEN
 from sikao_api.modules.session_lifecycle.application.serializer import serialize_lifecycle
 from sikao_api.modules.session_lifecycle.application.transition_support import apply_transition
-from sikao_api.modules.system.application.errors import NotFoundError
+from sikao_api.modules.system.application.errors import NotFoundError, ValidationError
 
 
 def pause_session(
@@ -18,6 +19,11 @@ def pause_session(
     request_id: str | None,
 ) -> SessionLifecycleResponseV2:
     practice_session = _load_session(session, user=user, session_id=session_id)
+    if practice_session.exam_mode and not practice_session.allow_pause:
+        raise ValidationError(
+            "mock exam pause is forbidden",
+            code=MOCK_PAUSE_FORBIDDEN,
+        )
     apply_transition(
         session,
         practice_session=practice_session,
