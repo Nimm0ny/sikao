@@ -4,6 +4,7 @@ import asyncio
 
 import pytest
 
+from sikao_api.modules.llm.application.llm.provider import ChatCompletionResult
 from sikao_api.core.config import Settings
 from sikao_api.modules.llm.application.essay_grader import (
     ESSAY_GRADING_PROMPT_VERSION,
@@ -49,6 +50,29 @@ def test_parse_grading_output_rejects_wrong_dimension_order() -> None:
         parse_grading_output(payload)
 
 
+def test_parse_grading_output_ignores_evaluation_total_score_extra() -> None:
+    payload = """
+    {
+      "evaluation": {
+        "dimensions": [
+          {"name": "论点准确", "score": 8, "comment": "ok"},
+          {"name": "材料运用", "score": 8, "comment": "ok"},
+          {"name": "语言", "score": 8, "comment": "ok"},
+          {"name": "结构", "score": 8, "comment": "ok"},
+          {"name": "字数符合度", "score": 8, "comment": "ok"}
+        ],
+        "strengths": [],
+        "weaknesses": [],
+        "suggestions": [],
+        "total_score": 32
+      },
+      "sample_answer": "x"
+    }
+    """
+    parsed = parse_grading_output(payload)
+    assert len(parsed.evaluation.dimensions) == 5
+
+
 def test_grade_essay_with_trace_uses_stub_provider() -> None:
     trace = asyncio.run(
         grade_essay_with_trace(
@@ -67,3 +91,44 @@ def test_grade_essay_with_trace_uses_stub_provider() -> None:
     assert len(trace.payload.evaluation.dimensions) == 5
     assert trace.usage["prompt_tokens"] is not None
     assert trace.raw_text
+
+
+def test_grade_essay_requests_json_object_response_format(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class CaptureProvider:
+        def __init__(self) -> None:
+            self.kwargs: dict[str, object] | None = None
+
+        async def chat_completion(self, **kwargs: object) -> ChatCompletionResult:
+            self.kwargs = kwargs
+            return ChatCompletionResult(
+                content=well_formed_essay_payload(),
+                prompt_tokens=10,
+                prompt_cache_hit_tokens=0,
+                prompt_cache_miss_tokens=10,
+                completion_tokens=20,
+                model="fake-model",
+                finish_reason="stop",
+            )
+
+    provider = CaptureProvider()
+    monkeypatch.setattr(
+        "sikao_api.modules.llm.application.essay_grader.build_llm_provider",
+        lambda *_args, **_kwargs: (provider, "mock"),
+    )
+
+    asyncio.run(
+        grade_essay_with_trace(
+            settings=_settings(),
+            question_stem="请结合材料谈谈你的理解。",
+            materials=["材料一", "材料二"],
+            user_answer="作答内容" * 100,
+            word_limit_min=800,
+            word_limit_max=1000,
+            full_score=40,
+        )
+    )
+
+    assert provider.kwargs is not None
+    assert provider.kwargs["response_format"] == "json_object"
