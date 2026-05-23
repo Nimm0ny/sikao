@@ -13,6 +13,7 @@ from sikao_api.core.config import Settings, get_settings
 from sikao_api.db.session import DatabaseManager
 from sikao_api.modules.content.interface import routes as content_v2
 from sikao_api.modules.daily_practice.interface import routes as daily_practice_v2
+from sikao_api.modules.essay_grading.interface import routes as essay_grading_v2
 from sikao_api.modules.favorites.interface import routes as favorites_v2
 from sikao_api.modules.identity.interface import routes as identity_v2
 from sikao_api.modules.ai_questions.interface import routes as ai_questions_v2
@@ -137,6 +138,7 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
     app.include_router(recommendations_v2.router)
     app.include_router(content_v2.router)
     app.include_router(daily_practice_v2.router)
+    app.include_router(essay_grading_v2.router)
     app.include_router(favorites_v2.router)
     app.include_router(question_flags_v2.router)
     app.include_router(practice_stats_v2.router)

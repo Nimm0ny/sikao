@@ -7,7 +7,8 @@ from typing import Any
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionFlagV2, QuestionV2, UserV2
+from sikao_api.db.models_v2 import EssaySubmissionV2, PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionFlagV2, QuestionV2, UserV2
+from sikao_api.modules.essay_grading.application.service import PracticeEssayGradingService
 from sikao_api.db.schemas_v2 import ActionLinkV2, PracticeAnswerPayloadV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionItemV2, PracticeSessionResultResponseV2, SectionCardV2, SummaryMetricV2
 from sikao_api.modules.daily_practice.application.state_sync import sync_daily_completion
 from sikao_api.modules.mock_exam.application.enforcer import assert_mock_exam_started
@@ -239,6 +240,9 @@ class SessionServiceV2:
         practice_session.paused_at = None
         practice_session.paused_total_seconds = paused_total_seconds
         practice_session.last_activity_at = submitted_at
+        essay_submission = PracticeEssayGradingService(
+            self.session,
+        ).ensure_submission_for_session(practice_session=practice_session)
         sync_daily_completion(self.session, practice_session=practice_session)
         if force_submitted_reason is not None:
             add_audit_log(
@@ -274,6 +278,8 @@ class SessionServiceV2:
                 linked_event.status = "done" if submitted_at >= linked_event.end_at else "in_progress"
                 linked_event.linked_session_id = practice_session.id
                 self.session.add(linked_event)
+        if essay_submission is not None:
+            self.session.add(essay_submission)
 
     def build_session_response(self, *, practice_session: PracticeSessionV2) -> PracticeSessionEnvelopeV2:
         answers = list(
@@ -347,10 +353,22 @@ class SessionServiceV2:
                 ActionLinkV2(
                     key="review",
                     label="Open review",
-                    href="/wrong-book",
+                    href=self._build_result_action_href(practice_session=practice_session),
                 )
             ],
         )
+
+    def _build_result_action_href(self, *, practice_session: PracticeSessionV2) -> str:
+        if practice_session.track != "essay":
+            return "/wrong-book"
+        submission_id = self.session.scalar(
+            select(EssaySubmissionV2.id).where(
+                EssaySubmissionV2.practice_session_id == practice_session.id
+            )
+        )
+        if submission_id is None:
+            return f"/practice/sessions/{practice_session.id}"
+        return f"/practice/essay/submissions/{submission_id}/result"
 
     def _resolve_paper_binding(self, paper_code: str | None) -> tuple[int | None, int | None]:
         if paper_code is None:
