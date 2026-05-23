@@ -18,6 +18,8 @@ from sikao_api.db.schemas_v2 import (
 )
 from sikao_api.db.session import get_db_session
 from sikao_api.modules.identity.application.security_v2 import get_current_user_v2, verify_csrf_v2
+from sikao_api.modules.mock_exam.application.enforcer import resolve_force_submit_reason
+from sikao_api.modules.system.application.audit_v2 import add_audit_log
 from sikao_api.modules.session.application.answer_flag_ops import (
     create_persistent_flag,
     set_answer_flag,
@@ -148,7 +150,24 @@ def submit_session(
 ) -> OperationAckV2:
     service = SessionServiceV2(session)
     practice_session = service.get_session(user=user, session_id=session_id)
-    service.submit(practice_session=practice_session)
+    force_submitted_reason = resolve_force_submit_reason(practice_session)
+    service.submit(
+        practice_session=practice_session,
+        force_submitted_reason=force_submitted_reason,
+    )
+    if force_submitted_reason is not None:
+        add_audit_log(
+            session,
+            user_id=user.id,
+            actor_type="system",
+            actor_id="mock_exam.submit_guard",
+            action="mock_exam.force_submitted",
+            target_type="practice_session_v2",
+            target_id=practice_session.id,
+            metadata={"reason": force_submitted_reason},
+            request_id=getattr(request.state, "request_id", None),
+            ip=None,
+        )
     session.commit()
     home_scheduler = getattr(request.app.state, "home_scheduler", None)
     if home_scheduler is not None:

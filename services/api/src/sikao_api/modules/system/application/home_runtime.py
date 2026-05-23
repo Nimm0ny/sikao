@@ -34,6 +34,7 @@ from sikao_api.modules.progress.application.snapshot_writer import (
     refresh_weekly_weakness_snapshot,
 )
 from sikao_api.modules.recommendations.application.service import RecommendationServiceV2
+from sikao_api.modules.mock_exam.application.auto_submitter import auto_submit_expired_mock_exams
 from sikao_api.modules.session.application.submit_hooks import run_progress_submit_hooks
 from sikao_api.modules.session_lifecycle.application.cleanup import (
     cleanup_stale_sessions,
@@ -194,6 +195,9 @@ class HomeRuntimeOrchestrator:
     async def run_daily_session_expire(self) -> int:
         return await asyncio.to_thread(self._run_daily_session_expire_sync)
 
+    async def run_mock_exam_auto_submit(self) -> list[tuple[int, int]]:
+        return await asyncio.to_thread(self._run_mock_exam_auto_submit_sync)
+
     def _run_submit_progress_hooks_sync(self, user_id: int, session_id: int | None) -> None:
         session = self._db.session_factory()
         try:
@@ -223,6 +227,18 @@ class HomeRuntimeOrchestrator:
             count = expire_daily_sessions(session)
             session.commit()
             return count
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_mock_exam_auto_submit_sync(self) -> list[tuple[int, int]]:
+        session = self._db.session_factory()
+        try:
+            submitted = auto_submit_expired_mock_exams(session)
+            session.commit()
+            return submitted
         except Exception:
             session.rollback()
             raise

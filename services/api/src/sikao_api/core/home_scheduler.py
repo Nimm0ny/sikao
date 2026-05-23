@@ -163,6 +163,14 @@ class HomeScheduler:
             max_instances=1,
             coalesce=True,
         )
+        self._scheduler.add_job(
+            self._job_mock_exam_auto_submit,
+            trigger=CronTrigger(minute="*/1", timezone=self._settings.home_scheduler_timezone),
+            id="home.mock_exam.auto_submit",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
         self._scheduled = True
 
     def enqueue_login_adjustment_check(self, *, user_id: int, request_id: str | None) -> bool:
@@ -265,6 +273,18 @@ class HomeScheduler:
         job_id = "home.session_lifecycle.daily_expire"
         self._mark_started(job_id)
         return await self._runtime.run_daily_session_expire()
+
+    async def _job_mock_exam_auto_submit(self) -> int:
+        job_id = "home.mock_exam.auto_submit"
+        self._mark_started(job_id)
+        submitted = await self._runtime.run_mock_exam_auto_submit()
+        for user_id, session_id in submitted:
+            self.enqueue_submit_recommender_refresh(
+                user_id=user_id,
+                session_id=session_id,
+                request_id=None,
+            )
+        return len(submitted)
 
     async def _job_login_adjustment_check(
         self,

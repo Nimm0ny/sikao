@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import select, update
@@ -9,11 +9,12 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionFlagV2, QuestionV2, UserV2
 from sikao_api.db.schemas_v2 import ActionLinkV2, PracticeAnswerPayloadV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionItemV2, PracticeSessionResultResponseV2, SectionCardV2, SummaryMetricV2
-from sikao_api.modules.mock_exam.domain.errors import MOCK_EXAM_NOT_STARTED
+from sikao_api.modules.mock_exam.application.enforcer import assert_mock_exam_started
 from sikao_api.modules.session.application.answer_flag_ops import promote_flagged_answers
 from sikao_api.modules.session.application.mode_dispatcher import resolve_session_selection
 from sikao_api.modules.session_lifecycle.application.transition_support import apply_transition
 from sikao_api.modules.plans.domain.rrule_subset import build_occurrence_ref, end_of_local_day, expand_occurrences, parse_occurrence_ref, start_of_local_day
+from sikao_api.modules.system.application.audit_v2 import add_audit_log
 from sikao_api.modules.system.application.errors import ConflictError, NotFoundError, ValidationError
 
 
@@ -97,8 +98,9 @@ class SessionServiceV2:
         answers: list[PracticeAnswerPayloadV2],
         request_id: str | None = None,
     ) -> None:
-        self._ensure_session_not_terminal(practice_session)
-        self._ensure_mock_exam_started(practice_session)
+        self.session.refresh(practice_session)
+        self._ensure_session_is_writable(practice_session)
+        assert_mock_exam_started(practice_session)
         self._ensure_distinct_answer_keys(answers)
         if not answers:
             self._ensure_session_not_submitted(practice_session.id)
@@ -157,21 +159,90 @@ class SessionServiceV2:
         practice_session.last_activity_at = datetime.now(UTC).replace(tzinfo=None)
         self.session.add(practice_session)
 
-    def submit(self, *, practice_session: PracticeSessionV2) -> None:
-        submitted_at = datetime.now(UTC).replace(tzinfo=None)
+    def submit(
+        self,
+        *,
+        practice_session: PracticeSessionV2,
+        force_submitted_reason: str | None = None,
+    ) -> None:
+        self.session.refresh(practice_session)
+        expected_status = practice_session.status
+        self._ensure_session_can_submit(
+            practice_session=practice_session,
+            force_submitted_reason=force_submitted_reason,
+        )
+        submitted_at = self._resolve_submitted_at(
+            practice_session=practice_session,
+            force_submitted_reason=force_submitted_reason,
+        )
+        paused_total_seconds = practice_session.paused_total_seconds
+        paused_at = practice_session.paused_at
+        if expected_status == "paused" and paused_at is not None:
+            paused_total_seconds += int((submitted_at - paused_at).total_seconds())
+        delayed_review_until = self._resolve_delayed_review_until(
+            practice_session=practice_session,
+            submitted_at=submitted_at,
+        )
         result = self.session.execute(
             update(PracticeSessionV2)
             .where(
                 PracticeSessionV2.id == practice_session.id,
-                PracticeSessionV2.status != "submitted",
+                PracticeSessionV2.status == expected_status,
             )
-            .values(status="submitted", submitted_at=submitted_at)
+            .values(
+                status="submitted",
+                submitted_at=submitted_at,
+                force_submitted=force_submitted_reason is not None,
+                force_submitted_reason=force_submitted_reason,
+                delayed_review_until=delayed_review_until,
+                paused_at=None,
+                paused_total_seconds=paused_total_seconds,
+                last_activity_at=submitted_at,
+            )
             .execution_options(synchronize_session=False)
         )
         if getattr(result, "rowcount", None) != 1:
+            current_status = self.session.scalar(
+                select(PracticeSessionV2.status).where(
+                    PracticeSessionV2.id == practice_session.id
+                )
+            )
+            if current_status == "submitted":
+                raise ConflictError(
+                    "practice session already submitted",
+                    code="practice_session_submitted",
+                )
+            if current_status in {"abandoned", "expired"}:
+                raise ConflictError(
+                    "practice session is not writable",
+                    code="SESSION_NOT_WRITABLE",
+                )
             raise ConflictError(
-                "practice session already submitted",
-                code="practice_session_submitted",
+                "invalid session transition",
+                code="INVALID_TRANSITION",
+            )
+        practice_session.status = "submitted"
+        practice_session.submitted_at = submitted_at
+        practice_session.force_submitted = force_submitted_reason is not None
+        practice_session.force_submitted_reason = force_submitted_reason
+        practice_session.delayed_review_until = delayed_review_until
+        practice_session.paused_at = None
+        practice_session.paused_total_seconds = paused_total_seconds
+        practice_session.last_activity_at = submitted_at
+        if force_submitted_reason is not None:
+            add_audit_log(
+                self.session,
+                user_id=practice_session.user_id,
+                actor_type="system",
+                actor_id="session.submit",
+                action="session.force_submitted",
+                target_type="practice_session_v2",
+                target_id=practice_session.id,
+                before={"status": expected_status},
+                after={"status": "submitted"},
+                metadata={"reason": force_submitted_reason},
+                request_id=None,
+                ip=None,
             )
         user = self.session.get(UserV2, practice_session.user_id)
         if user is not None:
@@ -355,11 +426,61 @@ class SessionServiceV2:
                 code="SESSION_NOT_WRITABLE",
             )
 
-    def _ensure_mock_exam_started(self, practice_session: PracticeSessionV2) -> None:
-        if practice_session.exam_mode and practice_session.status == "draft":
+    def _ensure_session_is_writable(self, practice_session: PracticeSessionV2) -> None:
+        if practice_session.status == "submitted":
             raise ConflictError(
-                "mock exam has not started",
-                code=MOCK_EXAM_NOT_STARTED,
+                "practice session already submitted",
+                code="practice_session_submitted",
+            )
+        self._ensure_session_not_terminal(practice_session)
+
+    def _resolve_delayed_review_until(
+        self,
+        *,
+        practice_session: PracticeSessionV2,
+        submitted_at: datetime,
+    ) -> datetime | None:
+        if not practice_session.exam_mode:
+            return None
+        mock_config = practice_session.config_snapshot.get("mock_exam")
+        if not isinstance(mock_config, Mapping):
+            return None
+        delayed_minutes = mock_config.get("delayed_review_minutes")
+        if not isinstance(delayed_minutes, int) or delayed_minutes <= 0:
+            return None
+        return submitted_at + timedelta(minutes=delayed_minutes)
+
+    def _resolve_submitted_at(
+        self,
+        *,
+        practice_session: PracticeSessionV2,
+        force_submitted_reason: str | None,
+    ) -> datetime:
+        if force_submitted_reason == "mock_exam_timeout" and practice_session.auto_submit_at is not None:
+            return practice_session.auto_submit_at
+        return datetime.now(UTC).replace(tzinfo=None)
+
+    def _ensure_session_can_submit(
+        self,
+        *,
+        practice_session: PracticeSessionV2,
+        force_submitted_reason: str | None,
+    ) -> None:
+        if practice_session.status == "submitted":
+            raise ConflictError(
+                "practice session already submitted",
+                code="practice_session_submitted",
+            )
+        self._ensure_session_not_terminal(practice_session)
+        if force_submitted_reason is not None and practice_session.status not in {"in_progress", "paused"}:
+            raise ConflictError(
+                "invalid session transition",
+                code="INVALID_TRANSITION",
+            )
+        if force_submitted_reason is None and practice_session.exam_mode and practice_session.status == "draft":
+            raise ConflictError(
+                "invalid session transition",
+                code="INVALID_TRANSITION",
             )
 
     def _load_existing_answers(
