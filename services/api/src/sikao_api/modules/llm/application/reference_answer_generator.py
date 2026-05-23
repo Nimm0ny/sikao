@@ -477,6 +477,64 @@ async def self_audit_reference_answer_with_trace(
     )
 
 
+async def generate_reference_answer(
+    *,
+    settings: Settings,
+    question_stem: str,
+    materials: list[str],
+    word_limit: int,
+    db: Session | None = None,
+    user_id: int | None = None,
+    model: str | None = None,
+    audit_model: str | None = None,
+) -> ReferenceAnswer:
+    return (
+        await generate_reference_answer_with_trace(
+            settings=settings,
+            question_stem=question_stem,
+            materials=materials,
+            word_limit=word_limit,
+            db=db,
+            user_id=user_id,
+            model=model,
+            audit_model=audit_model,
+        )
+    ).result
+
+
+async def generate_reference_answer_with_trace(
+    *,
+    settings: Settings,
+    question_stem: str,
+    materials: list[str],
+    word_limit: int,
+    db: Session | None = None,
+    user_id: int | None = None,
+    model: str | None = None,
+    audit_model: str | None = None,
+) -> ReferenceAnswerTrace:
+    draft = await generate_reference_answer_draft_with_trace(
+        settings=settings,
+        question_stem=question_stem,
+        materials=materials,
+        word_limit=word_limit,
+        db=db,
+        user_id=user_id,
+        model=model,
+    )
+    audit = await self_audit_reference_answer_with_trace(
+        settings=settings,
+        question_stem=question_stem,
+        materials=materials,
+        word_limit=word_limit,
+        candidate=draft.payload,
+        db=db,
+        user_id=user_id,
+        model=audit_model or model,
+    )
+    return build_reference_answer_trace(draft=draft, audit=audit)
+
+
 __all__ = [
     "REFERENCE_ANSWER_PROMPT_VERSION",
     "REFERENCE_ANSWER_SELF_AUDIT_PROMPT_VERSION",
@@ -487,6 +545,8 @@ __all__ = [
     "ReferenceAnswerDraftTrace",
     "ReferenceAnswerTrace",
     "build_reference_answer_trace",
+    "generate_reference_answer",
     "generate_reference_answer_draft_with_trace",
+    "generate_reference_answer_with_trace",
     "self_audit_reference_answer_with_trace",
 ]
