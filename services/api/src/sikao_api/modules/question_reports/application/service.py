@@ -7,7 +7,13 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from sikao_api.db.models_v2 import PracticeSessionV2, QuestionReportV2, QuestionV2, UserV2
+from sikao_api.db.models_v2 import (
+    PracticeSessionAnswerV2,
+    PracticeSessionV2,
+    QuestionReportV2,
+    QuestionV2,
+    UserV2,
+)
 from sikao_api.db.schemas_v2 import (
     OperationAckV2,
     QuestionReportCreateRequestV2,
@@ -30,6 +36,7 @@ from sikao_api.modules.system.application.errors import (
     ConflictError,
     NotFoundError,
     QuotaExceededError,
+    ValidationError,
 )
 
 
@@ -56,6 +63,7 @@ class QuestionReportService:
         source_session_id = self._validate_source_session(
             user_id=user.id,
             source_session_id=payload.source_session_id,
+            question_id=question.id,
         )
         existing = self.session.scalar(
             select(QuestionReportV2).where(
@@ -226,6 +234,7 @@ class QuestionReportService:
         *,
         user_id: int,
         source_session_id: int | None,
+        question_id: int,
     ) -> int | None:
         if source_session_id is None:
             return None
@@ -240,7 +249,52 @@ class QuestionReportService:
                 "practice session not found",
                 code="practice_session_not_found",
             )
+        if not self._session_contains_question(
+            practice_session=session_row,
+            question_id=question_id,
+        ):
+            raise ValidationError(
+                "practice session does not contain question",
+                code="question_report_source_session_mismatch",
+            )
         return source_session_id
+
+    def _session_contains_question(
+        self,
+        *,
+        practice_session: PracticeSessionV2,
+        question_id: int,
+    ) -> bool:
+        if (
+            practice_session.source_mode == "paper"
+            and practice_session.revision_id is not None
+        ):
+            matched_question_id = self.session.scalar(
+                select(QuestionV2.id).where(
+                    QuestionV2.id == question_id,
+                    QuestionV2.revision_id == practice_session.revision_id,
+                )
+            )
+            return matched_question_id is not None
+
+        question_ids = practice_session.config_snapshot.get("question_ids")
+        if isinstance(question_ids, list):
+            normalized_ids = {
+                int(value)
+                for value in question_ids
+                if isinstance(value, int)
+                or (isinstance(value, str) and value.isdigit())
+            }
+            if question_id in normalized_ids:
+                return True
+
+        answer_id = self.session.scalar(
+            select(PracticeSessionAnswerV2.id).where(
+                PracticeSessionAnswerV2.session_id == practice_session.id,
+                PracticeSessionAnswerV2.question_id == question_id,
+            )
+        )
+        return answer_id is not None
 
     def _ensure_daily_limit(
         self,

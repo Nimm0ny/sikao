@@ -994,7 +994,7 @@ class QuestionReportV2(Base):
         ForeignKey("practice_sessions_v2.id", ondelete="SET NULL"),
         nullable=True,
     )
-    selected_answer_at_report: Mapped[dict[str, Any] | None] = mapped_column(
+    selected_answer_at_report: Mapped[Any | None] = mapped_column(
         JSONB_COMPAT,
         nullable=True,
     )

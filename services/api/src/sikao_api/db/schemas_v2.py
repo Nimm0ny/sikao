@@ -737,7 +737,7 @@ class QuestionReportCreateRequestV2(CamelModel):
         max_length=QUESTION_REPORT_DESCRIPTION_MAX_LENGTH,
     )
     source_session_id: int | None = None
-    selected_answer_at_report: dict[str, Any] | None = None
+    selected_answer_at_report: Any | None = None
 
 
 class QuestionReportUpdateRequestV2(CamelModel):
@@ -757,7 +757,7 @@ class QuestionReportEnvelopeV2(CamelModel):
     duplicate_of_report_id: int | None = None
     applied_fix: dict[str, Any] | None = None
     source_session_id: int | None = None
-    selected_answer_at_report: dict[str, Any] | None = None
+    selected_answer_at_report: Any | None = None
     created_at: UtcDatetime
     updated_at: UtcDatetime
     handled_at: UtcDatetime | None = None
