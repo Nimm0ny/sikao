@@ -244,8 +244,7 @@ async def generate_reference_answer_draft_with_trace(
     db: Session | None = None,
     user_id: int | None = None,
     model: str | None = None,
-    audit_model: str | None = None,
-) -> ReferenceAnswerTrace:
+) -> ReferenceAnswerDraftTrace:
     _validate_request(
         question_stem=question_stem,
         materials=materials,
