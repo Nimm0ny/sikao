@@ -9,7 +9,6 @@ from sqlalchemy.orm import Session
 
 from sikao_api.core.config import Settings
 from sikao_api.db.models_v2 import (
-    EssayReferenceAnswerV2,
     EssayReportV2,
     EssaySubmissionV2,
     PracticeSessionAnswerV2,
@@ -18,7 +17,6 @@ from sikao_api.db.models_v2 import (
 )
 from sikao_api.db.schemas_v2 import (
     EssayGradingResponseV2,
-    EssayReferenceAnswerEnvelopeV2,
     EssayReportEnvelopeV2,
     GradingDimensionV2,
 )
