@@ -45,6 +45,8 @@ def record_events(
             "practice session is not writable",
             code="SESSION_NOT_WRITABLE",
         )
+    events = _normalize_events(practice_session=practice_session, events=payload.events)
+    _ensure_events_sorted(events)
 
     answers = {
         answer.id: answer
@@ -59,7 +61,7 @@ def record_events(
     batch_max_ts: datetime | None = None
     first_question_ts: datetime | None = None
 
-    for event in payload.events:
+    for event in events:
         answer = answers.get(event.answer_id)
         if answer is None:
             raise NotFoundError(
@@ -92,9 +94,9 @@ def record_events(
     session.add(practice_session)
     session.flush()
     return TimingEventBatchAckV2(
-        accepted=len(payload.events),
+        accepted=len(events),
         rejected=0,
-        last_ack_event_idx=len(payload.events) - 1 if payload.events else -1,
+        last_ack_event_idx=len(events) - 1 if events else -1,
     )
 
 
@@ -112,6 +114,20 @@ def _ensure_not_stale(*, answer: PracticeSessionAnswerV2, event: TimingEventV2) 
         return
     if event.ts < answer.last_modified_at - timedelta(seconds=_STALE_EVENT_GRACE_SECONDS):
         raise ValidationError("timing event is stale", code="STALE_EVENT")
+
+
+def _normalize_events(
+    *,
+    practice_session: PracticeSessionV2,
+    events: list[TimingEventV2],
+) -> list[TimingEventV2]:
+    if not practice_session.exam_mode or practice_session.auto_submit_at is None:
+        return events
+    deadline = practice_session.auto_submit_at
+    return [
+        event.model_copy(update={"ts": min(event.ts, deadline)})
+        for event in events
+    ]
 
 
 def _load_timing_state(practice_session: PracticeSessionV2) -> dict[str, Any]:

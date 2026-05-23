@@ -13,6 +13,7 @@ from sikao_api.modules.mock_exam.application.enforcer import assert_mock_exam_st
 from sikao_api.modules.session.application.answer_flag_ops import promote_flagged_answers
 from sikao_api.modules.session.application.mode_dispatcher import resolve_session_selection
 from sikao_api.modules.session_lifecycle.application.transition_support import apply_transition
+from sikao_api.modules.timing.application.submit_summary import apply_submit_timing_summary
 from sikao_api.modules.plans.domain.rrule_subset import build_occurrence_ref, end_of_local_day, expand_occurrences, parse_occurrence_ref, start_of_local_day
 from sikao_api.modules.system.application.audit_v2 import add_audit_log
 from sikao_api.modules.system.application.errors import ConflictError, NotFoundError, ValidationError
@@ -183,6 +184,12 @@ class SessionServiceV2:
             practice_session=practice_session,
             submitted_at=submitted_at,
         )
+        practice_session.paused_total_seconds = paused_total_seconds
+        apply_submit_timing_summary(
+            self.session,
+            practice_session=practice_session,
+            submitted_at=submitted_at,
+        )
         result = self.session.execute(
             update(PracticeSessionV2)
             .where(
@@ -198,6 +205,8 @@ class SessionServiceV2:
                 paused_at=None,
                 paused_total_seconds=paused_total_seconds,
                 last_activity_at=submitted_at,
+                total_active_seconds=practice_session.total_active_seconds,
+                payload_json=practice_session.payload_json,
             )
             .execution_options(synchronize_session=False)
         )
