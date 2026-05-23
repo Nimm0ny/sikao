@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from collections.abc import Mapping
 from dataclasses import asdict, dataclass
 from datetime import date, datetime
 from typing import Any
@@ -36,6 +37,11 @@ from sikao_api.modules.llm.application.llm import LLMMessage
 from sikao_api.modules.llm.application.plan_adjustor import PlanAdjustmentContext
 from sikao_api.modules.llm.application.plan_generator import PlanGenerateParams, RegenerateRangeParams
 from sikao_api.modules.llm.application.quotas import HomeLlmQuotaService
+from sikao_api.modules.llm.application.question_generator import (
+    QuestionGenerationTrace,
+    SourceQuestion,
+    generate_questions_with_trace,
+)
 from sikao_api.modules.llm.application.recommend_today_flow import run_recommend_today
 from sikao_api.modules.llm.application.recommender import RecommendationContext
 from sikao_api.modules.llm.application.regenerate_range_flow import run_regenerate_range_stream
@@ -51,6 +57,7 @@ from sikao_api.modules.plans.application.event_command_service import EventComma
 from sikao_api.modules.plans.application.event_delete_service import EventDeleteServiceV2
 from sikao_api.modules.plans.application.helpers import today_cn
 from sikao_api.modules.plans.application.plan_service import PlanServiceV2
+from sikao_api.modules.system.application.errors import LLMParseError, LLMServiceError
 
 _LOCAL_TZ = "Asia/Shanghai"
 
@@ -84,6 +91,10 @@ class HomeLlmService:
 
     def build_idempotent_request_hash(self, *, payload: dict[str, Any]) -> str:
         return build_idempotent_request_hash(payload=payload)
+
+    @staticmethod
+    def _nullable_usage(usage: Mapping[str, int | None]) -> dict[str, int | None]:
+        return {key: value for key, value in usage.items()}
 
     def invalidate_recommendation_cache(self, *, user_id: int) -> None:
         invalidate_user_prefix(
@@ -201,6 +212,56 @@ class HomeLlmService:
     ) -> PlanAdjustmentV2 | None:
         async with hold_user_execution_lock(user_id=user.id):
             return await run_adjust_plan(self, user=user, context=context)
+
+    async def generate_questions(
+        self,
+        *,
+        user: UserV2,
+        sources: list[SourceQuestion],
+        target_difficulty: tuple[float, float],
+        count: int,
+        model: str | None = None,
+    ) -> QuestionGenerationTrace:
+        async with hold_user_execution_lock(user_id=user.id):
+            self.quotas.check_quota(user_id=user.id, purpose="question_generation")
+            try:
+                trace = await generate_questions_with_trace(
+                    settings=self.settings,
+                    sources=sources,
+                    target_difficulty=target_difficulty,
+                    count=count,
+                    db=self.session,
+                    user_id=user.id,
+                    model=model,
+                )
+            except (LLMParseError, LLMServiceError) as exc:
+                self._record_practice_failure(
+                    user_id=user.id,
+                    purpose="question_generation",
+                    fallback_prompt_version="question_generate@failed",
+                    fallback_model=model or self.settings.llm_model_qa,
+                    exc=exc,
+                )
+                raise
+            self._record_success_call(
+                user_id=user.id,
+                purpose="question_generation",
+                prompt_version=trace.prompt_version,
+                provider=trace.provider,
+                model=trace.model,
+                messages=[
+                    LLMMessage(role=item["role"], content=item["content"])
+                    for item in trace.messages
+                ],
+                raw_text=trace.raw_text,
+                parsed_output={
+                    "questions": [
+                        question.model_dump(mode="python") for question in trace.questions
+                    ]
+                },
+                usage=self._nullable_usage(trace.usage),
+            )
+            return trace
 
     async def _collect_stream_text(
         self,
