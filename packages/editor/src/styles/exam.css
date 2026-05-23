@@ -33,8 +33,8 @@
      (so a token rename there cascades). --exam-grid-outer is a feature-
      local sub-shade between --ink-muted and --muted that gives the page
      border its visual weight; no exact global token matches. */
-  --exam-grid-line: var(--line-3);
-  --exam-grid-faint: var(--ink-4);
+  --exam-grid-line: var(--color-border-strong);
+  --exam-grid-faint: var(--color-text-disabled);
   --exam-grid-outer: #475569; /* hardcode-allow: between ink-muted and muted; no global token */
 }
 

@@ -96,7 +96,7 @@ export function MaterialTabs({
           style={{
             left: underline.left,
             width: underline.width,
-            background: 'linear-gradient(90deg, var(--ink-1) 0%, var(--accent-1) 100%)',
+            background: 'linear-gradient(90deg, var(--color-text-primary) 0%, var(--color-brand-primary) 100%)',
           }}
           data-testid="exam-materials-tab-underline"
         />

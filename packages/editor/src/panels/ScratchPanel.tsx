@@ -145,7 +145,7 @@ export function ScratchPanel() {
         )}
         style={{
           padding: '14px 18px 14px 22px',
-          outline: dropHover ? '2px dashed var(--accent-1)' : '0',
+          outline: dropHover ? '2px dashed var(--color-brand-primary)' : '0',
           outlineOffset: -4,
         }}
         data-testid="exam-scratch-droparea"

@@ -1,299 +1,39 @@
 /*
- * Design tokens — Sikao Frontend Style Guide.
+ * Design tokens — Sikao Frontend Style Guide V5 (SSOT).
  *
- * **SSOT** (CLAUDE.md §4 硬约束): 本文件是 sikao 设计 token 的单一权威源.
- * 运行时由 apps/web/src/styles/tokens.css shim 通过 @import 注入到 React app.
+ * **SSOT** (AGENTS.md §4 hard rule): single authoritative source of design
+ * tokens for sikao. Consumed at runtime via apps/web/src/index.css
+ * (which @imports this file).
  *
- * ═══════════════════════════════════════════════════════════════════════
- *  2026-05-23 V5 HARD-CUT (lhr 2026-05-23 拍板)
+ * 2026-05-24 — V5-M0.5 BIG-BANG REBUILD (lhr-locked).
+ *   apps/web business layer + packages/ui are scrapped; V1/V4 token alias
+ *   region (formerly lines 1-301: --paper-* / --ink-* / --line-* / --r-* /
+ *   --t-* / --sp-* / --row-h / --h-xs..lg / --fs-* / --tracking-* / --lh-* /
+ *   --sidebar / --motion-* / --accent-* / --ok / --warn / --err / --info /
+ *   font-serif/sans/mono / [data-theme='dark'/'night'] V1 dark / [data-theme='pure'] /
+ *   density / opt-style / reading-size / .serif / .sans / .mono / .eyebrow utility classes)
+ *   is fully removed. V5 region below (sections §1 primitive .. §7 rail
+ *   collapse) is now the only token surface.
  *
- *  全工程视觉语言由 V1 蓝白主色硬切到 V5 yellow-brand 系统:
- *  - V1 region (本文件 :root + [data-theme='dark'/'night']) 现在仅作
- *    V4 alias 兼容层存活, 通过 var(--color-*) 间接引用 V5 token.
- *  - V5 region (文件后段 §1-§7) 是新 SSOT, 三层架构 (primitive / semantic
- *    / component) + 多端断点 + Rail 折叠.
- *  - Sunset 硬日期 2026-06-06 (R1/Q6 决策): V1 alias region 在该日期
- *    后由 task 21.3 删除.
- *  - V1 视觉效果 (蓝色 CTA / 14px body / 蓝色 focus ring) 在硬切后立即
- *    停用; 全工程 hover/active/CTA 视觉为 V5 yellow-brand `#FFD200`.
+ * V5 dark theme triggers (kept for legacy toggle compatibility):
+ *   :root                    V5 yellow-brand light (default)
+ *   [data-v5-theme='dark']   V5 native dark trigger (preferred for new code)
+ *   [data-theme='dark']      legacy toggle, activates V5 dark
+ *   [data-theme='night']     legacy toggle, activates V5 dark
  *
- *  原 v1 (2026-05-19 蓝白主色) 的核心改动列表保留作历史记录:
- *    - primary brand/action: blue-white (V1) → yellow-brand `#FFD200` (V5)
- *    - type scale: 全站压缩 ~45% 已是 V1 方案; V5 进一步把 body 14→13
- *    - button radius: V1 已收敛到 4px; V5 改为 10px (--btn-radius-md)
- *    - paper / ink → V5 --color-bg-* / --color-text-*
- *    - dark mode 改为 V5 [data-v5-theme='dark']; V1 [data-theme='dark'/
- *      'night'] 在硬切区段保留, 但对应 token 已 alias 到 V5 dark 值.
- *    - --r-pill 9999 → 999 (数学等价)
+ * Business-feature tokens preserved (independent of V4 visual cut):
+ *   --practice-reading-fs    sm/md/lg via [data-practice-font='*']
+ *                            consumed by packages/domain/src/xingce/practiceFontSize.ts
  *
- * ═══════════════════════════════════════════════════════════════════════
- *
- * Themes (硬切后):
- *   :root              V5 yellow-brand light (default)
- *   [data-theme='pure']   no-op alias to default :root
- *   [data-theme='dark']   V5 dark via V1 alias (reuses V5 §3 dark palette)
- *   [data-theme='night']  alias to dark (legacy toggle compatibility)
- *   [data-v5-theme='dark'] V5 native dark trigger (preferred for new code)
- *
- * Density / reading-size (V1 keep, 与视觉换代正交):
- *   [data-density='compact'|'cozy']   行间距与卡片 padding
- *   [data-reading='md'|'lg'|'xl']      阅读区字号
+ * Global a11y / INV-3 enforcement:
+ *   em, i { font-style: normal }   CJK no-italic invariant
+ *   *:focus-visible { outline: 2px solid var(--color-focus-ring) }
  */
 
-:root {
-  /* ── paper (surface ladder) — V4 alias to V5 §2.1 surface tokens ─── */
-  --paper-1: var(--color-bg-surface);
-  --paper-2: var(--color-bg-elevated);
-  --paper-3: var(--color-bg-sunken);
-
-  /* ── ink (text ladder) — V4 alias to V5 §2.2 text tokens ─────────── */
-  --ink-1: var(--color-text-primary);
-  --ink-2: var(--color-text-secondary);
-  --ink-3: var(--color-text-meta);
-  --ink-4: var(--color-text-disabled);
-
-  /* ── line (border ladder) — V4 alias to V5 §2.3 border tokens ───── */
-  --line-1: var(--color-border-subtle);
-  --line-2: var(--color-border-default);
-  --line-3: var(--color-border-strong);
-
-  /* ── accent — V4 alias to V5 brand-yellow (HARD-CUT from V1 blue)
-   * @deprecated 2026-05-23 — sunset 2026-06-06. V1 #2563EB blue CTA palette
-   * is replaced by V5 #FFD200 brand-yellow per INV-2 invariant. All apps
-   * consuming --accent-* will visually shift from blue to yellow at this
-   * commit. Surface-level migration to --color-brand-* lands in Phase 6. */
-  --accent-1:  var(--color-brand-primary);
-  --accent-2:  var(--color-brand-hover);
-  --accent-50: var(--color-brand-soft);
-
-  /* ── semantic — V4 alias to V5 §2.4 state tokens ─────────────────── */
-  --ok:      var(--color-state-ok);
-  --ok-50:   var(--color-state-ok-soft);
-  --warn:    var(--color-state-warn);
-  --warn-50: var(--color-state-warn-soft);
-  --err:     var(--color-state-err);
-  --err-50:  var(--color-state-err-soft);
-
-  /* exam-accent — 答题"当前题/做题状态"信号色, 跟 --err (错误语义) 解耦.
-     来源: design/design_handoff_xingce_exam/TOKENS.md §1 建议. lhr 2026-05-11 批准. */
-  --exam-accent:     #B42318;
-  --exam-accent-50:  #FEF2F2;
-
-  /* data scale — heatmap / density viz 6 档色阶 (浅蓝灰 → 深行动蓝).
-     来源: design/SIKAO/handoff/modules/xingce-wrongbook/xingce-wrongbook.html
-     行 465-470 + README §2 "热图蓝色色阶". lhr 2026-05-12 批准
-     (docs/plan/sikao-wave5-roadmap-2026-05-12.md:93).
-     2026-05-19 蓝白主色修订: data-0 跟 paper-3 同族冷灰, data-5 落到
-     accent-2. 中段 data-1..data-4 蓝色饱和度渐进. */
-  --data-0: #F1F5F9;
-  --data-1: #DBEAFE;
-  --data-2: #BFDBFE;
-  --data-3: #93C5FD;
-  --data-4: #3B82F6;
-  --data-5: #1D4ED8;
-
-  /* ── spacing — V4 alias to V5 §1.2 space scale ──────────────────── */
-  --sp-1: var(--space-1);
-  --sp-2: var(--space-2);
-  --sp-3: var(--space-3);
-  --sp-4: var(--space-4);
-  --sp-5: var(--space-5);
-  --sp-6: var(--space-6);
-  --sp-7: var(--space-7);
-  --sp-8: var(--space-8);
-  --sp-9: 96px;  /* V5 has no --space-9; keep V1 value as-is */
-
-  /* ── radius — V4 alias to V5 §1.3 radius scale + §4.1 card radius ─ */
-  --r-1:       2px;
-  --r-tiny:    var(--btn-radius-md);
-  --r-2:       6px;
-  --r-card:    var(--card-radius);
-  --r-card-lg: var(--card-radius-lg);
-  --r-pill:    var(--radius-999);
-
-  /* ── shadow — V4 alias to V5 §1.6 shadow scale ──────────────────── */
-  --shadow-card: var(--shadow-l1);
-  --shadow-pop:  var(--shadow-l3);
-
-  /* ── type scale — V4 alias to V5 §1.4 font size scale ─────────────
-   * V5 reduces display 44→40 and body 14→13. Other sizes match V1.
-   * Surface-level adoption of --font-* lands in Phase 6. */
-  --t-display: var(--font-display);
-  --t-h1:      var(--font-h1);
-  --t-h2:      var(--font-h2);
-  --t-h3:      var(--font-h3);
-  --t-body:    var(--font-card);    /* V1 14px maps to --font-card (16/14 mobile) */
-  --t-small:   var(--font-body);    /* V1 13px maps to --font-body */
-  --t-meta:    var(--font-meta);
-  --t-tiny:    var(--font-tiny);
-
-  /* ── z-index — V4 alias to V5 §4.6 z-index ladder ───────────────── */
-  --z-nav:     var(--z-rail);    /* V1 nav covers both rail + topbar; alias to lower z */
-  --z-popover: var(--z-popover);
-  --z-modal:   var(--z-modal);
-  --z-toast:   var(--z-toast);
-
-  /* ── font families ────────────────────────────────────────────────── */
-  --font-serif: 'Source Serif 4', 'Songti SC', serif;
-  --font-sans:  'Inter', -apple-system, system-ui, sans-serif;
-  --font-mono:  'JetBrains Mono', ui-monospace, monospace;
-
-  /* ── semantic surface tints (Frontend Style Guide v1) ───────────────
-   * ok/warn/err 的 background tint, 走 token 不 inline hex.
-   * 跟 ok / warn / err 文字色配对 (e.g. EmptyState OK-banner 用
-   * bg-ok-bg + text-ok). dark mode 在 [data-theme='dark'] 区段重写. */
-  --ok-bg:   var(--ok-50);
-  --warn-bg: var(--warn-50);
-  --bad-bg:  var(--err-50);
-
-  /* sidebar always-dark 面板专属 (frontend AppShell 仍是 dark sidebar) */
-  --sidebar:          #020617;
-  --sidebar-fg:       #cbd5e1;
-  --sidebar-fg-muted: #94a3b8;
-  --sidebar-fg-dim:   #64748b;
-  --sidebar-line:     #1e293b;
-  --sidebar-hover:    #1e293b;
-
-  /* motion (SIKAO 没有 motion token, 跟规范字号轴正交) */
-  --motion-fast: 150ms;
-  --motion-base: 200ms;
-  --motion-slow: 300ms;
-  --motion-ease: cubic-bezier(0.4, 0, 0.2, 1);
-
-  /* legacy type scale (px) — tailwind utility `text-xs..text-5xl` 仍按
-   * 历史 px 阶梯映射, 跟规范 t-* 8 档轴 (--t-display..--t-tiny) 并存.
-   * 规范官在 PR4 起转移消费侧到 t-* (text-display / text-h1 / ...);
-   * 在那之前先保 200+ view 视觉稳定. */
-  --fs-xs:   12px;
-  --fs-sm:   13px;
-  --fs-base: 14px;
-  --fs-md:   16px;
-  --fs-lg:   18px;
-  --fs-xl:   20px;
-  --fs-2xl:  24px;
-  --fs-3xl:  30px;
-  --fs-4xl:  36px;
-  --fs-5xl:  48px;
-
-  /* 语义 type ramp (marketing landing 用) */
-  --fs-h-card:    22px;
-  --fs-h-section: 28px;
-  --fs-h-mkt:     42px;
-  --fs-display:   64px;
-
-  /* line-height */
-  --lh-tight:   1.2;
-  --lh-snug:    1.35;
-  --lh-normal:  1.5;
-  --lh-relaxed: 1.65;
-
-  /* tracking 7 档 (CLAUDE.md §4 SSOT, lint:hardcode 巡检) */
-  --tracking-tight:   -0.02em;
-  --tracking-normal:  0;
-  --tracking-loose:   0.06em;
-  --tracking-eyebrow: 0.08em;
-  --tracking-wide:    0.10em;
-  --tracking-wider:   0.12em;
-  --tracking-widest:  0.14em;
-}
-
-/*
- * ── Focus ring (global a11y, V5 hardcut to --color-focus-ring) ───────
- * @deprecated 2026-05-23 — V1 used --accent-2 (deep blue); V5 uses
- * --color-focus-ring (still blue #2B6CFF light / #7BA8FF dark).
- */
-*:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
-}
-
-/*
- * THEME · pure (素白 alias to default :root, kept for backward-compat toggle)
- *
- * @deprecated 2026-05-23 — sunset 2026-06-06. V1 had a separate "pure" theme
- * but its values were identical to default :root anyway. V5 default :root
- * already provides the white/yellow palette, so [data-theme='pure'] is now
- * a no-op alias preserved only for existing toggle code paths.
- */
-[data-theme='pure'] {
-  /* intentionally empty — inherits V5 default :root tokens */
-}
-
-/* THEME · dark (V1 dark trigger, post-hard-cut)
- * @deprecated 2026-05-23 — sunset 2026-06-06. V5 §3 above already activates
- * for [data-theme='dark'], aliasing V1 names to V5 dark palette. This block
- * keeps ONLY V1-exclusive tokens that V5 has no concept of:
- *   - data scale 反相 (heatmap visualization)
- *   - bg/ok-bg/warn-bg/bad-bg semantic surface tint aliases
- * All V1 paper/ink/line/accent/ok/warn/err/shadow dark overrides are removed —
- * they now follow V5 dark via the var() alias bridge in :root.
- */
-[data-theme='dark'], :root[data-theme='dark'],
-[data-theme='night'] {
-  /* data scale 反相: 深蓝灰 → 亮行动蓝 (V1-only, no V5 equivalent yet) */
-  --data-0: #1E293B;
-  --data-1: #1E3A8A;
-  --data-2: #1D4ED8;
-  --data-3: #2563EB;
-  --data-4: #60A5FA;
-  --data-5: #93C5FD;
-
-  /* semantic surface tint aliases (V1-only naming convention) */
-  --ok-bg:   var(--ok-50);
-  --warn-bg: var(--warn-50);
-  --bad-bg:  var(--err-50);
-}
-
-/* DENSITY 切换 */
-[data-density='compact'] {
-  --row-y: 8px;
-  --card-pad: 14px;
-}
-[data-density='cozy'] {
-  --row-y: 14px;
-  --card-pad: 22px;
-}
-
-/* OPT STYLE — fb 答题考场态 letter 形状 (Phase 3 P3a, 2026-05-11).
-   非 brand token (答题专用 fb scope). 用 CSS variable + html dataset 模式跟 [data-density]
-   同位置, 不引新约束. */
-[data-opt-style='circle'] {
-  --letter-radius: 9999px;
-}
-[data-opt-style='square'] {
-  --letter-radius: 4px;
-}
-
-/* READING SIZE — SIKAO tweak protocol */
-[data-reading='md'] { --read-fs: 15px; --read-lh: 1.7; }
-[data-reading='lg'] { --read-fs: 17px; --read-lh: 1.78; }
-[data-reading='xl'] { --read-fs: 19px; --read-lh: 1.85; }
-
-/* base reset (SIKAO no-italic policy) */
+/* CJK no-italic global reset (INV-3) */
 em, i { font-style: normal; }
 
-/* SIKAO utility classes */
-.serif { font-family: var(--font-serif); }
-.sans  { font-family: var(--font-sans); }
-.mono  { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
-.eyebrow {
-  font-family: var(--font-mono);
-  font-size: var(--t-tiny);
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-}
-
-/*
- * Phase 3.5 fenbi-merge — 答题阅读区字号偏好.
- *
- * data-practice-font 由 useFontSizeStore 在进入 practice 路由时打到 <html>;
- * 离开页面 attribute 移除. PracticeDeck 容器读 var(--practice-reading-fs)
- * 让题干 / 选项 / 材料 全部跟着变 (font-size CSS 属性 inherit 子树).
- *
- * 字号挡位 (sm 13 / md 16 / lg 19) 是公考行业经验: 13 适合压缩屏长卷,
- * 16 是默认舒适, 19 给老花 / 二屏 / 视疲劳用户.
- */
+/* Practice reading font-size (xingce 答题字号偏好, business feature) */
 :root { --practice-reading-fs: 16px; }
 [data-practice-font='sm'] { --practice-reading-fs: 13px; }
 [data-practice-font='md'] { --practice-reading-fs: 16px; }
@@ -305,20 +45,16 @@ em, i { font-style: normal; }
  *
  *  Source of truth: .kiro/specs/frontend-style-guide-v5/design.md §C.1
  *  Phase doc: docs/vault/05-migration/Phase/Style-Guide-V5/02-Token-System.md
- *  Implementation milestone: SIK-73 (Phase-Style-Guide-V5 / M1)
+ *  Implementation milestones: SIK-73 (M1 tokens.css), SIK-86 (M0.5 big-bang)
  *
- *  This region is fully namespace-isolated from the V1 tokens above:
- *    V1 names: --paper-* / --ink-* / --line-* / --r-* / --t-* / --sp-* / --h-*
- *    V5 names: --color-* / --space-* / --radius-* / --font-* / --shadow-l*
+ *  V5 is the only token surface in this file. V1/V4 alias region was deleted
+ *  in 2026-05-24 V5-M0.5 big-bang (commit ②) — see file header above.
  *
  *  Three-layer architecture (CP.2 invariant):
  *    1. Primitive  — raw values, internal-only, never consumed by app code
  *    2. Semantic   — light default + dark override, app code consumes when
  *                    no component token exists
  *    3. Component  — component-contract tokens, MUST be the default consumer
- *
- *  V4 alias bridge will be appended in task 1.7 (§8) once §1-§7 are stable.
- *  Sunset date: 2026-06-06 (R1/Q6 decision).
  * ═══════════════════════════════════════════════════════════════════════════ */
 
 /* ── §1 V5 Primitive layer ─────────────────────────────────────────────────
@@ -555,11 +291,11 @@ em, i { font-style: normal; }
 /* ── §3 V5 Semantic layer — dark override ───────────────────────────────────
  * Activated by ANY of:
  *   [data-v5-theme='dark']   — V5 native trigger (preferred for new code)
- *   [data-theme='dark']      — V1 legacy toggle, alias-bridged here
- *   [data-theme='night']     — V1 legacy toggle, alias-bridged here
- * After 2026-05-23 hard-cut, V1 dark/night toggles activate V5 dark palette
- * directly. V1 token names (--paper-* / --ink-* / etc.) are var()-aliased to
- * V5 names in :root, so they automatically follow the V5 dark switch here.
+ *   [data-theme='dark']      — legacy toggle (kept for backward-compat with
+ *                              existing localStorage 'theme' values; V1 token
+ *                              alias bridge that this used to feed has been
+ *                              removed in 2026-05-24 V5-M0.5 big-bang)
+ *   [data-theme='night']     — legacy toggle (same as above)
  * Sourced from design.md §C.2.1 to §C.2.5 dark column.
  * ─────────────────────────────────────────────────────────────────────────── */
 

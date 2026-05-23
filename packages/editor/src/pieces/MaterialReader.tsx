@@ -242,7 +242,7 @@ export function MaterialReader({ material, marking, search, nav, typography }: P
                 className={isMark && seg.justAdded ? 'exam-hl-pulse-once' : undefined}
                 style={{
                   background: isMark ? 'var(--exam-mark-bg)' : 'var(--exam-hit-bg)',
-                  color: 'var(--ink-1)',
+                  color: 'var(--color-text-primary)',
                   padding: '0 1px',
                   borderRadius: 2,
                   boxShadow: isMark

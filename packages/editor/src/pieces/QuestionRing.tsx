@@ -61,8 +61,8 @@ export function QuestionRing({
     return () => window.clearTimeout(id);
   }, [celebrating, onCelebrateEnd]);
 
-  const ringStroke = exceeded ? 'var(--err)' : done ? 'var(--exam-success-deep)' : active ? '#93c5fd' : 'var(--accent-1)'; /* hardcode-allow: light-blue ring on dark active chip needs sky-300; not a tokenable scenario */
-  const timeStroke = timePct >= 1 ? 'var(--err)' : timePct >= 0.75 ? 'var(--warn)' : active ? 'color-mix(in oklch, var(--paper-1), transparent 65%)' : 'var(--line-3)';
+  const ringStroke = exceeded ? 'var(--color-state-err)' : done ? 'var(--exam-success-deep)' : active ? '#93c5fd' : 'var(--color-brand-primary)'; /* hardcode-allow: light-blue ring on dark active chip needs sky-300; not a tokenable scenario */
+  const timeStroke = timePct >= 1 ? 'var(--color-state-err)' : timePct >= 0.75 ? 'var(--color-state-warn)' : active ? 'color-mix(in oklch, var(--color-bg-surface), transparent 65%)' : 'var(--color-border-strong)';
 
   const label = `切到 ${question.no} (${question.kind})${pinned ? ' · 已固定题干' : ''}`;
 

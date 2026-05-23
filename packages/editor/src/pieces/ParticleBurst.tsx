@@ -12,7 +12,7 @@ interface Props {
 }
 
 const PARTICLE_DEGS = [0, 60, 120, 180, 240, 300] as const;
-const COLORS = ['var(--accent-1)', 'var(--warn)'];
+const COLORS = ['var(--color-brand-primary)', 'var(--color-state-warn)'];
 const LIFETIME_MS = 700;
 
 // ParticleBurst — renders 6 particles radiating from a (x, y) anchor.
