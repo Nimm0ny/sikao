@@ -276,7 +276,7 @@ def test_ai_questions_generate_falls_back_to_llm_and_persists_questions(tmp_path
         assert len(created_session.json()["items"]) == 2
 
 
-def test_ai_questions_generate_exclude_already_done_fails_instead_of_reusing_old_item(tmp_path: Path) -> None:
+def test_ai_questions_generate_exclude_already_done_falls_back_to_llm(tmp_path: Path) -> None:
     with build_client(tmp_path) as client:
         user_id = register_user(client)
         source_ids = seed_paper(
@@ -316,8 +316,12 @@ def test_ai_questions_generate_exclude_already_done_fails_instead_of_reusing_old
             },
             headers={"Idempotency-Key": str(uuid4())},
         )
-        assert response.status_code == 503, response.text
-        assert response.json()["code"] == "AI_AUDIT_FAILED"
+        assert response.status_code == 200, response.text
+        payload = response.json()
+        assert payload["status"] == "llm_generated"
+        assert payload["poolCount"] == 0
+        assert payload["llmGeneratedCount"] == 2
+        assert old_ai_question not in payload["questionIds"]
 
 
 def test_ai_questions_generate_rejects_essay_until_b22_2_lands(tmp_path: Path) -> None:
