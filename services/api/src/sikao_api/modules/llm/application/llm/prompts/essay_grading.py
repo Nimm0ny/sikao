@@ -21,8 +21,12 @@ prompt builder 是纯函数, 不直接拿 ORM 实体, db 解耦 (跟 qa.py 一�
 
 from __future__ import annotations
 
+from typing import Any
+
 from sikao_api.modules.llm.application.llm.prompts._shared import with_tone
 from sikao_api.modules.llm.application.llm.provider import LLMMessage
+
+PROMPT_VERSION = "essay_grading@v1"
 
 # 5 维度 + 权重 + 评分细则. 顺序固定 (业务层 sanity check / weight 计算依赖).
 ESSAY_DIMENSIONS: list[tuple[str, float, str]] = [
@@ -91,6 +95,39 @@ _ESSAY_GRADING_SYSTEM_BODY = f"""\
 
 ESSAY_GRADING_SYSTEM_MESSAGE = with_tone(_ESSAY_GRADING_SYSTEM_BODY)
 
+OUTPUT_SCHEMA: dict[str, Any] = {
+    "type": "object",
+    "required": ["evaluation", "sample_answer"],
+    "properties": {
+        "evaluation": {
+            "type": "object",
+            "required": ["dimensions", "strengths", "weaknesses", "suggestions"],
+            "properties": {
+                "dimensions": {
+                    "type": "array",
+                    "minItems": 5,
+                    "items": {
+                        "type": "object",
+                        "required": ["name", "score", "comment"],
+                        "properties": {
+                            "name": {"type": "string"},
+                            "score": {"type": "number"},
+                            "comment": {"type": "string"},
+                        },
+                        "additionalProperties": False,
+                    },
+                },
+                "strengths": {"type": "array", "items": {"type": "string"}},
+                "weaknesses": {"type": "array", "items": {"type": "string"}},
+                "suggestions": {"type": "array", "items": {"type": "string"}},
+            },
+            "additionalProperties": False,
+        },
+        "sample_answer": {"type": "string", "minLength": 1},
+    },
+    "additionalProperties": False,
+}
+
 
 def build_essay_grading_messages(
     *,
@@ -142,6 +179,8 @@ __all__ = [
     "ESSAY_DIMENSION_WEIGHTS",
     "ESSAY_DIMENSIONS",
     "ESSAY_GRADING_SYSTEM_MESSAGE",
+    "OUTPUT_SCHEMA",
+    "PROMPT_VERSION",
     "build_essay_grading_messages",
 ]
 
