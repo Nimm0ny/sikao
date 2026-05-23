@@ -24,3 +24,11 @@ class TimingEventBatchAckV2(CamelModel):
     accepted: int
     rejected: int
     last_ack_event_idx: int
+
+
+class TimingBaselineResponseV2(CamelModel):
+    p50_ms: int
+    p90_ms: int
+    p95_ms: int
+    mean_ms: int
+    sample_size: int
