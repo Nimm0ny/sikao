@@ -22,6 +22,7 @@ from sikao_api.modules.question_reports.application.admin_query import (
     load_admin_item_or_raise,
 )
 from sikao_api.modules.question_reports.domain.types import (
+    ACTIVE_QUESTION_REPORT_STATUSES,
     TERMINAL_QUESTION_REPORT_STATUSES,
     QuestionReportCategory,
     QuestionReportStatus,
