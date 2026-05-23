@@ -341,3 +341,203 @@ em, i { font-style: normal; }
 [data-practice-font='sm'] { --practice-reading-fs: 13px; }
 [data-practice-font='md'] { --practice-reading-fs: 16px; }
 [data-practice-font='lg'] { --practice-reading-fs: 19px; }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+ *
+ *  V5 Token Region — Frontend Style Guide V5 (2026-05-23, lhr-locked)
+ *
+ *  Source of truth: .kiro/specs/frontend-style-guide-v5/design.md §C.1
+ *  Phase doc: docs/vault/05-migration/Phase/Style-Guide-V5/02-Token-System.md
+ *  Implementation milestone: SIK-73 (Phase-Style-Guide-V5 / M1)
+ *
+ *  This region is fully namespace-isolated from the V1 tokens above:
+ *    V1 names: --paper-* / --ink-* / --line-* / --r-* / --t-* / --sp-* / --h-*
+ *    V5 names: --color-* / --space-* / --radius-* / --font-* / --shadow-l*
+ *
+ *  Three-layer architecture (CP.2 invariant):
+ *    1. Primitive  — raw values, internal-only, never consumed by app code
+ *    2. Semantic   — light default + dark override, app code consumes when
+ *                    no component token exists
+ *    3. Component  — component-contract tokens, MUST be the default consumer
+ *
+ *  V4 alias bridge will be appended in task 1.7 (§8) once §1-§7 are stable.
+ *  Sunset date: 2026-06-06 (R1/Q6 decision).
+ * ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── §1 V5 Primitive layer ─────────────────────────────────────────────────
+ * Color scales 50..900 + spacing + radius + font sizes + weights + shadows
+ * + easings + durations. Sourced from design.md §C.1.1 to §C.1.7.
+ * These primitives are NOT consumed by app code directly — they are referenced
+ * only by V5 semantic / component tokens below.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* §1.1 color scale — neutral (gray ladder) */
+  --color-neutral-50:  #F8F9FA;
+  --color-neutral-100: #F1F3F5;
+  --color-neutral-200: #E9ECEF;
+  --color-neutral-300: #DEE2E6;
+  --color-neutral-400: #CED4DA;
+  --color-neutral-500: #ADB5BD;
+  --color-neutral-600: #868E96;
+  --color-neutral-700: #495057;
+  --color-neutral-800: #343A40;
+  --color-neutral-900: #1A1D20;
+
+  /* §1.1 color scale — yellow (brand-yellow anchor at 500) */
+  --color-yellow-50:  #FFF8CC;
+  --color-yellow-100: #FFF4B3;
+  --color-yellow-200: #FFEB80;
+  --color-yellow-300: #FFE34D;
+  --color-yellow-400: #FFD933;
+  --color-yellow-500: #FFD200;
+  --color-yellow-600: #E6BD00;
+  --color-yellow-700: #B89700;
+  --color-yellow-800: #8A7100;
+  --color-yellow-900: #5C4B00;
+
+  /* §1.1 color scale — blue (info / focus-ring) */
+  --color-blue-50:  #E5EEFF;
+  --color-blue-100: #CCDDFF;
+  --color-blue-200: #99BBFF;
+  --color-blue-300: #6699FF;
+  --color-blue-400: #3377FF;
+  --color-blue-500: #2B6CFF;
+  --color-blue-600: #225AD9;
+  --color-blue-700: #1A47B0;
+  --color-blue-800: #123487;
+  --color-blue-900: #0A215E;
+
+  /* §1.1 color scale — green (ok) */
+  --color-green-50:  #E8F4EE;
+  --color-green-100: #D1EADD;
+  --color-green-200: #A3D5BB;
+  --color-green-300: #75C098;
+  --color-green-400: #47AB76;
+  --color-green-500: #1F7A4D;
+  --color-green-600: #19623E;
+  --color-green-700: #134B2F;
+  --color-green-800: #0D3320;
+  --color-green-900: #071C11;
+}
+
+:root {
+  /* §1.1 color scale — amber (warn) */
+  --color-amber-50:  #FDF2DA;
+  --color-amber-100: #FBE4B5;
+  --color-amber-200: #F7C96B;
+  --color-amber-300: #F2AE21;
+  --color-amber-400: #D8930A;
+  --color-amber-500: #B45309;
+  --color-amber-600: #933F08;
+  --color-amber-700: #722C06;
+  --color-amber-800: #511A04;
+  --color-amber-900: #300802;
+
+  /* §1.1 color scale — red (err) */
+  --color-red-50:  #FCE8E8;
+  --color-red-100: #F9D1D1;
+  --color-red-200: #F3A3A3;
+  --color-red-300: #ED7575;
+  --color-red-400: #E74747;
+  --color-red-500: #DC2626;
+  --color-red-600: #B01F1F;
+  --color-red-700: #841717;
+  --color-red-800: #580F0F;
+  --color-red-900: #2C0808;
+
+  /* §1.2 spacing scale — web default (8px base) */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* §1.3 radius scale */
+  --radius-10:  10px;
+  --radius-12:  12px;
+  --radius-16:  16px;
+  --radius-22:  22px;
+  --radius-999: 9999px;
+}
+
+/* §1.2 spacing scale — mobile compact override (≤768px) */
+@media (max-width: 768px) {
+  :root {
+    --space-1: 2px;
+    --space-2: 6px;
+    --space-3: 10px;
+    --space-4: 12px;
+    --space-5: 18px;
+    --space-6: 24px;
+    --space-7: 36px;
+    --space-8: 48px;
+  }
+}
+
+:root {
+  /* §1.4 font size scale — web default (with line-height pairs) */
+  --font-display: 40px;
+  --font-h1:      32px;
+  --font-h2:      24px;
+  --font-h3:      18px;
+  --font-card:    16px;
+  --font-body:    13px;
+  --font-meta:    12px;
+  --font-tiny:    11px;
+
+  /* §1.4 line-height pairs (paired with font sizes above) */
+  --line-height-display: 1.2;
+  --line-height-h1:      1.3;
+  --line-height-h2:      1.35;
+  --line-height-h3:      1.4;
+  --line-height-card:    1.5;
+  --line-height-body:    1.55;
+  --line-height-meta:    1.4;
+  --line-height-tiny:    1.4;
+
+  /* §1.5 font weight scale */
+  --font-weight-regular:  400;
+  --font-weight-medium:   500;
+  --font-weight-semibold: 600;
+  --font-weight-bold:     700;
+
+  /* §1.6 shadow scale — light default (l1=card-rest .. l4=toast) */
+  --shadow-l1: 0 1px 2px rgba(26, 29, 32, .04), 0 1px 0 rgba(26, 29, 32, .02) inset;
+  --shadow-l2: 0 1px 2px rgba(26, 29, 32, .04), 0 8px 24px -12px rgba(26, 29, 32, .10);
+  --shadow-l3: 0 12px 32px -12px rgba(26, 29, 32, .18);
+  --shadow-l4: 0 24px 48px -16px rgba(26, 29, 32, .25);
+
+  /* §1.7 motion — easings & durations */
+  --ease-out:        cubic-bezier(.16, 1, .3, 1);
+  --ease-emphasized: cubic-bezier(.2, .8, .2, 1);
+  --dur-fast: 120ms;
+  --dur-base: 200ms;
+  --dur-slow: 360ms;
+}
+
+/* §1.4 font size scale — mobile override (≤768px) */
+@media (max-width: 768px) {
+  :root {
+    --font-display: 34px;
+    --font-h1:      28px;
+    --font-h2:      20px;
+    --font-h3:      16px;
+    --font-card:    14px;
+    --font-body:    13px;
+    --font-meta:    11px;
+    --font-tiny:    10px;
+  }
+}
+
+/* §1.7 motion — prefers-reduced-motion override (REQ-10.3, CP.6) */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --dur-fast: 0ms;
+    --dur-base: 0ms;
+    --dur-slow: 0ms;
+  }
+}
