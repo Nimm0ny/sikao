@@ -11,6 +11,7 @@ from _helpers.essay_grading_route_v2_support import (
     create_and_submit_essay_session,
     fake_grade_failure,
     fake_grade_success,
+    fake_reference_success,
     seed_essay_question,
 )
 from _helpers.practice_content_support import build_postgres_client, register_user
@@ -61,6 +62,10 @@ def test_postgres_practice_essay_grading_roundtrip(
         monkeypatch.setattr(
             "sikao_api.modules.essay_grading.application.background_grader.HomeLlmService.grade_essay",
             counting_success,
+        )
+        monkeypatch.setattr(
+            "sikao_api.modules.essay_grading.application.background_grader.HomeLlmService.generate_reference_answer",
+            fake_reference_success,
         )
 
         trigger = client.post(

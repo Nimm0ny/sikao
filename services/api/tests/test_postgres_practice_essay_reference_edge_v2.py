@@ -16,8 +16,8 @@ from _helpers.essay_grading_route_v2_support import (
     seed_essay_question,
     seed_reference_answer,
 )
-from _helpers.practice_content_support import build_postgres_client, register_user
-from sikao_api.db.models_v2 import EssayReferenceAnswerV2
+from _helpers.practice_content_support import build_postgres_client, register_user, seed_paper
+from sikao_api.db.models_v2 import EssayReferenceAnswerV2, IdempotencyKeyV2
 from sikao_api.modules.essay_grading.application.reference_generator_runner import (
     generate_reference_answer_for_question,
 )
@@ -198,3 +198,81 @@ def test_postgres_reference_generation_runner_deduplicates_concurrent_ai_writes(
                 .order_by(EssayReferenceAnswerV2.id.asc())
             )
             assert len(rows) == 1
+
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_postgres_reference_routes_reject_non_essay_questions(
+    tmp_path: Path,
+) -> None:
+    with build_postgres_client(tmp_path) as client:
+        register_user(client)
+        question_id = seed_paper(
+            client,
+            paper_code="XINGCE-REF-001",
+            title="Xingce Paper",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "行测题干",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "xingce",
+                    "category_l2": "logic",
+                }
+            ],
+        )[0]
+
+        listed = client.get(
+            f"/api/v2/practice/essay/questions/{question_id}/reference-answers"
+        )
+        assert listed.status_code == 422, listed.text
+        assert listed.json()["code"] == "essay_question_expected"
+
+        generated = client.post(
+            "/api/v2/practice/essay/reference-answers/generate",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"questionId": question_id},
+        )
+        assert generated.status_code == 422, generated.text
+        assert generated.json()["code"] == "essay_question_expected"
+
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_postgres_reference_generate_releases_claim_when_replay_store_fails(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    with build_postgres_client(tmp_path) as client:
+        register_user(client)
+        question_id = seed_essay_question(client, paper_code="ESSAY-REF-009")
+
+        def broken_store_replay(*args: Any, **kwargs: Any) -> None:
+            del args, kwargs
+            raise RuntimeError("store replay failed")
+
+        monkeypatch.setattr(
+            "sikao_api.modules.essay_grading.interface.routes.store_replay",
+            broken_store_replay,
+        )
+
+        with pytest.raises(RuntimeError, match="store replay failed"):
+            client.post(
+                "/api/v2/practice/essay/reference-answers/generate",
+                headers={"Idempotency-Key": str(uuid4())},
+                json={"questionId": question_id},
+            )
+
+        app = cast(Any, client.app)
+        factory = app.state.db.session_factory
+        with factory() as session:
+            row = session.query(IdempotencyKeyV2).filter_by(
+                endpoint="practice.essay_reference.generate"
+            ).one_or_none()
+            assert row is None
