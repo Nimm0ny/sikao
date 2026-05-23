@@ -1,0 +1,54 @@
+/*
+ * EmptyState — V5 D.3.10 atom (skeleton).
+ * Why: column layout with illustration > title > description > primary CTA.
+ *      Illustration uses inline SVG geometry until the V5-M4 sprite lands;
+ *      stroke="currentColor" keeps it themable.
+ */
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--space-6) var(--space-4);
+  gap: var(--space-3);
+  color: var(--color-text-primary);
+}
+.illustration {
+  width: 80px;
+  height: 80px;
+  color: var(--color-text-meta-soft);
+}
+.title {
+  margin: 0;
+  font-size: var(--font-card);
+  font-weight: var(--font-weight-semibold);
+}
+.description {
+  margin: 0;
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+  max-width: var(--max-w-reading);
+}
+.action {
+  margin-top: var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--btn-h-md);
+  padding: 0 var(--btn-padding-x-md);
+  border: none;
+  border-radius: var(--btn-radius-md);
+  background: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+  font-size: var(--btn-font-md);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: lint regex only matches single-feature @media queries; the compound `(hover: hover) and (pointer: fine)` query above is the canonical hover-capable form */
+  .action:hover { background: var(--color-brand-hover); }
+}
+.action:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
