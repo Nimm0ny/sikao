@@ -42,6 +42,10 @@ from sikao_api.modules.llm.application.question_generator import (
     SourceQuestion,
     generate_questions_with_trace,
 )
+from sikao_api.modules.llm.application.essay_grader import (
+    EssayGradingTrace,
+    grade_essay_with_trace,
+)
 from sikao_api.modules.llm.application.recommend_today_flow import run_recommend_today
 from sikao_api.modules.llm.application.recommender import RecommendationContext
 from sikao_api.modules.llm.application.regenerate_range_flow import run_regenerate_range_stream
@@ -259,6 +263,58 @@ class HomeLlmService:
                         question.model_dump(mode="python") for question in trace.questions
                     ]
                 },
+                usage=self._nullable_usage(trace.usage),
+            )
+            return trace
+
+    async def grade_essay(
+        self,
+        *,
+        user: UserV2,
+        question_stem: str,
+        materials: list[str],
+        user_answer: str,
+        word_limit_min: int | None,
+        word_limit_max: int | None,
+        full_score: int | None,
+        model: str | None = None,
+    ) -> EssayGradingTrace:
+        async with hold_user_execution_lock(user_id=user.id):
+            self.quotas.check_quota(user_id=user.id, purpose="essay_grading")
+            try:
+                trace = await grade_essay_with_trace(
+                    settings=self.settings,
+                    question_stem=question_stem,
+                    materials=materials,
+                    user_answer=user_answer,
+                    word_limit_min=word_limit_min,
+                    word_limit_max=word_limit_max,
+                    full_score=full_score,
+                    db=self.session,
+                    user_id=user.id,
+                    model=model,
+                )
+            except (LLMParseError, LLMServiceError) as exc:
+                self._record_practice_failure(
+                    user_id=user.id,
+                    purpose="essay_grading",
+                    fallback_prompt_version="essay_grading@failed",
+                    fallback_model=model or self.settings.llm_model_essay,
+                    exc=exc,
+                )
+                raise
+            self._record_success_call(
+                user_id=user.id,
+                purpose="essay_grading",
+                prompt_version=trace.prompt_version,
+                provider=trace.provider,
+                model=trace.model,
+                messages=[
+                    LLMMessage(role=item["role"], content=item["content"])
+                    for item in trace.messages
+                ],
+                raw_text=trace.raw_text,
+                parsed_output=trace.payload.model_dump(mode="python"),
                 usage=self._nullable_usage(trace.usage),
             )
             return trace
