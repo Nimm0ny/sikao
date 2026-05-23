@@ -360,12 +360,16 @@ class NoteDetailV2(CamelModel):
 class NoteCreateRequestV2(CamelModel):
     title: str = Field(min_length=1, max_length=255)
     body: str = Field(default="")
+    linked_question_id: int | None = None
+    visibility: str = "private"
 
 
 class NoteUpdateRequestV2(CamelModel):
     title: str = Field(min_length=1, max_length=255)
     body: str = Field(default="")
     status: str = Field(default="active")
+    linked_question_id: int | None = None
+    visibility: str | None = None
 
 
 class TrendPointV2(CamelModel):
