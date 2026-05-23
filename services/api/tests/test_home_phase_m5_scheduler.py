@@ -43,6 +43,8 @@ class _RecordingRuntime:
         self.login_called = asyncio.Event()
         self.raise_login = False
         self.calls: list[tuple[str, int, str | None]] = []
+        self.mock_exam_auto_submit_payloads: list[tuple[int, int]] = []
+        self.timing_baseline_recompute_result = 0
 
     async def run_daily_progress_snapshot(self) -> int:
         return 0
@@ -50,10 +52,10 @@ class _RecordingRuntime:
     async def run_weekly_weakness_snapshot(self) -> int:
         return 0
 
-    async def run_event_status_tick(self):
+    async def run_event_status_tick(self) -> list[Any]:
         return []
 
-    async def run_cleanup_expired(self):
+    async def run_cleanup_expired(self) -> dict[str, int]:
         return {"adjustments": 0, "recommendations": 0}
 
     async def run_cleanup_soft_deleted_events(self) -> int:
@@ -62,6 +64,18 @@ class _RecordingRuntime:
     async def run_daily_plan_adjust(self) -> int:
         return 0
 
+    async def run_session_lifecycle_cleanup(self) -> dict[str, int]:
+        return {"paused": 0, "abandoned": 0, "draft_abandoned": 0}
+
+    async def run_daily_session_expire(self) -> int:
+        return 0
+
+    async def run_mock_exam_auto_submit(self) -> list[tuple[int, int]]:
+        return list(self.mock_exam_auto_submit_payloads)
+
+    async def run_timing_baseline_recompute(self) -> int:
+        return self.timing_baseline_recompute_result
+
     async def run_login_adjustment_check(self, *, user_id: int, request_id: str | None) -> bool:
         self.calls.append(("login", user_id, request_id))
         self.login_called.set()
@@ -69,8 +83,8 @@ class _RecordingRuntime:
             raise RuntimeError("boom")
         return True
 
-    async def run_submit_progress_hooks(self, *, user_id: int) -> None:
-        del user_id
+    async def run_submit_progress_hooks(self, *, user_id: int, session_id: int | None) -> None:
+        del user_id, session_id
 
     async def run_skipped_adjustment_check(
         self,
@@ -152,3 +166,48 @@ def test_create_app_lifespan_starts_home_scheduler(tmp_path: Path) -> None:
         assert scheduler is not None
         assert scheduler.is_running is True
     assert scheduler.is_running is False
+
+
+def test_home_scheduler_registers_mock_exam_auto_submit_job(tmp_path: Path) -> None:
+    settings = _make_settings(tmp_path)
+    db = _make_db(settings)
+    scheduler = HomeScheduler(db, settings=settings, runtime=_RecordingRuntime())
+
+    scheduler.schedule_recurring_jobs()
+    job_ids = {job.id for job in scheduler._scheduler.get_jobs()}
+    assert "home.mock_exam.auto_submit" in job_ids
+    assert "home.timing.baseline_recompute" in job_ids
+
+
+@pytest.mark.asyncio
+async def test_timing_baseline_job_calls_runtime(tmp_path: Path) -> None:
+    settings = _make_settings(tmp_path)
+    db = _make_db(settings)
+    runtime = _RecordingRuntime()
+    runtime.timing_baseline_recompute_result = 7
+    scheduler = HomeScheduler(db, settings=settings, runtime=runtime)
+
+    result = await scheduler._job_timing_baseline_recompute()
+
+    assert result == 7
+
+
+@pytest.mark.asyncio
+async def test_mock_exam_auto_submit_job_enqueues_recommender_refresh(tmp_path: Path) -> None:
+    settings = _make_settings(tmp_path)
+    db = _make_db(settings)
+    runtime = _RecordingRuntime()
+    runtime.mock_exam_auto_submit_payloads = [(9, 42)]
+    scheduler = HomeScheduler(db, settings=settings, runtime=runtime)
+    recorded: list[tuple[int, int, str | None]] = []
+
+    def _record_enqueue(*, user_id: int, session_id: int, request_id: str | None) -> bool:
+        recorded.append((user_id, session_id, request_id))
+        return True
+
+    scheduler.enqueue_submit_recommender_refresh = _record_enqueue  # type: ignore[method-assign]
+
+    result = await scheduler._job_mock_exam_auto_submit()
+
+    assert result == 1
+    assert recorded == [(9, 42, None)]

@@ -44,12 +44,12 @@ class UserV2(Base):
     public_id: Mapped[str] = mapped_column(String(36), unique=True, nullable=False, default=lambda: str(uuid4()))
     display_name: Mapped[str] = mapped_column(String(255), nullable=False)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
-    deletion_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True, index=True)
+    deletion_reason: Mapped[str | None] = mapped_column(String(255), nullable=True)
 
     password_credential: Mapped[PasswordCredentialV2 | None] = relationship(
         back_populates="user",
@@ -261,6 +261,12 @@ class QuestionV2(Base):
         # are allowed by both PG and SQLite, so dedup losers can keep their
         # row by NULLing this field.
         UniqueConstraint("content_hash", name="uq_questions_v2_content_hash"),
+        Index("ix_questions_v2_heat", "heat_score"),
+        CheckConstraint(
+            "complexity_level IS NULL OR (complexity_level >= 1 AND complexity_level <= 5)",
+            name="ck_q_v2_complexity_range",
+        ),
+        CheckConstraint("heat_score >= 0.0", name="ck_q_v2_heat_non_negative"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -276,6 +282,10 @@ class QuestionV2(Base):
     answer_kind: Mapped[str] = mapped_column(String(32), nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, default="draft")
     content_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
 
     # Phase-Practice WU-B10.1 (Tab 2): question source + exam classification.
     # Source distinguishes real_exam vs ai_generated/ai_modified items so the
@@ -284,19 +294,34 @@ class QuestionV2(Base):
     # application layer (no DB enum, matching PlanV2.source convention) and the
     # value is logically immutable post-create — the DB-level immutable trigger
     # is added in WU-B10.3 once content_hash backfill completes.
-    source: Mapped[str] = mapped_column(String(32), nullable=False, default="real_exam")
+    source: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="real_exam",
+        server_default="real_exam",
+    )
     # year / region intentionally nullable: AI-generated items have no
     # provenance year and not every official paper carries a region (e.g. 国考).
     year: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
     region: Mapped[str | None] = mapped_column(String(32), nullable=True)
     # exam_type values: national / provincial / institution / xuandiao / other.
-    exam_type: Mapped[str] = mapped_column(String(32), nullable=False, default="other")
+    exam_type: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="other",
+        server_default="other",
+    )
     # category_l1 stores the top-level taxonomy key (e.g. 'verbal', 'numeric').
     # category_l2 is optional sub-category. Exact value space is defined by the
     # WU-B14 content service's category aggregator and the WU-B21 import script;
     # legacy rows are seeded with 'uncategorized' so the NOT NULL invariant
     # holds across the migration.
-    category_l1: Mapped[str] = mapped_column(String(32), nullable=False, default="uncategorized")
+    category_l1: Mapped[str] = mapped_column(
+        String(32),
+        nullable=False,
+        default="uncategorized",
+        server_default="uncategorized",
+    )
     category_l2: Mapped[str | None] = mapped_column(String(64), nullable=True)
 
     # Phase-Practice WU-B10.2 (Tab 2): quality signals + dedup key + AI-source
@@ -337,8 +362,9 @@ class QuestionV2(Base):
     is_active: Mapped[bool] = mapped_column(
         Boolean, nullable=False, default=True, server_default=true(), index=True
     )
-    # content_hash: BLAKE2b(stem + sorted options + correct_answer); 32 chars
-    # hex. Used to dedup both AI re-generations against existing real exams and
+    # content_hash: canonical 32-char BLAKE2b over prompt + normalized
+    # content_json (see sikao_api.db.content_hash.compute_question_content_hash).
+    # Used to dedup both AI re-generations against existing real exams and
     # repeated real-exam imports. Nullable in WU-B10.2 because legacy rows are
     # backfilled in WU-B10.3, after which the UNIQUE constraint is added.
     content_hash: Mapped[str | None] = mapped_column(String(32), nullable=True)
@@ -354,10 +380,24 @@ class QuestionV2(Base):
     ai_self_audit_passed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
     # ai_generated_at: provenance timestamp; NULL for real-exam rows.
     ai_generated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-
-    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
-    updated_at: Mapped[datetime] = mapped_column(
-        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    # Phase-1 question_metadata reserve fields. Phase 1 only lands the schema;
+    # Phase 2 will populate / expose them through dedicated services.
+    ability_dimensions: Mapped[list[str]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'"),
+    )
+    discrimination_index: Mapped[float | None] = mapped_column(Float, nullable=True)
+    heat_score: Mapped[float] = mapped_column(
+        Float, nullable=False, default=0.0, server_default="0"
+    )
+    complexity_level: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    knowledge_tags: Mapped[list[str]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'"),
     )
 
 
@@ -390,6 +430,37 @@ class PracticeSessionV2(Base):
         Index("ix_practice_sessions_v2_user_started", "user_id", "started_at"),
         Index("ix_practice_sessions_v2_linked_plan_event", "linked_plan_event_id"),
         Index("ix_practice_sessions_v2_linked_recommendation", "linked_recommendation_id"),
+        Index("ix_practice_sessions_v2_user_status_activity", "user_id", "status", "last_activity_at"),
+        Index("ix_practice_sessions_v2_mock_auto_submit", "exam_mode", "status", "auto_submit_at"),
+        CheckConstraint(
+            "(status = 'paused' AND paused_at IS NOT NULL) OR "
+            "(status != 'paused' AND paused_at IS NULL)",
+            name="ck_ps_v2_paused_status",
+        ),
+        CheckConstraint(
+            "(status != 'abandoned') OR (abandoned_reason IS NOT NULL)",
+            name="ck_ps_v2_abandoned_reason",
+        ),
+        CheckConstraint(
+            "(force_submitted = false) OR (force_submitted_reason IS NOT NULL)",
+            name="ck_ps_v2_force_submit_reason",
+        ),
+        CheckConstraint(
+            "(exam_mode = false) OR (time_limit_minutes IS NOT NULL)",
+            name="ck_ps_v2_mock_time_limit",
+        ),
+        CheckConstraint(
+            "(exam_mode = false) OR (practice_mode = 'full_set')",
+            name="ck_ps_v2_mock_full_set",
+        ),
+        CheckConstraint(
+            "(exam_mode = false) OR (source_mode = 'paper')",
+            name="ck_ps_v2_mock_paper_source",
+        ),
+        CheckConstraint(
+            "time_limit_minutes IS NULL OR (time_limit_minutes >= 10 AND time_limit_minutes <= 360)",
+            name="ck_ps_v2_mock_time_range",
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -411,12 +482,12 @@ class PracticeSessionV2(Base):
         ForeignKey("plan_event_v2.id", ondelete="SET NULL"),
         nullable=True,
     )
-    linked_plan_event_occurrence_ref: Mapped[str | None] = mapped_column(
-        String(64),
-        nullable=True,
-    )
     linked_recommendation_id: Mapped[int | None] = mapped_column(
         ForeignKey("recommendation_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    linked_plan_event_occurrence_ref: Mapped[str | None] = mapped_column(
+        String(64),
         nullable=True,
     )
 
@@ -449,6 +520,42 @@ class PracticeSessionV2(Base):
     config_snapshot: Mapped[dict[str, Any]] = mapped_column(
         JSONB_COMPAT, nullable=False, default=dict, server_default=text("'{}'")
     )
+    paused_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    paused_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    last_heartbeat_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    expires_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    abandoned_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    abandoned_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    force_submitted: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    force_submitted_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    recovered_from_session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("practice_sessions_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    total_active_seconds: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    paused_total_seconds: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    first_question_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_activity_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    exam_mode: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    time_limit_minutes: Mapped[int | None] = mapped_column(SmallInteger, nullable=True)
+    auto_submit_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    allow_review_during: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    allow_pause: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=true()
+    )
+    delayed_review_until: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
 
 
 class PracticeSessionAnswerV2(Base):
@@ -496,6 +603,21 @@ class PracticeSessionAnswerV2(Base):
         Boolean, nullable=False, default=False, server_default=false()
     )
     view_solution_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    time_spent_ms: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    first_seen_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    first_answered_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    last_modified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    answer_change_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    visit_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    is_overtime: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
 
 
 class EssayDraftV2(Base):
@@ -628,13 +750,12 @@ class ReviewItemV2(Base):
     #                       (D-Q12 "拓展" tier).
     # We do not enforce a DB-level enum or CHECK constraint; that lives in the
     # WU-B14+ review module's writer paths and follows the same pattern as
-    # PlanV2.source / RecommendationV2.status.
-    reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
-
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, onupdate=utc_now, nullable=False
     )
+    # PlanV2.source / RecommendationV2.status.
+    reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
 
 class ReviewAttemptV2(Base):
@@ -697,6 +818,358 @@ class NoteLinkV2(Base):
     note_id: Mapped[int] = mapped_column(ForeignKey("notes_v2.id", ondelete="CASCADE"), nullable=False)
     link_kind: Mapped[str] = mapped_column(String(32), nullable=False)
     link_target_id: Mapped[str] = mapped_column(String(64), nullable=False)
+
+
+class PracticeStatsSnapshotV2(Base):
+    __tablename__ = "practice_stats_snapshot_v2"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "scope",
+            "category_key",
+            "type",
+            name="uq_practice_stats_v2_scope",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    scope: Mapped[str] = mapped_column(String(32), nullable=False)
+    category_key: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    type: Mapped[str] = mapped_column(String(32), nullable=False)
+    total_questions: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    correct_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    accuracy: Mapped[float] = mapped_column(
+        Float, nullable=False, default=0.0, server_default="0"
+    )
+    total_sessions: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    total_minutes: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    average_score: Mapped[float | None] = mapped_column(Float, nullable=True)
+    recent_trend: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'"),
+    )
+    last_practiced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    percentile_rank: Mapped[float | None] = mapped_column(Float, nullable=True)
+    percentile_updated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+
+class QuestionFavoriteV2(Base):
+    __tablename__ = "question_favorite_v2"
+    __table_args__ = (
+        UniqueConstraint("user_id", "question_id", name="uq_qfav_v2_user_question"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    note: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+
+class QuestionFlagV2(Base):
+    __tablename__ = "question_flag_v2"
+    __table_args__ = (
+        Index(
+            "uq_qflag_v2_active_user_question",
+            "user_id",
+            "question_id",
+            unique=True,
+            sqlite_where=text("resolved_at IS NULL"),
+            postgresql_where=text("resolved_at IS NULL"),
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    reason: Mapped[str] = mapped_column(String(32), nullable=False)
+    source_session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("practice_sessions_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class EssayReferenceAnswerV2(Base):
+    __tablename__ = "essay_reference_answer_v2"
+    __table_args__ = (
+        Index("ix_essay_ref_answer_v2_question_status", "question_id", "status"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    content: Mapped[str] = mapped_column(Text, nullable=False)
+    source: Mapped[str] = mapped_column(String(32), nullable=False)
+    created_by_user_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_by_admin: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    likes_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    favorites_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    report_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    quality_score: Mapped[float] = mapped_column(
+        Float, nullable=False, default=5.0, server_default="5"
+    )
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="draft", server_default="draft"
+    )
+    published_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    ai_self_audit_passed: Mapped[bool | None] = mapped_column(Boolean, nullable=True)
+    ai_generated_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+
+class EssayReferenceFeedbackV2(Base):
+    __tablename__ = "essay_reference_feedback_v2"
+    __table_args__ = (
+        UniqueConstraint(
+            "reference_id",
+            "user_id",
+            "action",
+            name="uq_essay_ref_feedback_v2",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    reference_id: Mapped[int] = mapped_column(
+        ForeignKey("essay_reference_answer_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    action: Mapped[str] = mapped_column(String(32), nullable=False)
+    note: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+
+class AiGeneratedQuestionRequestV2(Base):
+    __tablename__ = "ai_generated_question_request_v2"
+    __table_args__ = (
+        Index("ix_ai_question_req_v2_user_started", "user_id", "started_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    request_params: Mapped[dict[str, Any]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'"),
+    )
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending", server_default="pending"
+    )
+    pool_question_ids: Mapped[list[int]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'"),
+    )
+    llm_generated_question_ids: Mapped[list[int]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'"),
+    )
+    llm_self_audit_passed_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default="0"
+    )
+    llm_call_id: Mapped[int | None] = mapped_column(
+        ForeignKey("llm_call_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
+    started_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    duration_ms: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+
+class DailyPracticeV2(Base):
+    __tablename__ = "daily_practice_v2"
+    __table_args__ = (
+        UniqueConstraint("user_id", "date", "type", name="uq_daily_practice_v2"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    date: Mapped[date] = mapped_column(Date, nullable=False)
+    type: Mapped[str] = mapped_column(String(32), nullable=False)
+    question_ids: Mapped[list[int]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=list,
+        server_default=text("'[]'"),
+    )
+    generation_strategy: Mapped[str] = mapped_column(String(32), nullable=False)
+    status: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="pending", server_default="pending"
+    )
+    started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    completed_session_id: Mapped[int | None] = mapped_column(
+        ForeignKey("practice_sessions_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    expired_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+
+class QuestionTimingBaselineV2(Base):
+    __tablename__ = "question_timing_baseline_v2"
+    __table_args__ = (
+        Index("ix_qtb_v2_recomputed", "last_recomputed_at"),
+    )
+
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    p50_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    p90_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    p95_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    mean_ms: Mapped[int] = mapped_column(Integer, nullable=False)
+    sample_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    last_recomputed_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, nullable=False
+    )
+
+
+class UserPracticePreferencesV2(Base):
+    __tablename__ = "user_practice_preferences_v2"
+
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        primary_key=True,
+    )
+    payload: Mapped[dict[str, Any]] = mapped_column(
+        JSONB_COMPAT,
+        nullable=False,
+        default=dict,
+        server_default=text("'{}'"),
+    )
+    schema_version: Mapped[int] = mapped_column(
+        SmallInteger, nullable=False, default=1, server_default="1"
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+
+class KnowledgePointV2(Base):
+    __tablename__ = "knowledge_point_v2"
+    __phase__ = "phase_2"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    code: Mapped[str] = mapped_column(String(64), nullable=False, unique=True, index=True)
+    label: Mapped[str] = mapped_column(String(128), nullable=False)
+    category_l1: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
+    category_l2: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    parent_id: Mapped[int | None] = mapped_column(
+        ForeignKey("knowledge_point_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    weight_in_exam: Mapped[float | None] = mapped_column(Float, nullable=True)
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=true(), index=True
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+
+class QuestionKnowledgePointV2(Base):
+    __tablename__ = "question_knowledge_point_v2"
+    __phase__ = "phase_2"
+    __table_args__ = (
+        UniqueConstraint(
+            "question_id",
+            "knowledge_point_id",
+            name="uq_qkp_v2_question_knowledge",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    question_id: Mapped[int] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    knowledge_point_id: Mapped[int] = mapped_column(
+        ForeignKey("knowledge_point_v2.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    weight: Mapped[float] = mapped_column(
+        Float, nullable=False, default=1.0, server_default="1"
+    )
+    annotated_by: Mapped[str] = mapped_column(String(32), nullable=False)
+    annotated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
 
 
 class ProfileInfoV2(Base):

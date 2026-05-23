@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import date
 from decimal import Decimal
 from typing import Any, Literal
@@ -8,6 +9,18 @@ from typing import Any, Literal
 from pydantic import Field, field_validator
 
 from sikao_api.core.schemas import CamelModel, UtcDatetime
+
+
+_ABILITY_DIMENSIONS = {
+    "comprehension",
+    "reasoning",
+    "calculation",
+    "memory",
+    "application",
+}
+_KEY_BINDING_PATTERN = re.compile(r"^(?:Ctrl\+|Shift\+|Alt\+)?[A-Za-z0-9_]+$")
+_TIME_PATTERN = re.compile(r"^([01]\d|2[0-3]):[0-5]\d$")
+_KNOWLEDGE_TAG_PATTERN = re.compile(r"^[a-z][a-z0-9_]*$")
 
 
 class ActionLinkV2(CamelModel):
@@ -124,6 +137,18 @@ class CatalogItemV2(CamelModel):
     subtitle: str | None = None
     status: str
     href: str
+    count: int | None = None
+    category_l1: str | None = None
+    category_l2: str | None = None
+    paper_code: str | None = None
+    year: int | None = None
+    region: str | None = None
+    exam_type: str | None = None
+    question_count: int | None = None
+    difficulty: str | None = None
+    is_completed: bool = False
+    best_score: float | None = None
+    last_attempt_at: UtcDatetime | None = None
 
 
 class CatalogListResponseV2(CamelModel):
@@ -142,12 +167,62 @@ class PracticeCenterResponseV2(CamelModel):
 class PracticeSessionCreateRequestV2(CamelModel):
     track: Literal["xingce", "essay"]
     entry_kind: str = Field(min_length=1, max_length=64)
+    mode: str | None = None
+    practice_mode: Literal["per_question", "full_set"] = "full_set"
     paper_code: str | None = None
     question_ids: list[int] = Field(default_factory=list)
     payload: dict[str, Any] = Field(default_factory=dict)
+    config: dict[str, Any] = Field(default_factory=dict)
     linked_plan_event_id: int | None = None
     linked_plan_event_occurrence_ref: str | None = Field(default=None, max_length=64)
     linked_recommendation_id: int | None = None
+
+
+class QuestionMetadataPreviewV2(CamelModel):
+    ability_dimensions: list[str] = Field(default_factory=list)
+    complexity_level: int | None = None
+    knowledge_tags: list[str] = Field(default_factory=list)
+    heat_score: float = 0.0
+
+    @field_validator("ability_dimensions")
+    @classmethod
+    def validate_ability_dimensions(cls, values: list[str]) -> list[str]:
+        invalid = sorted({value for value in values if value not in _ABILITY_DIMENSIONS})
+        if invalid:
+            raise ValueError(
+                "ability_dimensions contains unsupported values: "
+                + ", ".join(invalid)
+            )
+        return values
+
+    @field_validator("complexity_level")
+    @classmethod
+    def validate_complexity_level(cls, value: int | None) -> int | None:
+        if value is None:
+            return value
+        if not 1 <= value <= 5:
+            raise ValueError("complexity_level must be between 1 and 5")
+        return value
+
+    @field_validator("knowledge_tags")
+    @classmethod
+    def validate_knowledge_tags(cls, values: list[str]) -> list[str]:
+        invalid = sorted({value for value in values if not _KNOWLEDGE_TAG_PATTERN.match(value)})
+        if invalid:
+            raise ValueError(
+                "knowledge_tags must be snake_case: " + ", ".join(invalid)
+            )
+        return values
+
+
+class QuestionEnvelopeV2(CamelModel):
+    id: int
+    question_key: str
+    prompt: str
+    answer_kind: str
+    status: str
+    content: dict[str, Any] = Field(default_factory=dict)
+    metadata_preview: QuestionMetadataPreviewV2 | None = None
 
 
 class PracticeSessionItemV2(CamelModel):
@@ -156,6 +231,15 @@ class PracticeSessionItemV2(CamelModel):
     prompt: str
     answer_kind: str
     status: str
+    flagged: bool = False
+    viewed_solution: bool = False
+    has_user_notes: bool = False
+    is_favorited: bool = False
+    has_persistent_flag: bool = False
+    time_spent_ms: int = 0
+    answer_change_count: int = 0
+    visit_count: int = 0
+    is_overtime: bool = False
 
 
 class PracticeSessionEnvelopeV2(CamelModel):
@@ -166,6 +250,23 @@ class PracticeSessionEnvelopeV2(CamelModel):
     items: list[PracticeSessionItemV2]
     actions: list[ActionLinkV2]
     started_at: UtcDatetime
+    practice_mode: str = "full_set"
+    source_mode: str = "paper"
+    config_snapshot: dict[str, Any] = Field(default_factory=dict)
+    paused_at: UtcDatetime | None = None
+    paused_count: int = 0
+    last_heartbeat_at: UtcDatetime | None = None
+    expires_at: UtcDatetime | None = None
+    force_submitted: bool = False
+    force_submitted_reason: str | None = None
+    total_active_seconds: int = 0
+    paused_total_seconds: int = 0
+    first_question_at: UtcDatetime | None = None
+    last_activity_at: UtcDatetime | None = None
+    exam_mode: bool = False
+    time_limit_minutes: int | None = None
+    auto_submit_at: UtcDatetime | None = None
+    delayed_review_until: UtcDatetime | None = None
     submitted_at: UtcDatetime | None = None
 
 
@@ -177,6 +278,15 @@ class PracticeAnswerPayloadV2(CamelModel):
 
 class PracticeAnswerUpsertRequestV2(CamelModel):
     answers: list[PracticeAnswerPayloadV2] = Field(default_factory=list)
+
+
+class PracticeAnswerFlagRequestV2(CamelModel):
+    flagged: bool
+
+
+class PracticePersistentFlagRequestV2(CamelModel):
+    question_id: int
+    reason: Literal["uncertain", "revisit_later", "needs_review"]
 
 
 class OperationAckV2(CamelModel):
@@ -223,6 +333,8 @@ class NoteItemV2(CamelModel):
     title: str
     excerpt: str
     status: str
+    linked_question_id: int | None = None
+    visibility: str = "private"
     created_at: UtcDatetime
     updated_at: UtcDatetime
 
@@ -239,6 +351,8 @@ class NoteDetailV2(CamelModel):
     title: str
     body: str
     status: str
+    linked_question_id: int | None = None
+    visibility: str = "private"
     created_at: UtcDatetime
     updated_at: UtcDatetime
 
@@ -246,12 +360,426 @@ class NoteDetailV2(CamelModel):
 class NoteCreateRequestV2(CamelModel):
     title: str = Field(min_length=1, max_length=255)
     body: str = Field(default="")
+    linked_question_id: int | None = None
+    visibility: str = "private"
 
 
 class NoteUpdateRequestV2(CamelModel):
     title: str = Field(min_length=1, max_length=255)
     body: str = Field(default="")
     status: str = Field(default="active")
+    linked_question_id: int | None = None
+    visibility: str | None = None
+
+
+class TrendPointV2(CamelModel):
+    date: date
+    session_id: int
+    accuracy: float
+    count: int
+
+
+class PracticeStatsCellV2(CamelModel):
+    category_key: str | None = None
+    label: str
+    total_questions: int
+    correct_count: int
+    accuracy: float
+    total_sessions: int
+    total_minutes: int
+    recent_trend: list[TrendPointV2] = Field(default_factory=list)
+    percentile_rank: float | None = None
+    last_practiced_at: UtcDatetime | None = None
+
+
+class PracticeStatsResponseV2(CamelModel):
+    type: Literal["xingce", "essay"]
+    overall: PracticeStatsCellV2
+    by_category_l1: list[PracticeStatsCellV2] = Field(default_factory=list)
+    by_category_l2: list[PracticeStatsCellV2] = Field(default_factory=list)
+
+
+class QuestionTimingItemV2(CamelModel):
+    answer_id: int
+    question_id: int
+    time_spent_ms: int
+    baseline_p50_ms: int | None = None
+    baseline_p95_ms: int | None = None
+    is_overtime: bool
+    answer_change_count: int
+    visit_count: int
+
+
+class TimingSummaryV2(CamelModel):
+    overtime_count: int
+    fastest_answer_id: int | None = None
+    slowest_answer_id: int | None = None
+    most_changed_answer_id: int | None = None
+
+
+class SessionTimingReportV2(CamelModel):
+    total_active_seconds: int
+    total_wall_seconds: int
+    paused_total_seconds: int
+    questions: list[QuestionTimingItemV2] = Field(default_factory=list)
+    summary: TimingSummaryV2
+
+
+class TimingOverall(CamelModel):
+    total_minutes: int
+    avg_seconds_per_question: float
+    vs_baseline_ratio: float
+
+
+class TimingByCategory(CamelModel):
+    category: str
+    avg_seconds: float
+    vs_baseline_ratio: float
+    sample_count: int
+
+
+class TimingByDifficulty(CamelModel):
+    difficulty_bucket: str
+    avg_seconds: float
+    vs_baseline_ratio: float
+
+
+class TimingOvertimeBucket(CamelModel):
+    count: int
+    top_5_question_ids: list[int] = Field(default_factory=list)
+
+
+class PracticeStatsTimingResponseV2(CamelModel):
+    overall: TimingOverall
+    by_category_l1: list[TimingByCategory] = Field(default_factory=list)
+    by_difficulty: list[TimingByDifficulty] = Field(default_factory=list)
+    overtime_questions: TimingOvertimeBucket
+    pacing_pattern: Literal["steady", "fast_start_slow_end", "slow_start_fast_end", "irregular"]
+
+
+class LifecycleTransition(CamelModel):
+    from_status: str
+    to_status: str
+    trigger: str
+    actor: Literal["user", "system", "cron", "admin"]
+    ts: UtcDatetime
+    reason: str | None = None
+
+
+class SessionLifecycleResponseV2(CamelModel):
+    status: str
+    first_question_at: UtcDatetime | None = None
+    last_activity_at: UtcDatetime | None = None
+    paused_at: UtcDatetime | None = None
+    paused_count: int = 0
+    paused_total_seconds: int = 0
+    last_heartbeat_at: UtcDatetime | None = None
+    expires_at: UtcDatetime | None = None
+    abandoned_at: UtcDatetime | None = None
+    abandoned_reason: str | None = None
+    force_submitted: bool = False
+    force_submitted_reason: str | None = None
+    transitions: list[LifecycleTransition] = Field(default_factory=list)
+
+
+class SessionDiscardRequestV2(CamelModel):
+    reason: str | None = Field(default=None, max_length=64)
+
+
+class SessionHeartbeatRequestV2(CamelModel):
+    client_ts: UtcDatetime | None = None
+    current_question_id: int | None = None
+
+
+class SessionHeartbeatResponseV2(CamelModel):
+    server_ts: UtcDatetime
+    status: str
+
+
+class ActiveSessionProgress(CamelModel):
+    answered: int
+    total: int
+
+
+class ActiveSessionV2(CamelModel):
+    id: int
+    type: Literal["xingce", "essay"]
+    source_mode: str
+    practice_mode: str
+    status: str
+    started_at: UtcDatetime
+    last_activity_at: UtcDatetime | None = None
+    paused_at: UtcDatetime | None = None
+    progress: ActiveSessionProgress
+    paper_code: str | None = None
+    category: str | None = None
+    exam_mode: bool = False
+
+
+class ActiveSessionsResponseV2(CamelModel):
+    sessions: list[ActiveSessionV2] = Field(default_factory=list)
+    count: int
+
+
+class MockExamCreateRequestV2(CamelModel):
+    paper_code: str = Field(min_length=1, max_length=64)
+    time_limit_minutes: int | None = Field(default=None, ge=10, le=360)
+    delayed_review_minutes: int = Field(default=0, ge=0, le=1440)
+
+
+class MockExamCreateResponseV2(CamelModel):
+    session_id: int
+    paper_code: str
+    time_limit_minutes: int
+    auto_submit_at: UtcDatetime | None = None
+    expires_at: UtcDatetime | None = None
+    status: str
+
+
+class MockExamCountdownResponseV2(CamelModel):
+    server_now: UtcDatetime
+    auto_submit_at: UtcDatetime
+    remaining_seconds: int
+    status: str
+    elapsed_seconds: int
+
+
+class MockExamHistoryItem(CamelModel):
+    session_id: int
+    paper_code: str
+    completed_at: UtcDatetime
+    time_limit_minutes: int
+    actual_active_seconds: int
+    accuracy: float
+    total_score: float | None = None
+    is_force_submitted: bool
+    rank_in_self: int | None = None
+
+
+class MockExamAggregate(CamelModel):
+    total_count: int
+    best_accuracy: float
+    best_session_id: int | None = None
+    avg_accuracy: float
+    improvement_trend: float
+
+
+class MockExamHistoryResponseV2(CamelModel):
+    sessions: list[MockExamHistoryItem] = Field(default_factory=list)
+    aggregate: MockExamAggregate
+
+
+class MockExamComparisonResponseV2(CamelModel):
+    self: MockExamHistoryItem
+    self_history: list[MockExamHistoryItem] = Field(default_factory=list)
+    paper_baseline: dict[str, float | int | None] = Field(default_factory=dict)
+
+
+class UiPreferences(CamelModel):
+    font_size: Literal["sm", "base", "lg", "xl"] = "base"
+    line_height: Literal["compact", "comfortable", "spacious"] = "comfortable"
+    theme_preference: Literal["system", "light", "dark"] = "system"
+    show_question_index: bool = True
+    show_timing_indicator: bool = True
+    show_overtime_warning: bool = True
+    answer_panel_position: Literal["right", "bottom"] = "right"
+
+
+class PacingPreferences(CamelModel):
+    default_practice_mode: Literal["per_question", "full_set"] = "full_set"
+    auto_advance_after_answer: bool = False
+    auto_advance_delay_seconds: int = 1
+    confirm_before_submit: bool = True
+    confirm_when_unanswered_count_gte: int = 1
+
+    @field_validator("auto_advance_delay_seconds")
+    @classmethod
+    def validate_auto_advance_delay_seconds(cls, value: int) -> int:
+        if not 0 <= value <= 10:
+            raise ValueError("auto_advance_delay_seconds must be between 0 and 10")
+        return value
+
+    @field_validator("confirm_when_unanswered_count_gte")
+    @classmethod
+    def validate_confirm_unanswered_threshold(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("confirm_when_unanswered_count_gte must be >= 0")
+        return value
+
+
+class AutoSavePreferences(CamelModel):
+    enabled: bool = True
+    interval_seconds: int = 30
+    save_to_local_storage: bool = True
+
+    @field_validator("interval_seconds")
+    @classmethod
+    def validate_interval_seconds(cls, value: int) -> int:
+        if not 10 <= value <= 300:
+            raise ValueError("interval_seconds must be between 10 and 300")
+        return value
+
+
+class KeyBindings(CamelModel):
+    select_a: str = "a"
+    select_b: str = "b"
+    select_c: str = "c"
+    select_d: str = "d"
+    next_question: str = "ArrowRight"
+    prev_question: str = "ArrowLeft"
+    flag_uncertain: str = "f"
+    favorite: str = "s"
+    note: str = "n"
+    submit: str = "Ctrl+Enter"
+
+    @field_validator("*")
+    @classmethod
+    def validate_binding_shape(cls, value: str) -> str:
+        if not _KEY_BINDING_PATTERN.match(value):
+            raise ValueError("invalid key binding format")
+        return value
+
+
+class KeyboardPreferences(CamelModel):
+    enabled: bool = True
+    bindings: KeyBindings = Field(default_factory=KeyBindings)
+
+    @field_validator("bindings")
+    @classmethod
+    def validate_unique_bindings(cls, value: KeyBindings) -> KeyBindings:
+        keys = list(value.model_dump().values())
+        if len(set(keys)) != len(keys):
+            raise ValueError("KeyBindings must be unique across all actions")
+        return value
+
+
+class ReminderPreferences(CamelModel):
+    daily_practice_reminder_enabled: bool = False
+    daily_practice_reminder_time: str = "20:00"
+    weekly_summary_reminder_enabled: bool = False
+    overtime_threshold_seconds: int = 0
+    long_session_break_reminder_minutes: int = 0
+
+    @field_validator("daily_practice_reminder_time")
+    @classmethod
+    def validate_daily_practice_time(cls, value: str) -> str:
+        if not _TIME_PATTERN.match(value):
+            raise ValueError("daily_practice_reminder_time must be HH:MM")
+        return value
+
+    @field_validator("overtime_threshold_seconds")
+    @classmethod
+    def validate_overtime_threshold_seconds(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("overtime_threshold_seconds must be >= 0")
+        return value
+
+    @field_validator("long_session_break_reminder_minutes")
+    @classmethod
+    def validate_break_reminder_minutes(cls, value: int) -> int:
+        if value < 0:
+            raise ValueError("long_session_break_reminder_minutes must be >= 0")
+        return value
+
+
+class CustomPracticeDefaults(CamelModel):
+    last_used_source_mode: Literal["real_exam", "ai_generated"] = "real_exam"
+    last_used_year_range: Literal["all", "recent_3", "recent_5", "recent_10"] = "recent_3"
+    last_used_difficulty_range: tuple[float, float] = (0.0, 1.0)
+    last_used_count: Literal[5, 10, 15, 20, 30] = 10
+    last_used_practice_mode: Literal["per_question", "full_set"] = "full_set"
+    last_used_exclude_done: bool = True
+    last_used_only_wrong: bool = False
+
+    @field_validator("last_used_difficulty_range")
+    @classmethod
+    def validate_difficulty_range(cls, value: tuple[float, float]) -> tuple[float, float]:
+        if len(value) != 2 or value[0] < 0.0 or value[1] > 1.0 or value[0] > value[1]:
+            raise ValueError("last_used_difficulty_range must stay within [0.0, 1.0]")
+        return value
+
+
+class PracticePreferencesPayloadV1(CamelModel):
+    ui: UiPreferences = Field(default_factory=UiPreferences)
+    pacing: PacingPreferences = Field(default_factory=PacingPreferences)
+    auto_save: AutoSavePreferences = Field(default_factory=AutoSavePreferences)
+    keyboard: KeyboardPreferences = Field(default_factory=KeyboardPreferences)
+    reminders: ReminderPreferences = Field(default_factory=ReminderPreferences)
+    custom_practice: CustomPracticeDefaults = Field(default_factory=CustomPracticeDefaults)
+
+
+class PracticePreferencesResponseV2(CamelModel):
+    schema_version: int
+    payload: PracticePreferencesPayloadV1
+    is_default: bool
+    updated_at: UtcDatetime | None = None
+
+
+class PracticePreferencesPatchV2(CamelModel):
+    path: str = Field(min_length=1, max_length=128)
+    value: Any
+
+
+class PracticePreferencesResetRequestV2(CamelModel):
+    sections: list[str] = Field(default_factory=list)
+
+
+class EssayReferenceAnswerEnvelopeV2(CamelModel):
+    id: int
+    question_id: int
+    content: str
+    source: str
+    likes_count: int
+    favorites_count: int
+    report_count: int
+    quality_score: float
+    status: str
+    published_at: UtcDatetime | None = None
+
+
+class GradingDimensionV2(CamelModel):
+    name: str
+    score: float | None = None
+    full_score: float | None = None
+    comment: str | None = None
+
+
+class EssayReportEnvelopeV2(CamelModel):
+    total_score: float
+    dimensions: list[GradingDimensionV2] = Field(default_factory=list)
+    highlights: list[str] = Field(default_factory=list)
+    issues: list[str] = Field(default_factory=list)
+    overall_comment: str
+    improvement_suggestions: list[str] = Field(default_factory=list)
+    graded_at: UtcDatetime
+    llm_call_id: int
+
+
+class EssayGradingResponseV2(CamelModel):
+    submission_id: int
+    status: str
+    report: EssayReportEnvelopeV2 | None = None
+    reference_answers: list[EssayReferenceAnswerEnvelopeV2] = Field(default_factory=list)
+    error_message: str | None = None
+
+
+class AiQuestionsGenerateResponseV2(CamelModel):
+    request_id: int
+    question_ids: list[int] = Field(default_factory=list)
+    status: str
+    duration_ms: int
+    pool_count: int
+    llm_generated_count: int
+
+
+class DailyPracticeResponseV2(CamelModel):
+    id: int
+    date: date
+    type: Literal["xingce", "essay"]
+    question_count: int
+    status: str
+    completed_session_id: int | None = None
+    completed_accuracy: float | None = None
 
 
 class ProfileOverviewResponseV2(CamelModel):

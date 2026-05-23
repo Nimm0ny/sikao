@@ -5,7 +5,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Callable
 from uuid import uuid4
 
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED, JobExecutionEvent  # type: ignore[import-untyped]
@@ -147,6 +147,38 @@ class HomeScheduler:
             max_instances=1,
             coalesce=True,
         )
+        self._scheduler.add_job(
+            self._job_session_lifecycle_cleanup,
+            trigger=CronTrigger(minute="*/5", timezone=self._settings.home_scheduler_timezone),
+            id="home.session_lifecycle.cleanup",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+        self._scheduler.add_job(
+            self._job_daily_session_expire,
+            trigger=CronTrigger(hour=23, minute=55, timezone=self._settings.home_scheduler_timezone),
+            id="home.session_lifecycle.daily_expire",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+        self._scheduler.add_job(
+            self._job_mock_exam_auto_submit,
+            trigger=CronTrigger(minute="*/1", timezone=self._settings.home_scheduler_timezone),
+            id="home.mock_exam.auto_submit",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+        self._scheduler.add_job(
+            self._job_timing_baseline_recompute,
+            trigger=CronTrigger(day_of_week="mon", hour=3, minute=0, timezone="UTC"),
+            id="home.timing.baseline_recompute",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
         self._scheduled = True
 
     def enqueue_login_adjustment_check(self, *, user_id: int, request_id: str | None) -> bool:
@@ -173,11 +205,11 @@ class HomeScheduler:
             },
         )
 
-    def enqueue_submit_progress_refresh(self, *, user_id: int, request_id: str | None) -> bool:
+    def enqueue_submit_progress_refresh(self, *, user_id: int, session_id: int | None, request_id: str | None) -> bool:
         return self._enqueue_one_shot(
             job_id=f"home.hook.submit_progress_refresh:{uuid4().hex}",
             func=self._job_submit_progress_refresh,
-            kwargs={"user_id": user_id, "request_id": request_id},
+            kwargs={"user_id": user_id, "session_id": session_id, "request_id": request_id},
         )
 
     def enqueue_event_skipped_adjustment_check(
@@ -240,6 +272,33 @@ class HomeScheduler:
         self._mark_started(job_id)
         return await self._runtime.run_daily_plan_adjust()
 
+    async def _job_session_lifecycle_cleanup(self) -> dict[str, int]:
+        job_id = "home.session_lifecycle.cleanup"
+        self._mark_started(job_id)
+        return await self._runtime.run_session_lifecycle_cleanup()
+
+    async def _job_daily_session_expire(self) -> int:
+        job_id = "home.session_lifecycle.daily_expire"
+        self._mark_started(job_id)
+        return await self._runtime.run_daily_session_expire()
+
+    async def _job_mock_exam_auto_submit(self) -> int:
+        job_id = "home.mock_exam.auto_submit"
+        self._mark_started(job_id)
+        submitted = await self._runtime.run_mock_exam_auto_submit()
+        for user_id, session_id in submitted:
+            self.enqueue_submit_recommender_refresh(
+                user_id=user_id,
+                session_id=session_id,
+                request_id=None,
+            )
+        return len(submitted)
+
+    async def _job_timing_baseline_recompute(self) -> int:
+        job_id = "home.timing.baseline_recompute"
+        self._mark_started(job_id)
+        return await self._runtime.run_timing_baseline_recompute()
+
     async def _job_login_adjustment_check(
         self,
         *,
@@ -274,13 +333,14 @@ class HomeScheduler:
         self,
         *,
         user_id: int,
+        session_id: int | None,
         request_id: str | None,
         scheduled_job_id: str | None = None,
     ) -> None:
         del request_id
         job_id = scheduled_job_id or f"home.hook.submit_progress_refresh:{user_id}"
         self._mark_started(job_id)
-        await self._runtime.run_submit_progress_hooks(user_id=user_id)
+        await self._runtime.run_submit_progress_hooks(user_id=user_id, session_id=session_id)
 
     async def _job_skipped_adjustment_check(
         self,
@@ -306,7 +366,7 @@ class HomeScheduler:
         self,
         *,
         job_id: str,
-        func,
+        func: Callable[..., Any],
         kwargs: dict[str, Any],
     ) -> bool:
         if not self.is_running or self._loop is None:

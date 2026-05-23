@@ -158,6 +158,20 @@ def _extract_session_token(
     return None
 
 
+def _extract_optional_session_token(request: Request) -> str | None:
+    cookie_token = request.cookies.get(AUTH_SESSION_COOKIE_NAME)
+    if cookie_token:
+        return cookie_token
+
+    authorization = request.headers.get("Authorization")
+    if authorization is None:
+        return None
+    scheme, _, credentials = authorization.partition(" ")
+    if scheme.lower() != "bearer" or not credentials:
+        return None
+    return credentials
+
+
 def get_current_auth_context(
     request: Request,
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(bearer_security)],
@@ -194,6 +208,34 @@ def get_current_user_v2(
     context: Annotated[AuthContextV2, Depends(get_current_auth_context)]
 ) -> UserV2:
     return context.user
+
+
+def get_optional_current_user_v2(
+    request: Request,
+    session: Annotated[Session, Depends(get_db_session)],
+) -> UserV2 | None:
+    raw_token = _extract_optional_session_token(request)
+    if raw_token is None:
+        return None
+    token_hash = hash_token(raw_token)
+    auth_session = session.scalar(
+        select(AuthSessionV2).where(AuthSessionV2.token_hash == token_hash)
+    )
+    if auth_session is None:
+        return None
+    user = session.get(UserV2, auth_session.user_id)
+    if user is None:
+        return None
+    if user.deleted_at is not None:
+        return None
+    if not user.is_active:
+        return None
+    if auth_session.revoked_at is not None:
+        return None
+    now = datetime.now(UTC).replace(tzinfo=None)
+    if auth_session.expires_at <= now:
+        return None
+    return user
 
 
 def get_current_session_v2(

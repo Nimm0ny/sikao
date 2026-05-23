@@ -1,15 +1,21 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
-from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionV2, UserV2
+from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionFlagV2, QuestionV2, UserV2
 from sikao_api.db.schemas_v2 import ActionLinkV2, PracticeAnswerPayloadV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionItemV2, PracticeSessionResultResponseV2, SectionCardV2, SummaryMetricV2
+from sikao_api.modules.mock_exam.application.enforcer import assert_mock_exam_started
+from sikao_api.modules.session.application.answer_flag_ops import promote_flagged_answers
+from sikao_api.modules.session.application.mode_dispatcher import resolve_session_selection
+from sikao_api.modules.session_lifecycle.application.transition_support import apply_transition
+from sikao_api.modules.timing.application.submit_summary import apply_submit_timing_summary
 from sikao_api.modules.plans.domain.rrule_subset import build_occurrence_ref, end_of_local_day, expand_occurrences, parse_occurrence_ref, start_of_local_day
+from sikao_api.modules.system.application.audit_v2 import add_audit_log
 from sikao_api.modules.system.application.errors import ConflictError, NotFoundError, ValidationError
 
 
@@ -35,10 +41,12 @@ class SessionServiceV2:
             linked_plan_event_id=payload.linked_plan_event_id,
             linked_plan_event_occurrence_ref=payload.linked_plan_event_occurrence_ref,
         )
+        selection = resolve_session_selection(self.session, user=user, payload=payload)
         paper_id, revision_id = self._resolve_paper_binding(payload.paper_code)
         selected_questions = self._resolve_questions(
             question_ids=payload.question_ids,
             revision_id=revision_id,
+            fallback_questions=selection.questions,
         )
         practice_session = PracticeSessionV2(
             user_id=user.id,
@@ -48,6 +56,9 @@ class SessionServiceV2:
             paper_id=paper_id,
             revision_id=revision_id,
             payload_json=payload.payload,
+            practice_mode=payload.practice_mode,
+            source_mode=selection.source_mode,
+            config_snapshot=selection.config_snapshot,
             linked_plan_event_id=payload.linked_plan_event_id,
             linked_plan_event_occurrence_ref=payload.linked_plan_event_occurrence_ref,
             linked_recommendation_id=payload.linked_recommendation_id,
@@ -82,8 +93,15 @@ class SessionServiceV2:
         return practice_session
 
     def save_answers(
-        self, *, practice_session: PracticeSessionV2, answers: list[PracticeAnswerPayloadV2]
+        self,
+        *,
+        practice_session: PracticeSessionV2,
+        answers: list[PracticeAnswerPayloadV2],
+        request_id: str | None = None,
     ) -> None:
+        self.session.refresh(practice_session)
+        self._ensure_session_is_writable(practice_session)
+        assert_mock_exam_started(practice_session)
         self._ensure_distinct_answer_keys(answers)
         if not answers:
             self._ensure_session_not_submitted(practice_session.id)
@@ -119,24 +137,128 @@ class SessionServiceV2:
                 row.answered_at = datetime.now(UTC).replace(tzinfo=None)
                 self.session.add(row)
 
-        if existing:
+        if practice_session.status == "draft":
+            apply_transition(
+                self.session,
+                practice_session=practice_session,
+                trigger="first_answer",
+                actor="user",
+                actor_id=str(practice_session.user_id),
+                request_id=request_id,
+            )
+        elif practice_session.status == "paused":
+            apply_transition(
+                self.session,
+                practice_session=practice_session,
+                trigger="answer_during_paused",
+                actor="user",
+                actor_id=str(practice_session.user_id),
+                request_id=request_id,
+            )
+        elif existing:
             self._mark_session_in_progress(practice_session.id)
+        practice_session.last_activity_at = datetime.now(UTC).replace(tzinfo=None)
+        self.session.add(practice_session)
 
-    def submit(self, *, practice_session: PracticeSessionV2) -> None:
-        submitted_at = datetime.now(UTC).replace(tzinfo=None)
+    def submit(
+        self,
+        *,
+        practice_session: PracticeSessionV2,
+        force_submitted_reason: str | None = None,
+    ) -> None:
+        self.session.refresh(practice_session)
+        expected_status = practice_session.status
+        self._ensure_session_can_submit(
+            practice_session=practice_session,
+            force_submitted_reason=force_submitted_reason,
+        )
+        submitted_at = self._resolve_submitted_at(
+            practice_session=practice_session,
+            force_submitted_reason=force_submitted_reason,
+        )
+        paused_total_seconds = practice_session.paused_total_seconds
+        paused_at = practice_session.paused_at
+        if expected_status == "paused" and paused_at is not None:
+            paused_total_seconds += int((submitted_at - paused_at).total_seconds())
+        delayed_review_until = self._resolve_delayed_review_until(
+            practice_session=practice_session,
+            submitted_at=submitted_at,
+        )
+        practice_session.paused_total_seconds = paused_total_seconds
+        apply_submit_timing_summary(
+            self.session,
+            practice_session=practice_session,
+            submitted_at=submitted_at,
+        )
         result = self.session.execute(
             update(PracticeSessionV2)
             .where(
                 PracticeSessionV2.id == practice_session.id,
-                PracticeSessionV2.status != "submitted",
+                PracticeSessionV2.status == expected_status,
             )
-            .values(status="submitted", submitted_at=submitted_at)
+            .values(
+                status="submitted",
+                submitted_at=submitted_at,
+                force_submitted=force_submitted_reason is not None,
+                force_submitted_reason=force_submitted_reason,
+                delayed_review_until=delayed_review_until,
+                paused_at=None,
+                paused_total_seconds=paused_total_seconds,
+                last_activity_at=submitted_at,
+                total_active_seconds=practice_session.total_active_seconds,
+                payload_json=practice_session.payload_json,
+            )
             .execution_options(synchronize_session=False)
         )
         if getattr(result, "rowcount", None) != 1:
+            current_status = self.session.scalar(
+                select(PracticeSessionV2.status).where(
+                    PracticeSessionV2.id == practice_session.id
+                )
+            )
+            if current_status == "submitted":
+                raise ConflictError(
+                    "practice session already submitted",
+                    code="practice_session_submitted",
+                )
+            if current_status in {"abandoned", "expired"}:
+                raise ConflictError(
+                    "practice session is not writable",
+                    code="SESSION_NOT_WRITABLE",
+                )
             raise ConflictError(
-                "practice session already submitted",
-                code="practice_session_submitted",
+                "invalid session transition",
+                code="INVALID_TRANSITION",
+            )
+        practice_session.status = "submitted"
+        practice_session.submitted_at = submitted_at
+        practice_session.force_submitted = force_submitted_reason is not None
+        practice_session.force_submitted_reason = force_submitted_reason
+        practice_session.delayed_review_until = delayed_review_until
+        practice_session.paused_at = None
+        practice_session.paused_total_seconds = paused_total_seconds
+        practice_session.last_activity_at = submitted_at
+        if force_submitted_reason is not None:
+            add_audit_log(
+                self.session,
+                user_id=practice_session.user_id,
+                actor_type="system",
+                actor_id="session.submit",
+                action="session.force_submitted",
+                target_type="practice_session_v2",
+                target_id=practice_session.id,
+                before={"status": expected_status},
+                after={"status": "submitted"},
+                metadata={"reason": force_submitted_reason},
+                request_id=None,
+                ip=None,
+            )
+        user = self.session.get(UserV2, practice_session.user_id)
+        if user is not None:
+            promote_flagged_answers(
+                self.session,
+                user=user,
+                practice_session=practice_session,
             )
         if practice_session.linked_plan_event_id is not None and practice_session.linked_plan_event_occurrence_ref is None:
             linked_event = self.session.scalar(
@@ -160,13 +282,21 @@ class SessionServiceV2:
             )
         )
         questions_by_id = self._load_questions_for_answers(answers)
+        persistent_question_ids = self._load_persistent_flag_question_ids(
+            user_id=practice_session.user_id,
+            answers=answers,
+        )
         return PracticeSessionEnvelopeV2(
             id=practice_session.id,
             track=practice_session.track,
             entry_kind=practice_session.entry_kind,
             status=practice_session.status,
             items=[
-                self._build_session_item(answer=answer, questions_by_id=questions_by_id)
+                self._build_session_item(
+                    answer=answer,
+                    questions_by_id=questions_by_id,
+                    persistent_question_ids=persistent_question_ids,
+                )
                 for answer in answers
             ],
             actions=[
@@ -177,6 +307,9 @@ class SessionServiceV2:
                 )
             ],
             started_at=practice_session.started_at,
+            practice_mode=practice_session.practice_mode,
+            source_mode=practice_session.source_mode,
+            config_snapshot=practice_session.config_snapshot,
             submitted_at=practice_session.submitted_at,
         )
 
@@ -244,9 +377,20 @@ class SessionServiceV2:
         *,
         question_ids: list[int],
         revision_id: int | None,
+        fallback_questions: list[QuestionV2],
     ) -> list[QuestionV2]:
+        if fallback_questions:
+            return fallback_questions
         if not question_ids:
-            return []
+            if revision_id is None:
+                return []
+            return list(
+                self.session.scalars(
+                    select(QuestionV2)
+                    .where(QuestionV2.revision_id == revision_id)
+                    .order_by(QuestionV2.item_no.asc(), QuestionV2.id.asc())
+                )
+            )
         self._ensure_distinct_question_ids(question_ids)
         if revision_id is None:
             raise ValidationError(
@@ -282,6 +426,70 @@ class SessionServiceV2:
             raise ConflictError(
                 "practice session already submitted",
                 code="practice_session_submitted",
+            )
+
+    def _ensure_session_not_terminal(self, practice_session: PracticeSessionV2) -> None:
+        if practice_session.status in {"abandoned", "expired"}:
+            raise ConflictError(
+                "practice session is not writable",
+                code="SESSION_NOT_WRITABLE",
+            )
+
+    def _ensure_session_is_writable(self, practice_session: PracticeSessionV2) -> None:
+        if practice_session.status == "submitted":
+            raise ConflictError(
+                "practice session already submitted",
+                code="practice_session_submitted",
+            )
+        self._ensure_session_not_terminal(practice_session)
+
+    def _resolve_delayed_review_until(
+        self,
+        *,
+        practice_session: PracticeSessionV2,
+        submitted_at: datetime,
+    ) -> datetime | None:
+        if not practice_session.exam_mode:
+            return None
+        mock_config = practice_session.config_snapshot.get("mock_exam")
+        if not isinstance(mock_config, Mapping):
+            return None
+        delayed_minutes = mock_config.get("delayed_review_minutes")
+        if not isinstance(delayed_minutes, int) or delayed_minutes <= 0:
+            return None
+        return submitted_at + timedelta(minutes=delayed_minutes)
+
+    def _resolve_submitted_at(
+        self,
+        *,
+        practice_session: PracticeSessionV2,
+        force_submitted_reason: str | None,
+    ) -> datetime:
+        if force_submitted_reason == "mock_exam_timeout" and practice_session.auto_submit_at is not None:
+            return practice_session.auto_submit_at
+        return datetime.now(UTC).replace(tzinfo=None)
+
+    def _ensure_session_can_submit(
+        self,
+        *,
+        practice_session: PracticeSessionV2,
+        force_submitted_reason: str | None,
+    ) -> None:
+        if practice_session.status == "submitted":
+            raise ConflictError(
+                "practice session already submitted",
+                code="practice_session_submitted",
+            )
+        self._ensure_session_not_terminal(practice_session)
+        if force_submitted_reason is not None and practice_session.status not in {"in_progress", "paused"}:
+            raise ConflictError(
+                "invalid session transition",
+                code="INVALID_TRANSITION",
+            )
+        if force_submitted_reason is None and practice_session.exam_mode and practice_session.status == "draft":
+            raise ConflictError(
+                "invalid session transition",
+                code="INVALID_TRANSITION",
             )
 
     def _load_existing_answers(
@@ -439,6 +647,7 @@ class SessionServiceV2:
         *,
         answer: PracticeSessionAnswerV2,
         questions_by_id: dict[int, QuestionV2],
+        persistent_question_ids: set[int] | None = None,
     ) -> PracticeSessionItemV2:
         question = questions_by_id.get(answer.question_id) if answer.question_id is not None else None
         if question is None:
@@ -453,6 +662,13 @@ class SessionServiceV2:
             prompt=prompt,
             answer_kind=answer_kind,
             status="answered" if self._has_meaningful_answer(answer.response_json) else "pending",
+            flagged=answer.flagged,
+            viewed_solution=answer.viewed_solution,
+            has_persistent_flag=bool(
+                answer.question_id is not None
+                and persistent_question_ids is not None
+                and answer.question_id in persistent_question_ids
+            ),
         )
 
     def _resolve_new_answer_question_id(
@@ -510,3 +726,24 @@ class SessionServiceV2:
             )
         )
         return {question.id: question for question in questions}
+
+    def _load_persistent_flag_question_ids(
+        self,
+        *,
+        user_id: int,
+        answers: list[PracticeSessionAnswerV2],
+    ) -> set[int]:
+        question_ids = [answer.question_id for answer in answers if answer.question_id is not None]
+        if not question_ids:
+            return set()
+        return {
+            int(question_id)
+            for question_id in self.session.scalars(
+                select(QuestionFlagV2.question_id).where(
+                    QuestionFlagV2.user_id == user_id,
+                    QuestionFlagV2.question_id.in_(question_ids),
+                    QuestionFlagV2.resolved_at.is_(None),
+                )
+            )
+            if question_id is not None
+        }

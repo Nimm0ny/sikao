@@ -45,7 +45,10 @@ def _build_placeholder_item(item_id: int) -> ReviewItemSchemaV2:
 def _has_review_items(session: Session, *, user: UserV2) -> bool:
     return bool(
         session.scalar(
-            select(func.count()).select_from(ReviewItemV2).where(ReviewItemV2.user_id == user.id)
+            select(func.count()).select_from(ReviewItemV2).where(
+                ReviewItemV2.user_id == user.id,
+                ReviewItemV2.status == "pending",
+            )
         )
     )
 
@@ -63,7 +66,7 @@ def build_review_list(session: Session, *, user: UserV2) -> ReviewListResponseV2
     rows = list(
         session.scalars(
             select(ReviewItemV2)
-            .where(ReviewItemV2.user_id == user.id)
+            .where(ReviewItemV2.user_id == user.id, ReviewItemV2.status == "pending")
             .order_by(ReviewItemV2.updated_at.desc(), ReviewItemV2.id.desc())
         )
     )
@@ -77,7 +80,10 @@ def build_review_list(session: Session, *, user: UserV2) -> ReviewListResponseV2
 
 def build_smart_review(session: Session, *, user: UserV2) -> OverviewResponseV2:
     total = session.scalar(
-        select(func.count()).select_from(ReviewItemV2).where(ReviewItemV2.user_id == user.id)
+        select(func.count()).select_from(ReviewItemV2).where(
+            ReviewItemV2.user_id == user.id,
+            ReviewItemV2.status == "pending",
+        )
     ) or 0
     return OverviewResponseV2(
         summary=[SummaryMetricV2(key="smart", label="Smart review", value=str(total))],

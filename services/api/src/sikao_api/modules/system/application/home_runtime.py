@@ -9,6 +9,7 @@ from typing import Any
 from uuid import uuid4
 
 from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 from sikao_api.core.config import Settings
 from sikao_api.db.models_v2 import (
@@ -33,7 +34,13 @@ from sikao_api.modules.progress.application.snapshot_writer import (
     refresh_weekly_weakness_snapshot,
 )
 from sikao_api.modules.recommendations.application.service import RecommendationServiceV2
+from sikao_api.modules.mock_exam.application.auto_submitter import auto_submit_expired_mock_exams
 from sikao_api.modules.session.application.submit_hooks import run_progress_submit_hooks
+from sikao_api.modules.session_lifecycle.application.cleanup import (
+    cleanup_stale_sessions,
+    expire_daily_sessions,
+)
+from sikao_api.modules.timing.application.baseline_computer import recompute_question_timing_baseline
 from sikao_api.modules.system.application.audit_v2 import add_audit_log
 
 
@@ -180,14 +187,74 @@ class HomeRuntimeOrchestrator:
         finally:
             session.close()
 
-    async def run_submit_progress_hooks(self, *, user_id: int) -> None:
-        await asyncio.to_thread(self._run_submit_progress_hooks_sync, user_id)
+    async def run_submit_progress_hooks(self, *, user_id: int, session_id: int | None) -> None:
+        await asyncio.to_thread(self._run_submit_progress_hooks_sync, user_id, session_id)
 
-    def _run_submit_progress_hooks_sync(self, user_id: int) -> None:
+    async def run_session_lifecycle_cleanup(self) -> dict[str, int]:
+        return await asyncio.to_thread(self._run_session_lifecycle_cleanup_sync)
+
+    async def run_daily_session_expire(self) -> int:
+        return await asyncio.to_thread(self._run_daily_session_expire_sync)
+
+    async def run_mock_exam_auto_submit(self) -> list[tuple[int, int]]:
+        return await asyncio.to_thread(self._run_mock_exam_auto_submit_sync)
+
+    async def run_timing_baseline_recompute(self) -> int:
+        return await asyncio.to_thread(self._run_timing_baseline_recompute_sync)
+
+    def _run_submit_progress_hooks_sync(self, user_id: int, session_id: int | None) -> None:
         session = self._db.session_factory()
         try:
-            run_progress_submit_hooks(session, user_id=user_id)
+            run_progress_submit_hooks(session, user_id=user_id, session_id=session_id)
             session.commit()
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_session_lifecycle_cleanup_sync(self) -> dict[str, int]:
+        session = self._db.session_factory()
+        try:
+            counts = cleanup_stale_sessions(session)
+            session.commit()
+            return counts
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_daily_session_expire_sync(self) -> int:
+        session = self._db.session_factory()
+        try:
+            count = expire_daily_sessions(session)
+            session.commit()
+            return count
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_mock_exam_auto_submit_sync(self) -> list[tuple[int, int]]:
+        session = self._db.session_factory()
+        try:
+            submitted = auto_submit_expired_mock_exams(session)
+            session.commit()
+            return submitted
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_timing_baseline_recompute_sync(self) -> int:
+        session = self._db.session_factory()
+        try:
+            updated = recompute_question_timing_baseline(session)
+            session.commit()
+            return updated
         except Exception:
             session.rollback()
             raise
@@ -550,7 +617,7 @@ class HomeRuntimeOrchestrator:
 
     def _build_adjustment_payload(
         self,
-        session,
+        session: Session,
         *,
         plan: PlanV2,
         trigger_event_id: int | None,
@@ -601,15 +668,15 @@ class HomeRuntimeOrchestrator:
             "pending_adjustments": int(pending_adjustments or 0),
         }
 
-    def _is_ai_adjust_enabled(self, session, *, user_id: int) -> bool:
+    def _is_ai_adjust_enabled(self, session: Session, *, user_id: int) -> bool:
         profile = session.scalar(
             select(ProfileInfoV2).where(ProfileInfoV2.user_id == user_id)
         )
         if profile is None:
             return True
-        return profile.ai_adjust_enabled
+        return bool(profile.ai_adjust_enabled)
 
-    def _has_pending_adjustment(self, session, *, user_id: int) -> bool:
+    def _has_pending_adjustment(self, session: Session, *, user_id: int) -> bool:
         pending_id = session.scalar(
             select(PlanAdjustmentV2.id).where(
                 PlanAdjustmentV2.user_id == user_id,
@@ -621,7 +688,7 @@ class HomeRuntimeOrchestrator:
 
     def _find_recent_adjustment_by_hash(
         self,
-        session,
+        session: Session,
         *,
         user_id: int,
         adjustment_id: int,
@@ -642,7 +709,7 @@ class HomeRuntimeOrchestrator:
                 return row
         return None
 
-    def _list_active_user_ids(self, session) -> list[int]:
+    def _list_active_user_ids(self, session: Session) -> list[int]:
         return list(
             session.scalars(
                 select(UserV2.id).where(UserV2.is_active.is_(True))
@@ -651,7 +718,7 @@ class HomeRuntimeOrchestrator:
 
     def _load_occurrence_transition_keys(
         self,
-        session,
+        session: Session,
     ) -> set[tuple[int, str, str]]:
         rows = list(
             session.scalars(
