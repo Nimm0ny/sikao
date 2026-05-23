@@ -1,0 +1,91 @@
+﻿from __future__ import annotations
+
+from dataclasses import dataclass
+
+from pydantic import ValidationError as PydanticValidationError
+from sqlalchemy.orm import Session
+
+from sikao_api.core.config import Settings
+from sikao_api.modules.llm.application.llm import build_llm_provider
+from sikao_api.modules.llm.application.llm.json_parser import LlmJsonParseError
+from sikao_api.modules.llm.application.llm.prompts.essay_grading import build_essay_grading_messages
+from sikao_api.modules.llm.application.parsers.grading_parser import EssayGradingPayload, parse_grading_output
+from sikao_api.modules.system.application.errors import LLMParseError, LLMServiceError
+
+ESSAY_GRADING_TIMEOUT_SECONDS = 60.0
+
+@dataclass(frozen=True)
+class EssayGradingTrace:
+    payload: EssayGradingPayload
+    raw_text: str
+    usage: dict[str, int]
+    provider: str
+    model: str
+
+
+async def grade_essay_with_trace(
+    *,
+    settings: Settings,
+    question_stem: str,
+    materials: list[str],
+    user_answer: str,
+    word_limit_min: int | None,
+    word_limit_max: int | None,
+    full_score: int | None,
+    db: Session | None = None,
+    user_id: int | None = None,
+    model: str | None = None,
+) -> EssayGradingTrace:
+    try:
+        provider, provider_label = build_llm_provider(
+            settings,
+            db=db,
+            user_id=user_id,
+            timeout_seconds_override=ESSAY_GRADING_TIMEOUT_SECONDS,
+        )
+    except LLMServiceError as exc:
+        raise LLMServiceError(
+            f"essay grading provider build failed: {type(exc).__name__}: {exc.message}",
+            code=exc.code,
+        ) from exc
+    messages = build_essay_grading_messages(
+        question_stem=question_stem,
+        materials=materials,
+        word_limit_min=word_limit_min,
+        word_limit_max=word_limit_max,
+        full_score=full_score,
+        user_answer=user_answer,
+    )
+    try:
+        result = await provider.chat_completion(
+            messages=messages,
+            model=model or settings.llm_model_essay,
+            max_tokens=settings.llm_max_tokens,
+            temperature=0.3,
+        )
+        parsed = parse_grading_output(result.content)
+    except LlmJsonParseError as exc:
+        raise LLMParseError(str(exc)) from exc
+    except PydanticValidationError as exc:
+        raise LLMParseError("essay grading response schema invalid") from exc
+    except ValueError as exc:
+        raise LLMParseError(str(exc)) from exc
+    except Exception as exc:
+        raise LLMServiceError(
+            f"essay grading chat completion failed: {type(exc).__name__}: {exc}"
+        ) from exc
+    return EssayGradingTrace(
+        payload=parsed,
+        raw_text=result.content,
+        usage={
+            "prompt_tokens": result.prompt_tokens,
+            "prompt_cache_hit_tokens": result.prompt_cache_hit_tokens,
+            "prompt_cache_miss_tokens": result.prompt_cache_miss_tokens,
+            "completion_tokens": result.completion_tokens,
+        },
+        provider=provider_label,
+        model=result.model,
+    )
+
+
+__all__ = ["ESSAY_GRADING_TIMEOUT_SECONDS", "EssayGradingTrace", "grade_essay_with_trace"]

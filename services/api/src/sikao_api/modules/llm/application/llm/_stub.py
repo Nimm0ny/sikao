@@ -19,20 +19,17 @@ _UTC = timezone.utc
 _ESSAY_PAYLOAD: dict[str, object] = {
     "evaluation": {
         "dimensions": [
-            {"name": "argument_accuracy", "score": 8.0, "comment": "Core thesis is on-topic."},
-            {"name": "material_usage", "score": 7.5, "comment": "Uses provided material well."},
-            {"name": "language", "score": 7.0, "comment": "Language is clear and controlled."},
-            {"name": "structure", "score": 7.5, "comment": "Sections are ordered logically."},
-            {"name": "length_fit", "score": 9.0, "comment": "Length fits the prompt window."},
+            {"name": "论点准确", "score": 8.0, "comment": "Thesis stays on topic."},
+            {"name": "材料运用", "score": 7.5, "comment": "Uses the provided material."},
+            {"name": "语言", "score": 7.0, "comment": "Language is controlled."},
+            {"name": "结构", "score": 7.5, "comment": "Sections are ordered logically."},
+            {"name": "字数符合度", "score": 9.0, "comment": "Length fits the prompt window."},
         ],
         "strengths": ["clear thesis", "good structure", "material is cited"],
         "weaknesses": ["could deepen evidence", "closing can be sharper"],
         "suggestions": ["add one contrast paragraph", "tighten the final conclusion"],
     },
-    "sample_answer": (
-        "Sample essay answer for test and smoke flows only. "
-        "This payload is deterministic and should not be treated as a real model output."
-    ),
+    "sample_answer": "x" * 950,
 }
 
 _QUESTION_AUDIT_PAYLOAD: dict[str, object] = {
