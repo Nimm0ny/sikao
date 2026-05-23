@@ -6,7 +6,7 @@ from typing import Any, cast
 from fastapi.testclient import TestClient
 
 from _helpers.practice_content_support import build_client, register_user, seed_paper
-from sikao_api.db.models_v2 import AuditLogV2, QuestionReportV2
+from sikao_api.db.models_v2 import AuditLogV2, PracticeSessionV2, QuestionReportV2, QuestionV2
 
 
 def _session_factory(client: TestClient) -> Any:
@@ -289,6 +289,72 @@ def test_question_report_user_mutation_requires_pending_status(tmp_path: Path) -
         assert delete_after_ack.json()["code"] == "question_report_not_pending"
 
 
+def test_question_report_source_session_must_contain_question(tmp_path: Path) -> None:
+    with build_client(tmp_path) as client:
+        user_id = register_user(client)
+        paper_a_ids = seed_paper(
+            client,
+            paper_code="XC-QR-SOURCE-A",
+            title="Question Report Source A",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "Source session question A",
+                    "year": 2024,
+                    "region": "henan",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "reading",
+                }
+            ],
+        )
+        paper_b_ids = seed_paper(
+            client,
+            paper_code="XC-QR-SOURCE-B",
+            title="Question Report Source B",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "Reported question B",
+                    "year": 2024,
+                    "region": "henan",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "reading",
+                }
+            ],
+        )
+
+        factory = _session_factory(client)
+        with factory() as session:
+            question_a = session.get(QuestionV2, paper_a_ids[0])
+            assert question_a is not None
+            practice_session = PracticeSessionV2(
+                user_id=user_id,
+                track="xingce",
+                entry_kind="paper",
+                status="in_progress",
+                revision_id=question_a.revision_id,
+                payload_json={},
+                source_mode="paper",
+                practice_mode="full_set",
+            )
+            session.add(practice_session)
+            session.commit()
+            source_session_id = practice_session.id
+
+        mismatch = client.post(
+            f"/api/v2/practice/questions/{paper_b_ids[0]}/reports",
+            json={
+                "category": "other",
+                "description": "This session does not actually contain the reported question.",
+                "sourceSessionId": source_session_id,
+            },
+        )
+        assert mismatch.status_code == 422, mismatch.text
+        assert mismatch.json()["code"] == "question_report_source_session_mismatch"
+
+
 def test_question_report_auth_csrf_and_validation(tmp_path: Path) -> None:
     with build_client(tmp_path) as client:
         question_id = seed_paper(
@@ -354,6 +420,17 @@ def test_question_report_auth_csrf_and_validation(tmp_path: Path) -> None:
             },
         )
         assert too_short.status_code == 422, too_short.text
+
+        scalar_snapshot = client.post(
+            f"/api/v2/practice/questions/{question_id}/reports",
+            json={
+                "category": "answer_disputed",
+                "description": "The selected answer snapshot should accept a scalar JSON value.",
+                "selectedAnswerAtReport": "A",
+            },
+        )
+        assert scalar_snapshot.status_code == 200, scalar_snapshot.text
+        assert scalar_snapshot.json()["selectedAnswerAtReport"] == "A"
 
 
 def test_question_report_daily_limit_returns_429(tmp_path: Path) -> None:
