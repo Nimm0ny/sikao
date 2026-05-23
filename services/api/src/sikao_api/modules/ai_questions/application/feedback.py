@@ -41,7 +41,7 @@ def submit_feedback(
             PracticeSessionV2.status == "submitted",
             PracticeSessionV2.source_mode == "ai_generated",
             PracticeSessionAnswerV2.question_id == question.id,
-            PracticeSessionAnswerV2.answered_at.is_not(None),
+            PracticeSessionAnswerV2.response_json != {},
         )
     )
     if answered is None:
