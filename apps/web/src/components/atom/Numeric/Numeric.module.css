@@ -1,0 +1,40 @@
+/*
+ * Numeric — V5 D.3.9 atom (skeleton).
+ * Why: tabular-nums everywhere (Q3 decision, design.md §D.3.9). Size buckets
+ *      map to V5 §1.4 font-size scale; emphasis tweaks weight + secondary
+ *      tone for the unit half.
+ */
+.root {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--space-1);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: 'tnum' 1;
+  white-space: nowrap;
+}
+.value, .unit {
+  display: inline-block;
+}
+.root[data-size='meta']    .value { font-size: var(--font-meta); }
+.root[data-size='body']    .value { font-size: var(--font-body); }
+.root[data-size='card']    .value { font-size: var(--font-card); }
+.root[data-size='h3']      .value { font-size: var(--font-h3); }
+.root[data-size='h2']      .value { font-size: var(--font-h2); }
+.root[data-size='h1']      .value { font-size: var(--font-h1); }
+.root[data-size='display'] .value { font-size: var(--font-display); }
+
+.root[data-emphasis='value']    .value { font-weight: var(--font-weight-bold); }
+.root[data-emphasis='value']    .unit  { font-size: var(--font-meta); font-weight: var(--font-weight-regular); color: var(--color-text-secondary); }
+.root[data-emphasis='unit']     .unit  { font-weight: var(--font-weight-bold); }
+.root[data-emphasis='unit']     .value { font-size: var(--font-meta); font-weight: var(--font-weight-regular); color: var(--color-text-secondary); }
+.root[data-emphasis='balanced'] .unit  { color: var(--color-text-secondary); font-weight: var(--font-weight-regular); }
+.root[data-emphasis='balanced'] .value { font-weight: var(--font-weight-semibold); }
+
+.trend {
+  display: inline-flex;
+  align-items: center;
+  margin-right: var(--space-1);
+}
+.root[data-trend='up']   .trend { color: var(--color-state-ok); }
+.root[data-trend='down'] .trend { color: var(--color-state-err); }
+.root[data-trend='flat'] .trend { color: var(--color-text-meta); }

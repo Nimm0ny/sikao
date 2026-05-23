@@ -1,0 +1,35 @@
+/*
+ * ProgressRing — V5 D.3.27 atom (skeleton).
+ * Why: track is the elevated bg, indicator is the variant token. Rotated
+ *      so 0% sits at the top arc; transitions only the dash offset.
+ */
+.root {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.svg {
+  display: block;
+  transform: rotate(-90deg);
+}
+.track {
+  stroke: var(--color-bg-elevated);
+}
+.indicator {
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--dur-base) var(--ease-out);
+}
+.root[data-variant='brand'] .indicator { stroke: var(--color-brand-primary); }
+.root[data-variant='ok']    .indicator { stroke: var(--color-state-ok); }
+.root[data-variant='warn']  .indicator { stroke: var(--color-state-warn); }
+.root[data-variant='err']   .indicator { stroke: var(--color-state-err); }
+
+.center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}

@@ -1,0 +1,63 @@
+/*
+ * ProgressLinear — V5 D.3.27 atom (skeleton).
+ * Why: track + fill share variant tokens. Indeterminate runs a sliding
+ *      30%-wide segment; reduced-motion freezes it at a static 50% width
+ *      so non-animated UAs still communicate "work in progress".
+ */
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.track {
+  position: relative;
+  flex: 1;
+  background: var(--color-bg-elevated);
+  border-radius: var(--radius-999);
+  overflow: hidden;
+}
+.root[data-size='sm'] .track { height: 4px; }
+.root[data-size='md'] .track { height: 6px; }
+.root[data-size='lg'] .track { height: 10px; }
+
+.fill {
+  height: 100%;
+  border-radius: inherit;
+  transition: width var(--dur-base) var(--ease-out);
+}
+.fillIndeterminate {
+  position: absolute;
+  top: 0;
+  height: 100%;
+  width: 30%;
+  border-radius: inherit;
+  animation: progress-indeterminate 1.4s var(--ease-out) infinite;
+}
+.track[data-variant='brand'] .fill,
+.track[data-variant='brand'] .fillIndeterminate { background: var(--color-brand-primary); }
+.track[data-variant='ok']    .fill,
+.track[data-variant='ok']    .fillIndeterminate { background: var(--color-state-ok); }
+.track[data-variant='warn']  .fill,
+.track[data-variant='warn']  .fillIndeterminate { background: var(--color-state-warn); }
+.track[data-variant='err']   .fill,
+.track[data-variant='err']   .fillIndeterminate { background: var(--color-state-err); }
+
+.label {
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+  min-width: 36px;
+  text-align: right;
+}
+
+@keyframes progress-indeterminate {
+  0%   { left: -30%; width: 30%; }
+  100% { left: 100%; width: 30%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .fillIndeterminate {
+    animation: none;
+    left: 0;
+    width: 50%;
+  }
+}
