@@ -50,16 +50,22 @@ class _RecordingRuntime:
     async def run_weekly_weakness_snapshot(self) -> int:
         return 0
 
-    async def run_event_status_tick(self):
+    async def run_event_status_tick(self) -> list[Any]:
         return []
 
-    async def run_cleanup_expired(self):
+    async def run_cleanup_expired(self) -> dict[str, int]:
         return {"adjustments": 0, "recommendations": 0}
 
     async def run_cleanup_soft_deleted_events(self) -> int:
         return 0
 
     async def run_daily_plan_adjust(self) -> int:
+        return 0
+
+    async def run_session_lifecycle_cleanup(self) -> dict[str, int]:
+        return {"paused": 0, "abandoned": 0, "draft_abandoned": 0}
+
+    async def run_daily_session_expire(self) -> int:
         return 0
 
     async def run_login_adjustment_check(self, *, user_id: int, request_id: str | None) -> bool:
@@ -69,8 +75,8 @@ class _RecordingRuntime:
             raise RuntimeError("boom")
         return True
 
-    async def run_submit_progress_hooks(self, *, user_id: int) -> None:
-        del user_id
+    async def run_submit_progress_hooks(self, *, user_id: int, session_id: int | None) -> None:
+        del user_id, session_id
 
     async def run_skipped_adjustment_check(
         self,

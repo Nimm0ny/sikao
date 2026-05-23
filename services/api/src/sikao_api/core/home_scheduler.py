@@ -5,7 +5,7 @@ import logging
 import time
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Any
+from typing import Any, Callable
 from uuid import uuid4
 
 from apscheduler.events import EVENT_JOB_ERROR, EVENT_JOB_EXECUTED, JobExecutionEvent  # type: ignore[import-untyped]
@@ -147,6 +147,22 @@ class HomeScheduler:
             max_instances=1,
             coalesce=True,
         )
+        self._scheduler.add_job(
+            self._job_session_lifecycle_cleanup,
+            trigger=CronTrigger(minute="*/5", timezone=self._settings.home_scheduler_timezone),
+            id="home.session_lifecycle.cleanup",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+        self._scheduler.add_job(
+            self._job_daily_session_expire,
+            trigger=CronTrigger(hour=23, minute=55, timezone=self._settings.home_scheduler_timezone),
+            id="home.session_lifecycle.daily_expire",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
         self._scheduled = True
 
     def enqueue_login_adjustment_check(self, *, user_id: int, request_id: str | None) -> bool:
@@ -240,6 +256,16 @@ class HomeScheduler:
         self._mark_started(job_id)
         return await self._runtime.run_daily_plan_adjust()
 
+    async def _job_session_lifecycle_cleanup(self) -> dict[str, int]:
+        job_id = "home.session_lifecycle.cleanup"
+        self._mark_started(job_id)
+        return await self._runtime.run_session_lifecycle_cleanup()
+
+    async def _job_daily_session_expire(self) -> int:
+        job_id = "home.session_lifecycle.daily_expire"
+        self._mark_started(job_id)
+        return await self._runtime.run_daily_session_expire()
+
     async def _job_login_adjustment_check(
         self,
         *,
@@ -307,7 +333,7 @@ class HomeScheduler:
         self,
         *,
         job_id: str,
-        func,
+        func: Callable[..., Any],
         kwargs: dict[str, Any],
     ) -> bool:
         if not self.is_running or self._loop is None:

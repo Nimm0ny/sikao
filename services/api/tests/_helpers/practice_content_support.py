@@ -157,7 +157,7 @@ def register_user(
     factory = app.state.db.session_factory
     with factory() as session:
         user = session.query(UserV2).filter_by(display_name=display_name).one()
-        return user.id
+        return int(user.id)
 
 
 def seed_paper(
