@@ -12,11 +12,28 @@ from _home_phase_m4_support import build_client, parse_sse_frames, register_user
 
 def test_regenerate_range_empty_output_does_not_delete_existing_events(tmp_path: Path, monkeypatch) -> None:
     class EmptyPlanProvider:
-        async def chat_completion(self, *, messages: list[LLMMessage], model: str, max_tokens=None, temperature=0.7) -> ChatCompletionResult:
+        async def chat_completion(
+            self,
+            *,
+            messages: list[LLMMessage],
+            model: str,
+            max_tokens=None,
+            temperature=0.7,
+            response_format=None,
+        ) -> ChatCompletionResult:
+            del max_tokens, messages, model, response_format, temperature
             raise NotImplementedError
 
-        async def chat_completion_stream(self, *, messages: list[LLMMessage], model: str, max_tokens=None, temperature=0.7):
-            del messages, model, max_tokens, temperature
+        async def chat_completion_stream(
+            self,
+            *,
+            messages: list[LLMMessage],
+            model: str,
+            max_tokens=None,
+            temperature=0.7,
+            response_format=None,
+        ):
+            del max_tokens, messages, model, response_format, temperature
             yield ChatCompletionChunk("", False, None, None, None, None, None)
             yield ChatCompletionChunk('{"events": [], "summary": {}, "errors": []}', True, 12, 0, 12, 8, "stop")
 

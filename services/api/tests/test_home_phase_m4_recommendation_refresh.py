@@ -99,8 +99,9 @@ def test_recommendation_refresh_parse_failure_keeps_pending_rows(tmp_path: Path,
             model: str,
             max_tokens=None,
             temperature: float = 0.7,
+            response_format=None,
         ) -> ChatCompletionResult:
-            del messages, model, max_tokens, temperature
+            del max_tokens, messages, model, response_format, temperature
             return ChatCompletionResult(
                 content='{"recommendations": [{"title": "broken"}]}',
                 prompt_tokens=8,

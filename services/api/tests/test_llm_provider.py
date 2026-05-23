@@ -13,6 +13,7 @@ from __future__ import annotations
 import asyncio
 import json
 from collections.abc import Awaitable, Callable
+from typing import TypeVar
 
 import httpx
 import pytest
@@ -28,17 +29,24 @@ from sikao_api.modules.llm.application.llm.provider import (
 )
 
 
-def _run[T](coro: Awaitable[T]) -> T:
+T = TypeVar("T")
+
+
+def _run(coro: Awaitable[T]) -> T:
     """asyncio.run 包同步 test runner. 避免加 pytest-asyncio dep."""
     return asyncio.run(coro)  # type: ignore[arg-type]
 
 
-def _make_provider(handler: Callable[[httpx.Request], httpx.Response]) -> OpenAICompatibleProvider:
+def _make_provider(
+    handler: Callable[[httpx.Request], httpx.Response],
+    *,
+    base_url: str = "https://mock.test/v1",
+) -> OpenAICompatibleProvider:
     """Build provider with MockTransport-backed AsyncClient."""
     transport = httpx.MockTransport(handler)
     client = httpx.AsyncClient(transport=transport)
     config = OpenAICompatibleConfig(
-        base_url="https://mock.test/v1",
+        base_url=base_url,
         api_key="sk-test",
         timeout_seconds=5.0,
     )
@@ -98,6 +106,66 @@ def test_chat_completion_happy_path() -> None:
     assert payload["model"] == "deepseek-v4-flash"
     assert payload["messages"] == [{"role": "user", "content": "hi"}]
     assert "stream" not in payload  # sync call 不带 stream
+    assert "response_format" not in payload
+
+
+def test_chat_completion_includes_json_response_format_when_requested() -> None:
+    captured_payload: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured_payload.update(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={
+                "model": "deepseek-v4-flash",
+                "choices": [
+                    {"message": {"content": "{}"}, "finish_reason": "stop"}
+                ],
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+            },
+        )
+
+    provider = _make_provider(
+        handler,
+        base_url="https://dashscope.aliyuncs.com/compatible-mode/v1",
+    )
+    _run(
+        provider.chat_completion(
+            messages=[LLMMessage(role="user", content="return json")],
+            model="deepseek-v4-flash",
+            response_format="json_object",
+        )
+    )
+
+    assert captured_payload["response_format"] == {"type": "json_object"}
+
+
+def test_chat_completion_omits_json_response_format_for_unknown_endpoint() -> None:
+    captured_payload: dict[str, object] = {}
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        captured_payload.update(json.loads(request.content))
+        return httpx.Response(
+            200,
+            json={
+                "model": "deepseek-v4-flash",
+                "choices": [
+                    {"message": {"content": "{}"}, "finish_reason": "stop"}
+                ],
+                "usage": {"prompt_tokens": 1, "completion_tokens": 1},
+            },
+        )
+
+    provider = _make_provider(handler)
+    _run(
+        provider.chat_completion(
+            messages=[LLMMessage(role="user", content="return json")],
+            model="deepseek-v4-flash",
+            response_format="json_object",
+        )
+    )
+
+    assert "response_format" not in captured_payload
 
 
 def test_chat_completion_carries_deepseek_cache_tokens() -> None:
