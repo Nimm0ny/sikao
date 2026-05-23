@@ -30,6 +30,7 @@ class EssayGradingTrace:
     model: str
     messages: list[dict[str, str]]
     prompt_version: str
+    llm_call_id: int | None = None
 
 
 def _annotate_llm_error(

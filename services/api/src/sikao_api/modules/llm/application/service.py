@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from collections.abc import AsyncIterator
 from collections.abc import Mapping
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import date, datetime
 from typing import Any
 
@@ -309,7 +309,7 @@ class HomeLlmService:
                     exc=exc,
                 )
                 raise
-            self._record_success_call(
+            llm_call = self._record_success_call(
                 user_id=user.id,
                 purpose="essay_grading",
                 prompt_version=trace.prompt_version,
@@ -323,7 +323,7 @@ class HomeLlmService:
                 parsed_output=trace.payload.model_dump(mode="python"),
                 usage=self._nullable_usage(trace.usage),
             )
-            return trace
+            return replace(trace, llm_call_id=int(llm_call.id))
 
     async def generate_reference_answer(
         self,
