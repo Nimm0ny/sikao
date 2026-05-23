@@ -1,6 +1,11 @@
 /*
  * Design tokens — Sikao Frontend Style Guide V5 (SSOT).
  *
+ * v4-residual-allow-file: this file's header documents the V1/V4 names that
+ * WERE removed in V5-M0.5; those names appear only in the historical comment
+ * block (lines 8-17) and not as live tokens. lint-v4-token-residual should
+ * skip this file.
+ *
  * **SSOT** (AGENTS.md §4 hard rule): single authoritative source of design
  * tokens for sikao. Consumed at runtime via apps/web/src/index.css
  * (which @imports this file).
