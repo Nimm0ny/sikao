@@ -193,7 +193,10 @@ def test_profile_extensions_and_records_canonicalization(tmp_path: Path) -> None
         }
         assert {
             item["href"] for item in day_window.json()["items"]
-        } == {"/practice/result/1", "/essay/grades/1"}
+        } == {
+            "/practice/result/1",
+            f"/practice/essay/submissions/{submission.id}/result",
+        }
 
         legacy_dashboard_records = client.get("/api/v2/dashboard/records")
         assert legacy_dashboard_records.status_code == 404, legacy_dashboard_records.text

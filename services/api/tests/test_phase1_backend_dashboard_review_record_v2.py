@@ -444,7 +444,7 @@ def test_dashboard_records_essay_only_uses_single_aggregate_semantics(tmp_path: 
         assert payload["items"][0]["title"] == "Essay submission"
         assert payload["items"][0]["status"] == "completed"
         assert payload["items"][0]["score"] == "72.50"
-        assert payload["items"][0]["href"] == "/essay/grades/1"
+        assert payload["items"][0]["href"] == "/practice/essay/submissions/1/result"
 
 
 def test_dashboard_records_mixed_data_keeps_summary_items_and_total_in_sync(tmp_path: Path) -> None:
@@ -498,7 +498,7 @@ def test_dashboard_records_mixed_data_keeps_summary_items_and_total_in_sync(tmp_
         ]
         assert [item["href"] for item in payload["items"]] == [
             "/practice/result/2",
-            "/essay/grades/1",
+            "/practice/essay/submissions/1/result",
             "/practice/sessions/1",
         ]
 
@@ -573,7 +573,7 @@ def test_dashboard_records_unscored_essay_without_report_normalizes_to_pending(t
         assert payload["items"][0]["title"] == "Essay submission"
         assert payload["items"][0]["status"] == "pending"
         assert payload["items"][0]["score"] is None
-        assert payload["items"][0]["href"] == "/essay/history"
+        assert payload["items"][0]["href"] == "/practice/essay/submissions/1/grading-status"
 
 
 def test_dashboard_records_unscored_essay_with_pending_report_stays_pending(tmp_path: Path) -> None:
@@ -604,4 +604,4 @@ def test_dashboard_records_unscored_essay_with_pending_report_stays_pending(tmp_
         assert payload["items"][0]["title"] == "Essay submission"
         assert payload["items"][0]["status"] == "pending"
         assert payload["items"][0]["score"] is None
-        assert payload["items"][0]["href"] == "/essay/history"
+        assert payload["items"][0]["href"] == "/practice/essay/submissions/1/grading-status"
