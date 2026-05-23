@@ -57,6 +57,49 @@ class ReferenceAnswerTrace:
     audit_prompt_version: str
 
 
+@dataclass(frozen=True)
+class ReferenceAnswerDraftTrace:
+    payload: ReferenceAnswerPayload
+    raw_text: str
+    usage: dict[str, int]
+    provider: str
+    model: str
+    messages: list[dict[str, str]]
+    prompt_version: str
+
+
+@dataclass(frozen=True)
+class ReferenceAnswerAuditTrace:
+    result: ReferenceAnswerAuditResult
+    raw_text: str
+    usage: dict[str, int]
+    provider: str
+    model: str
+    messages: list[dict[str, str]]
+    prompt_version: str
+
+
+def _annotate_llm_error(
+    exc: Exception,
+    *,
+    prompt_version: str,
+    provider: str,
+    model: str,
+    messages: list[dict[str, str]],
+    raw_text: str,
+    usage: dict[str, int | None],
+    parse_status: str,
+) -> Exception:
+    setattr(exc, "prompt_version_value", prompt_version)
+    setattr(exc, "provider_label", provider)
+    setattr(exc, "model_used", model)
+    setattr(exc, "messages_payload", messages)
+    setattr(exc, "raw_text_payload", raw_text)
+    setattr(exc, "usage_payload", usage)
+    setattr(exc, "parse_status", parse_status)
+    return exc
+
+
 def _validate_request(
     *,
     question_stem: str,
