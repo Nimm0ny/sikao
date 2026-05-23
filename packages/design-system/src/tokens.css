@@ -658,3 +658,106 @@ em, i { font-style: normal; }
   --shadow-l3: 0 16px 40px rgba(0, 0, 0, .5);
   --shadow-l4: 0 24px 56px rgba(0, 0, 0, .6);
 }
+
+/* ── §4 V5 Component layer ──────────────────────────────────────────────────
+ * Component contract tokens — these are what app code SHOULD consume by
+ * default. They reference primitive (§1) and semantic (§2/§3) layers.
+ * Per CP.2: component layer is theme-stable (NOT overridden by [data-v5-theme]).
+ * Sourced from design.md §C.3.1 to §C.3.6 + §D.4.6 exam hooks.
+ * ─────────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* §4.1 card */
+  --card-radius:         var(--radius-16);
+  --card-radius-sm:      var(--radius-12);
+  --card-radius-lg:      var(--radius-22);
+  --card-padding:        var(--space-4);
+  --card-padding-sm:     var(--space-3);
+  --card-bg:             var(--color-bg-surface);
+  --card-bg-elevated:    var(--color-bg-elevated);
+  --card-border:         1px solid var(--color-border-subtle);
+  --card-shadow-rest:    var(--shadow-l1);
+  --card-shadow-hover:   var(--shadow-l2);
+  --card-title-h:        28px;
+  --card-body-min-h:     48px;
+  --card-action-divider: 1px solid var(--color-border-subtle);
+
+  /* §4.2 button — 4 size buckets (sm 32 / md 36 / lg 40 / xl 48) */
+  --btn-h-sm: 32px;
+  --btn-h-md: 36px;
+  --btn-h-lg: 40px;
+  --btn-h-xl: 48px;
+
+  --btn-padding-x-sm: var(--space-3);
+  --btn-padding-x-md: var(--space-4);
+  --btn-padding-x-lg: var(--space-4);
+  --btn-padding-x-xl: var(--space-5);
+
+  --btn-font-sm: var(--font-meta);
+  --btn-font-md: var(--font-body);
+  --btn-font-lg: var(--font-card);
+  --btn-font-xl: var(--font-card);
+
+  --btn-icon-size-sm: 14px;
+  --btn-icon-size-md: 16px;
+  --btn-icon-size-lg: 18px;
+  --btn-icon-size-xl: 22px;
+
+  --btn-radius-sm: var(--radius-10);
+  --btn-radius-md: var(--radius-10);
+  --btn-radius-lg: var(--radius-12);
+  --btn-radius-xl: var(--radius-12);
+
+  --btn-gap-sm: var(--space-2);
+  --btn-gap-md: var(--space-2);
+  --btn-gap-lg: var(--space-2);
+  --btn-gap-xl: var(--space-3);
+
+  /* §4.3 input */
+  --input-h-md:         36px;
+  --input-radius:       var(--radius-10);
+  --input-padding-x:    var(--space-3);
+  --input-bg:           var(--color-bg-sunken);
+  --input-border:       1px solid var(--color-border-default);
+  --input-border-focus: 1px solid var(--color-focus-ring);
+  --input-ring-focus:   0 0 0 3px rgba(43, 108, 255, .16);
+}
+
+:root {
+  /* §4.4 row height — list/tab (strictly distinct from --btn-h-*) */
+  --row-h-sm: 40px;
+  --row-h-md: 52px;
+  --row-h-lg: 64px;
+
+  /* §4.5 nav / topbar / sidebar — V5 names, distinct from V1 sidebar tokens above */
+  /* Note: V1 already defines --topbar-h indirectly via legacy code; V5 explicitly
+   * sets it to 56px (mobile 48px) per design §C.3.5. We reuse the same name
+   * because design §C.6 mapping marks --topbar-h as "keep". */
+  --topbar-h:          56px;
+  --bottom-nav-h:      64px;
+  --bottom-nav-radius: var(--radius-999);
+
+  /* --rail-w is set dynamically by collapse state — see §7 below.
+   * Default expanded width here is a fallback only. */
+  --rail-w: 240px;
+
+  /* §4.6 z-index ladder (≥10 spacing per layer for third-party slot-in) */
+  --z-rail:    20;
+  --z-topbar:  30;
+  --z-popover: 40;
+  --z-modal:   60;
+  --z-toast:   80;
+
+  /* §4.7 exam hooks — V5 ONLY exposes these 3 tokens; layout/resize/timer
+   * logic is delivered by an independent Exam spec (R1/Q5 + R2/Q6). */
+  --exam-pane-padding:      var(--space-4);
+  --exam-divider-handle-w:  4px;
+  --exam-topbar-h:          var(--topbar-h);
+}
+
+/* §4.5 mobile topbar override */
+@media (max-width: 768px) {
+  :root {
+    --topbar-h: 48px;
+  }
+}
