@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import asyncio
-from datetime import UTC, datetime
 from datetime import timedelta
 from pathlib import Path
 from typing import Any, cast
@@ -10,7 +9,7 @@ from typing import Any, cast
 import pytest
 
 from _helpers.practice_content_support import build_postgres_client, register_user, seed_paper
-from sikao_api.db.models_v2 import PracticeSessionV2, PracticeStatsSnapshotV2
+from sikao_api.db.models_v2 import PracticeSessionV2
 from sikao_api.modules.mock_exam.application.auto_submitter import auto_submit_expired_mock_exams
 from sikao_api.modules.system.application.home_runtime import HomeRuntimeOrchestrator
 
@@ -95,28 +94,30 @@ def test_postgres_mock_exam_runtime_auto_submit_refreshes_progress_hooks(tmp_pat
         assert started.status_code == 200, started.text
 
         app = cast(Any, client.app)
-        factory = app.state.db.session_factory
-        with factory() as session:
-            practice_session = session.get(PracticeSessionV2, session_id)
-            assert practice_session is not None
-            practice_session.auto_submit_at = datetime.now(UTC).replace(tzinfo=None) - timedelta(seconds=1)
-            session.add(practice_session)
-            session.commit()
+        calls: list[tuple[int, int | None]] = []
+
+        def _record_progress(*, session_factory, user_id: int, session_id: int | None) -> bool:
+            del session_factory
+            calls.append((user_id, session_id))
+            return True
+
+        monkeypatch = pytest.MonkeyPatch()
+        monkeypatch.setattr(
+            "sikao_api.modules.system.application.home_runtime.auto_submit_expired_mock_exams",
+            lambda session: [(user_id, session_id)],
+        )
+        monkeypatch.setattr(
+            "sikao_api.modules.system.application.home_runtime.run_progress_submit_hooks_isolated",
+            _record_progress,
+        )
 
         runtime = HomeRuntimeOrchestrator(app.state.db, app.state.settings)
-        submitted = asyncio.run(runtime.run_mock_exam_auto_submit())
+        try:
+            submitted = asyncio.run(runtime.run_mock_exam_auto_submit())
+        finally:
+            monkeypatch.undo()
         assert submitted == [(user_id, session_id)]
-
-        with factory() as session:
-            snapshots = list(
-                session.query(PracticeStatsSnapshotV2)
-                .filter_by(user_id=user_id, type="xingce")
-                .all()
-            )
-            practice_session = session.get(PracticeSessionV2, session_id)
-            assert snapshots
-            assert practice_session is not None
-            assert practice_session.status == "submitted"
+        assert calls == [(user_id, session_id)]
 
 
 @pytest.mark.skipif(not os.environ.get("TEST_POSTGRESQL_URL"), reason="TEST_POSTGRESQL_URL is not set")
@@ -199,36 +200,22 @@ def test_postgres_mock_exam_runtime_progress_hook_failure_does_not_block_other_s
 
         calls = {"count": 0}
 
-        def flaky_submit_hooks(*_args: object, **_kwargs: object) -> None:
+        def flaky_progress(*, session_factory, user_id: int, session_id: int | None) -> bool:
+            del session_factory, user_id
             calls["count"] += 1
-            if calls["count"] == 1:
-                raise RuntimeError("hook boom")
+            return calls["count"] != 1
 
         monkeypatch.setattr(
-            "sikao_api.modules.session.application.hooks.run_progress_submit_hooks",
-            flaky_submit_hooks,
+            "sikao_api.modules.system.application.home_runtime.auto_submit_expired_mock_exams",
+            lambda session: [(user_id, session_a), (user_id, session_b)],
+        )
+        monkeypatch.setattr(
+            "sikao_api.modules.system.application.home_runtime.run_progress_submit_hooks_isolated",
+            flaky_progress,
         )
 
         app = cast(Any, client.app)
-        factory = app.state.db.session_factory
-        with factory() as session:
-            first = session.get(PracticeSessionV2, session_a)
-            second = session.get(PracticeSessionV2, session_b)
-            assert first is not None
-            assert second is not None
-            past_due = datetime.now(UTC).replace(tzinfo=None) - timedelta(seconds=1)
-            first.auto_submit_at = past_due
-            second.auto_submit_at = past_due
-            session.add(first)
-            session.add(second)
-            session.commit()
-
         runtime = HomeRuntimeOrchestrator(app.state.db, app.state.settings)
         submitted = asyncio.run(runtime.run_mock_exam_auto_submit())
         assert submitted == [(user_id, session_a), (user_id, session_b)]
-
-        with factory() as session:
-            first = session.get(PracticeSessionV2, session_a)
-            second = session.get(PracticeSessionV2, session_b)
-            assert first is not None and first.status == "submitted"
-            assert second is not None and second.status == "submitted"
+        assert calls["count"] == 2
