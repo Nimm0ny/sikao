@@ -41,3 +41,16 @@ class AiQuestionRequestDetailV2(CamelModel):
     started_at: UtcDatetime
     completed_at: UtcDatetime | None = None
     duration_ms: int | None = None
+
+
+class AiQuestionFeedbackRequestV2(CamelModel):
+    action: Literal["like", "report"]
+    note: str | None = Field(default=None, max_length=512)
+
+
+class AiQuestionFeedbackResponseV2(CamelModel):
+    question_id: int
+    action: Literal["like", "report"]
+    quality_score: float
+    report_count: int
+    is_active: bool

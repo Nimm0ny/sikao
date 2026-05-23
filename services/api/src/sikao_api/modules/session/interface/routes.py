@@ -25,6 +25,7 @@ from sikao_api.modules.session.application.answer_flag_ops import (
     set_answer_flag,
 )
 from sikao_api.modules.session.application.service import SessionServiceV2
+from sikao_api.modules.session.application.submit_hooks import run_progress_submit_hooks
 from sikao_api.modules.session.application.view_solution_ops import mark_view_solution
 from sikao_api.db.models_v2 import UserV2
 
@@ -168,9 +169,9 @@ def submit_session(
             request_id=getattr(request.state, "request_id", None),
             ip=None,
         )
-    session.commit()
     home_scheduler = getattr(request.app.state, "home_scheduler", None)
     if home_scheduler is not None:
+        session.commit()
         try:
             home_scheduler.enqueue_submit_progress_refresh(
                 user_id=user.id,
@@ -188,6 +189,13 @@ def submit_session(
                 user.id,
                 practice_session.id,
             )
+    else:
+        run_progress_submit_hooks(
+            session,
+            user_id=user.id,
+            session_id=practice_session.id,
+        )
+        session.commit()
     return OperationAckV2(ok=True, status="submitted")
 
 

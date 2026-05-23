@@ -4,8 +4,10 @@ from sqlalchemy import case, delete, func, select
 from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import PracticeSessionAnswerV2, PracticeSessionV2, PracticeStatsSnapshotV2, QuestionV2, UserV2
+from sikao_api.modules.ai_questions.application.feedback import refresh_ai_question_quality
 from sikao_api.modules.practice_stats.application.cells import build_stats_response
 from sikao_api.modules.practice_stats.application.loaders import load_practice_facts
+from sikao_api.modules.practice_stats.interface.schemas import PracticeStatsResponseV2
 
 
 def recompute_user_stats(session: Session, *, user_id: int) -> list[PracticeStatsSnapshotV2]:
@@ -32,7 +34,7 @@ def recompute_all_user_stats(session: Session) -> int:
     return len(user_ids)
 
 
-def _snapshot_rows(*, user_id: int, response) -> list[PracticeStatsSnapshotV2]:
+def _snapshot_rows(*, user_id: int, response: PracticeStatsResponseV2) -> list[PracticeStatsSnapshotV2]:
     return [
         PracticeStatsSnapshotV2(
             user_id=user_id,
@@ -84,4 +86,5 @@ def _refresh_question_quality_metrics(session: Session, *, session_id: int) -> N
             continue
         question.answer_count = int(total or 0)
         question.historical_accuracy = float((correct or 0) / (graded or 1)) if graded else 0.0
+        refresh_ai_question_quality(session, question=question)
         session.add(question)

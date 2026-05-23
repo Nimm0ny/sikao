@@ -10,9 +10,12 @@ from sikao_api.core.deps import get_app_settings
 from sikao_api.db.models_v2 import UserV2
 from sikao_api.db.schemas_v2 import AiQuestionsGenerateResponseV2
 from sikao_api.db.session import get_db_session
+from sikao_api.modules.ai_questions.application.feedback import submit_feedback
 from sikao_api.modules.ai_questions.application.service import AiQuestionsService
 from sikao_api.modules.ai_questions.domain.errors import IDEMPOTENCY_KEY_REQUIRED
 from sikao_api.modules.ai_questions.interface.schemas import (
+    AiQuestionFeedbackRequestV2,
+    AiQuestionFeedbackResponseV2,
     AiQuestionRequestDetailV2,
     AiQuestionsGenerateRequestV2,
 )
@@ -60,3 +63,26 @@ def get_ai_question_request(
         user=user,
         request_id=request_id,
     )
+
+
+@router.post(
+    "/{question_id}/feedback",
+    response_model=AiQuestionFeedbackResponseV2,
+    dependencies=[Depends(get_current_user_v2), Depends(verify_csrf_v2)],
+)
+def post_ai_question_feedback(
+    question_id: int,
+    payload: AiQuestionFeedbackRequestV2,
+    request: Request,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> AiQuestionFeedbackResponseV2:
+    response = submit_feedback(
+        session,
+        user=user,
+        question_id=question_id,
+        payload=payload,
+        request_id=getattr(request.state, "request_id", None),
+    )
+    session.commit()
+    return response
