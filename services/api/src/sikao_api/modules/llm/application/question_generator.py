@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import asdict, dataclass
+from collections.abc import Mapping
 from typing import Any
 
+from pydantic import ValidationError as PydanticValidationError
 from sqlalchemy.orm import Session
 
 from sikao_api.core.config import Settings
@@ -72,6 +74,27 @@ def _serialize_source(source: SourceQuestion) -> dict[str, Any]:
 
 def _serialize_question(question: ParsedGeneratedQuestion) -> dict[str, Any]:
     return question.model_dump(mode="python")
+
+
+def _annotate_llm_error(
+    exc: Exception,
+    *,
+    prompt_version: str,
+    provider: str,
+    model: str,
+    messages: list[dict[str, str]],
+    raw_text: str,
+    usage: Mapping[str, int | None],
+    parse_status: str,
+) -> Exception:
+    setattr(exc, "prompt_version_value", prompt_version)
+    setattr(exc, "provider_label", provider)
+    setattr(exc, "model_used", model)
+    setattr(exc, "messages_payload", messages)
+    setattr(exc, "raw_text_payload", raw_text)
+    setattr(exc, "usage_payload", usage)
+    setattr(exc, "parse_status", parse_status)
+    return exc
 
 
 def _validate_generation_request(
@@ -173,22 +196,58 @@ async def generate_questions_with_trace(
         max_tokens=settings.llm_max_tokens,
         temperature=settings.llm_temperature,
     )
-    generated_questions = parse_question_generation(result.content)
-    _validate_generation_response(
-        sources=sources,
-        count=count,
-        generated_questions=generated_questions,
-    )
+    usage: dict[str, int | None] = {
+        "prompt_tokens": result.prompt_tokens,
+        "completion_tokens": result.completion_tokens,
+    }
+    serialized_messages = [asdict(message) for message in messages]
+    try:
+        generated_questions = parse_question_generation(result.content)
+        _validate_generation_response(
+            sources=sources,
+            count=count,
+            generated_questions=generated_questions,
+        )
+    except PydanticValidationError as exc:
+        raise _annotate_llm_error(
+            LLMParseError("question generation response schema invalid"),
+            prompt_version=QUESTION_GENERATE_PROMPT_VERSION,
+            provider=provider_label,
+            model=result.model,
+            messages=serialized_messages,
+            raw_text=result.content,
+            usage=usage,
+            parse_status="schema_violation",
+        ) from exc
+    except LLMParseError as exc:
+        raise _annotate_llm_error(
+            exc,
+            prompt_version=QUESTION_GENERATE_PROMPT_VERSION,
+            provider=provider_label,
+            model=result.model,
+            messages=serialized_messages,
+            raw_text=result.content,
+            usage=usage,
+            parse_status="invalid_json",
+        ) from exc
+    except ValueError as exc:
+        raise _annotate_llm_error(
+            LLMParseError(str(exc)),
+            prompt_version=QUESTION_GENERATE_PROMPT_VERSION,
+            provider=provider_label,
+            model=result.model,
+            messages=serialized_messages,
+            raw_text=result.content,
+            usage=usage,
+            parse_status="schema_violation",
+        ) from exc
     return QuestionGenerationTrace(
         questions=generated_questions,
         raw_text=result.content,
-        usage={
-            "prompt_tokens": result.prompt_tokens,
-            "completion_tokens": result.completion_tokens,
-        },
+        usage=usage,
         provider=provider_label,
         model=result.model,
-        messages=[asdict(message) for message in messages],
+        messages=serialized_messages,
         prompt_version=QUESTION_GENERATE_PROMPT_VERSION,
     )
 
