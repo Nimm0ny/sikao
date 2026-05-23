@@ -387,12 +387,12 @@ async def self_audit_reference_answer_with_trace(
         question_stem=question_stem,
         materials=materials,
         word_limit=word_limit,
-        candidate=payload.model_dump(mode="python"),
+        candidate=candidate.model_dump(mode="python"),
     )
     try:
-        audit_completion = await audit_provider.chat_completion(
+        result = await provider.chat_completion(
             messages=audit_messages,
-            model=audit_model or model or settings.llm_model_essay,
+            model=model or settings.llm_model_essay,
             max_tokens=settings.llm_max_tokens,
             temperature=0.2,
         )
@@ -407,45 +407,73 @@ async def self_audit_reference_answer_with_trace(
         ) from exc
 
     try:
-        audit = parse_reference_answer_audit(audit_completion.content)
+        parsed = parse_reference_answer_audit(result.content)
     except LlmJsonParseError as exc:
-        raise LLMParseError(str(exc)) from exc
+        raise _annotate_llm_error(
+            LLMParseError(str(exc)),
+            prompt_version=REFERENCE_ANSWER_SELF_AUDIT_PROMPT_VERSION,
+            provider=provider_label,
+            model=result.model,
+            messages=[asdict(message) for message in audit_messages],
+            raw_text=result.content,
+            usage={
+                "prompt_tokens": result.prompt_tokens,
+                "prompt_cache_hit_tokens": result.prompt_cache_hit_tokens,
+                "prompt_cache_miss_tokens": result.prompt_cache_miss_tokens,
+                "completion_tokens": result.completion_tokens,
+            },
+            parse_status="invalid_json",
+        ) from exc
     except PydanticValidationError as exc:
-        raise LLMParseError("reference answer self audit response schema invalid") from exc
+        raise _annotate_llm_error(
+            LLMParseError("reference answer self audit response schema invalid"),
+            prompt_version=REFERENCE_ANSWER_SELF_AUDIT_PROMPT_VERSION,
+            provider=provider_label,
+            model=result.model,
+            messages=[asdict(message) for message in audit_messages],
+            raw_text=result.content,
+            usage={
+                "prompt_tokens": result.prompt_tokens,
+                "prompt_cache_hit_tokens": result.prompt_cache_hit_tokens,
+                "prompt_cache_miss_tokens": result.prompt_cache_miss_tokens,
+                "completion_tokens": result.completion_tokens,
+            },
+            parse_status="schema_violation",
+        ) from exc
     except ValueError as exc:
-        raise LLMParseError(str(exc)) from exc
-    audit = _enforce_local_constraints(
-        payload=payload,
-        audit=audit,
+        raise _annotate_llm_error(
+            LLMParseError(str(exc)),
+            prompt_version=REFERENCE_ANSWER_SELF_AUDIT_PROMPT_VERSION,
+            provider=provider_label,
+            model=result.model,
+            messages=[asdict(message) for message in audit_messages],
+            raw_text=result.content,
+            usage={
+                "prompt_tokens": result.prompt_tokens,
+                "prompt_cache_hit_tokens": result.prompt_cache_hit_tokens,
+                "prompt_cache_miss_tokens": result.prompt_cache_miss_tokens,
+                "completion_tokens": result.completion_tokens,
+            },
+            parse_status="schema_violation",
+        ) from exc
+    parsed = _enforce_local_constraints(
+        payload=candidate,
+        audit=parsed,
         word_limit=word_limit,
     )
-
-    return ReferenceAnswerTrace(
-        result=_build_result(payload=payload, audit=audit),
-        generation_payload=payload,
-        audit_result=audit,
+    return ReferenceAnswerAuditTrace(
+        result=parsed,
         raw_text=result.content,
-        audit_raw_text=audit_completion.content,
         usage={
             "prompt_tokens": result.prompt_tokens,
             "prompt_cache_hit_tokens": result.prompt_cache_hit_tokens,
             "prompt_cache_miss_tokens": result.prompt_cache_miss_tokens,
             "completion_tokens": result.completion_tokens,
         },
-        audit_usage={
-            "prompt_tokens": audit_completion.prompt_tokens,
-            "prompt_cache_hit_tokens": audit_completion.prompt_cache_hit_tokens,
-            "prompt_cache_miss_tokens": audit_completion.prompt_cache_miss_tokens,
-            "completion_tokens": audit_completion.completion_tokens,
-        },
         provider=provider_label,
         model=result.model,
-        messages=[asdict(message) for message in messages],
-        prompt_version=REFERENCE_ANSWER_PROMPT_VERSION,
-        audit_provider=audit_provider_label,
-        audit_model=audit_completion.model,
-        audit_messages=[asdict(message) for message in audit_messages],
-        audit_prompt_version=REFERENCE_ANSWER_SELF_AUDIT_PROMPT_VERSION,
+        messages=[asdict(message) for message in audit_messages],
+        prompt_version=REFERENCE_ANSWER_SELF_AUDIT_PROMPT_VERSION,
     )
 
 
@@ -455,7 +483,10 @@ __all__ = [
     "REFERENCE_GENERATION_TIMEOUT_SECONDS",
     "REFERENCE_SELF_AUDIT_TIMEOUT_SECONDS",
     "ReferenceAnswer",
+    "ReferenceAnswerAuditTrace",
+    "ReferenceAnswerDraftTrace",
     "ReferenceAnswerTrace",
-    "generate_reference_answer",
-    "generate_reference_answer_with_trace",
+    "build_reference_answer_trace",
+    "generate_reference_answer_draft_with_trace",
+    "self_audit_reference_answer_with_trace",
 ]
