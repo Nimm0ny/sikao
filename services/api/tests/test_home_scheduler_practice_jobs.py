@@ -37,6 +37,11 @@ class _RecordingRuntime:
             "published_count": 0,
             "archived_count": 0,
         }
+        self.daily_generate_result: Any = {
+            "generated_count": 0,
+            "skipped_count": 0,
+            "failure_count": 0,
+        }
 
     async def run_daily_progress_snapshot(self) -> int:
         return 0
@@ -65,6 +70,9 @@ class _RecordingRuntime:
     async def run_reference_quality_recompute(self) -> Any:
         return self.reference_quality_result
 
+    async def run_daily_practice_generate(self) -> Any:
+        return self.daily_generate_result
+
     async def run_session_lifecycle_cleanup(self) -> dict[str, int]:
         return {"paused": 0, "abandoned": 0, "draft_abandoned": 0}
 
@@ -92,6 +100,10 @@ def test_home_scheduler_registers_practice_b23_jobs(tmp_path: Path) -> None:
     assert "practice.question_accuracy.recompute" in jobs
     assert "practice.ai_questions.cleanup" in jobs
     assert "practice.reference_quality.recompute" in jobs
+    assert "practice.daily.generate" in jobs
+    assert str(jobs["practice.daily.generate"].trigger.timezone) == "Asia/Shanghai"
+    assert str(jobs["practice.daily.generate"].trigger.fields[5]) == "4"
+    assert str(jobs["practice.daily.generate"].trigger.fields[6]) == "0"
     assert str(jobs["practice.question_accuracy.recompute"].trigger.timezone) == "Asia/Shanghai"
     assert str(jobs["practice.question_accuracy.recompute"].trigger.fields[5]) == "4"
     assert str(jobs["practice.question_accuracy.recompute"].trigger.fields[6]) == "0"
@@ -156,4 +168,28 @@ async def test_home_scheduler_reference_quality_job_calls_runtime(tmp_path: Path
         "updated_count": 4,
         "published_count": 1,
         "archived_count": 2,
+    }
+
+
+@pytest.mark.asyncio
+async def test_home_scheduler_daily_generate_job_calls_runtime(tmp_path: Path) -> None:
+    settings = _make_settings(tmp_path)
+    runtime = _RecordingRuntime()
+    runtime.daily_generate_result = {
+        "generated_count": 8,
+        "skipped_count": 2,
+        "failure_count": 1,
+    }
+    scheduler = HomeScheduler(
+        cast(Any, object()),
+        settings=settings,
+        runtime=runtime,
+    )
+
+    result = await scheduler._job_daily_practice_generate()
+
+    assert result == {
+        "generated_count": 8,
+        "skipped_count": 2,
+        "failure_count": 1,
     }
