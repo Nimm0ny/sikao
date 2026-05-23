@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import UTC, datetime
+import logging
 from typing import Any
 
 from sqlalchemy import select
@@ -18,6 +20,9 @@ from sikao_api.modules.essay_grading.application.report_persist import (
     build_failed_feedback_json,
     build_report_persist_payload,
 )
+from sikao_api.modules.essay_grading.application.reference_generator_runner import (
+    generate_reference_answer_for_question,
+)
 from sikao_api.modules.llm.application.service import HomeLlmService
 from sikao_api.modules.system.application.errors import (
     ConflictError,
@@ -25,6 +30,8 @@ from sikao_api.modules.system.application.errors import (
     LLMServiceError,
     ValidationError,
 )
+
+logger = logging.getLogger(__name__)
 
 
 async def grade_submission_async(
@@ -34,12 +41,32 @@ async def grade_submission_async(
 ) -> None:
     session = session_factory()
     try:
-        await _grade_submission_inner(
+        auto_reference = await _grade_submission_inner(
             session=session,
             settings=settings,
             submission_id=submission_id,
         )
         session.commit()
+        if auto_reference is not None:
+            try:
+                with session_factory() as reference_session:
+                    await generate_reference_answer_for_question(
+                        session=reference_session,
+                        settings=settings,
+                        user_id=auto_reference.user_id,
+                        question_id=auto_reference.question_id,
+                        actor_type="system",
+                        actor_id="essay_grading.auto_reference",
+                        action="reference.generate.auto",
+                        request_id=None,
+                    )
+                    reference_session.commit()
+            except Exception:
+                logger.exception(
+                    "essay reference auto generation failed user_id=%s question_id=%s",
+                    auto_reference.user_id,
+                    auto_reference.question_id,
+                )
     except Exception as exc:  # noqa: BLE001
         session.rollback()
         with session_factory() as fallback_session:
@@ -58,17 +85,17 @@ async def _grade_submission_inner(
     session: Session,
     settings: Settings,
     submission_id: int,
-) -> None:
+) -> AutoReferenceRequest | None:
     submission = session.get(EssaySubmissionV2, submission_id)
     if submission is None or submission.status != "pending_grading":
-        return
+        return None
     if submission.question_id is None:
         mark_submission_failed(
             session=session,
             submission_id=submission_id,
             error_message="question binding missing",
         )
-        return
+        return None
 
     question = session.get(QuestionV2, submission.question_id)
     user = session.get(UserV2, submission.user_id)
@@ -78,7 +105,7 @@ async def _grade_submission_inner(
             submission_id=submission_id,
             error_message="question or user not found",
         )
-        return
+        return None
 
     report = _ensure_report_row(session=session, submission_id=submission.id)
     materials = _extract_materials(question.content_json)
@@ -120,6 +147,14 @@ async def _grade_submission_inner(
             submission_id=submission.id,
             error_message=f"{type(exc).__name__}: {exc.message if hasattr(exc, 'message') else exc}",
         )
+        return None
+    return AutoReferenceRequest(user_id=user.id, question_id=question.id)
+
+
+@dataclass(frozen=True)
+class AutoReferenceRequest:
+    user_id: int
+    question_id: int
 
 
 def _persist_completed_report(

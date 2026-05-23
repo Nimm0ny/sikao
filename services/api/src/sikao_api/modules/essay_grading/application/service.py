@@ -22,6 +22,9 @@ from sikao_api.db.schemas_v2 import (
     EssayReportEnvelopeV2,
     GradingDimensionV2,
 )
+from sikao_api.modules.essay_grading.application.reference_query import (
+    list_public_reference_answers,
+)
 from sikao_api.modules.llm.application.service import HomeLlmService
 from sikao_api.modules.system.application.errors import (
     ConflictError,
@@ -162,7 +165,11 @@ class PracticeEssayGradingService:
         report: EssayReportV2 | None = None,
     ) -> EssayGradingResponseV2:
         current_report = report or self._get_report(submission_id=submission.id)
-        references = self._load_reference_answers(question_id=submission.question_id)
+        references = (
+            list_public_reference_answers(self.session, question_id=submission.question_id)
+            if submission.question_id is not None
+            else []
+        )
         report_envelope: EssayReportEnvelopeV2 | None = None
         error_message: str | None = None
         if current_report is not None:
@@ -198,45 +205,6 @@ class PracticeEssayGradingService:
         return self.session.scalar(
             select(EssayReportV2).where(EssayReportV2.submission_id == submission_id)
         )
-
-    def _load_reference_answers(
-        self,
-        *,
-        question_id: int | None,
-    ) -> list[EssayReferenceAnswerEnvelopeV2]:
-        if question_id is None:
-            return []
-        rows = list(
-            self.session.scalars(
-                select(EssayReferenceAnswerV2)
-                .where(
-                    EssayReferenceAnswerV2.question_id == question_id,
-                    EssayReferenceAnswerV2.status == "public",
-                )
-                .order_by(
-                    EssayReferenceAnswerV2.source.asc(),
-                    EssayReferenceAnswerV2.quality_score.desc(),
-                    EssayReferenceAnswerV2.id.asc(),
-                )
-                .limit(5)
-            )
-        )
-        return [
-            EssayReferenceAnswerEnvelopeV2(
-                id=row.id,
-                question_id=row.question_id,
-                content=row.content,
-                source=row.source,
-                likes_count=row.likes_count,
-                favorites_count=row.favorites_count,
-                report_count=row.report_count,
-                quality_score=row.quality_score,
-                status=row.status,
-                published_at=row.published_at,
-            )
-            for row in rows
-        ]
-
 
 def _extract_essay_answer_text(response_json: dict[str, Any]) -> str:
     for key in ("text", "content", "answerText"):
