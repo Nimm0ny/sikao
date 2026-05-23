@@ -121,6 +121,50 @@ def test_generate_reference_answer_with_trace_uses_builtin_stub_provider() -> No
     assert len(trace.result.key_points) == 3
 
 
+def test_generate_reference_answer_requests_json_object_response_format(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    class CaptureProvider:
+        def __init__(self) -> None:
+            self.calls: list[dict[str, object]] = []
+
+        async def chat_completion(self, **kwargs: object) -> ChatCompletionResult:
+            self.calls.append(dict(kwargs))
+            content = (
+                well_formed_reference_answer_payload()
+                if len(self.calls) == 1
+                else well_formed_reference_audit_payload()
+            )
+            return ChatCompletionResult(
+                content=content,
+                prompt_tokens=10,
+                prompt_cache_hit_tokens=0,
+                prompt_cache_miss_tokens=10,
+                completion_tokens=20,
+                model="fake-model",
+                finish_reason="stop",
+            )
+
+    provider = CaptureProvider()
+    monkeypatch.setattr(
+        "sikao_api.modules.llm.application.reference_answer_generator.build_llm_provider",
+        lambda *_args, **_kwargs: (provider, "mock"),
+    )
+
+    asyncio.run(
+        generate_reference_answer_with_trace(
+            settings=_settings(),
+            question_stem="请结合材料作答。",
+            materials=["材料一", "材料二"],
+            word_limit=1000,
+        )
+    )
+
+    assert len(provider.calls) == 2
+    assert provider.calls[0]["response_format"] == "json_object"
+    assert provider.calls[1]["response_format"] == "json_object"
+
+
 def test_generate_reference_answer_keeps_failed_audit_result(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
