@@ -30,6 +30,8 @@ QUESTION_SELF_AUDIT_TIMEOUT_SECONDS = 10.0
 @dataclass(frozen=True)
 class SourceQuestion:
     id: int
+    revision_id: int
+    subject_kind: str
     type: str
     stem: str
     options: dict[str, str]
@@ -40,6 +42,28 @@ class SourceQuestion:
     year: int | None = None
     region: str | None = None
     exam_type: str | None = None
+
+
+@dataclass(frozen=True)
+class QuestionGenerationTrace:
+    questions: list[ParsedGeneratedQuestion]
+    raw_text: str
+    usage: dict[str, int | None]
+    provider: str
+    model: str
+    messages: list[dict[str, str]]
+    prompt_version: str
+
+
+@dataclass(frozen=True)
+class QuestionAuditTrace:
+    result: QuestionAuditResult
+    raw_text: str
+    usage: dict[str, int | None]
+    provider: str
+    model: str
+    messages: list[dict[str, str]]
+    prompt_version: str
 
 
 def _serialize_source(source: SourceQuestion) -> dict[str, Any]:
@@ -104,12 +128,35 @@ async def generate_questions(
     user_id: int | None = None,
     model: str | None = None,
 ) -> list[ParsedGeneratedQuestion]:
+    return (
+        await generate_questions_with_trace(
+            settings=settings,
+            sources=sources,
+            target_difficulty=target_difficulty,
+            count=count,
+            db=db,
+            user_id=user_id,
+            model=model,
+        )
+    ).questions
+
+
+async def generate_questions_with_trace(
+    *,
+    settings: Settings,
+    sources: list[SourceQuestion],
+    target_difficulty: tuple[float, float],
+    count: int,
+    db: Session | None = None,
+    user_id: int | None = None,
+    model: str | None = None,
+) -> QuestionGenerationTrace:
     _validate_generation_request(
         sources=sources,
         target_difficulty=target_difficulty,
         count=count,
     )
-    provider, _provider_label = build_llm_provider(
+    provider, provider_label = build_llm_provider(
         settings,
         db=db,
         user_id=user_id,
@@ -132,7 +179,18 @@ async def generate_questions(
         count=count,
         generated_questions=generated_questions,
     )
-    return generated_questions
+    return QuestionGenerationTrace(
+        questions=generated_questions,
+        raw_text=result.content,
+        usage={
+            "prompt_tokens": result.prompt_tokens,
+            "completion_tokens": result.completion_tokens,
+        },
+        provider=provider_label,
+        model=result.model,
+        messages=[asdict(message) for message in messages],
+        prompt_version=QUESTION_GENERATE_PROMPT_VERSION,
+    )
 
 
 async def self_audit_question(
@@ -145,7 +203,30 @@ async def self_audit_question(
     user_id: int | None = None,
     model: str | None = None,
 ) -> QuestionAuditResult:
-    provider, _provider_label = build_llm_provider(
+    return (
+        await self_audit_question_with_trace(
+            settings=settings,
+            question=question,
+            target_difficulty=target_difficulty,
+            source=source,
+            db=db,
+            user_id=user_id,
+            model=model,
+        )
+    ).result
+
+
+async def self_audit_question_with_trace(
+    *,
+    settings: Settings,
+    question: ParsedGeneratedQuestion,
+    target_difficulty: tuple[float, float],
+    source: SourceQuestion | None = None,
+    db: Session | None = None,
+    user_id: int | None = None,
+    model: str | None = None,
+) -> QuestionAuditTrace:
+    provider, provider_label = build_llm_provider(
         settings,
         db=db,
         user_id=user_id,
@@ -162,15 +243,32 @@ async def self_audit_question(
         max_tokens=settings.llm_max_tokens,
         temperature=settings.llm_temperature,
     )
-    return parse_question_audit(result.content)
+    return QuestionAuditTrace(
+        result=parse_question_audit(result.content),
+        raw_text=result.content,
+        usage={
+            "prompt_tokens": result.prompt_tokens,
+            "completion_tokens": result.completion_tokens,
+        },
+        provider=provider_label,
+        model=result.model,
+        messages=[asdict(message) for message in messages],
+        prompt_version=QUESTION_SELF_AUDIT_PROMPT_VERSION,
+    )
 
 
 __all__ = [
+    "ParsedGeneratedQuestion",
+    "QuestionAuditTrace",
+    "QuestionAuditResult",
+    "QuestionGenerationTrace",
     "QUESTION_GENERATE_PROMPT_VERSION",
     "QUESTION_GENERATION_TIMEOUT_SECONDS",
     "QUESTION_SELF_AUDIT_PROMPT_VERSION",
     "QUESTION_SELF_AUDIT_TIMEOUT_SECONDS",
     "SourceQuestion",
     "generate_questions",
+    "generate_questions_with_trace",
     "self_audit_question",
+    "self_audit_question_with_trace",
 ]
