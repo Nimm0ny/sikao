@@ -4,8 +4,9 @@ import { Badge, EmptyState, Skeleton } from '../components/atom';
 import { Button } from '../components/form/Button';
 import { PageHeader, Panel } from '../components/layout';
 import { Banner } from '../components/overlay';
+import { LifecycleTimelineView } from '../components/practice/lifecycle/LifecycleTimelineView';
 import { usePracticeSessionResult } from '@sikao/api-client/queries/sessionQueries';
-import { usePracticeTimingReport } from '@sikao/api-client/queries/sessionRuntimeQueries';
+import { usePracticeSessionLifecycle, usePracticeTimingReport } from '@sikao/api-client/queries/sessionRuntimeQueries';
 import styles from './SessionResult.module.css';
 
 export function SessionResult() {
@@ -14,6 +15,7 @@ export function SessionResult() {
   const sessionId = Number(params.sessionId);
   const resultQuery = usePracticeSessionResult(sessionId);
   const timingQuery = usePracticeTimingReport(sessionId);
+  const lifecycleQuery = usePracticeSessionLifecycle(sessionId);
 
   if (!Number.isInteger(sessionId) || sessionId <= 0) {
     return <Banner variant="err" title="Invalid result page" description="Open the result page from Practice Center." />;
@@ -83,6 +85,13 @@ export function SessionResult() {
               <div className={styles.item}>Paused seconds: {timingQuery.data.pausedTotalSeconds}</div>
             </div>
           )}
+        </Panel>
+        <Panel title="Lifecycle">
+          <LifecycleTimelineView
+            lifecycle={lifecycleQuery.data}
+            loading={lifecycleQuery.isLoading}
+            error={lifecycleQuery.isError}
+          />
         </Panel>
       </div>
     </div>

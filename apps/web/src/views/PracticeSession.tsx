@@ -10,10 +10,25 @@ import { TimerDisplay } from '../components/business/TimerDisplay';
 import { Badge, EmptyState, Skeleton } from '../components/atom';
 import { Button } from '../components/form/Button';
 import { Banner } from '../components/overlay';
+import { DiscardSessionDialog } from '../components/practice/lifecycle/DiscardSessionDialog';
+import { PauseResumeButton } from '../components/practice/lifecycle/PauseResumeButton';
 import { ExamLayout } from '../layouts/ExamLayout';
 import { fetchPracticeQuestionDetail } from '@sikao/api-client/queries/practiceQuestionQueries';
-import { useFlagPracticeSessionAnswer, usePracticeSession, useSavePracticeSessionAnswers } from '@sikao/api-client/queries/sessionQueries';
-import { usePracticeSessionCountdown, usePracticeSessionHeartbeat, usePracticeSessionLifecycle, useStartPracticeSession, useSubmitPracticeSession } from '@sikao/api-client/queries/sessionRuntimeQueries';
+import {
+  useFlagPracticeSessionAnswer,
+  usePracticeSession,
+  useSavePracticeSessionAnswers,
+} from '@sikao/api-client/queries/sessionQueries';
+import {
+  useDiscardPracticeSession,
+  usePausePracticeSession,
+  usePracticeSessionCountdown,
+  usePracticeSessionHeartbeat,
+  usePracticeSessionLifecycle,
+  useResumePracticeSession,
+  useStartPracticeSession,
+  useSubmitPracticeSession,
+} from '@sikao/api-client/queries/sessionRuntimeQueries';
 import type { PracticeSessionItemV2 } from '@sikao/api-client/types/practice';
 import { useHeartbeatLoop } from '@sikao/domain/practice/useHeartbeatLoop';
 import styles from './PracticeSession.module.css';
@@ -64,9 +79,14 @@ export function PracticeSession() {
   const saveAnswers = useSavePracticeSessionAnswers();
   const flagAnswer = useFlagPracticeSessionAnswer();
   const submitSession = useSubmitPracticeSession();
+  const pauseSession = usePausePracticeSession();
+  const resumeSession = useResumePracticeSession();
+  const discardSession = useDiscardPracticeSession();
   const heartbeat = usePracticeSessionHeartbeat();
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, string[]>>({});
+  const [discardOpen, setDiscardOpen] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   const startSessionRef = useRef(startSession);
   const startedSessionIdRef = useRef<number | null>(null);
   const hydratedSessionIdRef = useRef<number | null>(null);
@@ -114,15 +134,31 @@ export function PracticeSession() {
     setAnswers(buildHydratedAnswers(sessionQuery.data.items));
   }, [sessionQuery.data]);
 
+  const runtimeStatus = lifecycleQuery.data?.status ?? sessionQuery.data?.status;
+  const lifecycleBusy =
+    pauseSession.isPending ||
+    resumeSession.isPending ||
+    discardSession.isPending;
+
   useHeartbeatLoop({
-    enabled: Boolean(sessionQuery.data && sessionQuery.data.status !== 'draft' && sessionQuery.data.status !== 'submitted'),
+    enabled: Boolean(
+      sessionQuery.data &&
+      runtimeStatus !== 'draft' &&
+      runtimeStatus !== 'paused' &&
+      runtimeStatus !== 'submitted' &&
+      runtimeStatus !== 'abandoned' &&
+      runtimeStatus !== 'expired',
+    ),
     onHeartbeat: async () => {
       await heartbeat.mutateAsync(sessionId);
+    },
+    onError: (error) => {
+      setActionError(String(error));
     },
   });
 
   if (!Number.isInteger(sessionId) || sessionId <= 0) {
-    return <Banner variant="err" title="无效 session" description="请从练习中心重新进入。" />;
+    return <Banner variant="err" title="Invalid session" description="Re-enter from Practice Center." />;
   }
 
   if (sessionQuery.isLoading) {
@@ -130,10 +166,11 @@ export function PracticeSession() {
   }
 
   if (sessionQuery.isError || !sessionQuery.data) {
-    return <Banner variant="err" title="答题页加载失败" description="请返回练习中心重试。" />;
+    return <Banner variant="err" title="Runtime session failed to load" description="Retry from Practice Center." />;
   }
 
   const session = sessionQuery.data;
+  const currentStatus = runtimeStatus ?? session.status;
   const currentItem = session.items[currentIndex];
   const currentQuestionQuery = questionQueries[currentIndex];
   const currentQuestion = currentQuestionQuery?.data;
@@ -158,10 +195,10 @@ export function PracticeSession() {
   const topbar = (
     <div className={styles.topbar}>
       <div>
-        <strong>{session.track === 'essay' ? '申论' : '行测'} Session #{session.id}</strong>
+        <strong>{session.track === 'essay' ? 'Essay' : 'Xingce'} Session #{session.id}</strong>
         <div className={styles.metaList}>
-          <span className={styles.metaText}>状态：{lifecycleQuery.data?.status ?? session.status}</span>
-          <span className={styles.metaText}>模式：{session.practiceMode}</span>
+          <span className={styles.metaText}>Status: {currentStatus}</span>
+          <span className={styles.metaText}>Mode: {session.practiceMode}</span>
           <Badge variant="neutral" size="sm">{session.sourceMode}</Badge>
         </div>
       </div>
@@ -169,15 +206,45 @@ export function PracticeSession() {
         {countdownQuery.data ? (
           <TimerDisplay
             remainingMs={countdownQuery.data.remainingSeconds * 1000}
-            paused={session.status === 'paused'}
+            paused={currentStatus === 'paused'}
           />
         ) : null}
-        <Button variant="secondary" onClick={() => navigate('/practice')}>退出</Button>
-        <Button variant="primary" onClick={async () => {
-          await submitSession.mutateAsync(session.id);
-          navigate(`/practice/sessions/${session.id}/result`);
-        }}>
-          提交
+        <PauseResumeButton
+          status={currentStatus}
+          busy={lifecycleBusy}
+          onPause={() => {
+            void (async () => {
+              setActionError(null);
+              try {
+                await pauseSession.mutateAsync(session.id);
+              } catch (error) {
+                setActionError(String(error));
+              }
+            })();
+          }}
+          onResume={() => {
+            void (async () => {
+              setActionError(null);
+              try {
+                await resumeSession.mutateAsync(session.id);
+              } catch (error) {
+                setActionError(String(error));
+              }
+            })();
+          }}
+        />
+        <Button variant="ghost" onClick={() => setDiscardOpen(true)} disabled={lifecycleBusy}>
+          Discard
+        </Button>
+        <Button variant="secondary" onClick={() => navigate('/practice')}>Exit</Button>
+        <Button
+          variant="primary"
+          onClick={async () => {
+            await submitSession.mutateAsync(session.id);
+            navigate(`/practice/sessions/${session.id}/result`);
+          }}
+        >
+          Submit
         </Button>
       </div>
     </div>
@@ -186,7 +253,7 @@ export function PracticeSession() {
   const leftPane = currentQuestionQuery?.isLoading ? (
     <Skeleton variant="text" lines={8} />
   ) : currentQuestionQuery?.isError || !currentQuestion ? (
-    <Banner variant="err" title="题目详情加载失败" description="请返回重试。" />
+    <Banner variant="err" title="Question detail failed to load" description="Retry the runtime session." />
   ) : session.track === 'essay' ? (
     <div className={styles.pane}>
       <QuestionStem
@@ -196,7 +263,7 @@ export function PracticeSession() {
       />
       <textarea
         className={styles.essayInput}
-        aria-label="申论作答输入"
+        aria-label="Essay answer input"
         value={answers[currentItem.questionKey]?.[0] ?? ''}
         onChange={(event) => {
           const next = event.target.value.trim() === '' ? [] : [event.target.value];
@@ -213,7 +280,13 @@ export function PracticeSession() {
       <QuestionStem
         number={currentIndex + 1}
         type={currentQuestion.questionKind}
-        difficulty={currentQuestion.difficultyCode === 'hard' ? 'hard' : currentQuestion.difficultyCode === 'easy' ? 'easy' : 'medium'}
+        difficulty={
+          currentQuestion.difficultyCode === 'hard'
+            ? 'hard'
+            : currentQuestion.difficultyCode === 'easy'
+              ? 'easy'
+              : 'medium'
+        }
         content={currentQuestion.stemText ?? currentQuestion.content?.stem ?? ''}
       />
       <div className={styles.options}>
@@ -243,7 +316,7 @@ export function PracticeSession() {
             payload: { flagged: !currentItem.flagged },
           })}
         >
-          {currentItem.flagged ? '取消标记' : '标记不确定'}
+          {currentItem.flagged ? 'Unmark' : 'Mark uncertain'}
         </Button>
       </div>
     </div>
@@ -257,14 +330,40 @@ export function PracticeSession() {
         onJump={(questionNumber) => setCurrentIndex(questionNumber - 1)}
       />
       {session.items.length === 0 ? (
-        <EmptyState title="当前 session 没有题目" description="请返回练习中心重新创建。" />
+        <EmptyState title="No questions in this session" description="Create a new session from Practice Center." />
       ) : null}
     </div>
   );
 
   return (
     <div className={styles.root} data-testid="practice-session-view">
+      {actionError ? (
+        <Banner
+          variant="err"
+          title="Runtime action failed"
+          description={actionError}
+          dismissible
+          onDismiss={() => setActionError(null)}
+        />
+      ) : null}
       <ExamLayout topbar={topbar} leftPane={leftPane} rightPane={rightPane} />
+      <DiscardSessionDialog
+        open={discardOpen}
+        loading={discardSession.isPending}
+        onClose={() => setDiscardOpen(false)}
+        onConfirm={async () => {
+          setActionError(null);
+          try {
+            await discardSession.mutateAsync({
+              sessionId: session.id,
+              payload: { reason: 'user_discard' },
+            });
+            navigate('/practice');
+          } catch (error) {
+            setActionError(String(error));
+          }
+        }}
+      />
     </div>
   );
 }
