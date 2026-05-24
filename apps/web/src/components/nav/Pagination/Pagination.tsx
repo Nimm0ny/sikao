@@ -1,6 +1,7 @@
 import { useId, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { Select } from '../../form/Select';
+import { PAGINATION } from '@/lib/ui-copy';
 import styles from './Pagination.module.css';
 
 /*
@@ -182,7 +183,7 @@ export function Pagination({
             className={styles.jumperInput}
             value={jumperValue}
             placeholder={String(safeCurrent)}
-            aria-label="跳至指定页"
+            aria-label={PAGINATION.jumpToPage}
             data-testid="pagination-jumper-input"
             onChange={(e) => setJumperValue(e.target.value)}
             onKeyDown={handleJumperKey}

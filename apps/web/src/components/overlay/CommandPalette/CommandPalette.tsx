@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type { ChangeEvent, KeyboardEvent as ReactKeyboardEvent, ReactElement } from 'react';
 import { FocusTrap } from '../../system/FocusTrap';
+import { COMMAND_PALETTE } from '@/lib/ui-copy';
 import styles from './CommandPalette.module.css';
 
 /*
@@ -132,7 +133,7 @@ function Panel({ onClose, groups, placeholder }: PanelProps) {
           </div>
           <div id={listboxId} role="listbox" className={styles.list} aria-label="命令结果">
             {visibleFlat.length === 0 ? (
-              <div className={styles.empty} data-testid="cmdk-empty">无匹配结果</div>
+              <div className={styles.empty} data-testid="cmdk-empty">{COMMAND_PALETTE.emptyResult}</div>
             ) : rendered.map((g) => (
               <div key={g.label} className={styles.group}>
                 <div className={styles.groupHeader}>{g.label}</div>

@@ -52,8 +52,8 @@ const TARGET_PREFIXES = ['views/', 'components/'];
 function getMode() {
   const argMode = process.argv.find((a) => a.startsWith('--mode='));
   if (argMode) return argMode.slice('--mode='.length);
-  if (process.env.LINT_UI_COPY_MODE === 'error') return 'error';
-  return 'warn';
+  if (process.env.LINT_UI_COPY_MODE === 'warn') return 'warn';
+  return 'error';
 }
 const MODE = getMode();
 
