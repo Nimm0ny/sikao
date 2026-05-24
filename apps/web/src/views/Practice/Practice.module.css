@@ -1,0 +1,165 @@
+/*
+ * Practice view — V5 D.4.2 desktop page skeleton.
+ * Why: 4-row Workspace grid (header / row1 quick + recent / specialty
+ *      4-col / paper 4-col). row1 = 224px default; collapses to 192px at
+ *      max-height 800px per design §D.4.2 (laptop ergonomics). Mobile
+ *      (<bp-md) collapses to 1 column.
+ */
+
+.root {
+  display: grid;
+  grid-template-rows: auto minmax(0, 224px) minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  width: 100%;
+  min-height: 0;
+}
+
+.row1 {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: var(--space-4);
+  min-height: 0;
+}
+
+.quickGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.quickCard {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow-rest);
+  padding: var(--card-padding);
+  cursor: pointer;
+  text-align: left;
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  color: inherit;
+  transition: background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover gated by hover+fine pointer (CP.9). */
+  .quickCard:hover {
+    background: var(--color-bg-elevated);
+    box-shadow: var(--card-shadow-hover);
+  }
+}
+
+.quickCard:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.quickTitle {
+  font-size: var(--font-card);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.quickMeta {
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+  margin: 0;
+  margin-top: var(--space-2);
+}
+
+.recentList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow: auto;
+}
+
+.specialtyGrid,
+.paperGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.specialtyCard {
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  position: relative;
+}
+
+.specialtyHeader {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.specialtyName {
+  font-size: var(--font-card);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.specialtyMeta {
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+}
+
+.paperCard {
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  padding: var(--card-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.paperTitle {
+  font-size: var(--font-card);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.paperMeta {
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+@media (max-height: 800px) {
+  .root {
+    grid-template-rows: auto minmax(0, 192px) minmax(0, 1fr) minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 1023.98px) {
+  .specialtyGrid,
+  .paperGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .row1 { grid-template-columns: 1fr; grid-auto-rows: minmax(0, auto); }
+}
+
+@media (max-width: 767.98px) {
+  .specialtyGrid,
+  .paperGrid {
+    grid-template-columns: 1fr;
+  }
+  .quickGrid { grid-template-columns: 1fr; }
+}

@@ -19,6 +19,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from '../layouts/RootLayout';
 import { Home } from '../views/Home';
+import { Practice } from '../views/Practice';
 import { BootCard } from './BootCard';
 
 export const router = createBrowserRouter([
@@ -27,7 +28,7 @@ export const router = createBrowserRouter([
     element: <RootLayout />,
     children: [
       { index: true, element: <Home /> },
-      { path: 'practice', element: <BootCard /> },
+      { path: 'practice', element: <Practice /> },
       { path: 'review', element: <BootCard /> },
       { path: 'note', element: <BootCard /> },
       { path: 'question-hub', element: <BootCard /> },
