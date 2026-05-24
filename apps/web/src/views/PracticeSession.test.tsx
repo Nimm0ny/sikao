@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { act, render, screen, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
@@ -228,6 +228,88 @@ describe('PracticeSession', () => {
     await screen.findByTestId('practice-session-view');
     await userEvent.click(screen.getByRole('button', { name: 'Pause' }));
     expect(await screen.findByRole('button', { name: 'Resume' })).toBeInTheDocument();
+  });
+
+  it('requires explicit confirmation before starting a mock exam draft', async () => {
+    let started = false;
+    let startCalls = 0;
+    server.use(
+      http.get('/api/v2/practice/sessions/:sessionId', ({ params }) =>
+        HttpResponse.json({
+          actions: [{ key: 'continue', label: 'Continue session', href: `/practice/sessions/${params.sessionId}`, enabled: true }],
+          id: Number(params.sessionId),
+          entryKind: 'mock_exam',
+          examMode: true,
+          forceSubmitted: false,
+          items: [
+            {
+              id: '1',
+              questionKey: '1001',
+              prompt: 'Mock question 1',
+              answerKind: 'single_choice',
+              status: 'pending',
+              selectedAnswerKeys: [],
+              answerText: null,
+              flagged: false,
+              viewedSolution: false,
+              hasPersistentFlag: false,
+              hasUserNotes: false,
+              isFavorited: false,
+              isOvertime: false,
+              answerChangeCount: 0,
+              timeSpentMs: 0,
+              visitCount: 0,
+            },
+          ],
+          pausedCount: 0,
+          pausedTotalSeconds: 0,
+          practiceMode: 'full_set',
+          sourceMode: 'paper',
+          startedAt: '2026-05-24T08:00:00Z',
+          status: started ? 'in_progress' : 'draft',
+          totalActiveSeconds: 0,
+          track: 'xingce',
+          configSnapshot: {},
+        }),
+      ),
+      http.get('/api/v2/practice/sessions/:sessionId/lifecycle', () =>
+        HttpResponse.json({
+          status: started ? 'in_progress' : 'draft',
+          pausedCount: 0,
+          pausedTotalSeconds: 0,
+          forceSubmitted: false,
+          transitions: [],
+        }),
+      ),
+      http.post('/api/v2/practice/sessions/:sessionId/start', () => {
+        startCalls += 1;
+        started = true;
+        return HttpResponse.json({
+          status: 'in_progress',
+          pausedCount: 0,
+          pausedTotalSeconds: 0,
+          forceSubmitted: false,
+          firstQuestionAt: '2026-05-24T08:00:00Z',
+          transitions: [],
+        });
+      }),
+    );
+
+    renderPracticeSession();
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('Start mock exam?')).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Start mock exam' }));
+    await waitFor(() => {
+      expect(startCalls).toBe(1);
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog')).toBeNull();
+    });
+    expect(await screen.findByTestId('practice-session-view')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText(/Status:\s*in_progress/)).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('button', { name: 'Pause' })).toBeNull();
   });
 
   it('does not send heartbeat ticks while the session is paused', async () => {

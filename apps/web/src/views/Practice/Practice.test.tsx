@@ -12,6 +12,10 @@ function AiGeneratingRouteProbe() {
   return <div data-testid="ai-generating-route-hit">{location.search}</div>;
 }
 
+function MockExamStartRouteProbe() {
+  return <div data-testid="mock-exam-start-route-hit" />;
+}
+
 function renderPractice() {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -24,6 +28,7 @@ function renderPractice() {
       { path: '/practice', element: <Practice /> },
       { path: '/practice/sessions/:sessionId', element: <div data-testid="practice-session-route-hit" /> },
       { path: '/practice/ai-questions/generating', element: <AiGeneratingRouteProbe /> },
+      { path: '/practice/mock-exam/start', element: <MockExamStartRouteProbe /> },
     ],
     { initialEntries: ['/practice'] },
   );
@@ -145,6 +150,14 @@ describe('Practice view (SIK-27/28)', () => {
     await userEvent.click(await screen.findByRole('button', { name: /继续/ }));
 
     expect(await screen.findByTestId('practice-session-route-hit')).toBeInTheDocument();
+  });
+
+  it('navigates to the mock exam start route from quick actions', async () => {
+    renderPractice();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Mock exam' }));
+
+    expect(await screen.findByTestId('mock-exam-start-route-hit')).toBeInTheDocument();
   });
 
   it('renders page-level error state when stats request fails', async () => {
