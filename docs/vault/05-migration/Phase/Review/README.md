@@ -220,7 +220,7 @@ M14  week 11         WU-FR12：e2e（含 review-confidence + review-debt）+ a11
 
 | Identifier | Milestone | Focus | Depends on | Status | Gate |
 |---|---|---|---|---|---|
-| `SIK-58` | `M0` | Review docs-only intake and SSOT lock | none | `in_progress` | docs-only scoped validation + independent subagent review |
+| `SIK-58` | `M0` | Review docs-only intake and SSOT lock | none | `done` | docs-only scoped validation + independent subagent review |
 | `SIK-59` | `M1` | `WU-R1` Schema Migration | `SIK-58`, Phase-Home `WU-B1` | `backlog` | backend schema gate |
 | `SIK-60` | `M2` | `WU-R2 + WU-R3 + WU-R4 + WU-R6` Review CRUD + SRS + cross-phase hook + prompts | `SIK-59`, Phase-Practice `session.commit hook`, Phase-Home `WU-B7` | `backlog` | backend runtime + prompt gate |
 | `SIK-61` | `M3` | `WU-R5 + WU-R13` Cause Analysis + Taxonomy | `SIK-60` | `backlog` | LLM + taxonomy gate |
@@ -359,5 +359,6 @@ M14  week 11         WU-FR12：e2e（含 review-confidence + review-debt）+ a11
 | 题目中枢页（跨 tab 共用） | `/q/:id` | [`.tmp_review/out/_cross/Question Hub v2.html`](../../../../.tmp_review/out/_cross/Question%20Hub%20v2.html) |
 
 历史 V4 一屏混合视图（`Review.html` / `Review v1.html` / `Review Redo v1.html`）保留作版本对照，新实施以上面 v1 子路由原型为准（D-Review-Default-View）。
+
 
 
