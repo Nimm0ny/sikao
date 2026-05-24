@@ -314,6 +314,12 @@ class ReviewItemV2(CamelModel):
     status: str
     href: str
     created_at: UtcDatetime
+    correct_streak: int = 0
+    next_review_at: UtcDatetime | None = None
+    question_id: int | None = None
+    has_user_notes: bool = False
+    has_cause_analysis: bool = False
+    updated_at: UtcDatetime | None = None
 
 
 class ReviewListResponseV2(CamelModel):
@@ -327,12 +333,40 @@ class ReviewAttemptOutV2(CamelModel):
     id: int
     outcome: str
     attempted_at: UtcDatetime
+    notes_json: dict[str, Any] = Field(default_factory=dict)
+
+
+class SrsStateV2(CamelModel):
+    algorithm_version: str = "simple_v1"
+    correct_streak: int = 0
+    next_review_at: UtcDatetime | None = None
+    interval_days: int | None = None
+    is_due_today: bool = False
+    days_overdue: int = 0
 
 
 class ReviewDetailResponseV2(CamelModel):
     item: ReviewItemV2
     history: list[ReviewAttemptOutV2]
     actions: list[ActionLinkV2]
+    srs_state: SrsStateV2 | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+
+
+class ReviewItemCreateV2(CamelModel):
+    question_id: int
+    title: str | None = None
+
+
+class ReviewItemBatchActionV2(CamelModel):
+    item_ids: list[int] = Field(default_factory=list)
+    action: Literal["archive", "restore", "graduate"]
+
+
+class ReviewBatchActionResultV2(CamelModel):
+    ok: bool
+    status: str
+    affected_count: int
 
 
 class NoteItemV2(CamelModel):

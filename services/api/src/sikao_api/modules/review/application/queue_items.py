@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from datetime import UTC, datetime
+from zoneinfo import ZoneInfo
 
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from sikao_api.db.enums_v2 import ReviewAttemptOutcome, ReviewItemStatus, ReviewSourceKind
-from sikao_api.db.models_v2 import QuestionV2, ReviewAttemptV2, ReviewItemV2
+from sikao_api.db.models_v2 import AiCauseAnalysisV2, NoteV2, QuestionV2, ReviewAttemptV2, ReviewItemV2
 
 
 ACTIVE_REVIEW_ITEM_STATUSES = (
@@ -20,10 +21,28 @@ FLAGGED_SOURCE_ALIASES = {
     "question_flag",
 }
 TERMINAL_FLAGGED_LEGACY_STATUSES = {"resolved", "removed"}
+DEFAULT_REVIEW_TIMEZONE = ZoneInfo("Asia/Shanghai")
 
 
 def utc_now() -> datetime:
     return datetime.now(UTC).replace(tzinfo=None)
+
+
+def today_end_utc(*, timezone: ZoneInfo = DEFAULT_REVIEW_TIMEZONE) -> datetime:
+    now_local = datetime.now(timezone)
+    return now_local.replace(hour=23, minute=59, second=59, microsecond=0).astimezone(UTC).replace(tzinfo=None)
+
+
+def canonical_review_source_kind(*, source_kind: str, reason: str | None) -> str:
+    if source_kind in FLAGGED_SOURCE_ALIASES or reason == "flagged_persistent":
+        return ReviewSourceKind.FLAGGED_PERSISTENT.value
+    return source_kind
+
+
+def canonical_review_status(status: str) -> str:
+    if status in TERMINAL_FLAGGED_LEGACY_STATUSES:
+        return ReviewItemStatus.ARCHIVED.value
+    return status
 
 
 def reason_compat_for_source(source_kind: str) -> str | None:
@@ -233,3 +252,39 @@ def load_questions_by_id(
             select(QuestionV2).where(QuestionV2.id.in_(resolved_ids))
         )
     }
+
+
+def load_review_presence_sets(
+    session: Session,
+    *,
+    user_id: int,
+    items: Iterable[ReviewItemV2],
+) -> tuple[set[int], set[int]]:
+    question_ids = {
+        int(item.question_id)
+        for item in items
+        if item.question_id is not None
+    }
+    if not question_ids:
+        return set(), set()
+    note_question_ids = {
+        int(question_id)
+        for question_id in session.scalars(
+            select(NoteV2.linked_question_id).where(
+                NoteV2.user_id == user_id,
+                NoteV2.linked_question_id.in_(question_ids),
+            )
+        )
+        if question_id is not None
+    }
+    cause_question_ids = {
+        int(question_id)
+        for question_id in session.scalars(
+            select(AiCauseAnalysisV2.question_id).where(
+                AiCauseAnalysisV2.user_id == user_id,
+                AiCauseAnalysisV2.question_id.in_(question_ids),
+            )
+        )
+        if question_id is not None
+    }
+    return note_question_ids, cause_question_ids
