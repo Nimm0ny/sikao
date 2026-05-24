@@ -116,6 +116,14 @@ class HomeScheduler:
             coalesce=True,
         )
         self._scheduler.add_job(
+            self._job_review_weekly_summary_snapshot,
+            trigger=CronTrigger(day_of_week="mon", hour=2, minute=0, timezone=self._settings.home_scheduler_timezone),
+            id="review.weekly_summary.snapshot",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+        self._scheduler.add_job(
             self._job_event_status_tick,
             trigger=CronTrigger(minute="*/15", timezone=self._settings.home_scheduler_timezone),
             id="home.event_status.tick",
@@ -274,6 +282,11 @@ class HomeScheduler:
         job_id = "home.weakness_snapshot.weekly"
         self._mark_started(job_id)
         return await self._runtime.run_weekly_weakness_snapshot()
+
+    async def _job_review_weekly_summary_snapshot(self) -> int:
+        job_id = "review.weekly_summary.snapshot"
+        self._mark_started(job_id)
+        return await self._runtime.run_review_weekly_summary_snapshot()
 
     async def _job_event_status_tick(self) -> int:
         job_id = "home.event_status.tick"

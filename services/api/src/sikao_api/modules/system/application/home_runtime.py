@@ -43,6 +43,13 @@ from sikao_api.modules.progress.application.snapshot_writer import (
     refresh_daily_progress_snapshot,
     refresh_weekly_weakness_snapshot,
 )
+from sikao_api.modules.review.application.weekly_service import write_weekly_snapshot
+from sikao_api.modules.review.application.time_windows import iso_week_code_from_date, previous_week_start
+from sikao_api.modules.review.application.audit import (
+    log_review_weekly_snapshot_generated,
+    log_review_weekly_snapshot_refreshed,
+)
+from sikao_api.modules.review.application.metrics import increment_weekly_snapshot_generated
 from sikao_api.modules.recommendations.application.service import RecommendationServiceV2
 from sikao_api.modules.mock_exam.application.auto_submitter import auto_submit_expired_mock_exams
 from sikao_api.modules.session.application.hooks import run_progress_submit_hooks_isolated
@@ -73,6 +80,9 @@ class HomeRuntimeOrchestrator:
 
     async def run_weekly_weakness_snapshot(self) -> int:
         return await asyncio.to_thread(self._run_weekly_weakness_snapshot_sync)
+
+    async def run_review_weekly_summary_snapshot(self) -> int:
+        return await asyncio.to_thread(self._run_review_weekly_summary_snapshot_sync)
 
     async def run_event_status_tick(self) -> list[SkippedEventHookPayload]:
         return await asyncio.to_thread(self._run_event_status_tick_sync)
@@ -361,6 +371,38 @@ class HomeRuntimeOrchestrator:
             anchor_date = today_cn()
             for user_id in self._list_active_user_ids(session):
                 refresh_weekly_weakness_snapshot(session, user_id=user_id, anchor_date=anchor_date)
+                processed += 1
+            session.commit()
+            return processed
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_review_weekly_summary_snapshot_sync(self) -> int:
+        session = self._db.session_factory()
+        try:
+            processed = 0
+            week_start = previous_week_start(today_cn())
+            week_code = iso_week_code_from_date(week_start)
+            for user_id in self._list_active_user_ids(session):
+                row, created = write_weekly_snapshot(session, user_id=user_id, week_start_date=week_start)
+                if created:
+                    log_review_weekly_snapshot_generated(
+                        session,
+                        user_id=user_id,
+                        snapshot_id=row.id,
+                        week=week_code,
+                    )
+                    increment_weekly_snapshot_generated()
+                else:
+                    log_review_weekly_snapshot_refreshed(
+                        session,
+                        user_id=user_id,
+                        snapshot_id=row.id,
+                        week=week_code,
+                    )
                 processed += 1
             session.commit()
             return processed
