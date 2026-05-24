@@ -126,11 +126,6 @@ def apply_import_plan(session: Session, paper: ImportPaper, plan: ImportPlan) ->
                 ai_source_question_id=question.ai_source_question_id,
                 ai_self_audit_passed=question.ai_self_audit_passed,
                 ai_generated_at=question.ai_generated_at,
-                ability_dimensions=question.ability_dimensions,
-                discrimination_index=question.discrimination_index,
-                heat_score=question.heat_score,
-                complexity_level=question.complexity_level,
-                knowledge_tags=question.knowledge_tags,
             )
         )
     session.flush()
@@ -176,11 +171,6 @@ def _revision_signature(session: Session, paper: PaperV2, revision: PaperRevisio
                     if question.ai_generated_at is not None
                     else None
                 ),
-                "ability_dimensions": question.ability_dimensions,
-                "discrimination_index": question.discrimination_index,
-                "heat_score": question.heat_score,
-                "complexity_level": question.complexity_level,
-                "knowledge_tags": question.knowledge_tags,
                 "is_active": question.is_active,
             }
             for question in questions

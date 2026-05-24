@@ -18,6 +18,10 @@ from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, QuestionV2
 REPO_ROOT = Path(__file__).resolve().parents[3]
 ALEMBIC_INI = REPO_ROOT / "database" / "migrations" / "alembic.ini"
 API_SRC = REPO_ROOT / "services" / "api" / "src"
+if str(REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(REPO_ROOT))
+if str(API_SRC) not in sys.path:
+    sys.path.insert(0, str(API_SRC))
 
 _MODULE = importlib.import_module("scripts.import.import_real_exams")
 _PARSER = importlib.import_module("scripts.import.importers.parser")
@@ -162,6 +166,12 @@ def test_dry_run_apply_and_skip_cycle(tmp_path: Path) -> None:
             )
             assert len(questions) == 2
             assert questions[0].category_l1 == "verbal"
+            assert questions[1].category_l2 == "reading"
+            assert questions[0].ability_dimensions == []
+            assert questions[0].knowledge_tags == []
+            assert questions[0].discrimination_index is None
+            assert questions[0].heat_score == 0.0
+            assert questions[0].complexity_level is None
             assert questions[0].content_hash
     finally:
         engine.dispose()
@@ -223,15 +233,27 @@ def test_metadata_only_change_creates_new_revision_plan(tmp_path: Path) -> None:
         engine.dispose()
 
 
-def test_invalid_knowledge_tags_fail_fast(tmp_path: Path) -> None:
-    json_path = tmp_path / "invalid-tags.json"
+def test_phase1_import_ignores_question_metadata_fields(tmp_path: Path) -> None:
+    json_path = tmp_path / "phase1-schema-only.json"
     _write_json_input(json_path)
     payload = json.loads(json_path.read_text(encoding="utf-8"))
+    payload["questions"][0]["quality_score"] = 0.0
+    payload["questions"][0]["ability_dimensions"] = ["reasoning", "not_valid"]
     payload["questions"][0]["knowledge_tags"] = ["LogicFill", "good_tag"]
+    payload["questions"][0]["discrimination_index"] = 0.42
+    payload["questions"][0]["heat_score"] = 2.5
+    payload["questions"][0]["complexity_level"] = 4
     json_path.write_text(json.dumps(payload, ensure_ascii=False), encoding="utf-8")
 
-    with pytest.raises(ValueError, match="knowledge_tags must be snake_case"):
-        _MAPPER.map_raw_papers(_PARSER.load_raw_papers(json_path))
+    import_papers = _MAPPER.map_raw_papers(_PARSER.load_raw_papers(json_path))
+    question = import_papers[0].questions[0]
+
+    assert question.ability_dimensions == []
+    assert question.knowledge_tags == []
+    assert question.discrimination_index is None
+    assert question.heat_score == 0.0
+    assert question.complexity_level is None
+    assert question.quality_score == 0.0
 
 
 def test_apply_uses_per_paper_transactions(tmp_path: Path) -> None:
@@ -279,3 +301,4 @@ def test_apply_uses_per_paper_transactions(tmp_path: Path) -> None:
             assert session.scalar(select(PaperV2).where(PaperV2.paper_code == "GX-2024-02")) is None
     finally:
         engine.dispose()
+

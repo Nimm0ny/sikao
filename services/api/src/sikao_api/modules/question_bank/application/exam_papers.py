@@ -15,6 +15,7 @@ from typing import Any, Literal, Protocol, cast, overload
 from sqlalchemy import exists, func, or_, select, text
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy.sql.elements import ColumnElement
 
 from sikao_api.db import schemas
 from sikao_api.db.models import (
@@ -929,7 +930,7 @@ class ExamPaperService:
     def _load_custom_practice_candidates(
         self, payload: schemas.CustomPracticeStartPayload
     ) -> list[Question]:
-        filters: list = [
+        filters: list[ColumnElement[bool]] = [
             Paper.current_revision_id == PaperRevision.id,
             PaperRevision.visible_in_public.is_(True),
             Question.enabled.is_(True),

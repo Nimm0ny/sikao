@@ -75,11 +75,11 @@ def _map_raw_paper(raw: RawPaperRecord) -> ImportPaper:
         answer_kind = str(question.get("answer_kind") or "single_choice").strip()
         status = str(question.get("status") or "published").strip()
         content_json = _question_content_json(question, prompt)
-        ability_dimensions = _normalize_ability_dimensions(question.get("ability_dimensions"))
-        knowledge_tags = _normalize_knowledge_tags(question.get("knowledge_tags"))
         content_hash = compute_question_content_hash(prompt, content_json)
         category_l1, category_l2 = _normalize_category_pair(question)
         is_active = _optional_bool(question.get("is_active"), default=True)
+        historical_accuracy = _optional_float(question.get("historical_accuracy"))
+        quality_score = _optional_float(question.get("quality_score"))
         questions.append(
             ImportQuestion(
                 item_no=item_no,
@@ -93,19 +93,21 @@ def _map_raw_paper(raw: RawPaperRecord) -> ImportPaper:
                 exam_type=str(question.get("exam_type") or "other").strip() or "other",
                 category_l1=category_l1,
                 category_l2=category_l2,
-                historical_accuracy=_optional_float(question.get("historical_accuracy")) or 0.0,
+                historical_accuracy=0.0 if historical_accuracy is None else historical_accuracy,
                 answer_count=_optional_int(question.get("answer_count")) or 0,
-                quality_score=_optional_float(question.get("quality_score")) or 5.0,
+                quality_score=5.0 if quality_score is None else quality_score,
                 report_count=_optional_int(question.get("report_count")) or 0,
                 is_active=True if is_active is None else is_active,
                 ai_source_question_id=_optional_int(question.get("ai_source_question_id")),
                 ai_self_audit_passed=_optional_bool(question.get("ai_self_audit_passed")),
                 ai_generated_at=_optional_datetime(question.get("ai_generated_at")),
-                ability_dimensions=ability_dimensions,
-                discrimination_index=_optional_float(question.get("discrimination_index")),
-                heat_score=_optional_float(question.get("heat_score")) or 0.0,
-                complexity_level=_optional_int(question.get("complexity_level")),
-                knowledge_tags=knowledge_tags,
+                # Phase-Practice B29 is schema-only in Phase 1: importer keeps these
+                # columns at their DB defaults instead of filling preview metadata.
+                ability_dimensions=[],
+                discrimination_index=None,
+                heat_score=0.0,
+                complexity_level=None,
+                knowledge_tags=[],
                 content_hash=content_hash,
             )
         )
@@ -139,11 +141,6 @@ def _map_raw_paper(raw: RawPaperRecord) -> ImportPaper:
                     if question.ai_generated_at is not None
                     else None
                 ),
-                "ability_dimensions": question.ability_dimensions,
-                "discrimination_index": question.discrimination_index,
-                "heat_score": question.heat_score,
-                "complexity_level": question.complexity_level,
-                "knowledge_tags": question.knowledge_tags,
                 "is_active": question.is_active,
             }
             for question in questions
