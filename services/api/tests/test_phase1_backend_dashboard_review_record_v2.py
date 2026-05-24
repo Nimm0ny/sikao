@@ -176,7 +176,20 @@ def _assert_review_item_contract_shape(
     expected_status: str,
     expected_href: str,
 ) -> None:
-    assert set(item.keys()) == {"id", "kind", "title", "status", "href", "createdAt"}
+    assert set(item.keys()) == {
+        "id",
+        "kind",
+        "title",
+        "status",
+        "href",
+        "createdAt",
+        "correctStreak",
+        "nextReviewAt",
+        "questionId",
+        "hasUserNotes",
+        "hasCauseAnalysis",
+        "updatedAt",
+    }
     assert item["id"] == expected_id
     assert item["kind"] == expected_kind
     assert item["title"] == expected_title
@@ -299,6 +312,31 @@ def test_review_redo_prefers_cookie_session_over_bearer_when_both_are_present(tm
         assert response.json()["code"] == "session_not_found"
 
 
+def test_review_write_routes_require_auth_and_csrf(tmp_path: Path) -> None:
+    with build_client(tmp_path) as (client, _app):
+        unauth_create = client.post("/api/v2/review/items", json={"questionId": 1})
+        assert unauth_create.status_code == 401, unauth_create.text
+        assert unauth_create.json()["code"] == "auth_required"
+
+        unauth_archive = client.patch("/api/v2/review/items/1/archive")
+        assert unauth_archive.status_code == 401, unauth_archive.text
+        assert unauth_archive.json()["code"] == "auth_required"
+
+        _register_email(client)
+        client.headers.pop("X-CSRF-Token", None)
+
+        csrf_create = client.post("/api/v2/review/items", json={"questionId": 1})
+        assert csrf_create.status_code == 403, csrf_create.text
+        assert csrf_create.json()["code"] == "csrf_missing"
+
+        csrf_batch = client.post(
+            "/api/v2/review/items/batch",
+            json={"itemIds": [1], "action": "archive"},
+        )
+        assert csrf_batch.status_code == 403, csrf_batch.text
+        assert csrf_batch.json()["code"] == "csrf_missing"
+
+
 def test_review_items_returns_empty_paginated_skeleton_payload(tmp_path: Path) -> None:
     with build_client(tmp_path) as (client, _app):
         _register_email(client)
@@ -317,19 +355,20 @@ def test_review_item_detail_returns_placeholder_skeleton_payload(tmp_path: Path)
 
         assert response.status_code == 200, response.text
         payload = response.json()
-        assert set(payload.keys()) == {"item", "history", "actions"}
+        assert set(payload.keys()) == {"item", "history", "actions", "srsState", "metadata"}
         _assert_review_item_contract_shape(
             payload["item"],
             expected_id=7,
             expected_kind="placeholder",
             expected_title="review-item-7",
             expected_status="empty",
-            expected_href="/wrong-book/7",
+            expected_href="/review/items/7",
         )
         assert payload["history"] == []
+        assert payload["metadata"] == {}
         assert len(payload["actions"]) == 1
         assert payload["actions"][0]["key"] == "redo"
-        assert payload["actions"][0]["href"] == "/wrong-book/7/redo"
+        assert payload["actions"][0]["href"] == "/review/items/7/redo"
         assert payload["actions"][0]["enabled"] is False
         assert isinstance(payload["actions"][0]["label"], str)
 

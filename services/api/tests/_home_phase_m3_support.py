@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Iterator
 
@@ -154,11 +154,12 @@ def seed_review_item(app: FastAPI, *, user_id: int, title: str, updated_at: date
     try:
         row = ReviewItemV2(
             user_id=user_id,
-            source_kind="wrong_question",
+            source_kind="wrong_answer",
             source_id=None,
             title=title,
             status="pending",
             metadata_json={},
+            reason="wrong_answer",
             created_at=updated_at - timedelta(days=1),
             updated_at=updated_at,
         )
