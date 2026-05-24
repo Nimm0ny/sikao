@@ -22,6 +22,7 @@ In scope:
 - checked-in `packages/api-client/src/types/api.generated.ts` must match regenerated output
 - add explicit backend e2e for `question_report_admin_loop`
 - collect final backend PASS evidence for the Practice-only final gate
+- realign the active backend pytest inventory to the live `create_app().openapi()` surface before claiming full green
 
 Out of scope:
 
@@ -36,6 +37,7 @@ Out of scope:
 - `services/api/spec/openapi.json` is regenerated and committed
 - `packages/api-client/src/types/api.generated.ts` is regenerated from the committed spec
 - `services/api/tests/test_home_phase_m6_contract_lock.py` must pass without local patching
+- live runtime surface is `create_app().openapi()`, not stale historical route tests
 
 ### Explicit B25-B30 proof set
 
@@ -59,6 +61,15 @@ The final backend gate for this issue must include direct PASS evidence for:
   - question field mutation persists
   - dual audit persists
   - user list reflects resolved state
+
+### Legacy suite realignment
+
+- active `services/api/tests/test_*.py` must not keep asserting routes that are absent from the live app
+- legacy suites that still target unmounted route groups must be archived out of pytest collection, not silently left red:
+  - legacy auth extras outside `identity_v2` (`/api/v2/auth/me`, `/refresh`, `/forgot-password`, `/verify-email/*`, `/bind/*`, `/unbind/*`, `/sms/send-code`)
+  - legacy question-bank/admin import surfaces (`/api/v2/admin/papers*`, `/api/v2/admin/import-jobs/*`, `/api/v2/papers*`, `/api/v2/practice/papers/*`)
+  - legacy wrong-book, notebook, llm, exam-events, user-exams, old profile helpers when those routes are not mounted in `main.py`
+- route tests that are still in-scope must be rewritten to the current contract instead of being archived
 
 ## Validation Plan
 
