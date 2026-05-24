@@ -11,7 +11,8 @@
     "./*": "./src/*"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:icons": "node scripts/build-icon-sprite.mjs"
   },
   "devDependencies": {
     "typescript": "^5.9.3"
