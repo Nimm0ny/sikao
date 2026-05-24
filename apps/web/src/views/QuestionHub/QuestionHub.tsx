@@ -3,7 +3,7 @@
 // Phase 6+. Real strings will land via @/lib/ui-copy when business Phase
 // integrations replace the placeholders.
 import { useState } from 'react';
-import { Badge } from '../../components/atom';
+import { Badge, Chip } from '../../components/atom';
 import { Pagination } from '../../components/nav';
 import { Panel, PageHeader } from '../../components/layout';
 import styles from './QuestionHub.module.css';
@@ -101,15 +101,9 @@ interface FilterChipProps {
 
 function FilterChip({ label, active, onClick }: FilterChipProps) {
   return (
-    <button
-      type="button"
-      className={styles.chip}
-      data-active={active ? 'true' : undefined}
-      onClick={onClick}
-      aria-pressed={active}
-    >
+    <Chip size="sm" active={active} onSelect={onClick}>
       {label}
-    </button>
+    </Chip>
   );
 }
 

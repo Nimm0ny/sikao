@@ -3,7 +3,7 @@
 // Phase 6+. Real strings will land via @/lib/ui-copy when business Phase
 // integrations replace the placeholders.
 import { useState } from 'react';
-import { Badge } from '../../components/atom';
+import { Badge, Chip } from '../../components/atom';
 import { Drawer } from '../../components/overlay';
 import { PageHeader } from '../../components/layout';
 import { Search } from '../../components/form';
@@ -106,32 +106,27 @@ export function Note() {
       <div className={styles.filterBar} data-testid="note-filter-bar" aria-label="笔记筛选">
         <span className={styles.filterGroup} aria-label="来源">
           {SOURCE_OPTIONS.map((opt) => (
-            <button
+            <Chip
               key={opt.key}
-              type="button"
-              className={styles.chip}
-              data-toggle="source"
-              data-active={activeSource === opt.key ? 'true' : undefined}
-              onClick={() => setActiveSource(opt.key)}
-              aria-pressed={activeSource === opt.key}
+              size="md"
+              active={activeSource === opt.key}
+              onSelect={() => setActiveSource(opt.key)}
             >
               {opt.label}
-            </button>
+            </Chip>
           ))}
         </span>
         <span className={styles.filterGroup} aria-label="状态">
           {TOGGLE_OPTIONS.map((opt) => (
-            <button
+            <Chip
               key={opt.key}
-              type="button"
-              className={styles.chip}
-              data-toggle={opt.key}
-              data-active={activeToggles.has(opt.key) ? 'true' : undefined}
-              onClick={() => toggleToggle(opt.key)}
-              aria-pressed={activeToggles.has(opt.key)}
+              variant={opt.key === 'favorite' ? 'brand' : 'neutral'}
+              size="md"
+              active={activeToggles.has(opt.key)}
+              onSelect={() => toggleToggle(opt.key)}
             >
               {opt.label}
-            </button>
+            </Chip>
           ))}
         </span>
       </div>

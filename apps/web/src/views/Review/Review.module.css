@@ -27,45 +27,6 @@
   flex-wrap: wrap;
 }
 
-.chip {
-  appearance: none;
-  -webkit-appearance: none;
-  font: inherit;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  padding: 0 var(--space-3);
-  height: 26px;
-  border-radius: var(--radius-999);
-  background: var(--color-bg-elevated);
-  color: var(--color-text-secondary);
-  border: 1px solid var(--color-border-subtle);
-  font-size: var(--font-meta);
-  font-weight: var(--font-weight-medium);
-  transition:
-    background var(--dur-fast) var(--ease-out),
-    color var(--dur-fast) var(--ease-out),
-    border-color var(--dur-fast) var(--ease-out);
-}
-
-.chip:focus-visible {
-  outline: 2px solid var(--color-focus-ring);
-  outline-offset: 2px;
-}
-
-@media (hover: hover) and (pointer: fine) {
-  /* touch-allow: hover gated by hover+fine pointer (CP.9). */
-  .chip:hover {
-    background: var(--color-bg-sunken);
-  }
-}
-
-.chip[data-active='true'] {
-  background: var(--color-text-primary);
-  color: var(--color-bg-surface);
-  border-color: var(--color-text-primary);
-}
-
 .calendarBar {
   display: flex;
   flex-wrap: wrap;

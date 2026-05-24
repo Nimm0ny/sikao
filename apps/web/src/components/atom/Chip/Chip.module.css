@@ -1,0 +1,71 @@
+/*
+ * Chip — V5 D.3.8 atom (skeleton).
+ * Why: selectable-mode chip surface. Static-mode chips delegate to Tag
+ *      (no styles needed here). The selectable-mode `.chipButton`
+ *      consolidates the bespoke `.chip` rules that Note / Question Hub /
+ *      Review used to ship in their view-level module.css — one source
+ *      of truth across the 3 views per V5 spec §D.4.3 R2/Q1.
+ */
+.chipButton {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-999);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-subtle);
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-medium);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.chipButton[data-size='sm'] {
+  height: 26px;
+}
+.chipButton[data-size='md'] {
+  height: 28px;
+}
+
+.chipButton:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover gated by hover+fine pointer (CP.9). */
+  .chipButton:not([data-disabled]):hover {
+    background: var(--color-bg-sunken);
+  }
+}
+
+/* Inverted-black active visual (default neutral variant per §D.4.3 R2/Q1) */
+.chipButton[data-active] {
+  background: var(--color-text-primary);
+  color: var(--color-bg-surface);
+  border-color: var(--color-text-primary);
+}
+
+/* Brand-yellow active visual (Note favorite toggle / brand-promoted chip) */
+.chipButton[data-variant='brand'][data-active] {
+  background: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+  border-color: var(--color-brand-primary);
+}
+
+.chipButton[data-disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.leading {
+  display: inline-flex;
+  align-items: center;
+}
