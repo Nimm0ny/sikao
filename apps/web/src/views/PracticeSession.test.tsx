@@ -1,11 +1,16 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { PracticeSession } from './PracticeSession';
 import { server } from '../mocks/server';
+
+afterEach(() => {
+  vi.useRealTimers();
+  vi.restoreAllMocks();
+});
 
 function renderPracticeSession(initialEntry = '/practice/sessions/6001') {
   const queryClient = new QueryClient({
@@ -16,6 +21,7 @@ function renderPracticeSession(initialEntry = '/practice/sessions/6001') {
   });
   const router = createMemoryRouter(
     [
+      { path: '/practice', element: <div data-testid="practice-route-hit" /> },
       { path: '/practice/sessions/:sessionId', element: <PracticeSession /> },
       { path: '/practice/sessions/:sessionId/result', element: <div data-testid="result-route-hit" /> },
     ],
@@ -145,7 +151,7 @@ describe('PracticeSession', () => {
 
     renderPracticeSession();
     expect(await screen.findByTestId('practice-session-view')).toBeInTheDocument();
-    expect(screen.getByLabelText('申论作答输入')).toHaveValue('Recovered essay draft');
+    expect(screen.getByLabelText('Essay answer input')).toHaveValue('Recovered essay draft');
   });
 
   it('marks an essay item unanswered after the user clears its text', async () => {
@@ -211,16 +217,131 @@ describe('PracticeSession', () => {
     renderPracticeSession();
     await screen.findByTestId('practice-session-view');
     await userEvent.click(screen.getByTestId('answer-sheet-cell-2'));
-    const textarea = screen.getByLabelText('申论作答输入');
+    const textarea = screen.getByLabelText('Essay answer input');
     await userEvent.clear(textarea);
     await userEvent.click(screen.getByTestId('answer-sheet-cell-1'));
     expect(screen.getByTestId('answer-sheet-cell-2').dataset.state).toBe('unanswered');
   });
 
+  it('toggles pause and resume through lifecycle controls', async () => {
+    renderPracticeSession();
+    await screen.findByTestId('practice-session-view');
+    await userEvent.click(screen.getByRole('button', { name: 'Pause' }));
+    expect(await screen.findByRole('button', { name: 'Resume' })).toBeInTheDocument();
+  });
+
+  it('does not send heartbeat ticks while the session is paused', async () => {
+    let heartbeatCalls = 0;
+    const setIntervalSpy = vi.spyOn(window, 'setInterval');
+
+    server.use(
+      http.get('/api/v2/practice/sessions/:sessionId', ({ params }) =>
+        HttpResponse.json({
+          actions: [{ key: 'continue', label: 'Continue session', href: `/practice/sessions/${params.sessionId}`, enabled: true }],
+          id: Number(params.sessionId),
+          entryKind: 'paper',
+          examMode: false,
+          forceSubmitted: false,
+          items: [
+            {
+              id: '1',
+              questionKey: '1001',
+              prompt: 'Mock question 1',
+              answerKind: 'single_choice',
+              status: 'answered',
+              selectedAnswerKeys: ['A'],
+              answerText: null,
+              flagged: false,
+              viewedSolution: false,
+              hasPersistentFlag: false,
+              hasUserNotes: false,
+              isFavorited: false,
+              isOvertime: false,
+              answerChangeCount: 0,
+              timeSpentMs: 0,
+              visitCount: 0,
+            },
+          ],
+          pausedCount: 1,
+          pausedTotalSeconds: 300,
+          practiceMode: 'full_set',
+          sourceMode: 'paper',
+          startedAt: '2026-05-24T08:00:00Z',
+          status: 'paused',
+          totalActiveSeconds: 120,
+          track: 'xingce',
+          configSnapshot: {},
+        }),
+      ),
+      http.get('/api/v2/practice/sessions/:sessionId/lifecycle', () =>
+        HttpResponse.json({
+          status: 'paused',
+          pausedAt: '2026-05-24T08:05:00Z',
+          pausedCount: 1,
+          pausedTotalSeconds: 300,
+          forceSubmitted: false,
+          transitions: [],
+        }),
+      ),
+      http.post('/api/v2/practice/sessions/:sessionId/heartbeat', () => {
+        heartbeatCalls += 1;
+        return HttpResponse.json({
+          serverTs: new Date().toISOString(),
+          status: 'paused',
+        });
+      }),
+    );
+
+    renderPracticeSession();
+    await screen.findByTestId('practice-session-view');
+    const heartbeatIntervals = setIntervalSpy.mock.calls.filter((call) => call[1] === 30_000);
+    expect(heartbeatIntervals).toHaveLength(0);
+    expect(heartbeatCalls).toBe(0);
+  });
+
+  it('sends an explicit empty heartbeat body when the active interval fires', async () => {
+    let heartbeatBody: unknown = null;
+    const setIntervalSpy = vi.spyOn(window, 'setInterval');
+
+    server.use(
+      http.post('/api/v2/practice/sessions/:sessionId/heartbeat', async ({ request }) => {
+        heartbeatBody = await request.json();
+        return HttpResponse.json({
+          serverTs: new Date().toISOString(),
+          status: 'in_progress',
+        });
+      }),
+    );
+
+    renderPracticeSession();
+    await screen.findByTestId('practice-session-view');
+
+    const heartbeatRegistration = setIntervalSpy.mock.calls.find((call) => call[1] === 30_000);
+    expect(heartbeatRegistration).toBeDefined();
+    const intervalCallback = heartbeatRegistration?.[0];
+    expect(typeof intervalCallback).toBe('function');
+
+    await act(async () => {
+      await (intervalCallback as () => void)();
+      await Promise.resolve();
+    });
+
+    expect(heartbeatBody).toEqual({});
+  });
+
+  it('discards the runtime session and returns to practice center', async () => {
+    renderPracticeSession();
+    await screen.findByTestId('practice-session-view');
+    await userEvent.click(screen.getByRole('button', { name: 'Discard' }));
+    const dialog = await screen.findByRole('dialog');
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Discard' }));
+    expect(await screen.findByTestId('practice-route-hit')).toBeInTheDocument();
+  });
+
   it('submits and navigates to result route', async () => {
     renderPracticeSession();
     await screen.findByTestId('practice-session-view');
-    await userEvent.click(screen.getByRole('button', { name: '提交' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
     expect(await screen.findByTestId('result-route-hit')).toBeInTheDocument();
   });
 });
