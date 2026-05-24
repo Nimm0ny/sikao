@@ -10,6 +10,7 @@
 import { afterAll, afterEach, beforeAll } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 import { server } from './mocks/server';
+import { resetPracticeMocks } from './mocks/handlers/practice';
 
 // MSW lifecycle:
 //   - beforeAll: start with current handler registry (fresh per file).
@@ -20,7 +21,10 @@ import { server } from './mocks/server';
 //     an endpoint no handler registered. Per-Tab handlers fill the registry
 //     in their feature milestones.
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-afterEach(() => server.resetHandlers());
+afterEach(() => {
+  server.resetHandlers();
+  resetPracticeMocks();
+});
 afterAll(() => server.close());
 
 // jsdom does not implement scrollIntoView / scrollTo. Component tests that

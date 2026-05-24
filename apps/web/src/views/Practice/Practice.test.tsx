@@ -1,18 +1,40 @@
 import { describe, expect, it } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
+import { createMemoryRouter, RouterProvider, useLocation } from 'react-router-dom';
 import { Practice } from './Practice';
-import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 import { server } from '../../mocks/server';
 
-function renderPractice() {
-  return renderWithProviders(<Practice />, {
-    initialEntries: ['/practice'],
-  });
+function AiGeneratingRouteProbe() {
+  const location = useLocation();
+  return <div data-testid="ai-generating-route-hit">{location.search}</div>;
 }
 
-describe('Practice view (SIK-27)', () => {
+function renderPractice() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0, staleTime: 0 },
+      mutations: { retry: false },
+    },
+  });
+  const router = createMemoryRouter(
+    [
+      { path: '/practice', element: <Practice /> },
+      { path: '/practice/sessions/:sessionId', element: <div data-testid="practice-session-route-hit" /> },
+      { path: '/practice/ai-questions/generating', element: <AiGeneratingRouteProbe /> },
+    ],
+    { initialEntries: ['/practice'] },
+  );
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
+}
+
+describe('Practice view (SIK-27/28)', () => {
   it('renders data state and switches between 行测 / 申论', async () => {
     renderPractice();
 
@@ -24,7 +46,7 @@ describe('Practice view (SIK-27)', () => {
     expect(await screen.findByText('归纳概括')).toBeInTheDocument();
   });
 
-  it('opens custom dialog and creates a custom session with defaults', async () => {
+  it('opens custom dialog and navigates to the runtime session after create', async () => {
     let patchBody: unknown = null;
     server.use(
       http.patch('/api/v2/profile/practice-preferences', async ({ request }) => {
@@ -93,14 +115,36 @@ describe('Practice view (SIK-27)', () => {
     renderPractice();
 
     await userEvent.click(await screen.findByRole('button', { name: '自定义刷题' }));
-    expect(await screen.findByText('支持真题 / AI 出题、自定义范围、难度与节奏。')).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: '开始创建' })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: '开始创建' }));
 
-    expect(await screen.findByText('自定义刷题已创建')).toBeInTheDocument();
     await waitFor(() => {
       expect(patchBody).not.toBeNull();
     });
+    expect(await screen.findByTestId('practice-session-route-hit')).toBeInTheDocument();
+  });
+
+  it('navigates to the AI generating route when custom practice uses AI mode', async () => {
+    renderPractice();
+
+    await userEvent.click(await screen.findByRole('button', { name: /自定义刷题/ }));
+    await userEvent.click(screen.getByDisplayValue('ai_generated'));
+    await userEvent.click(screen.getByRole('button', { name: /开始创建/ }));
+
+    const routeProbe = await screen.findByTestId('ai-generating-route-hit');
+    expect(routeProbe).toHaveTextContent('type=essay');
+    expect(routeProbe).toHaveTextContent('practiceMode=full_set');
+    expect(routeProbe).toHaveTextContent('excludeDone=true');
+    expect(routeProbe).toHaveTextContent('onlyWrong=false');
+  });
+
+  it('navigates to the active runtime session from continue-last quick action', async () => {
+    renderPractice();
+
+    await userEvent.click(await screen.findByRole('button', { name: /继续/ }));
+
+    expect(await screen.findByTestId('practice-session-route-hit')).toBeInTheDocument();
   });
 
   it('renders page-level error state when stats request fails', async () => {
