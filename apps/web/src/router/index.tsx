@@ -21,6 +21,7 @@ import { RootLayout } from '../layouts/RootLayout';
 import { Home } from '../views/Home';
 import { Practice } from '../views/Practice';
 import { Note } from '../views/Note';
+import { Me } from '../views/Me';
 import { BootCard } from './BootCard';
 
 export const router = createBrowserRouter([
@@ -33,7 +34,7 @@ export const router = createBrowserRouter([
       { path: 'review', element: <BootCard /> },
       { path: 'note', element: <Note /> },
       { path: 'question-hub', element: <BootCard /> },
-      { path: 'me', element: <BootCard /> },
+      { path: 'me', element: <Me /> },
     ],
   },
   {

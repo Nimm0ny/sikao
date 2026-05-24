@@ -1,0 +1,128 @@
+/*
+ * Me view — V5 D.4.4 desktop page skeleton.
+ * Why: 4-row Workspace grid (header / hero / 2-col MeGrid / danger Panel
+ *      spanning both cols). Danger list bar surface (left 4px err bar +
+ *      err text) is scoped to [data-testid="me-danger-list"] so neutral
+ *      list-cards on the same page stay neutral.
+ */
+
+.root {
+  display: grid;
+  grid-template-rows: auto auto auto 1fr;
+  gap: var(--space-4);
+  width: 100%;
+  min-height: 0;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-4);
+  align-items: center;
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow-rest);
+  padding: var(--card-padding);
+  box-sizing: border-box;
+}
+
+.heroInfo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.heroName {
+  font-size: var(--font-h2);
+  font-weight: var(--font-weight-semibold);
+  margin: 0;
+  color: var(--color-text-primary);
+}
+
+.heroMeta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+}
+
+.heroStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+  border-left: 1px solid var(--color-border-subtle);
+  padding-left: var(--space-4);
+}
+
+.heroStatCell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.heroStatLabel {
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list > li {
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.list > li:last-child {
+  border-bottom: 0;
+}
+
+/* Danger surface: scoped inside [data-testid="me-danger-list"] so普通
+ * list-card remain neutral elsewhere. Spec §D.4.4: 4px err bar on the
+ * leading edge + err text color across the row. */
+.dangerList > li {
+  position: relative;
+}
+
+.dangerList > li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-state-err);
+  border-radius: var(--radius-999);
+}
+
+.dangerList > li > * {
+  padding-left: var(--space-3);
+}
+
+@media (max-width: 1023.98px) {
+  .grid { grid-template-columns: 1fr; }
+  .hero {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto auto;
+  }
+  .heroStats {
+    grid-column: 1 / -1;
+    border-left: 0;
+    padding-left: 0;
+    border-top: 1px solid var(--color-border-subtle);
+    padding-top: var(--space-3);
+  }
+}
