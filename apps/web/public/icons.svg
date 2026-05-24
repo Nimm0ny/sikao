@@ -20,11 +20,24 @@
       <path d="M4 12h16" />
       <path d="M4 17h16" />
   </symbol>
+  <symbol id="check-filled" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.2 14.4l-4.8-4.8 1.6-1.6 3.2 3.2 6.4-6.4 1.6 1.6z" />
+  </symbol>
+  <symbol id="check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
+    <path d="M5 12l5 5 9-11" />
+  </symbol>
   <symbol id="chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
     <path d="M15 6l-6 6 6 6" />
   </symbol>
   <symbol id="chevron-right" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
     <path d="M9 6l6 6-6 6" />
+  </symbol>
+  <symbol id="close-filled" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm4.2 14.6l-1.6 1.6L12 15.6l-2.6 2.6-1.6-1.6L10.4 14 7.8 11.4l1.6-1.6L12 12.4l2.6-2.6 1.6 1.6L13.6 14z" />
+  </symbol>
+  <symbol id="close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
+    <path d="M6 6l12 12" />
+      <path d="M18 6L6 18" />
   </symbol>
   <symbol id="exit" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
     <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
@@ -35,6 +48,14 @@
     <path d="M9 14l-3 3 1 4 4-1 3-3" />
       <path d="M11 12l5-9 5 5-9 5z" />
       <path d="M3 21h6" />
+  </symbol>
+  <symbol id="info-filled" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1 5h2v2h-2zm0 4h2v6h-2z" />
+  </symbol>
+  <symbol id="info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
+    <circle cx="12" cy="12" r="9" />
+      <path d="M12 8v0.01" />
+      <path d="M12 11v6" />
   </symbol>
   <symbol id="notebook" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
     <path d="M5 4h12a2 2 0 0 1 2 2v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1z" />
@@ -93,5 +114,13 @@
       <path d="M9 4v16" />
       <path d="M15 16l4 4 4-4" />
       <path d="M19 20V4" />
+  </symbol>
+  <symbol id="warning-filled" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M12 3L2 21h20zm-1 6h2v6h-2zm0 8h2v2h-2z" />
+  </symbol>
+  <symbol id="warning" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8">
+    <path d="M12 3L2 21h20z" />
+      <path d="M12 10v5" />
+      <path d="M12 18.01V18" />
   </symbol>
 </svg>
