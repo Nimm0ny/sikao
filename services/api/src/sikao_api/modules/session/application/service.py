@@ -14,7 +14,7 @@ from sikao_api.db.schemas_v2 import ActionLinkV2, PracticeAnswerPayloadV2, Pract
 from sikao_api.modules.daily_practice.application.state_sync import sync_daily_completion
 from sikao_api.modules.mock_exam.application.enforcer import assert_mock_exam_started
 from sikao_api.modules.session.application.answer_flag_ops import promote_flagged_answers
-from sikao_api.modules.session.application.mode_dispatcher import resolve_session_selection
+from sikao_api.modules.session.application.mode_dispatcher import SessionSelection, resolve_session_selection
 from sikao_api.modules.session_lifecycle.application.state_machine import evaluate_transition
 from sikao_api.modules.session_lifecycle.domain.types import SessionActor, SessionTrigger, SessionStatus
 from sikao_api.modules.session_lifecycle.domain.types import TransitionAttempt
@@ -186,18 +186,13 @@ class SessionServiceV2:
                 "practice session is not writable",
                 code="SESSION_NOT_WRITABLE",
             )
-        trigger = cast(
-            SessionTrigger,
-            "force_submit" if force_submitted_reason is not None else "user_submit",
-        )
+        trigger: SessionTrigger = "force_submit" if force_submitted_reason is not None else "user_submit"
+        actor: SessionActor = "system" if force_submitted_reason is not None else "user"
         transition = evaluate_transition(
             TransitionAttempt(
                 from_status=cast(SessionStatus, expected_status),
                 trigger=trigger,
-                actor=cast(
-                    SessionActor,
-                    "system" if force_submitted_reason is not None else "user",
-                ),
+                actor=actor,
             )
         )
         if not transition.ok or transition.new_status != "submitted":
@@ -275,7 +270,7 @@ class SessionServiceV2:
         if essay_submission is not None:
             self.session.add(essay_submission)
 
-    def _claim_daily_selection_if_needed(self, *, selection) -> None:
+    def _claim_daily_selection_if_needed(self, *, selection: SessionSelection) -> None:
         if selection.source_mode != "daily":
             return
         daily_id = selection.config_snapshot.get("daily_practice_id")
@@ -534,6 +529,20 @@ class SessionServiceV2:
         if isinstance(raw_keys, Sequence) and not isinstance(raw_keys, (str, bytes, bytearray)):
             return normalize_answer_keys([str(item) for item in raw_keys])
         return []
+
+    def _extract_answer_text(self, response_json: Mapping[str, Any]) -> str | None:
+        candidates = (
+            response_json.get("text"),
+            response_json.get("answerText"),
+            response_json.get("content"),
+        )
+        for candidate in candidates:
+            if not isinstance(candidate, str):
+                continue
+            normalized = candidate.strip()
+            if normalized:
+                return normalized
+        return None
 
     def _extract_correct_answer_keys(self, question: QuestionV2) -> list[str]:
         content_json = question.content_json if isinstance(question.content_json, Mapping) else {}
@@ -807,6 +816,8 @@ class SessionServiceV2:
             prompt=prompt,
             answer_kind=answer_kind,
             status="answered" if self._has_meaningful_answer(answer.response_json) else "pending",
+            selected_answer_keys=self._extract_selected_answer_keys(answer.response_json),
+            answer_text=self._extract_answer_text(answer.response_json),
             flagged=answer.flagged,
             viewed_solution=answer.viewed_solution,
             has_persistent_flag=bool(

@@ -238,6 +238,8 @@ class PracticeSessionItemV2(CamelModel):
     prompt: str
     answer_kind: str
     status: str
+    selected_answer_keys: list[str] = Field(default_factory=list)
+    answer_text: str | None = None
     flagged: bool = False
     viewed_solution: bool = False
     has_user_notes: bool = False
@@ -510,6 +512,65 @@ class CauseTagItemV2(CamelModel):
 class CauseTagListResponseV2(CamelModel):
     items: list[CauseTagItemV2]
     total: int
+
+
+class ReviewInsightsDayPointV2(CamelModel):
+    date: date
+    new_incorrect: int
+    graduated: int
+    net_accumulation: int
+
+
+class ReviewInsightsTrendsResponseV2(CamelModel):
+    days: list[ReviewInsightsDayPointV2] = Field(default_factory=list)
+
+
+class ReviewCauseFrequencyV2(CamelModel):
+    slug: str
+    name: str
+    count: int
+    severity_distribution: dict[str, int] = Field(default_factory=dict)
+
+
+class ReviewInsightsCausesResponseV2(CamelModel):
+    causes: list[ReviewCauseFrequencyV2] = Field(default_factory=list)
+
+
+class ReviewWeekAccuracyPointV2(CamelModel):
+    week: str
+    total_attempts: int
+    correct_count: int
+    accuracy_pct: float
+
+
+class ReviewInsightsRedoAccuracyResponseV2(CamelModel):
+    weeks: list[ReviewWeekAccuracyPointV2] = Field(default_factory=list)
+
+
+class ReviewWeeklyProgressHighlightV2(CamelModel):
+    question_id: int | None = None
+    title: str
+    summary: str
+    from_confidence: str | None = None
+    to_confidence: str | None = None
+
+
+class ReviewWeeklyConcernHighlightV2(CamelModel):
+    slug: str | None = None
+    label: str
+    summary: str
+
+
+class ReviewWeeklySummaryResponseV2(CamelModel):
+    week: str
+    items_reviewed: int
+    redo_accuracy_pct: float
+    new_notes_count: int
+    new_graduated_count: int
+    generated_note_id: int | None = None
+    biggest_progress: ReviewWeeklyProgressHighlightV2 | None = None
+    biggest_concern: ReviewWeeklyConcernHighlightV2 | None = None
+    next_week_focus: str | None = None
 
 
 class NoteItemV2(CamelModel):

@@ -87,6 +87,96 @@ def test_postgres_session_answer_ops_closed_book_and_submit_promotion(tmp_path) 
 
 
 @pytest.mark.skipif(not os.environ.get("TEST_POSTGRESQL_URL"), reason="TEST_POSTGRESQL_URL is not set")
+def test_postgres_session_detail_returns_normalized_answer_snapshot(tmp_path) -> None:
+    with build_postgres_client(tmp_path) as client:
+        register_user(client, email="snapshot@example.com", display_name="Snapshot User")
+        seed_paper(
+            client,
+            paper_code="XC-PG-SNAPSHOT",
+            title="PG Snapshot Choice",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "Choice question",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "logic_fill",
+                    "options": ["A", "B"],
+                },
+            ],
+        )
+        seed_paper(
+            client,
+            paper_code="ES-PG-SNAPSHOT",
+            title="PG Snapshot Essay",
+            subject_kind="essay",
+            questions=[
+                {
+                    "prompt": "Essay question",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "essay",
+                    "category_l2": "argumentation",
+                    "answer_kind": "essay",
+                },
+            ],
+        )
+
+        choice_session = client.post(
+            "/api/v2/practice/sessions",
+            json={"track": "xingce", "entryKind": "paper", "paperCode": "XC-PG-SNAPSHOT", "practiceMode": "full_set"},
+        )
+        assert choice_session.status_code == 200, choice_session.text
+        choice_payload = choice_session.json()
+        choice_session_id = choice_payload["id"]
+        choice_question_key = str(choice_payload["items"][0]["questionKey"])
+
+        choice_save = client.post(
+            f"/api/v2/practice/sessions/{choice_session_id}/answers",
+            json={"answers": [{"questionKey": choice_question_key, "answer": {"selectedAnswerKeys": ["B"]}}]},
+        )
+        assert choice_save.status_code == 200, choice_save.text
+
+        choice_detail = client.get(f"/api/v2/practice/sessions/{choice_session_id}")
+        assert choice_detail.status_code == 200, choice_detail.text
+        choice_item = choice_detail.json()["items"][0]
+        assert choice_item["selectedAnswerKeys"] == ["B"]
+        assert choice_item["answerText"] is None
+        assert choice_item["status"] == "answered"
+
+        essay_session = client.post(
+            "/api/v2/practice/sessions",
+            json={"track": "essay", "entryKind": "paper", "paperCode": "ES-PG-SNAPSHOT", "practiceMode": "full_set"},
+        )
+        assert essay_session.status_code == 200, essay_session.text
+        essay_payload = essay_session.json()
+        essay_session_id = essay_payload["id"]
+        essay_question_key = str(essay_payload["items"][0]["questionKey"])
+
+        essay_save = client.post(
+            f"/api/v2/practice/sessions/{essay_session_id}/answers",
+            json={"answers": [{"questionKey": essay_question_key, "answer": {"text": "Draft essay body"}}]},
+        )
+        assert essay_save.status_code == 200, essay_save.text
+
+        essay_content_save = client.post(
+            f"/api/v2/practice/sessions/{essay_session_id}/answers",
+            json={"answers": [{"questionKey": essay_question_key, "answer": {"content": "Draft essay from content"}}]},
+        )
+        assert essay_content_save.status_code == 200, essay_content_save.text
+
+        essay_detail = client.get(f"/api/v2/practice/sessions/{essay_session_id}")
+        assert essay_detail.status_code == 200, essay_detail.text
+        essay_item = essay_detail.json()["items"][0]
+        assert essay_item["selectedAnswerKeys"] == []
+        assert essay_item["answerText"] == "Draft essay from content"
+        assert essay_item["status"] == "answered"
+
+
+@pytest.mark.skipif(not os.environ.get("TEST_POSTGRESQL_URL"), reason="TEST_POSTGRESQL_URL is not set")
 def test_postgres_answer_flag_rejects_stale_terminal_transition(tmp_path) -> None:
     with build_postgres_client(tmp_path) as client:
         user_id = register_user(client, email="race@example.com", display_name="Race User")
