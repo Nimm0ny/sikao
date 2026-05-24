@@ -358,6 +358,29 @@ class ReviewItemCreateV2(CamelModel):
     title: str | None = None
 
 
+class ReviewAttemptSubmitV2(CamelModel):
+    is_correct: bool
+    user_answer: str = Field(min_length=1, max_length=4096)
+    confidence: Literal["guess", "unsure", "likely", "certain"] | None = None
+    recall_text: str | None = Field(default=None, max_length=4096)
+
+    @field_validator("user_answer")
+    @classmethod
+    def _validate_user_answer(cls, value: str) -> str:
+        stripped = value.strip()
+        if not stripped:
+            raise ValueError("user_answer cannot be blank")
+        return stripped
+
+    @field_validator("recall_text")
+    @classmethod
+    def _normalize_recall_text(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        return stripped or None
+
+
 class ReviewItemBatchActionV2(CamelModel):
     item_ids: list[int] = Field(default_factory=list)
     action: Literal["archive", "restore", "graduate"]
