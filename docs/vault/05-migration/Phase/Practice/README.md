@@ -26,8 +26,8 @@
 | [00-Decisions](./00-Decisions.md) | 任何 PR 开工前；决策冲突时以本文档为准（路径冲突时以 A0 为准） |
 | [01-Boundary-Rules](./01-Boundary-Rules.md) | 写题源 / 答题节奏 / 异步批改 / 题级笔记任何业务逻辑前 |
 | [02-Data-Model](./02-Data-Model.md) | WU-B10 / B11 / B12 / B13 类型生成 |
-| [03-Backend-WU](./03-Backend-WU.md) | 后端 WU-B10~B24 总盘 |
-| [04-Frontend-WU](./04-Frontend-WU.md) | 前端 WU-F9~F18 总盘 |
+| [03-Backend-WU](./03-Backend-WU.md) | 后端 WU-B10~B30 总盘 |
+| [04-Frontend-WU](./04-Frontend-WU.md) | 前端 WU-F9~F22 总盘 |
 | [05-LLM-Module](./05-LLM-Module.md) | WU-B22（在 Phase-Home `modules/llm/` 上扩展 3 个能力） |
 | [06-LLM-Prompts](./06-LLM-Prompts.md) | WU-B22 + 任何调 prompt 的代码 |
 | [07-AI-Question-Engine](./07-AI-Question-Engine.md) | WU-B18 / WU-B22.1 / WU-F14 / WU-F15 |
@@ -221,6 +221,26 @@ WU 详细：
 - 后端：[03-Backend-WU](./03-Backend-WU.md)
 - 前端：[04-Frontend-WU](./04-Frontend-WU.md)
 - 后端依赖详细矩阵：[03-Backend-WU §26](./03-Backend-WU.md#26-与-phase-home-wu-的依赖图详)
+
+---
+
+## 6.3 Multica Ledger Map
+
+当前仓内 SSOT 与 Multica 子 issue 映射如下，后续 Practice 执行按此顺序推进：
+
+| Multica | Tranche | Scope |
+|---|---|---|
+| `SIK-20` | `P0 / M0` | docs-only intake + gate / dependency / child map 锁定 |
+| `SIK-21` | `P1 / M1-M3` | `B10 / B11 / B12 / B13 / B21 / B29` |
+| `SIK-22` | `P2 / M4` | `B14 / B16 / B17` |
+| `SIK-23` | `P3 / M5` | `B15 / B25 / B26 / B27` |
+| `SIK-24` | `P4 / M6-M7` | `B22 / B18 / B19` |
+| `SIK-25` | `P5 / M8-M10` | `B20 / B23 / B24 / B28 / B30` |
+| `SIK-26` | `P6 / M11-M12` | `F9 / F10` |
+| `SIK-27` | `P7 / M13-M15` | `F11 / F12 / F13 / F14 / F22` |
+| `SIK-28` | `P8 / M16-M19` | `F15 / F16 / F17 / F18 / F19 / F20 / F21` |
+
+`SIK-20` 的作用不是新增实现，而是把这份映射、Home 依赖门槛、以及 `B25-B30 / F19-F22` 的 latest-doc 口径固定到 repo SSOT，防止后续执行回退到旧的 `B10-B24 / F9-F18` 拆法。
 
 ---
 
