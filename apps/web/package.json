@@ -19,7 +19,8 @@
     "lint:v4-residual": "node scripts/lint-v4-token-residual.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:coverage": "vitest run --coverage"
+    "test:coverage": "vitest run --coverage",
+    "test:a11y": "vitest run src/views/__tests__/views.a11y.test.tsx"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
