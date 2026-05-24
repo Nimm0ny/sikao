@@ -95,6 +95,7 @@ describe('usePracticeStore — scratchClips', () => {
       items: [
         {
           answerChangeCount: 0,
+          answerText: null,
           answerKind: 'single_choice',
           flagged: true,
           hasPersistentFlag: false,
@@ -104,6 +105,7 @@ describe('usePracticeStore — scratchClips', () => {
           isOvertime: false,
           prompt: 'Q1',
           questionKey: '101',
+          selectedAnswerKeys: ['A'],
           status: 'answered',
           timeSpentMs: 0,
           viewedSolution: false,
@@ -111,6 +113,7 @@ describe('usePracticeStore — scratchClips', () => {
         },
         {
           answerChangeCount: 0,
+          answerText: null,
           answerKind: 'single_choice',
           flagged: false,
           hasPersistentFlag: true,
@@ -120,6 +123,7 @@ describe('usePracticeStore — scratchClips', () => {
           isOvertime: false,
           prompt: 'Q2',
           questionKey: '102',
+          selectedAnswerKeys: ['B'],
           status: 'answered',
           timeSpentMs: 0,
           viewedSolution: true,
