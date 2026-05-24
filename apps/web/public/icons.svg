@@ -20,6 +20,40 @@
       <path d="M4 12h16" />
       <path d="M4 17h16" />
   </symbol>
+  <symbol id="cat-panduan" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7">
+    <path d="M12 3v18" />
+      <path d="M12 5l-7 4 7 4" />
+      <path d="M12 11l7 4-7 4" />
+  </symbol>
+  <symbol id="cat-shenlun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7">
+    <path d="M5 4h11l3 3v13a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z" />
+      <path d="M16 4v3h3" />
+      <path d="M8 11h8" />
+      <path d="M8 14h8" />
+      <path d="M8 17h6" />
+  </symbol>
+  <symbol id="cat-shuliang" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7">
+    <path d="M5 7h6" />
+      <path d="M8 4v6" />
+      <path d="M14 5l4 4" />
+      <path d="M18 5l-4 4" />
+      <path d="M5 16h6" />
+      <path d="M5 19h6" />
+      <path d="M14 14h4" />
+      <path d="M16 14v4" />
+      <path d="M14 20h4" />
+  </symbol>
+  <symbol id="cat-yanyu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7">
+    <path d="M5 5h14a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-4 4v-4H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1z" />
+      <path d="M8 9h8" />
+      <path d="M8 12h5" />
+  </symbol>
+  <symbol id="cat-ziliao" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7">
+    <rect x="4" y="4" width="16" height="16" rx="1.5" />
+      <path d="M8 16V11" />
+      <path d="M12 16V8" />
+      <path d="M16 16v-3" />
+  </symbol>
   <symbol id="check-filled" viewBox="0 0 24 24" fill="currentColor">
     <path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm-1.2 14.4l-4.8-4.8 1.6-1.6 3.2 3.2 6.4-6.4 1.6 1.6z" />
   </symbol>
