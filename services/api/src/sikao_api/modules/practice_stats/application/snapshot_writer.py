@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from sqlalchemy import case, delete, func, select
 from sqlalchemy.orm import Session
 
@@ -12,6 +14,12 @@ from sikao_api.modules.practice_stats.interface.schemas import PracticeStatsResp
 
 def recompute_user_stats(session: Session, *, user_id: int) -> list[PracticeStatsSnapshotV2]:
     rows: list[PracticeStatsSnapshotV2] = []
+    existing_bucket_keys = {
+        (row.type, row.scope, row.category_key)
+        for row in session.scalars(
+            select(PracticeStatsSnapshotV2).where(PracticeStatsSnapshotV2.user_id == user_id)
+        )
+    }
     session.execute(delete(PracticeStatsSnapshotV2).where(PracticeStatsSnapshotV2.user_id == user_id))
     for type_name in ("xingce", "essay"):
         response = build_stats_response(type_name=type_name, facts=load_practice_facts(session, user_id=user_id, type_name=type_name))
@@ -19,6 +27,7 @@ def recompute_user_stats(session: Session, *, user_id: int) -> list[PracticeStat
     for row in rows:
         session.add(row)
     session.flush()
+    _refresh_snapshot_percentiles(session, rows=rows, existing_bucket_keys=existing_bucket_keys)
     return rows
 
 
@@ -58,6 +67,54 @@ def _snapshot_rows(*, user_id: int, response: PracticeStatsResponseV2) -> list[P
         }.items()
         for cell in cells
     ]
+
+
+def _refresh_snapshot_percentiles(
+    session: Session,
+    *,
+    rows: list[PracticeStatsSnapshotV2],
+    existing_bucket_keys: set[tuple[str, str, str | None]],
+) -> None:
+    bucket_keys = existing_bucket_keys | {
+        (row.type, row.scope, row.category_key)
+        for row in rows
+    }
+    refresh_percentile_buckets(session, bucket_keys=bucket_keys)
+
+
+def refresh_percentile_buckets(
+    session: Session,
+    *,
+    bucket_keys: set[tuple[str, str, str | None]],
+) -> None:
+    updated_at = datetime.now(UTC).replace(tzinfo=None)
+    for type_name, scope, category_key in bucket_keys:
+        peers = list(
+            session.scalars(
+                select(PracticeStatsSnapshotV2).where(
+                    PracticeStatsSnapshotV2.type == type_name,
+                    PracticeStatsSnapshotV2.scope == scope,
+                    PracticeStatsSnapshotV2.category_key == category_key,
+                )
+            )
+        )
+        ranked_peers = [row for row in peers if row.total_questions > 0]
+        if not ranked_peers:
+            for row in peers:
+                row.percentile_rank = None
+                row.percentile_updated_at = None
+                session.add(row)
+            continue
+        accuracies = [row.accuracy for row in ranked_peers]
+        for row in peers:
+            if row.total_questions <= 0:
+                row.percentile_rank = None
+                row.percentile_updated_at = None
+            else:
+                rank = sum(1 for value in accuracies if value <= row.accuracy) / len(accuracies)
+                row.percentile_rank = round(rank, 4)
+                row.percentile_updated_at = updated_at
+            session.add(row)
 
 
 def _refresh_question_quality_metrics(session: Session, *, session_id: int) -> None:

@@ -23,7 +23,11 @@ def build_snapshot_stats(session: Session, *, user: UserV2, type_name: str) -> P
             .order_by(PracticeStatsSnapshotV2.scope.asc(), PracticeStatsSnapshotV2.category_key.asc())
         )
     )
-    if not rows:
+    needs_recompute = not rows or any(
+        row.total_questions > 0 and row.percentile_rank is None
+        for row in rows
+    )
+    if needs_recompute:
         recompute_user_stats(session, user_id=user.id)
         rows = list(
             session.scalars(
