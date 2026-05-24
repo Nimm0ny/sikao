@@ -82,6 +82,14 @@ def test_srs_unsure_blocks_graduation() -> None:
     assert item.metadata_json["unsure_blocked_graduation"] is True
 
 
+def test_srs_null_confidence_correct_increments_skip_count_and_defaults_likely() -> None:
+    item = _item(status="in_progress", streak=2)
+    result = advance_on_correct(item, confidence=None, used_recall=False, user_tz="Asia/Shanghai")
+    assert result.new_streak == 3
+    assert item.metadata_json["confidence_skipped_count"] == 1
+    assert item.metadata_json["last_confidence"] == "likely"
+
+
 def test_srs_hard_item_caps_positive_multiplier() -> None:
     item = _item(status="in_progress", streak=1, metadata={"is_hard": True})
     result = advance_on_correct(item, confidence="certain", used_recall=True, user_tz="Asia/Shanghai")
@@ -104,6 +112,14 @@ def test_srs_second_mismatch_marks_hard() -> None:
     assert result.is_hard_now is True
     assert item.metadata_json["is_hard"] is True
     assert {event.outcome for event in result.attempts} >= {"hard_marked", "confidence_mismatch", "incorrect"}
+
+
+def test_srs_null_confidence_incorrect_increments_skip_count() -> None:
+    item = _item(status="in_progress", streak=2)
+    result = regress_on_incorrect(item, confidence=None, user_tz="Asia/Shanghai")
+    assert result.new_streak == 1
+    assert item.metadata_json["confidence_skipped_count"] == 1
+    assert item.metadata_json["last_confidence"] == "likely"
 
 
 def test_srs_probation_correct_finishes_graduated() -> None:
