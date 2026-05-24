@@ -27,18 +27,17 @@ import styles from './RootLayout.module.css';
  *      design + §D.4 SaaS pattern, /me is reached through the RailMe avatar
  *      slot (R2/Q4 decision: avatar replaces 5th nav row).
  *
- *      The layout also wires the mobile chrome (MobileAppShell + MobileTopBar
- *      + BottomTabBar) for <bp-md> breakpoints — AppShell handles the
- *      desktop/mobile DOM split internally, but the tab bar items list
- *      lives here (5 tabs, design.md §D.5.2: 首页 / 练习 / 复盘 / 笔记 / 我的).
+ *      The layout also wires the mobile chrome (MobileTopBar + BottomTabBar)
+ *      for <bp-md> breakpoints — AppShell handles the desktop/mobile DOM
+ *      split internally via matchMedia, so we hand both slot trees in and
+ *      AppShell decides which to render. The mobile tab bar items list
+ *      lives here (5 tabs, design.md §D.5.2: 首页 / 练习 / 复盘 / 笔记 / 我的)
+ *      because mobile exposes 我的 as the 5th bottom-tab whereas desktop
+ *      hides it under RailMe.
  *
  *      Active tab is derived from the current URL pathname so deep links
  *      land correctly. No router/state plumbing beyond this.
  */
-
-// lint-allow-ui-copy: V5-M3.5 Phase 4 page skeleton — Rail nav labels are
-// design tokens fixed by spec §D.4, not user-editable strings. ui-copy SSOT
-// migration tracked under future Phase 6+.
 
 const HOME_PATH = '/';
 const PRACTICE_PATH = '/practice';

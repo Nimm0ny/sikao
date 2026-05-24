@@ -48,8 +48,7 @@ describe('Note view (D.4.3)', () => {
   it('cards expose the data-tilt attribute for the -2..+2 deg simulation', () => {
     renderNote();
     const cards = screen
-      .getAllByRole('listitem')
-      .filter((el) => el.getAttribute('data-testid')?.startsWith('note-card-'));
+      .getAllByTestId(/^note-card-/);
     for (const card of cards) {
       const tilt = card.dataset.tilt;
       expect(tilt).toBeDefined();
@@ -59,13 +58,9 @@ describe('Note view (D.4.3)', () => {
 
   it('source chip filtering shrinks visible cards', () => {
     renderNote();
-    const before = screen.getAllByRole('listitem').filter((el) =>
-      el.getAttribute('data-testid')?.startsWith('note-card-'),
-    ).length;
+    const before = screen.getAllByTestId(/^note-card-/).length;
     fireEvent.click(within(screen.getByTestId('note-filter-bar')).getByRole('button', { name: '错题反思' }));
-    const after = screen.getAllByRole('listitem').filter((el) =>
-      el.getAttribute('data-testid')?.startsWith('note-card-'),
-    ).length;
+    const after = screen.getAllByTestId(/^note-card-/).length;
     expect(after).toBeLessThan(before);
   });
 });

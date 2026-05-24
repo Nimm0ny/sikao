@@ -91,6 +91,17 @@
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: var(--space-4);
   align-content: start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stickyCell {
+  /* display: contents collapses the <li> box so the inner <button>
+   * becomes the direct grid item; this keeps the spec-pinned sticky
+   * card layout while preserving proper <ul><li><button> a11y nesting
+   * (Phase 4 review #5: button MUST NOT carry role="listitem"). */
+  display: contents;
 }
 
 .sticky {

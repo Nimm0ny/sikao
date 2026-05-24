@@ -141,29 +141,29 @@ export function Note() {
         <span>卡片视图</span>
       </div>
 
-      <div className={styles.notesGrid} data-testid="note-grid" role="list">
+      <ul className={styles.notesGrid} data-testid="note-grid" role="list">
         {visibleNotes.map((note) => (
-          <button
-            key={note.id}
-            type="button"
-            role="listitem"
-            className={styles.sticky}
-            data-tilt={String(note.tilt)}
-            data-testid={`note-card-${note.id}`}
-            onClick={() => setDrawerNote(note)}
-          >
-            <span className={styles.stickyHeader}>
-              <Badge variant="neutral" size="sm">{labelForSource(note.source)}</Badge>
-              {note.starred ? <StarIcon /> : null}
-            </span>
-            <h3 className={styles.stickyTitle}>{note.title}</h3>
-            <p className={styles.stickySummary}>{note.summary}</p>
-            <span className={styles.stickyMeta}>
-              <span>{note.time}</span>
-            </span>
-          </button>
+          <li key={note.id} className={styles.stickyCell}>
+            <button
+              type="button"
+              className={styles.sticky}
+              data-tilt={String(note.tilt)}
+              data-testid={`note-card-${note.id}`}
+              onClick={() => setDrawerNote(note)}
+            >
+              <span className={styles.stickyHeader}>
+                <Badge variant="neutral" size="sm">{labelForSource(note.source)}</Badge>
+                {note.starred ? <StarIcon /> : null}
+              </span>
+              <h3 className={styles.stickyTitle}>{note.title}</h3>
+              <p className={styles.stickySummary}>{note.summary}</p>
+              <span className={styles.stickyMeta}>
+                <span>{note.time}</span>
+              </span>
+            </button>
+          </li>
         ))}
-      </div>
+      </ul>
 
       <Drawer
         open={drawerNote !== null}
