@@ -7166,6 +7166,11 @@
             "title": "Id",
             "type": "integer"
           },
+          "notesJson": {
+            "additionalProperties": true,
+            "title": "Notesjson",
+            "type": "object"
+          },
           "outcome": {
             "title": "Outcome",
             "type": "string"
@@ -7177,6 +7182,78 @@
           "attemptedAt"
         ],
         "title": "ReviewAttemptOutV2",
+        "type": "object"
+      },
+      "ReviewAttemptSubmitV2": {
+        "properties": {
+          "confidence": {
+            "anyOf": [
+              {
+                "enum": [
+                  "guess",
+                  "unsure",
+                  "likely",
+                  "certain"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "isCorrect": {
+            "title": "Iscorrect",
+            "type": "boolean"
+          },
+          "recallText": {
+            "anyOf": [
+              {
+                "maxLength": 4096,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recalltext"
+          },
+          "userAnswer": {
+            "maxLength": 4096,
+            "minLength": 1,
+            "title": "Useranswer",
+            "type": "string"
+          }
+        },
+        "required": [
+          "isCorrect",
+          "userAnswer"
+        ],
+        "title": "ReviewAttemptSubmitV2",
+        "type": "object"
+      },
+      "ReviewBatchActionResultV2": {
+        "properties": {
+          "affectedCount": {
+            "title": "Affectedcount",
+            "type": "integer"
+          },
+          "ok": {
+            "title": "Ok",
+            "type": "boolean"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "ok",
+          "status",
+          "affectedCount"
+        ],
+        "title": "ReviewBatchActionResultV2",
         "type": "object"
       },
       "ReviewDetailResponseV2": {
@@ -7197,6 +7274,21 @@
           },
           "item": {
             "$ref": "#/components/schemas/ReviewItemV2"
+          },
+          "metadata": {
+            "additionalProperties": true,
+            "title": "Metadata",
+            "type": "object"
+          },
+          "srsState": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/SrsStateV2"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "required": [
@@ -7207,11 +7299,75 @@
         "title": "ReviewDetailResponseV2",
         "type": "object"
       },
+      "ReviewItemBatchActionV2": {
+        "properties": {
+          "action": {
+            "enum": [
+              "archive",
+              "restore",
+              "graduate"
+            ],
+            "title": "Action",
+            "type": "string"
+          },
+          "itemIds": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Itemids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "action"
+        ],
+        "title": "ReviewItemBatchActionV2",
+        "type": "object"
+      },
+      "ReviewItemCreateV2": {
+        "properties": {
+          "questionId": {
+            "title": "Questionid",
+            "type": "integer"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          }
+        },
+        "required": [
+          "questionId"
+        ],
+        "title": "ReviewItemCreateV2",
+        "type": "object"
+      },
       "ReviewItemV2": {
         "properties": {
+          "correctStreak": {
+            "default": 0,
+            "title": "Correctstreak",
+            "type": "integer"
+          },
           "createdAt": {
             "title": "Createdat",
             "type": "string"
+          },
+          "hasCauseAnalysis": {
+            "default": false,
+            "title": "Hascauseanalysis",
+            "type": "boolean"
+          },
+          "hasUserNotes": {
+            "default": false,
+            "title": "Hasusernotes",
+            "type": "boolean"
           },
           "href": {
             "title": "Href",
@@ -7225,6 +7381,28 @@
             "title": "Kind",
             "type": "string"
           },
+          "nextReviewAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextreviewat"
+          },
+          "questionId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questionid"
+          },
           "status": {
             "title": "Status",
             "type": "string"
@@ -7232,6 +7410,17 @@
           "title": {
             "title": "Title",
             "type": "string"
+          },
+          "updatedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Updatedat"
           }
         },
         "required": [
@@ -7586,6 +7775,54 @@
           "summary"
         ],
         "title": "SessionTimingReportV2",
+        "type": "object"
+      },
+      "SrsStateV2": {
+        "properties": {
+          "algorithmVersion": {
+            "default": "simple_v1",
+            "title": "Algorithmversion",
+            "type": "string"
+          },
+          "correctStreak": {
+            "default": 0,
+            "title": "Correctstreak",
+            "type": "integer"
+          },
+          "daysOverdue": {
+            "default": 0,
+            "title": "Daysoverdue",
+            "type": "integer"
+          },
+          "intervalDays": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Intervaldays"
+          },
+          "isDueToday": {
+            "default": false,
+            "title": "Isduetoday",
+            "type": "boolean"
+          },
+          "nextReviewAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextreviewat"
+          }
+        },
+        "title": "SrsStateV2",
         "type": "object"
       },
       "SubjectAccuracyV2": {
@@ -15154,6 +15391,96 @@
     "/api/v2/review/items": {
       "get": {
         "operationId": "list_review_items_api_v2_review_items_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source_kind",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Kind"
+            }
+          },
+          {
+            "in": "query",
+            "name": "question_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Question Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page_size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "title": "Page Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "order_by",
+            "required": false,
+            "schema": {
+              "default": "created_at",
+              "title": "Order By",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "order_dir",
+            "required": false,
+            "schema": {
+              "default": "desc",
+              "title": "Order Dir",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -15164,6 +15491,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -15172,6 +15509,96 @@
           }
         ],
         "summary": "List Review Items",
+        "tags": [
+          "review-v2"
+        ]
+      },
+      "post": {
+        "operationId": "create_review_item_api_v2_review_items_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewItemCreateV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewItemV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Review Item",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/items/batch": {
+      "post": {
+        "operationId": "batch_action_api_v2_review_items_batch_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewItemBatchActionV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewBatchActionResultV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Batch Action",
         "tags": [
           "review-v2"
         ]
@@ -15224,6 +15651,157 @@
         ]
       }
     },
+    "/api/v2/review/items/{item_id}/archive": {
+      "patch": {
+        "operationId": "archive_item_api_v2_review_items__item_id__archive_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewItemV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Archive Item",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/items/{item_id}/attempt": {
+      "post": {
+        "operationId": "attempt_review_item_api_v2_review_items__item_id__attempt_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ReviewAttemptSubmitV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDetailResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Attempt Review Item",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/items/{item_id}/graduate": {
+      "patch": {
+        "operationId": "graduate_item_api_v2_review_items__item_id__graduate_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewItemV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Graduate Item",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
     "/api/v2/review/items/{item_id}/redo": {
       "post": {
         "operationId": "redo_review_item_api_v2_review_items__item_id__redo_post",
@@ -15266,6 +15844,53 @@
           }
         ],
         "summary": "Redo Review Item",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/items/{item_id}/restore": {
+      "patch": {
+        "operationId": "restore_item_api_v2_review_items__item_id__restore_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewItemV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Restore Item",
         "tags": [
           "review-v2"
         ]
