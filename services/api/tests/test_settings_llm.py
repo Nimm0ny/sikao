@@ -115,12 +115,12 @@ def test_read_apikey_file_default_parses_multiline_key_value(
 ) -> None:
     """支持 lhr 实际写法: 'models: x\\napikey: sk-xxx' 多行 key:value 格式."""
     multiline = tmp_path / "apikey"
-    multiline.write_text("models: deepseek-V4\napikey: sk-30c7456ee25148ec\n")
+    multiline.write_text("models: deepseek-V4\napikey: example_key_for_parser_01234567\n")
     monkeypatch.setattr("sikao_api.core.config._APIKEY_FILE", multiline)
 
     from sikao_api.core.config import _read_apikey_file_default
 
-    assert _read_apikey_file_default() == "sk-30c7456ee25148ec"
+    assert _read_apikey_file_default() == "example_key_for_parser_01234567"
 
 
 def test_read_apikey_file_default_accepts_api_key_alias(

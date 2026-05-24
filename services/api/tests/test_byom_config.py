@@ -32,7 +32,7 @@ def _gen_master_key_hex() -> str:
 def test_encrypt_decrypt_round_trip() -> None:
     """encrypt(plaintext) → decrypt(blob) → 原 plaintext."""
     master = _gen_master_key_hex()
-    plaintext = "sk-30c7456ee25148ec952f5e7fff318f3c"
+    plaintext = "example_long_key_0123456789abcdef0123456789abcd"
     blob = encrypt_api_key(plaintext=plaintext, user_id=42, master_key_hex=master)
     decrypted = decrypt_api_key(blob=blob, user_id=42, master_key_hex=master)
     assert decrypted == plaintext
@@ -102,8 +102,8 @@ def test_decrypt_short_blob_raises() -> None:
 
 def test_mask_api_key_long_keeps_prefix_suffix() -> None:
     """长 key (≥10 chars) 显前 5 + 后 4, 中间 ..."""
-    masked = mask_api_key("sk-30c7456ee25148ec952f5e7fff318f3c")
-    assert masked == "sk-30...8f3c"  # 前 5 chars 'sk-30' + 后 4 chars '8f3c'
+    masked = mask_api_key("example_long_key_0123456789abcdef0123456789abcd")
+    assert masked == "examp...abcd"
 
 
 def test_mask_api_key_short_full_mask() -> None:

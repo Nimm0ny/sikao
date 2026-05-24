@@ -203,7 +203,7 @@ def test_serialize_masked_never_returns_raw_key(session: Session) -> None:
     settings = _make_settings()
     user = _make_user(session)
     service = UserLlmConfigService(session, settings)
-    plaintext = "sk-30c7456ee25148ec952f5e7fff318f3c"
+    plaintext = "example_long_key_0123456789abcdef0123456789abcd"
     with patch("socket.getaddrinfo", return_value=_public_addrinfo()):
         config = service.create(
             user_id=user.id, label="x",
@@ -214,7 +214,7 @@ def test_serialize_masked_never_returns_raw_key(session: Session) -> None:
     assert serialized["api_key_masked"] != plaintext
     assert plaintext not in str(serialized)
     # mask 格式 'sk-30...8f3c' (前 5 + 后 4 chars)
-    assert serialized["api_key_masked"] == "sk-30...8f3c"
+    assert serialized["api_key_masked"] == "examp...abcd"
 
 
 # ─── factory build_llm_provider user-aware ───────────────────────────────
@@ -337,7 +337,7 @@ def test_endpoint_create_then_list_config(client: TestClient) -> None:
             json={
                 "label": "我的 DeepSeek",
                 "baseUrl": "https://api.deepseek.com/v1",
-                "apiKey": "sk-30c7456ee25148ec952f5e7fff318f3c",
+                "apiKey": "example_long_key_0123456789abcdef0123456789abcd",
                 "model": "deepseek-v4-flash",
             },
         )

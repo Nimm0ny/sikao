@@ -205,7 +205,7 @@ def test_serialize_masked_never_returns_raw_key(session: Session) -> None:
     settings = _make_settings()
     user = _make_user(session)
     service = UserLlmConfigService(session, settings)
-    plaintext = "sk-30c7456ee25148ec952f5e7fff318f3c"
+    plaintext = "example_long_key_0123456789abcdef0123456789abcd"
     with patch("socket.getaddrinfo", return_value=_public_addrinfo()):
         config = service.create(
             user_id=user.id,
@@ -217,7 +217,7 @@ def test_serialize_masked_never_returns_raw_key(session: Session) -> None:
     [serialized] = service.serialize_masked([config])
     assert serialized["api_key_masked"] != plaintext
     assert plaintext not in str(serialized)
-    assert serialized["api_key_masked"] == "sk-30...8f3c"
+    assert serialized["api_key_masked"] == "examp...abcd"
 
 
 def test_build_llm_provider_user_default_overrides_system(
