@@ -9,7 +9,7 @@ import { QuestionStem } from '../components/business/QuestionStem';
 import { TimerDisplay } from '../components/business/TimerDisplay';
 import { Badge, EmptyState, Skeleton } from '../components/atom';
 import { Button } from '../components/form/Button';
-import { Banner } from '../components/overlay';
+import { Banner, Modal } from '../components/overlay';
 import { DiscardSessionDialog } from '../components/practice/lifecycle/DiscardSessionDialog';
 import { PauseResumeButton } from '../components/practice/lifecycle/PauseResumeButton';
 import { ExamLayout } from '../layouts/ExamLayout';
@@ -112,7 +112,7 @@ export function PracticeSession() {
   });
 
   useEffect(() => {
-    if (sessionQuery.data?.status !== 'draft') {
+    if (sessionQuery.data?.status !== 'draft' || sessionQuery.data?.examMode) {
       startedSessionIdRef.current = null;
       return;
     }
@@ -121,7 +121,7 @@ export function PracticeSession() {
     }
     startedSessionIdRef.current = sessionId;
     void startSessionRef.current.mutateAsync(sessionId);
-  }, [sessionId, sessionQuery.data?.status]);
+  }, [sessionId, sessionQuery.data?.examMode, sessionQuery.data?.status]);
 
   useEffect(() => {
     if (!sessionQuery.data) {
@@ -171,6 +171,7 @@ export function PracticeSession() {
 
   const session = sessionQuery.data;
   const currentStatus = runtimeStatus ?? session.status;
+  const showMockStartConfirm = session.examMode && currentStatus === 'draft';
   const currentItem = session.items[currentIndex];
   const currentQuestionQuery = questionQueries[currentIndex];
   const currentQuestion = currentQuestionQuery?.data;
@@ -203,36 +204,38 @@ export function PracticeSession() {
         </div>
       </div>
       <div className={styles.topbarActions}>
-        {countdownQuery.data ? (
+        {countdownQuery.data && currentStatus !== 'draft' ? (
           <TimerDisplay
             remainingMs={countdownQuery.data.remainingSeconds * 1000}
             paused={currentStatus === 'paused'}
           />
         ) : null}
-        <PauseResumeButton
-          status={currentStatus}
-          busy={lifecycleBusy}
-          onPause={() => {
-            void (async () => {
-              setActionError(null);
-              try {
-                await pauseSession.mutateAsync(session.id);
-              } catch (error) {
-                setActionError(String(error));
-              }
-            })();
-          }}
-          onResume={() => {
-            void (async () => {
-              setActionError(null);
-              try {
-                await resumeSession.mutateAsync(session.id);
-              } catch (error) {
-                setActionError(String(error));
-              }
-            })();
-          }}
-        />
+        {!session.examMode ? (
+          <PauseResumeButton
+            status={currentStatus}
+            busy={lifecycleBusy}
+            onPause={() => {
+              void (async () => {
+                setActionError(null);
+                try {
+                  await pauseSession.mutateAsync(session.id);
+                } catch (error) {
+                  setActionError(String(error));
+                }
+              })();
+            }}
+            onResume={() => {
+              void (async () => {
+                setActionError(null);
+                try {
+                  await resumeSession.mutateAsync(session.id);
+                } catch (error) {
+                  setActionError(String(error));
+                }
+              })();
+            }}
+          />
+        ) : null}
         <Button variant="ghost" onClick={() => setDiscardOpen(true)} disabled={lifecycleBusy}>
           Discard
         </Button>
@@ -347,6 +350,29 @@ export function PracticeSession() {
         />
       ) : null}
       <ExamLayout topbar={topbar} leftPane={leftPane} rightPane={rightPane} />
+      <Modal
+        open={showMockStartConfirm}
+        onClose={() => navigate('/practice/mock-exam/start')}
+        title="Start mock exam?"
+        description="Once started, the mock exam runs with a strict countdown and force-submit behavior."
+        primaryAction={{
+          label: startSession.isPending ? 'Starting...' : 'Start mock exam',
+          onClick: () => {
+            void (async () => {
+              setActionError(null);
+              try {
+                await startSession.mutateAsync(session.id);
+              } catch (error) {
+                setActionError(String(error));
+              }
+            })();
+          },
+        }}
+        secondaryAction={{
+          label: 'Cancel',
+          onClick: () => navigate('/practice/mock-exam/start'),
+        }}
+      />
       <DiscardSessionDialog
         open={discardOpen}
         loading={discardSession.isPending}
