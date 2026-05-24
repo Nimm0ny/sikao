@@ -16,7 +16,6 @@ describe('Me view (D.4.4)', () => {
     renderMe();
     expect(screen.getByTestId('me-hero')).toBeInTheDocument();
     expect(screen.getByText('lhr')).toBeInTheDocument();
-    // 3 numeric stat values render via Numeric atom with tabular-nums.
     const cells = screen.getByTestId('me-hero').querySelectorAll('span > span');
     expect(cells.length).toBeGreaterThan(0);
   });
@@ -27,18 +26,21 @@ describe('Me view (D.4.4)', () => {
     expect(screen.getByText('账号')).toBeInTheDocument();
   });
 
-  it('renders 危险操作 Panel with variant=danger and a danger list', () => {
+  it('renders 危险操作 panel with variant=danger and a danger list', () => {
     renderMe();
     const dangerPanel = screen.getByText('危险操作').closest('[data-testid="panel"]');
     expect(dangerPanel?.getAttribute('data-variant')).toBe('danger');
     expect(screen.getByTestId('me-danger-list')).toBeInTheDocument();
   });
 
-  it('clicking 注销 in the danger list opens a destructive ConfirmDialog', () => {
+  it('clicking 注销账号 opens the destructive confirm dialog', () => {
     renderMe();
     fireEvent.click(screen.getByRole('button', { name: /注销账号/ }));
-    // ConfirmDialog renders via the V5 overlay portal; the dialog title
-    // appears in the document as confirmation it's open.
     expect(screen.getByText('确认操作')).toBeInTheDocument();
+  });
+
+  it('shows the practice preferences entry in 学习设置', () => {
+    renderMe();
+    expect(screen.getByRole('button', { name: /练习偏好/ })).toBeInTheDocument();
   });
 });

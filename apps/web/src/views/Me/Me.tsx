@@ -3,28 +3,12 @@
 // Phase 6+. Real strings will land via @/lib/ui-copy when business Phase
 // integrations replace the placeholders.
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Avatar, Badge, Numeric } from '../../components/atom';
 import { ListItem } from '../../components/list';
 import { ConfirmDialog } from '../../components/overlay';
 import { Panel, PageHeader } from '../../components/layout';
 import styles from './Me.module.css';
-
-/*
- * Me view — V5 D.4.4 desktop page skeleton.
- *
- * Why: container tree per design.md §D.4.4 — 4-row Workspace grid:
- *      header → MeHero (Avatar + name + Numeric × 3 stats) → MeGrid 2-col
- *      (学习设置 + 账号 list-cards) → 危险操作 Panel variant=danger
- *      spanning both columns. Danger Panel uses Panel's variant="danger"
- *      surface (4px err border + err-soft fill) and the danger list-card
- *      affordance is a left 4px err bar + err text color, scoped only
- *      inside [data-variant="danger"] so普通 list-card remains neutral
- *      elsewhere on the page.
- *
- *      Account 注销 triggers <ConfirmDialog destructive> per design.md
- *      §D.4.4 — destructive operations MUST go through ConfirmDialog
- *      (D.3.22 hard rule), not a plain Modal.
- */
 
 interface MeStats {
   readonly streakDays: number;
@@ -45,7 +29,7 @@ interface SettingItem {
 }
 
 const STUDY_SETTINGS: ReadonlyArray<SettingItem> = [
-  { id: 'goal', title: '每日目标', subtitle: '50 题 / 60 分钟' },
+  { id: 'practice-preferences', title: '练习偏好', subtitle: '自定义刷题、键位、提醒与答题节奏' },
   { id: 'remind', title: '提醒时间', subtitle: '每天 09:00 / 21:00' },
   { id: 'theme', title: '外观主题', subtitle: '跟随系统' },
   { id: 'density', title: '密度', subtitle: '舒适' },
@@ -65,10 +49,11 @@ const DANGER_SETTINGS: ReadonlyArray<SettingItem> = [
 
 export function Me() {
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const navigate = useNavigate();
 
   return (
     <div className={styles.root} data-testid="me-view">
-      <PageHeader title="我的" subtitle="账号 · 设置 · 学习数据" />
+      <PageHeader title="我的" subtitle="账号 / 设置 / 学习数据" />
 
       <article className={styles.hero} data-testid="me-hero">
         <Avatar fallback="L" size="xl" status="online" alt="lhr" />
@@ -98,9 +83,17 @@ export function Me() {
       <section className={styles.grid} aria-label="账号与设置">
         <Panel title="学习设置">
           <ul className={styles.list} role="list">
-            {STUDY_SETTINGS.map((s) => (
-              <li key={s.id}>
-                <ListItem title={s.title} subtitle={s.subtitle} onPress={() => {}} />
+            {STUDY_SETTINGS.map((setting) => (
+              <li key={setting.id}>
+                <ListItem
+                  title={setting.title}
+                  subtitle={setting.subtitle}
+                  onPress={() => {
+                    if (setting.id === 'practice-preferences') {
+                      navigate('/profile/practice-preferences');
+                    }
+                  }}
+                />
               </li>
             ))}
           </ul>
@@ -108,9 +101,9 @@ export function Me() {
 
         <Panel title="账号">
           <ul className={styles.list} role="list">
-            {ACCOUNT_SETTINGS.map((s) => (
-              <li key={s.id}>
-                <ListItem title={s.title} subtitle={s.subtitle} onPress={() => {}} />
+            {ACCOUNT_SETTINGS.map((setting) => (
+              <li key={setting.id}>
+                <ListItem title={setting.title} subtitle={setting.subtitle} onPress={() => {}} />
               </li>
             ))}
           </ul>
@@ -123,13 +116,13 @@ export function Me() {
           role="list"
           data-testid="me-danger-list"
         >
-          {DANGER_SETTINGS.map((s) => (
-            <li key={s.id}>
+          {DANGER_SETTINGS.map((setting) => (
+            <li key={setting.id}>
               <ListItem
-                title={s.title}
-                subtitle={s.subtitle}
+                title={setting.title}
+                subtitle={setting.subtitle}
                 onPress={() => {
-                  if (s.id === 'delete' || s.id === 'logout') {
+                  if (setting.id === 'delete' || setting.id === 'logout') {
                     setConfirmOpen(true);
                   }
                 }}
