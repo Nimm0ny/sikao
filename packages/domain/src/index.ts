@@ -29,4 +29,7 @@ export { useAdjustmentBannerStore } from './dashboard/useAdjustmentBannerStore';
 export { useDashboardPreferenceStore } from './dashboard/useDashboardPreferenceStore';
 export { useRecommendationDraftStore } from './dashboard/useRecommendationDraftStore';
 export { usePlanStore } from './plan/usePlanStore';
+export { useAnswerSessionStore } from './practice/useAnswerSessionStore';
+export { usePracticeStore as usePracticeCenterStore } from './practice/usePracticeStore';
+export { useSessionConfigStore } from './practice/useSessionConfigStore';
 export { useHighlightStore } from './xingce/useHighlightStore';
