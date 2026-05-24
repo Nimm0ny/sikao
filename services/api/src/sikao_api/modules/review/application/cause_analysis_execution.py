@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session as SqlAlchemySession
 from sikao_api.core.config import Settings
 from sikao_api.db.enums_v2 import CauseAnalysisScope
 from sikao_api.db.models_v2 import AiCauseAnalysisV2, QuestionV2, ReviewItemV2, UserV2
+from sikao_api.db.schemas_v2 import CauseAnalysisResponseV2
 from sikao_api.modules.llm.application.call_execution import call_json_completion
 from sikao_api.modules.llm.application.call_recording import persist_failed_call, record_success_call
 from sikao_api.modules.llm.application.parsers.cause_analysis_parser import parse_cause_analysis_with_meta
@@ -39,7 +40,7 @@ async def execute_and_persist_single_analysis(
     last_answer_hash: str,
     error_count: int,
     related_questions: list[int],
-) -> Any:
+) -> CauseAnalysisResponseV2:
     raw_text = ""
     usage: dict[str, int | None] = {"prompt_tokens": None, "completion_tokens": None}
     provider = "unknown"
@@ -134,7 +135,7 @@ async def execute_and_persist_group_analysis(
     messages: list[Any],
     tag_map: dict[str, CauseTagDefinition],
     related_questions: list[int],
-) -> Any:
+) -> CauseAnalysisResponseV2:
     raw_text = ""
     usage: dict[str, int | None] = {"prompt_tokens": None, "completion_tokens": None}
     provider = "unknown"

@@ -13,6 +13,9 @@ from sikao_api.db.schemas_v2 import (
     CauseTagListResponseV2,
     OperationAckV2,
     OverviewResponseV2,
+    ReviewInsightsCausesResponseV2,
+    ReviewInsightsRedoAccuracyResponseV2,
+    ReviewInsightsTrendsResponseV2,
     ReviewAttemptSubmitV2,
     ReviewBatchActionResultV2,
     ReviewDetailResponseV2,
@@ -20,6 +23,7 @@ from sikao_api.db.schemas_v2 import (
     ReviewItemCreateV2,
     ReviewItemV2,
     ReviewListResponseV2,
+    ReviewWeeklySummaryResponseV2,
 )
 from sqlalchemy.orm import Session
 
@@ -36,6 +40,11 @@ from sikao_api.modules.review.application.cause_analysis_queries import list_cau
 from sikao_api.modules.review.application.cause_analysis_result import serialize_analysis_row
 from sikao_api.modules.review.application.cause_analysis_service import ReviewCauseAnalysisService
 from sikao_api.modules.review.application.cause_override_service import CauseOverrideService
+from sikao_api.modules.review.application.insights_service import (
+    build_review_causes,
+    build_review_redo_accuracy,
+    build_review_trends,
+)
 from sikao_api.modules.review.application.service import (
     apply_review_batch_action,
     archive_review_item,
@@ -48,6 +57,8 @@ from sikao_api.modules.review.application.service import (
     restore_review_item,
     submit_review_attempt,
 )
+from sikao_api.modules.review.application.time_windows import iso_week_code_from_date, previous_week_start
+from sikao_api.modules.review.application.weekly_service import load_weekly_summary_or_fallback
 from sikao_api.modules.system.application.audit_v2 import add_audit_log
 
 router = APIRouter(
@@ -91,6 +102,40 @@ def get_smart_review(
     return build_smart_review(session, user=user)
 
 
+@router.get("/weekly-summary", response_model=ReviewWeeklySummaryResponseV2)
+def get_weekly_summary(
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+    week: str | None = Query(default=None),
+) -> ReviewWeeklySummaryResponseV2:
+    resolved_week = week or iso_week_code_from_date(previous_week_start())
+    return load_weekly_summary_or_fallback(session, user_id=user.id, week=resolved_week)
+
+
+@router.get("/insights/trends", response_model=ReviewInsightsTrendsResponseV2)
+def get_review_insights_trends(
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> ReviewInsightsTrendsResponseV2:
+    return build_review_trends(session, user_id=user.id)
+
+
+@router.get("/insights/causes", response_model=ReviewInsightsCausesResponseV2)
+def get_review_insights_causes(
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> ReviewInsightsCausesResponseV2:
+    return build_review_causes(session, user_id=user.id)
+
+
+@router.get("/insights/redo-accuracy", response_model=ReviewInsightsRedoAccuracyResponseV2)
+def get_review_insights_redo_accuracy(
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> ReviewInsightsRedoAccuracyResponseV2:
+    return build_review_redo_accuracy(session, user_id=user.id)
+
+
 @router.get("/items/{item_id}", response_model=ReviewDetailResponseV2)
 def get_review_item(
     item_id: int,
@@ -119,6 +164,7 @@ async def create_cause_analysis_single(
         item_id=item_id,
         payload=payload,
         idempotency_key=idempotency_key or "",
+        request_id=getattr(request.state, "request_id", None),
     )
     session.commit()
     return response
@@ -141,6 +187,7 @@ async def create_cause_analysis_group(
         user=user,
         payload=payload,
         idempotency_key=idempotency_key or "",
+        request_id=getattr(request.state, "request_id", None),
     )
     session.commit()
     return response
@@ -206,10 +253,16 @@ def attempt_review_item(
 @router.patch("/items/{item_id}/graduate", response_model=ReviewItemV2, dependencies=[Depends(verify_csrf_v2)])
 def graduate_item(
     item_id: int,
+    request: Request,
     user: Annotated[UserV2, Depends(get_current_user_v2)],
     session: Annotated[Session, Depends(get_db_session)],
 ) -> ReviewItemV2:
-    item = graduate_review_item(session, user=user, item_id=item_id)
+    item = graduate_review_item(
+        session,
+        user=user,
+        item_id=item_id,
+        request_id=getattr(request.state, "request_id", None),
+    )
     session.commit()
     return item
 
@@ -217,10 +270,16 @@ def graduate_item(
 @router.patch("/items/{item_id}/archive", response_model=ReviewItemV2, dependencies=[Depends(verify_csrf_v2)])
 def archive_item(
     item_id: int,
+    request: Request,
     user: Annotated[UserV2, Depends(get_current_user_v2)],
     session: Annotated[Session, Depends(get_db_session)],
 ) -> ReviewItemV2:
-    item = archive_review_item(session, user=user, item_id=item_id)
+    item = archive_review_item(
+        session,
+        user=user,
+        item_id=item_id,
+        request_id=getattr(request.state, "request_id", None),
+    )
     session.commit()
     return item
 
@@ -228,10 +287,16 @@ def archive_item(
 @router.patch("/items/{item_id}/restore", response_model=ReviewItemV2, dependencies=[Depends(verify_csrf_v2)])
 def restore_item(
     item_id: int,
+    request: Request,
     user: Annotated[UserV2, Depends(get_current_user_v2)],
     session: Annotated[Session, Depends(get_db_session)],
 ) -> ReviewItemV2:
-    item = restore_review_item(session, user=user, item_id=item_id)
+    item = restore_review_item(
+        session,
+        user=user,
+        item_id=item_id,
+        request_id=getattr(request.state, "request_id", None),
+    )
     session.commit()
     return item
 

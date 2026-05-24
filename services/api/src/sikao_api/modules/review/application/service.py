@@ -31,6 +31,16 @@ from sikao_api.modules.review.application.presentation import (
     build_srs_state,
     serialize_review_item,
 )
+from sikao_api.modules.review.application.audit import (
+    log_review_item_archived,
+    log_review_item_mark_resolved,
+    log_review_item_restored,
+)
+from sikao_api.modules.review.application.metrics import (
+    increment_archived,
+    increment_mastery_transition,
+    increment_restored,
+)
 from sikao_api.modules.review.application.queue_items import (
     canonical_review_status,
     create_review_item,
@@ -293,6 +303,7 @@ def submit_review_attempt(
             context=attempt_context,
             re_failed_new_item_id=re_failed_new_item_id,
         )
+        _record_mastery_transition_metrics(probation_result.attempts)
         return build_review_detail(session, user=user, item_id=item.id)
 
     attempt_result: SRSAdvanceResult | SRSRegressResult
@@ -322,6 +333,7 @@ def submit_review_attempt(
         events=attempt_result.attempts,
         context=attempt_context,
     )
+    _record_mastery_transition_metrics(attempt_result.attempts)
     return build_review_detail(session, user=user, item_id=item.id)
 
 
@@ -330,6 +342,7 @@ def graduate_review_item(
     *,
     user: UserV2,
     item_id: int,
+    request_id: str | None = None,
 ) -> ReviewItemSchemaV2:
     item = _load_owned_item(session, user=user, item_id=item_id)
     expected_version = item.version
@@ -346,6 +359,14 @@ def graduate_review_item(
             outcome=event.outcome,
             notes_json=event.notes_json,
         )
+    log_review_item_mark_resolved(
+        session,
+        user_id=user.id,
+        item_id=item.id,
+        before_status=status,
+        request_id=request_id,
+    )
+    increment_mastery_transition(outcome="mark_resolved")
     note_question_ids, cause_question_ids = load_review_presence_sets(
         session,
         user_id=user.id,
@@ -359,6 +380,7 @@ def archive_review_item(
     *,
     user: UserV2,
     item_id: int,
+    request_id: str | None = None,
 ) -> ReviewItemSchemaV2:
     item = _load_owned_item(session, user=user, item_id=item_id)
     expected_version = item.version
@@ -380,6 +402,14 @@ def archive_review_item(
         outcome=ReviewAttemptOutcome.ARCHIVED.value,
         notes_json={"beforeStatus": before_status, "afterStatus": ReviewItemStatus.ARCHIVED.value},
     )
+    log_review_item_archived(
+        session,
+        user_id=user.id,
+        item_id=item.id,
+        before_status=before_status,
+        request_id=request_id,
+    )
+    increment_archived()
     note_question_ids, cause_question_ids = load_review_presence_sets(
         session,
         user_id=user.id,
@@ -393,6 +423,7 @@ def restore_review_item(
     *,
     user: UserV2,
     item_id: int,
+    request_id: str | None = None,
 ) -> ReviewItemSchemaV2:
     item = _load_owned_item(session, user=user, item_id=item_id)
     expected_version = item.version
@@ -415,6 +446,13 @@ def restore_review_item(
         outcome=ReviewAttemptOutcome.RESTORED.value,
         notes_json={"afterStatus": ReviewItemStatus.PENDING.value, "afterStreak": 0},
     )
+    log_review_item_restored(
+        session,
+        user_id=user.id,
+        item_id=item.id,
+        request_id=request_id,
+    )
+    increment_restored()
     note_question_ids, cause_question_ids = load_review_presence_sets(
         session,
         user_id=user.id,
@@ -520,6 +558,15 @@ def _record_review_attempt_events(
             outcome=event.outcome,
             notes_json=notes_json,
         )
+
+
+def _record_mastery_transition_metrics(events: list[AttemptEvent]) -> None:
+    for event in events:
+        if event.outcome in {
+            ReviewAttemptOutcome.PROBATION_ENTERED.value,
+            ReviewAttemptOutcome.GRADUATED.value,
+        }:
+            increment_mastery_transition(outcome=event.outcome)
 
 
 def _is_confidence_required(item: ReviewItemV2) -> bool:

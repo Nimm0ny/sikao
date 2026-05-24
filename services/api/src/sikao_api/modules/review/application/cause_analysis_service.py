@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from time import monotonic
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -62,6 +63,18 @@ from sikao_api.modules.review.application.cause_analysis_queries import (
     load_question_or_raise,
 )
 from sikao_api.modules.review.application.cause_analysis_result import serialize_analysis_row
+from sikao_api.modules.review.application.audit import (
+    log_review_cause_analysis_cache_hit,
+    log_review_cause_analysis_completed,
+    persist_review_cause_analysis_failed,
+    persist_review_cause_analysis_requested,
+)
+from sikao_api.modules.review.application.metrics import (
+    increment_cause_cache_hit,
+    increment_cause_failure,
+    increment_cause_request,
+    observe_cause_duration_ms,
+)
 from sikao_api.modules.system.application.errors import ConflictError
 
 _ACTIVE_REVIEW_STATUSES = {
@@ -87,6 +100,7 @@ class ReviewCauseAnalysisService:
         item_id: int,
         payload: CauseAnalysisRequestV2,
         idempotency_key: str,
+        request_id: str | None = None,
     ) -> CauseAnalysisResponseV2:
         endpoint = f"POST /api/v2/review/items/{item_id}/cause-analysis"
         validate_idempotency_key(idempotency_key)
@@ -113,6 +127,15 @@ class ReviewCauseAnalysisService:
         try:
             item = load_item_or_raise(self.session, user=user, item_id=item_id)
             question = load_question_or_raise(self.session, item)
+            persist_review_cause_analysis_requested(
+                self.session,
+                user_id=user.id,
+                scope="single",
+                mode=payload.mode,
+                review_item_id=item.id,
+                request_id=request_id,
+            )
+            increment_cause_request(scope="single", mode=payload.mode)
             if payload.mode == "forced" and not bool(item.metadata_json.get("forced_cause_analysis_pending", False)):
                 raise ConflictError(
                     "forced cause analysis is not pending for this item",
@@ -139,6 +162,15 @@ class ReviewCauseAnalysisService:
                 if payload.mode == "forced":
                     clear_forced_pending(item)
                     self.session.add(item)
+                log_review_cause_analysis_cache_hit(
+                    self.session,
+                    user_id=user.id,
+                    scope="single",
+                    mode=payload.mode,
+                    analysis_id=cached_row.id,
+                    request_id=request_id,
+                )
+                increment_cause_cache_hit(scope="single", mode=payload.mode)
                 response = serialize_analysis_row(cached_row, cached=True)
                 store_replay(
                     self.session,
@@ -169,6 +201,7 @@ class ReviewCauseAnalysisService:
                 tags=tags,
                 previous_analysis=previous_analysis,
             )
+            started_at = monotonic()
             response = await execute_and_persist_single_analysis(
                 self.session,
                 settings=self.settings,
@@ -191,6 +224,17 @@ class ReviewCauseAnalysisService:
                     category_pairs={(question.category_l1, question.category_l2)},
                 ),
             )
+            duration_ms = observe_cause_duration_ms(scope="single", mode=payload.mode, started_at=started_at)
+            log_review_cause_analysis_completed(
+                self.session,
+                user_id=user.id,
+                scope="single",
+                mode=payload.mode,
+                analysis_id=response.analysis_id,
+                llm_call_id=response.llm_call_id,
+                duration_ms=duration_ms,
+                request_id=request_id,
+            )
             store_replay(
                 self.session,
                 user_id=user.id,
@@ -200,7 +244,16 @@ class ReviewCauseAnalysisService:
                 response_body=response.model_dump(mode="json", by_alias=True),
             )
             return response
-        except Exception:
+        except Exception as exc:
+            persist_review_cause_analysis_failed(
+                self.session,
+                user_id=user.id,
+                scope="single",
+                mode=payload.mode,
+                error_type=type(exc).__name__,
+                request_id=request_id,
+            )
+            increment_cause_failure(scope="single", mode=payload.mode, error_type=type(exc).__name__)
             release_idempotency_claim(
                 self.session,
                 user_id=user.id,
@@ -216,6 +269,7 @@ class ReviewCauseAnalysisService:
         user: UserV2,
         payload: CauseAnalysisGroupRequestV2,
         idempotency_key: str,
+        request_id: str | None = None,
     ) -> CauseAnalysisResponseV2:
         endpoint = "POST /api/v2/review/cause-analysis/group"
         validate_idempotency_key(idempotency_key)
@@ -242,6 +296,15 @@ class ReviewCauseAnalysisService:
 
         try:
             items = load_group_items_or_raise(self.session, user=user, item_ids=payload.item_ids)
+            persist_review_cause_analysis_requested(
+                self.session,
+                user_id=user.id,
+                scope="group",
+                mode="group",
+                review_item_id=None,
+                request_id=request_id,
+            )
+            increment_cause_request(scope="group", mode="group")
             tags = load_active_cause_tags(self.session)
             tag_map = {tag.slug: tag for tag in tags}
             prompt_summary, summary_block = build_group_context(self.session, user=user, items=items)
@@ -260,6 +323,15 @@ class ReviewCauseAnalysisService:
                 input_hash=input_hash,
             )
             if cached_row is not None:
+                log_review_cause_analysis_cache_hit(
+                    self.session,
+                    user_id=user.id,
+                    scope="group",
+                    mode="group",
+                    analysis_id=cached_row.id,
+                    request_id=request_id,
+                )
+                increment_cause_cache_hit(scope="group", mode="group")
                 response = serialize_analysis_row(cached_row, cached=True)
                 store_replay(
                     self.session,
@@ -289,6 +361,7 @@ class ReviewCauseAnalysisService:
                 )
                 for item in items
             }
+            started_at = monotonic()
             response = await execute_and_persist_group_analysis(
                 self.session,
                 settings=self.settings,
@@ -305,6 +378,17 @@ class ReviewCauseAnalysisService:
                     category_pairs=category_pairs,
                 ),
             )
+            duration_ms = observe_cause_duration_ms(scope="group", mode="group", started_at=started_at)
+            log_review_cause_analysis_completed(
+                self.session,
+                user_id=user.id,
+                scope="group",
+                mode="group",
+                analysis_id=response.analysis_id,
+                llm_call_id=response.llm_call_id,
+                duration_ms=duration_ms,
+                request_id=request_id,
+            )
             store_replay(
                 self.session,
                 user_id=user.id,
@@ -314,7 +398,16 @@ class ReviewCauseAnalysisService:
                 response_body=response.model_dump(mode="json", by_alias=True),
             )
             return response
-        except Exception:
+        except Exception as exc:
+            persist_review_cause_analysis_failed(
+                self.session,
+                user_id=user.id,
+                scope="group",
+                mode="group",
+                error_type=type(exc).__name__,
+                request_id=request_id,
+            )
+            increment_cause_failure(scope="group", mode="group", error_type=type(exc).__name__)
             release_idempotency_claim(
                 self.session,
                 user_id=user.id,
