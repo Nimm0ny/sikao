@@ -1973,7 +1973,25 @@ export interface paths {
         /** List Review Items */
         get: operations["list_review_items_api_v2_review_items_get"];
         put?: never;
-        post?: never;
+        /** Create Review Item */
+        post: operations["create_review_item_api_v2_review_items_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/items/batch": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Batch Action */
+        post: operations["batch_action_api_v2_review_items_batch_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1997,6 +2015,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/review/items/{item_id}/archive": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Archive Item */
+        patch: operations["archive_item_api_v2_review_items__item_id__archive_patch"];
+        trace?: never;
+    };
+    "/api/v2/review/items/{item_id}/attempt": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Attempt Review Item */
+        post: operations["attempt_review_item_api_v2_review_items__item_id__attempt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/items/{item_id}/graduate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Graduate Item */
+        patch: operations["graduate_item_api_v2_review_items__item_id__graduate_patch"];
+        trace?: never;
+    };
     "/api/v2/review/items/{item_id}/redo": {
         parameters: {
             query?: never;
@@ -2012,6 +2081,23 @@ export interface paths {
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/items/{item_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Restore Item */
+        patch: operations["restore_item_api_v2_review_items__item_id__restore_patch"];
         trace?: never;
     };
     "/api/v2/review/smart": {
@@ -4701,8 +4787,32 @@ export interface components {
             attemptedAt: string;
             /** Id */
             id: number;
+            /** Notesjson */
+            notesJson?: {
+                [key: string]: unknown;
+            };
             /** Outcome */
             outcome: string;
+        };
+        /** ReviewAttemptSubmitV2 */
+        ReviewAttemptSubmitV2: {
+            /** Confidence */
+            confidence?: ("guess" | "unsure" | "likely" | "certain") | null;
+            /** Iscorrect */
+            isCorrect: boolean;
+            /** Recalltext */
+            recallText?: string | null;
+            /** Useranswer */
+            userAnswer: string;
+        };
+        /** ReviewBatchActionResultV2 */
+        ReviewBatchActionResultV2: {
+            /** Affectedcount */
+            affectedCount: number;
+            /** Ok */
+            ok: boolean;
+            /** Status */
+            status: string;
         };
         /** ReviewDetailResponseV2 */
         ReviewDetailResponseV2: {
@@ -4711,21 +4821,64 @@ export interface components {
             /** History */
             history: components["schemas"]["ReviewAttemptOutV2"][];
             item: components["schemas"]["ReviewItemV2"];
+            /** Metadata */
+            metadata?: {
+                [key: string]: unknown;
+            };
+            srsState?: components["schemas"]["SrsStateV2"] | null;
+        };
+        /** ReviewItemBatchActionV2 */
+        ReviewItemBatchActionV2: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "archive" | "restore" | "graduate";
+            /** Itemids */
+            itemIds?: number[];
+        };
+        /** ReviewItemCreateV2 */
+        ReviewItemCreateV2: {
+            /** Questionid */
+            questionId: number;
+            /** Title */
+            title?: string | null;
         };
         /** ReviewItemV2 */
         ReviewItemV2: {
+            /**
+             * Correctstreak
+             * @default 0
+             */
+            correctStreak: number;
             /** Createdat */
             createdAt: string;
+            /**
+             * Hascauseanalysis
+             * @default false
+             */
+            hasCauseAnalysis: boolean;
+            /**
+             * Hasusernotes
+             * @default false
+             */
+            hasUserNotes: boolean;
             /** Href */
             href: string;
             /** Id */
             id: number;
             /** Kind */
             kind: string;
+            /** Nextreviewat */
+            nextReviewAt?: string | null;
+            /** Questionid */
+            questionId?: number | null;
             /** Status */
             status: string;
             /** Title */
             title: string;
+            /** Updatedat */
+            updatedAt?: string | null;
         };
         /** ReviewListResponseV2 */
         ReviewListResponseV2: {
@@ -4843,6 +4996,33 @@ export interface components {
             totalActiveSeconds: number;
             /** Totalwallseconds */
             totalWallSeconds: number;
+        };
+        /** SrsStateV2 */
+        SrsStateV2: {
+            /**
+             * Algorithmversion
+             * @default simple_v1
+             */
+            algorithmVersion: string;
+            /**
+             * Correctstreak
+             * @default 0
+             */
+            correctStreak: number;
+            /**
+             * Daysoverdue
+             * @default 0
+             */
+            daysOverdue: number;
+            /** Intervaldays */
+            intervalDays?: number | null;
+            /**
+             * Isduetoday
+             * @default false
+             */
+            isDueToday: boolean;
+            /** Nextreviewat */
+            nextReviewAt?: string | null;
         };
         /** SubjectAccuracyV2 */
         SubjectAccuracyV2: {
@@ -9239,7 +9419,15 @@ export interface operations {
     };
     list_review_items_api_v2_review_items_get: {
         parameters: {
-            query?: never;
+            query?: {
+                status?: string | null;
+                source_kind?: string | null;
+                question_id?: number | null;
+                page?: number;
+                page_size?: number;
+                order_by?: string;
+                order_dir?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -9253,6 +9441,81 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReviewListResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_review_item_api_v2_review_items_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewItemCreateV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewItemV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    batch_action_api_v2_review_items_batch_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewItemBatchActionV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewBatchActionResultV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -9288,6 +9551,103 @@ export interface operations {
             };
         };
     };
+    archive_item_api_v2_review_items__item_id__archive_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewItemV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    attempt_review_item_api_v2_review_items__item_id__attempt_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReviewAttemptSubmitV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDetailResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    graduate_item_api_v2_review_items__item_id__graduate_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewItemV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     redo_review_item_api_v2_review_items__item_id__redo_post: {
         parameters: {
             query?: never;
@@ -9306,6 +9666,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_item_api_v2_review_items__item_id__restore_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewItemV2"];
                 };
             };
             /** @description Validation Error */
