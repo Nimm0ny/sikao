@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from sqlalchemy import select
-from tests._home_phase_m3_support import (
+from _home_phase_m3_support import (
     AuditLogV2,
     PlanEventV2,
     PracticeSessionAnswerV2,
@@ -42,7 +42,11 @@ def test_home_m3_dashboard_progress_and_planning_contracts(tmp_path: Path) -> No
         plan_id = plan_response.json()["id"]
 
         today_cn = (datetime.now(UTC) + timedelta(hours=8)).date()
-        next_day = today_cn + timedelta(days=1)
+        week_event_day = (
+            today_cn + timedelta(days=1)
+            if today_cn.weekday() < 6
+            else today_cn - timedelta(days=1)
+        )
         recurring_event = client.post(
             "/api/v2/plans/events",
             json={
@@ -63,8 +67,8 @@ def test_home_m3_dashboard_progress_and_planning_contracts(tmp_path: Path) -> No
                 "planId": plan_id,
                 "title": "Essay block",
                 "category": "essay",
-                "startAt": f"{next_day.isoformat()}T03:00:00Z",
-                "endAt": f"{next_day.isoformat()}T04:30:00Z",
+                "startAt": f"{week_event_day.isoformat()}T03:00:00Z",
+                "endAt": f"{week_event_day.isoformat()}T04:30:00Z",
                 "timezone": "Asia/Shanghai",
             },
         )

@@ -8,6 +8,7 @@ import subprocess
 import sys
 from datetime import datetime, timezone
 from pathlib import Path
+import json
 from uuid import uuid4
 
 from sqlalchemy import create_engine
@@ -15,8 +16,6 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import (
     PracticeSessionAnswerV2,
-    PracticeSessionV2,
-    UserV2,
 )
 
 
@@ -43,25 +42,55 @@ def _alembic(env: dict[str, str], *args: str) -> None:
 
 
 def _seed_session(db_url: str) -> int:
-    engine = create_engine(db_url, future=True)
-    try:
-        with Session(engine) as session:
-            user = UserV2(public_id=str(uuid4()), display_name="seed user")
-            session.add(user)
-            session.flush()
-            ps = PracticeSessionV2(
-                user_id=user.id,
-                track="xingce",
-                entry_kind="paper",
-                status="draft",
-                payload_json={},
-            )
-            session.add(ps)
-            session.flush()
-            session.commit()
-            return ps.id
-    finally:
-        engine.dispose()
+    database_file = Path(db_url.removeprefix("sqlite:///"))
+    now = datetime.now(timezone.utc).replace(tzinfo=None).isoformat(sep=" ")
+    with sqlite3.connect(database_file) as connection:
+        cursor = connection.cursor()
+        cursor.execute(
+            """
+            INSERT INTO users_v2 (public_id, display_name, is_active, created_at, updated_at)
+            VALUES (?, ?, 1, ?, ?)
+            """,
+            (str(uuid4()), "seed user", now, now),
+        )
+        user_id = cursor.lastrowid
+        assert user_id is not None
+        user_id = int(user_id)
+
+        columns = {
+            row[1]
+            for row in cursor.execute("PRAGMA table_info('practice_sessions_v2')").fetchall()
+        }
+        values: dict[str, object] = {
+            "user_id": user_id,
+            "track": "xingce",
+            "entry_kind": "paper",
+            "status": "draft",
+            "payload_json": json.dumps({}),
+            "started_at": now,
+            "updated_at": now,
+        }
+        if "practice_mode" in columns:
+            values["practice_mode"] = "full_set"
+        if "source_mode" in columns:
+            values["source_mode"] = "paper"
+        if "config_snapshot" in columns:
+            values["config_snapshot"] = json.dumps({})
+
+        ordered_columns = list(values.keys())
+        placeholders = ", ".join("?" for _ in ordered_columns)
+        cursor.execute(
+            f"""
+            INSERT INTO practice_sessions_v2 ({", ".join(ordered_columns)})
+            VALUES ({placeholders})
+            """,
+            tuple(values[column] for column in ordered_columns),
+        )
+        session_id = cursor.lastrowid
+        assert session_id is not None
+        session_id = int(session_id)
+        connection.commit()
+        return session_id
 
 
 def test_model_declares_columns() -> None:

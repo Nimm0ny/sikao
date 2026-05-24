@@ -1,17 +1,21 @@
 from __future__ import annotations
 
 from contextlib import contextmanager
+from collections.abc import Iterator
 from pathlib import Path
+from typing import cast
 from unittest.mock import patch
 
+from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from sikao_api.core.config import Settings
+from sikao_api.db.models_v2 import PaperRevisionV2, PaperV2, QuestionV2
 from sikao_api.main import create_app
 
 
 @contextmanager
-def build_client(tmp_path: Path) -> TestClient:
+def build_client(tmp_path: Path) -> Iterator[TestClient]:
     settings = Settings(
         app_env="test",
         database_url=f"sqlite:///{(tmp_path / 'phase1-backend.db').as_posix()}",
@@ -45,6 +49,52 @@ def _register_and_seed_auth(client: TestClient, *, email: str = "alice@example.c
     token = response.cookies.get("auth_session_v2")
     assert token is not None
     return {"csrf": csrf, "token": token}
+
+
+def _seed_xingce_paper(
+    client: TestClient,
+    *,
+    paper_code: str,
+    question_count: int = 1,
+) -> list[int]:
+    app = cast(FastAPI, client.app)
+    session = app.state.db.session_factory()
+    try:
+        paper = PaperV2(
+            paper_code=paper_code,
+            title=f"Paper {paper_code}",
+            subject_kind="xingce",
+        )
+        session.add(paper)
+        session.flush()
+
+        revision = PaperRevisionV2(
+            paper_id=paper.id,
+            revision_number=1,
+            status="published",
+        )
+        session.add(revision)
+        session.flush()
+
+        question_ids: list[int] = []
+        for item_no in range(1, question_count + 1):
+            question = QuestionV2(
+                revision_id=revision.id,
+                item_no=item_no,
+                subject_kind="xingce",
+                prompt=f"Question {item_no}",
+                answer_kind="single_choice",
+                status="published",
+                content_json={"stem": f"Question {item_no}"},
+            )
+            session.add(question)
+            session.flush()
+            question_ids.append(question.id)
+
+        session.commit()
+        return question_ids
+    finally:
+        session.close()
 
 
 def test_openapi_exposes_phase1_backend_paths(tmp_path: Path) -> None:
@@ -123,6 +173,7 @@ def test_empty_contract_shapes_for_core_pages(tmp_path: Path) -> None:
 def test_notes_profile_and_session_skeleton_endpoints_work(tmp_path: Path) -> None:
     with build_client(tmp_path) as client:
         _register_and_seed_auth(client)
+        question_ids = _seed_xingce_paper(client, paper_code="PHASE1-NOTES", question_count=1)
 
         create_note = client.post(
             "/api/v2/notes",
@@ -155,7 +206,13 @@ def test_notes_profile_and_session_skeleton_endpoints_work(tmp_path: Path) -> No
 
         session_response = client.post(
             "/api/v2/practice/sessions",
-            json={"track": "xingce", "entryKind": "papers", "paperCode": None, "questionIds": [], "payload": {}},
+            json={
+                "track": "xingce",
+                "entryKind": "paper",
+                "paperCode": "PHASE1-NOTES",
+                "questionIds": question_ids,
+                "payload": {},
+            },
         )
         assert session_response.status_code == 200, session_response.text
         session_id = session_response.json()["id"]
@@ -164,7 +221,11 @@ def test_notes_profile_and_session_skeleton_endpoints_work(tmp_path: Path) -> No
             f"/api/v2/practice/sessions/{session_id}/answers",
             json={
                 "answers": [
-                    {"questionKey": "Q1", "answer": {"selected": ["A"]}, "durationSeconds": 12}
+                    {
+                        "questionKey": str(question_ids[0]),
+                        "answer": {"selected": ["A"]},
+                        "durationSeconds": 12,
+                    }
                 ]
             },
         )
@@ -183,6 +244,7 @@ def test_notes_profile_and_session_skeleton_endpoints_work(tmp_path: Path) -> No
 def test_phase1_contract_smoke_covers_all_new_endpoints(tmp_path: Path) -> None:
     with build_client(tmp_path) as client:
         _register_and_seed_auth(client, email="phase1@example.com")
+        question_ids = _seed_xingce_paper(client, paper_code="PHASE1-SMOKE", question_count=1)
 
         # auth auxiliary flows
         with patch(
@@ -287,14 +349,28 @@ def test_phase1_contract_smoke_covers_all_new_endpoints(tmp_path: Path) -> None:
 
         create_session = client.post(
             "/api/v2/practice/sessions",
-            json={"track": "essay", "entryKind": "categories", "questionIds": [], "payload": {"seed": True}},
+            json={
+                "track": "xingce",
+                "entryKind": "paper",
+                "paperCode": "PHASE1-SMOKE",
+                "questionIds": question_ids,
+                "payload": {"seed": True},
+            },
         )
         assert create_session.status_code == 200, create_session.text
         session_id = create_session.json()["id"]
         assert client.get(f"/api/v2/practice/sessions/{session_id}").status_code == 200
         assert client.post(
             f"/api/v2/practice/sessions/{session_id}/answers",
-            json={"answers": [{"questionKey": "Q-1", "answer": {"text": "demo"}}]},
+            json={
+                "answers": [
+                    {
+                        "questionKey": str(question_ids[0]),
+                        "answer": {"selected": ["A"]},
+                        "durationSeconds": 10,
+                    }
+                ]
+            },
         ).status_code == 200
         assert client.post(f"/api/v2/practice/sessions/{session_id}/submit").status_code == 200
         assert client.get(f"/api/v2/practice/sessions/{session_id}/result").status_code == 200

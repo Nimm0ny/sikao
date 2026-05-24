@@ -7,18 +7,16 @@ import sqlite3
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 from uuid import uuid4
+from datetime import datetime, timezone
 
-from sqlalchemy import create_engine, event
+from sqlalchemy import Table, create_engine, event
 from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import (
     NoteV2,
-    PaperRevisionV2,
-    PaperV2,
     QuestionV2,
-    UserV2,
 )
 
 
@@ -57,34 +55,84 @@ def _engine_with_fk(db_url: str):
 
 
 def _seed_user_and_question(db_url: str) -> tuple[int, int]:
-    engine = _engine_with_fk(db_url)
-    try:
-        with Session(engine) as session:
-            user = UserV2(public_id=str(uuid4()), display_name="seed user")
-            paper = PaperV2(paper_code=f"p-{uuid4().hex}", title="paper", subject_kind="xingce")
-            session.add_all([user, paper])
-            session.flush()
-            revision = PaperRevisionV2(paper_id=paper.id, revision_number=1, status="draft")
-            session.add(revision)
-            session.flush()
-            question = QuestionV2(
-                revision_id=revision.id,
-                item_no=1,
-                subject_kind="xingce",
-                prompt="linked prompt",
-                answer_kind="single_choice",
-                status="draft",
-                content_json={},
+    database_file = Path(db_url.removeprefix("sqlite:///"))
+    now = datetime.now(timezone.utc).replace(tzinfo=None).isoformat(sep=" ")
+    with sqlite3.connect(database_file) as connection:
+        cursor = connection.cursor()
+        def insert_row(table_name: str, values: dict[str, object]) -> int:
+            columns = {
+                row[1]
+                for row in cursor.execute(f"PRAGMA table_info('{table_name}')").fetchall()
+            }
+            ordered_columns = [column for column in values if column in columns]
+            placeholders = ", ".join("?" for _ in ordered_columns)
+            cursor.execute(
+                f"""
+                INSERT INTO {table_name} ({", ".join(ordered_columns)})
+                VALUES ({placeholders})
+                """,
+                tuple(values[column] for column in ordered_columns),
             )
-            session.add(question)
-            session.commit()
-            return user.id, question.id
-    finally:
-        engine.dispose()
+            row_id = cursor.lastrowid
+            assert row_id is not None
+            return int(row_id)
+
+        user_id = insert_row(
+            "users_v2",
+            {
+                "public_id": str(uuid4()),
+                "display_name": "seed user",
+                "is_active": 1,
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+
+        paper_id = insert_row(
+            "papers_v2",
+            {
+                "paper_code": f"p-{uuid4().hex}",
+                "title": "paper",
+                "subject_kind": "xingce",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+
+        revision_id = insert_row(
+            "paper_revisions_v2",
+            {
+                "paper_id": paper_id,
+                "revision_number": 1,
+                "status": "draft",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+
+        question_id = insert_row(
+            "questions_v2",
+            {
+                "revision_id": revision_id,
+                "item_no": 1,
+                "subject_kind": "xingce",
+                "prompt": "linked prompt",
+                "answer_kind": "single_choice",
+                "status": "draft",
+                "content_json": "{}",
+                "source": "real_exam",
+                "exam_type": "other",
+                "category_l1": "uncategorized",
+                "created_at": now,
+                "updated_at": now,
+            },
+        )
+        connection.commit()
+        return user_id, question_id
 
 
 def test_model_declares_link_and_visibility() -> None:
-    table = NoteV2.__table__
+    table = cast(Table, NoteV2.__table__)
     assert table.c["linked_question_id"].nullable is True
     assert table.c["visibility"].nullable is False
     fk = next(iter(table.c["linked_question_id"].foreign_keys))

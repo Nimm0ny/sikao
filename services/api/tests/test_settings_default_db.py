@@ -26,11 +26,11 @@ def test_default_database_url_is_absolute() -> None:
 
 
 def test_default_database_url_points_under_exam_api_var() -> None:
-    """Absolute path 必须落到 apps/exam-api/var/exam_papers.db。"""
+    """Absolute path 必须落到 services/api/var/exam_papers.db。"""
     db_path = Path(DEFAULT_DATABASE_URL.removeprefix("sqlite:///"))
     assert db_path.name == "exam_papers.db"
     assert db_path.parent.name == "var"
-    assert db_path.parent.parent.name == "exam-api"
+    assert db_path.parent.parent.name == "api"
 
 
 def test_settings_uses_default_db_when_env_unset(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -105,6 +105,20 @@ def test_postgres_url_passes_through(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DATABASE_URL", pg_url)
     settings = Settings(_env_file=None)  # type: ignore[call-arg]
     assert settings.database_url == pg_url
+
+
+def test_cors_allowed_origins_accepts_json_array_env(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv(
+        "CORS_ALLOWED_ORIGINS",
+        '["http://127.0.0.1:18080","http://localhost:18080"]',
+    )
+    settings = Settings(_env_file=None)  # type: ignore[call-arg]
+    assert settings.cors_allowed_origins == (
+        "http://127.0.0.1:18080",
+        "http://localhost:18080",
+    )
 
 
 def test_relative_db_url_independent_of_cwd(
