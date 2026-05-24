@@ -723,6 +723,27 @@ class WeaknessSnapshotV2(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
+class ReviewWeeklySnapshotV2(Base):
+    __tablename__ = "review_weekly_snapshots_v2"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "week_start_date",
+            name="uq_review_weekly_snapshots_v2_user_week",
+        ),
+        Index("ix_review_weekly_snapshots_v2_user_week", "user_id", "week_start_date"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False)
+    week_start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    data_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
+
+
 class ReviewItemV2(Base):
     __tablename__ = "review_items_v2"
     __table_args__ = (
