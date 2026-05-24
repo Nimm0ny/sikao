@@ -12,16 +12,53 @@ import { createPreferencesPayload, nowIso } from './practiceCatalogFixtures';
 
 export { createPreferencesPayload };
 
-export function makeSessionEnvelope(nextSessionId: number, payload?: Partial<PracticeSessionCreateRequestV2>): PracticeSessionEnvelopeV2 {
+export function makeSessionEnvelope(
+  nextSessionId: number,
+  payload?: Partial<PracticeSessionCreateRequestV2>,
+): PracticeSessionEnvelopeV2 {
   return {
-    actions: [{ key: 'continue', label: '继续答题', href: `/practice/sessions/${nextSessionId}`, enabled: true }],
+    actions: [{ key: 'continue', label: 'Continue session', href: `/practice/sessions/${nextSessionId}`, enabled: true }],
     id: nextSessionId,
     entryKind: payload?.entryKind ?? 'custom',
     examMode: false,
     forceSubmitted: false,
     items: [
-      { answerChangeCount: 0, answerKind: 'single_choice', flagged: false, hasPersistentFlag: false, hasUserNotes: false, id: '1', isFavorited: false, isOvertime: false, prompt: '示例题 1', questionKey: '1001', status: 'pending', timeSpentMs: 0, viewedSolution: false, visitCount: 0 },
-      { answerChangeCount: 0, answerKind: 'single_choice', flagged: false, hasPersistentFlag: false, hasUserNotes: false, id: '2', isFavorited: false, isOvertime: false, prompt: '示例题 2', questionKey: '1002', status: 'pending', timeSpentMs: 0, viewedSolution: false, visitCount: 0 },
+      {
+        answerChangeCount: 0,
+        answerKind: 'single_choice',
+        answerText: null,
+        flagged: false,
+        hasPersistentFlag: false,
+        hasUserNotes: false,
+        id: '1',
+        isFavorited: false,
+        isOvertime: false,
+        prompt: 'Mock question 1',
+        questionKey: '1001',
+        selectedAnswerKeys: [],
+        status: 'pending',
+        timeSpentMs: 0,
+        viewedSolution: false,
+        visitCount: 0,
+      },
+      {
+        answerChangeCount: 0,
+        answerKind: 'single_choice',
+        answerText: null,
+        flagged: false,
+        hasPersistentFlag: false,
+        hasUserNotes: false,
+        id: '2',
+        isFavorited: false,
+        isOvertime: false,
+        prompt: 'Mock question 2',
+        questionKey: '1002',
+        selectedAnswerKeys: [],
+        status: 'pending',
+        timeSpentMs: 0,
+        viewedSolution: false,
+        visitCount: 0,
+      },
     ],
     pausedCount: 0,
     pausedTotalSeconds: 0,
@@ -103,7 +140,10 @@ export function makeAiQuestionsGenerateResponse(count: number, requestId: number
   };
 }
 
-export function makeMockExamCreateResponse(payload: { paperCode: string; timeLimitMinutes?: number }, sessionId: number): MockExamCreateResponseV2 {
+export function makeMockExamCreateResponse(
+  payload: { paperCode: string; timeLimitMinutes?: number },
+  sessionId: number,
+): MockExamCreateResponseV2 {
   return {
     paperCode: payload.paperCode,
     sessionId,
