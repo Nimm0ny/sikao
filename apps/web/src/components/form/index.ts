@@ -36,3 +36,6 @@ export type { SliderProps, SliderMark, SliderSize } from './Slider';
 
 export { Search } from './Search';
 export type { SearchProps, SearchSize } from './Search';
+
+export { DatePicker } from './DatePicker';
+export type { DatePickerProps, DatePickerPreset, DateFormat } from './DatePicker';

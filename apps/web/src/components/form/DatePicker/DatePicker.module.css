@@ -1,0 +1,180 @@
+/*
+ * DatePicker — V5 D.3.14 form atom (skeleton).
+ * Why: trigger reuses --input-* token chrome so DatePicker stacks visually
+ *      align with Input / Select. Calendar grid is a 7-column CSS grid
+ *      with fixed cell size so the panel never reflows when month changes.
+ *      Preset row sits above the month nav per design §D.3.14.
+ */
+.root {
+  position: relative;
+  display: inline-flex;
+  width: 100%;
+  align-items: center;
+}
+
+.trigger {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  height: var(--input-h-md);
+  background: var(--input-bg);
+  border: var(--input-border);
+  border-radius: var(--input-radius);
+  padding: 0 var(--space-3);
+  gap: var(--space-2);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--font-body);
+  text-align: left;
+  cursor: pointer;
+  transition: border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+.trigger:focus-visible {
+  outline: 0;
+  border: var(--input-border-focus);
+  box-shadow: var(--input-ring-focus);
+}
+.trigger[data-open] {
+  border: var(--input-border-focus);
+  box-shadow: var(--input-ring-focus);
+}
+.trigger[data-disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-bg-elevated);
+}
+
+.label {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.trigger[data-empty] .label { color: var(--color-text-meta-soft); }
+
+.suffix {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--color-text-meta);
+}
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 252px;
+}
+
+.presetRow {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding-bottom: var(--space-2);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.presetBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  background: transparent;
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-999);
+  padding: var(--space-1) var(--space-3);
+  font: inherit;
+  font-size: var(--font-meta);
+  color: var(--color-text-primary);
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: lint regex matches single-feature @media; this compound query is canonical hover-capable */
+  .presetBtn:hover { background: var(--color-bg-elevated); }
+}
+
+.navRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+.navLabel {
+  flex: 1 1 auto;
+  text-align: center;
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+.navBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-10);
+  color: var(--color-text-primary);
+  cursor: pointer;
+  font-size: var(--font-card);
+}
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: compound hover-capable query */
+  .navBtn:hover { background: var(--color-bg-elevated); }
+}
+.navBtn:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.weekdayRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-1);
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+  text-align: center;
+}
+.weekday { padding: var(--space-1) 0; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-1);
+}
+.dayCell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  background: transparent;
+  border: 0;
+  border-radius: var(--radius-10);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--font-meta);
+  cursor: pointer;
+}
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: compound hover-capable query */
+  .dayCell:hover:not(:disabled) { background: var(--color-bg-elevated); }
+}
+.dayCell:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+.dayCell[data-out-of-month] { color: var(--color-text-meta-soft); }
+.dayCell[data-today] {
+  border: 1px solid var(--color-brand-primary);
+}
+.dayCell[data-selected] {
+  background: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+  font-weight: var(--font-weight-semibold);
+}
+.dayCell:disabled {
+  cursor: not-allowed;
+  color: var(--color-text-disabled);
+}
