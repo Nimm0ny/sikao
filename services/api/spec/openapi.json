@@ -932,6 +932,505 @@
         "title": "CatalogListResponseV2",
         "type": "object"
       },
+      "CauseAnalysisComparisonJudgmentV2": {
+        "properties": {
+          "actionsLikelyCompleted": {
+            "items": {
+              "type": "boolean"
+            },
+            "title": "Actionslikelycompleted",
+            "type": "array"
+          },
+          "improvedDimensions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Improveddimensions",
+            "type": "array"
+          },
+          "newlyEmergedDimensions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Newlyemergeddimensions",
+            "type": "array"
+          },
+          "overallTrend": {
+            "enum": [
+              "improved",
+              "partial_improvement",
+              "stagnant",
+              "regressed"
+            ],
+            "title": "Overalltrend",
+            "type": "string"
+          },
+          "persistedDimensions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Persisteddimensions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "overallTrend"
+        ],
+        "title": "CauseAnalysisComparisonJudgmentV2",
+        "type": "object"
+      },
+      "CauseAnalysisDimensionOverrideV2": {
+        "properties": {
+          "overriddenAt": {
+            "title": "Overriddenat",
+            "type": "string"
+          },
+          "severityOverridden": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Severityoverridden"
+          },
+          "slugOriginal": {
+            "title": "Slugoriginal",
+            "type": "string"
+          },
+          "slugOverridden": {
+            "title": "Slugoverridden",
+            "type": "string"
+          },
+          "userNote": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usernote"
+          }
+        },
+        "required": [
+          "slugOriginal",
+          "slugOverridden",
+          "overriddenAt"
+        ],
+        "title": "CauseAnalysisDimensionOverrideV2",
+        "type": "object"
+      },
+      "CauseAnalysisDimensionV2": {
+        "properties": {
+          "_llm_original": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Original"
+          },
+          "_llm_original_slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Original Slug"
+          },
+          "nameDisplay": {
+            "title": "Namedisplay",
+            "type": "string"
+          },
+          "severity": {
+            "enum": [
+              "high",
+              "medium",
+              "low"
+            ],
+            "title": "Severity",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "suggestion": {
+            "title": "Suggestion",
+            "type": "string"
+          },
+          "userOverride": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CauseAnalysisDimensionOverrideV2"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "required": [
+          "slug",
+          "nameDisplay",
+          "severity",
+          "suggestion"
+        ],
+        "title": "CauseAnalysisDimensionV2",
+        "type": "object"
+      },
+      "CauseAnalysisEvolutionContextV2": {
+        "properties": {
+          "comparisonJudgment": {
+            "$ref": "#/components/schemas/CauseAnalysisComparisonJudgmentV2"
+          },
+          "previousAnalysisId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previousanalysisid"
+          },
+          "previousAnalyzedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previousanalyzedat"
+          },
+          "previousConfidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Previousconfidence"
+          },
+          "previousDimensions": {
+            "items": {
+              "$ref": "#/components/schemas/CauseAnalysisDimensionV2"
+            },
+            "title": "Previousdimensions",
+            "type": "array"
+          },
+          "previousSuggestedActions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Previoussuggestedactions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "comparisonJudgment"
+        ],
+        "title": "CauseAnalysisEvolutionContextV2",
+        "type": "object"
+      },
+      "CauseAnalysisGroupRequestV2": {
+        "properties": {
+          "itemIds": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 20,
+            "minItems": 2,
+            "title": "Itemids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "itemIds"
+        ],
+        "title": "CauseAnalysisGroupRequestV2",
+        "type": "object"
+      },
+      "CauseAnalysisRequestV2": {
+        "properties": {
+          "mode": {
+            "default": "single",
+            "enum": [
+              "single",
+              "forced"
+            ],
+            "title": "Mode",
+            "type": "string"
+          }
+        },
+        "title": "CauseAnalysisRequestV2",
+        "type": "object"
+      },
+      "CauseAnalysisResponseV2": {
+        "properties": {
+          "analysisId": {
+            "title": "Analysisid",
+            "type": "integer"
+          },
+          "cached": {
+            "title": "Cached",
+            "type": "boolean"
+          },
+          "expiresAt": {
+            "title": "Expiresat",
+            "type": "string"
+          },
+          "llmCallId": {
+            "title": "Llmcallid",
+            "type": "integer"
+          },
+          "mode": {
+            "enum": [
+              "single",
+              "forced",
+              "group"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "result": {
+            "$ref": "#/components/schemas/CauseAnalysisResultV2"
+          },
+          "scope": {
+            "enum": [
+              "single",
+              "group"
+            ],
+            "title": "Scope",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "integer"
+          },
+          "warningCode": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Warningcode"
+          }
+        },
+        "required": [
+          "analysisId",
+          "scope",
+          "mode",
+          "version",
+          "cached",
+          "expiresAt",
+          "llmCallId",
+          "result"
+        ],
+        "title": "CauseAnalysisResponseV2",
+        "type": "object"
+      },
+      "CauseAnalysisResultV2": {
+        "properties": {
+          "_meta": {
+            "additionalProperties": true,
+            "title": "Meta",
+            "type": "object"
+          },
+          "dimensions": {
+            "items": {
+              "$ref": "#/components/schemas/CauseAnalysisDimensionV2"
+            },
+            "title": "Dimensions",
+            "type": "array"
+          },
+          "evolutionContext": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/CauseAnalysisEvolutionContextV2"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mode": {
+            "enum": [
+              "single",
+              "forced",
+              "group"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "relatedQuestions": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Relatedquestions",
+            "type": "array"
+          },
+          "suggestedActions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Suggestedactions",
+            "type": "array"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "mode",
+          "summary"
+        ],
+        "title": "CauseAnalysisResultV2",
+        "type": "object"
+      },
+      "CauseDimensionOverrideRequestV2": {
+        "properties": {
+          "expectedVersion": {
+            "minimum": 1.0,
+            "title": "Expectedversion",
+            "type": "integer"
+          },
+          "slug": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Slug",
+            "type": "string"
+          },
+          "userNote": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Usernote"
+          },
+          "userSeverity": {
+            "anyOf": [
+              {
+                "enum": [
+                  "high",
+                  "medium",
+                  "low"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Userseverity"
+          }
+        },
+        "required": [
+          "slug",
+          "expectedVersion"
+        ],
+        "title": "CauseDimensionOverrideRequestV2",
+        "type": "object"
+      },
+      "CauseTagItemV2": {
+        "properties": {
+          "category": {
+            "title": "Category",
+            "type": "string"
+          },
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "displayOrder": {
+            "title": "Displayorder",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "isActive": {
+            "title": "Isactive",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "severityDefault": {
+            "title": "Severitydefault",
+            "type": "string"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          },
+          "taxonomyVersion": {
+            "title": "Taxonomyversion",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "slug",
+          "name",
+          "category",
+          "severityDefault",
+          "description",
+          "displayOrder",
+          "isActive",
+          "taxonomyVersion"
+        ],
+        "title": "CauseTagItemV2",
+        "type": "object"
+      },
+      "CauseTagListResponseV2": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CauseTagItemV2"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total"
+        ],
+        "title": "CauseTagListResponseV2",
+        "type": "object"
+      },
       "CustomPracticeDefaults": {
         "properties": {
           "lastUsedCount": {
@@ -8702,6 +9201,32 @@
         ]
       }
     },
+    "/api/v2/admin/review/cause-tags/invalidate-cache": {
+      "post": {
+        "operationId": "invalidate_cause_tag_registry_api_v2_admin_review_cause_tags_invalidate_cache_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationAckV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBasic": []
+          }
+        ],
+        "summary": "Invalidate Cause Tag Registry",
+        "tags": [
+          "review-admin-v2"
+        ]
+      }
+    },
     "/api/v2/auth/login": {
       "post": {
         "operationId": "login_api_v2_auth_login_post",
@@ -15388,6 +15913,162 @@
         ]
       }
     },
+    "/api/v2/review/cause-analysis/group": {
+      "post": {
+        "operationId": "create_cause_analysis_group_api_v2_review_cause_analysis_group_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CauseAnalysisGroupRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CauseAnalysisResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Cause Analysis Group",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/cause-analysis/{analysis_id}/dimensions/{dimension_index}": {
+      "patch": {
+        "operationId": "patch_cause_analysis_dimension_api_v2_review_cause_analysis__analysis_id__dimensions__dimension_index__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analysis_id",
+            "required": true,
+            "schema": {
+              "title": "Analysis Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "dimension_index",
+            "required": true,
+            "schema": {
+              "title": "Dimension Index",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CauseDimensionOverrideRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CauseAnalysisResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Patch Cause Analysis Dimension",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/cause-tags": {
+      "get": {
+        "operationId": "list_cause_tags_api_v2_review_cause_tags_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CauseTagListResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Cause Tags",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
     "/api/v2/review/items": {
       "get": {
         "operationId": "list_review_items_api_v2_review_items_get",
@@ -15750,6 +16431,79 @@
           }
         ],
         "summary": "Attempt Review Item",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/items/{item_id}/cause-analysis": {
+      "post": {
+        "operationId": "create_cause_analysis_single_api_v2_review_items__item_id__cause_analysis_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CauseAnalysisRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CauseAnalysisResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Create Cause Analysis Single",
         "tags": [
           "review-v2"
         ]
