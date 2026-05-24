@@ -3,14 +3,18 @@ from __future__ import annotations
 import pytest
 
 from sikao_api.modules.llm.application.llm.prompts.cause_analysis_group import (
-    CAUSE_ANALYSIS_GROUP_SYSTEM_MESSAGE,
     build_cause_analysis_group_messages,
 )
+from sikao_api.modules.llm.application.llm.prompts.cause_analysis_forced import (
+    build_cause_analysis_forced_messages,
+)
 from sikao_api.modules.llm.application.llm.prompts.cause_analysis_single import (
-    CAUSE_ANALYSIS_SINGLE_SYSTEM_MESSAGE,
     build_cause_analysis_single_messages,
 )
-from sikao_api.modules.llm.application.parsers.cause_analysis_parser import parse_cause_analysis
+from sikao_api.modules.llm.application.parsers.cause_analysis_parser import (
+    parse_cause_analysis,
+    parse_cause_analysis_with_meta,
+)
 
 
 def test_build_cause_analysis_single_messages_embed_required_context() -> None:
@@ -30,7 +34,7 @@ def test_build_cause_analysis_single_messages_embed_required_context() -> None:
         evolution_context_block="previous analysis: concept_confusion",
     )
     assert len(messages) == 2
-    assert messages[0].content == CAUSE_ANALYSIS_SINGLE_SYSTEM_MESSAGE
+    assert "允许的错因 taxonomy" in messages[0].content
     assert "QuestionType: single_choice" in messages[1].content
     assert "EvolutionContext:" in messages[1].content
 
@@ -41,8 +45,28 @@ def test_build_cause_analysis_group_messages_embed_question_count() -> None:
         questions_summary_block="Q1 wrong A\nQ2 wrong B\nQ3 wrong C",
     )
     assert len(messages) == 2
-    assert messages[0].content == CAUSE_ANALYSIS_GROUP_SYSTEM_MESSAGE
+    assert "允许的错因 taxonomy" in messages[0].content
     assert "QuestionCount: 3" in messages[1].content
+
+
+def test_build_cause_analysis_forced_messages_embed_mismatch_context() -> None:
+    messages = build_cause_analysis_forced_messages(
+        question_type="single_choice",
+        category_l1="verbal",
+        category_l2="logic_fill",
+        question_body="Question body here",
+        options_text="A. one\nB. two\nC. three\nD. four",
+        correct_answer="B",
+        explanation="Detailed explanation for the source question.",
+        error_count=4,
+        answer_history_block="2026-05-24 wrong -> A",
+        confidence_history="certain",
+        avg_duration_s=40.0,
+        duration_ratio=2.2,
+        mismatch_count=2,
+    )
+    assert "ForcedMismatchContext:" in messages[1].content
+    assert "mismatchCount: 2" in messages[1].content
 
 
 def test_parse_cause_analysis_accepts_valid_single_payload() -> None:
@@ -73,6 +97,7 @@ def test_parse_cause_analysis_accepts_valid_single_payload() -> None:
     payload = parse_cause_analysis(raw)
     assert payload.dimensions[0].slug == "concept_confusion"
     assert payload.evolution_context is not None
+    assert payload.evolution_context.comparison_judgment.overall_trend == "stagnant"
 
 
 def test_parse_cause_analysis_accepts_group_payload_with_null_evolution() -> None:
@@ -113,9 +138,11 @@ def test_parse_cause_analysis_falls_back_unknown_slug_to_other() -> None:
       "related_questions": []
     }
     """
-    payload = parse_cause_analysis(raw)
+    parsed = parse_cause_analysis_with_meta(raw)
+    payload = parsed.payload
     assert payload.dimensions[0].slug == "other"
     assert payload.dimensions[0].llm_original is not None
+    assert parsed.fallback_count == 1
 
 
 def test_parse_cause_analysis_rejects_invalid_json() -> None:
