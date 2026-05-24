@@ -8,6 +8,7 @@ from fastapi import Query
 from sikao_api.db.schemas_v2 import (
     OperationAckV2,
     OverviewResponseV2,
+    ReviewAttemptSubmitV2,
     ReviewBatchActionResultV2,
     ReviewDetailResponseV2,
     ReviewItemBatchActionV2,
@@ -30,6 +31,7 @@ from sikao_api.modules.review.application.service import (
     create_review_item_manual,
     graduate_review_item,
     restore_review_item,
+    submit_review_attempt,
 )
 
 router = APIRouter(
@@ -90,6 +92,18 @@ def create_review_item(
     item = create_review_item_manual(session, user=user, payload=payload)
     session.commit()
     return item
+
+
+@router.post("/items/{item_id}/attempt", response_model=ReviewDetailResponseV2, dependencies=[Depends(verify_csrf_v2)])
+def attempt_review_item(
+    item_id: int,
+    payload: ReviewAttemptSubmitV2,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> ReviewDetailResponseV2:
+    detail = submit_review_attempt(session, user=user, item_id=item_id, payload=payload)
+    session.commit()
+    return detail
 
 
 @router.patch("/items/{item_id}/graduate", response_model=ReviewItemV2, dependencies=[Depends(verify_csrf_v2)])

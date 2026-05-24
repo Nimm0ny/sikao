@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from hashlib import sha256
+
 from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
@@ -10,6 +12,7 @@ from sikao_api.db.schemas_v2 import (
     OperationAckV2,
     OverviewResponseV2,
     ReviewAttemptOutV2,
+    ReviewAttemptSubmitV2,
     ReviewBatchActionResultV2,
     ReviewDetailResponseV2,
     ReviewItemBatchActionV2,
@@ -41,8 +44,21 @@ from sikao_api.modules.review.application.validators import (
     review_status_clause,
     validate_manual_add_target,
 )
-from sikao_api.modules.review.application.srs_engine import mark_resolved
+from sikao_api.modules.review.application.srs_engine import (
+    AttemptEvent,
+    SRSAdvanceResult,
+    SRSRegressResult,
+    advance_on_correct,
+    execute_probation_check,
+    is_due_today,
+    mark_resolved,
+    regress_on_incorrect,
+)
+from sikao_api.modules.review.application.srs_types import coerce_int, ensure_metadata
 from sikao_api.modules.system.application.errors import ConflictError, NotFoundError
+
+
+_REVIEW_USER_TIMEZONE = "Asia/Shanghai"
 
 
 def build_review_list(
@@ -204,6 +220,111 @@ def create_review_item_manual(
     return serialize_review_item(item, note_question_ids=note_question_ids, cause_question_ids=cause_question_ids)
 
 
+def submit_review_attempt(
+    session: Session,
+    *,
+    user: UserV2,
+    item_id: int,
+    payload: ReviewAttemptSubmitV2,
+) -> ReviewDetailResponseV2:
+    item = _load_owned_item(session, user=user, item_id=item_id)
+    expected_version = item.version
+    normalize_flagged_review_row(item)
+    status = canonical_review_status(item.status)
+    if status in {ReviewItemStatus.GRADUATED.value, ReviewItemStatus.ARCHIVED.value}:
+        raise ConflictError("review item cannot accept attempts in current status", code="review_item_status_invalid")
+
+    confidence_prompted_forced = _is_confidence_required(item)
+    if payload.confidence is None and confidence_prompted_forced:
+        raise ConflictError("review attempt requires confidence", code="review_attempt_confidence_required")
+
+    effective_confidence = payload.confidence or "likely"
+    used_recall = payload.recall_text is not None
+    attempt_context = _build_review_attempt_context(
+        user_answer=payload.user_answer,
+        is_correct=payload.is_correct,
+        submitted_confidence=payload.confidence,
+        effective_confidence=effective_confidence,
+        used_recall=used_recall,
+        recall_text=payload.recall_text,
+        confidence_prompted_forced=confidence_prompted_forced,
+    )
+
+    if status == ReviewItemStatus.PROBATIONARY.value:
+        if not is_due_today(item, user_tz=_REVIEW_USER_TIMEZONE, respect_debt=False):
+            raise ConflictError("probationary review item is not due", code="review_item_not_due")
+        probation_result = execute_probation_check(
+            item,
+            is_correct=payload.is_correct,
+            user_id=user.id,
+            user_tz=_REVIEW_USER_TIMEZONE,
+        )
+        _apply_review_attempt_metadata(
+            item,
+            user_answer=payload.user_answer,
+            effective_confidence=effective_confidence,
+            used_recall=used_recall,
+        )
+        if payload.confidence is None:
+            metadata = ensure_metadata(item)
+            metadata["confidence_skipped_count"] = coerce_int(
+                metadata.get("confidence_skipped_count"),
+                default=0,
+            ) + 1
+        _persist_review_state_with_cas(session, item=item, user_id=user.id, expected_version=expected_version)
+        re_failed_new_item_id = None
+        if probation_result.re_failed_payload is not None:
+            re_failed_item = create_review_item(
+                session,
+                user_id=user.id,
+                question_id=probation_result.re_failed_payload.question_id,
+                source_kind=probation_result.re_failed_payload.source_kind,
+                source_id=item.id,
+                title=probation_result.re_failed_payload.title,
+                metadata_json=dict(probation_result.re_failed_payload.metadata_json),
+                status=probation_result.re_failed_payload.status,
+                reason=None,
+            )
+            re_failed_new_item_id = re_failed_item.id
+        _record_review_attempt_events(
+            session,
+            item_id=item.id,
+            events=probation_result.attempts,
+            context=attempt_context,
+            re_failed_new_item_id=re_failed_new_item_id,
+        )
+        return build_review_detail(session, user=user, item_id=item.id)
+
+    attempt_result: SRSAdvanceResult | SRSRegressResult
+    if payload.is_correct:
+        attempt_result = advance_on_correct(
+            item,
+            confidence=payload.confidence,
+            used_recall=used_recall,
+            user_tz=_REVIEW_USER_TIMEZONE,
+        )
+    else:
+        attempt_result = regress_on_incorrect(
+            item,
+            confidence=payload.confidence,
+            user_tz=_REVIEW_USER_TIMEZONE,
+        )
+    _apply_review_attempt_metadata(
+        item,
+        user_answer=payload.user_answer,
+        effective_confidence=effective_confidence,
+        used_recall=used_recall,
+    )
+    _persist_review_state_with_cas(session, item=item, user_id=user.id, expected_version=expected_version)
+    _record_review_attempt_events(
+        session,
+        item_id=item.id,
+        events=attempt_result.attempts,
+        context=attempt_context,
+    )
+    return build_review_detail(session, user=user, item_id=item.id)
+
+
 def graduate_review_item(
     session: Session,
     *,
@@ -337,6 +458,76 @@ def build_redo_ack(
     if item is None and _has_active_review_items(session, user=user):
         raise NotFoundError("review item not found", code="review_item_not_found")
     return OperationAckV2(ok=False, status="unavailable")
+
+
+def _build_review_attempt_context(
+    *,
+    user_answer: str,
+    is_correct: bool,
+    submitted_confidence: str | None,
+    effective_confidence: str,
+    used_recall: bool,
+    recall_text: str | None,
+    confidence_prompted_forced: bool,
+) -> dict[str, object]:
+    context: dict[str, object] = {
+        "userAnswer": user_answer,
+        "isCorrect": is_correct,
+        "confidence": submitted_confidence,
+        "submittedConfidence": submitted_confidence,
+        "effectiveConfidence": effective_confidence,
+        "usedRecall": used_recall,
+        "confidenceSkipped": submitted_confidence is None,
+        "confidencePromptedForced": confidence_prompted_forced,
+    }
+    if recall_text is not None:
+        context["recallText"] = recall_text
+    return context
+
+
+def _apply_review_attempt_metadata(
+    item: ReviewItemV2,
+    *,
+    user_answer: str,
+    effective_confidence: str,
+    used_recall: bool,
+) -> None:
+    metadata = ensure_metadata(item)
+    metadata["last_answer_hash"] = sha256(user_answer.encode("utf-8")).hexdigest()
+    metadata["used_recall"] = used_recall
+    metadata["last_reviewed_at"] = utc_now().isoformat()
+    metadata["last_confidence"] = effective_confidence
+
+
+def _record_review_attempt_events(
+    session: Session,
+    *,
+    item_id: int,
+    events: list[AttemptEvent],
+    context: dict[str, object],
+    re_failed_new_item_id: int | None = None,
+) -> None:
+    for event in events:
+        notes_json = {**event.notes_json, **context}
+        if (
+            re_failed_new_item_id is not None
+            and event.outcome == ReviewAttemptOutcome.PROBATION_FAILED.value
+        ):
+            notes_json["reFailedNewItemId"] = re_failed_new_item_id
+        record_review_attempt(
+            session,
+            item_id=item_id,
+            outcome=event.outcome,
+            notes_json=notes_json,
+        )
+
+
+def _is_confidence_required(item: ReviewItemV2) -> bool:
+    metadata = ensure_metadata(item)
+    return (
+        coerce_int(metadata.get("confidence_mismatch_count"), default=0) >= 1
+        or bool(metadata.get("is_hard", False))
+    )
 
 
 def _has_active_review_items(session: Session, *, user: UserV2) -> bool:

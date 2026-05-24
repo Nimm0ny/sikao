@@ -102,6 +102,7 @@ def advance_on_correct(
     ensure_simple_algorithm(item)
     metadata = ensure_metadata(item)
     effective_confidence: ConfidenceLevel = confidence or "likely"
+    _record_confidence_skip(metadata, confidence=confidence)
     if item.status == ReviewItemStatus.PENDING.value:
         item.status = ReviewItemStatus.IN_PROGRESS.value
 
@@ -263,6 +264,7 @@ def regress_on_incorrect(
     ensure_simple_algorithm(item)
     metadata = ensure_metadata(item)
     effective_confidence: ConfidenceLevel = confidence or "likely"
+    _record_confidence_skip(metadata, confidence=confidence)
     before_streak = item.correct_streak
     if item.correct_streak > 0:
         item.correct_streak -= 1
@@ -333,3 +335,15 @@ def regress_on_incorrect(
 def _require_status(item: ReviewItemV2, statuses: set[str]) -> None:
     if item.status not in statuses:
         raise SRSStateError(f"invalid review item status for SRS operation: {item.status}")
+
+
+def _record_confidence_skip(
+    metadata: dict[str, object],
+    *,
+    confidence: ConfidenceLevel | None,
+) -> None:
+    if confidence is None:
+        metadata["confidence_skipped_count"] = coerce_int(
+            metadata.get("confidence_skipped_count"),
+            default=0,
+        ) + 1
