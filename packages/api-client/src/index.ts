@@ -20,3 +20,4 @@ export * from './profileQueries';
 export * from './progressQueries';
 export * from './recommendationsQueries';
 export type * from './types/home';
+export type * from './types/practice';
