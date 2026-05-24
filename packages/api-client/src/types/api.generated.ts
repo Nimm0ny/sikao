@@ -55,6 +55,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/admin/review/cause-tags/invalidate-cache": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Invalidate Cause Tag Registry */
+        post: operations["invalidate_cause_tag_registry_api_v2_admin_review_cause_tags_invalidate_cache_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/auth/login": {
         parameters: {
             query?: never;
@@ -1963,6 +1980,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/review/cause-analysis/group": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Cause Analysis Group */
+        post: operations["create_cause_analysis_group_api_v2_review_cause_analysis_group_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/cause-analysis/{analysis_id}/dimensions/{dimension_index}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Cause Analysis Dimension */
+        patch: operations["patch_cause_analysis_dimension_api_v2_review_cause_analysis__analysis_id__dimensions__dimension_index__patch"];
+        trace?: never;
+    };
+    "/api/v2/review/cause-tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Cause Tags */
+        get: operations["list_cause_tags_api_v2_review_cause_tags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/review/items": {
         parameters: {
             query?: never;
@@ -2043,6 +2111,23 @@ export interface paths {
         put?: never;
         /** Attempt Review Item */
         post: operations["attempt_review_item_api_v2_review_items__item_id__attempt_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/items/{item_id}/cause-analysis": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Create Cause Analysis Single */
+        post: operations["create_cause_analysis_single_api_v2_review_items__item_id__cause_analysis_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2536,6 +2621,170 @@ export interface components {
             page: number;
             /** Pagesize */
             pageSize: number;
+            /** Total */
+            total: number;
+        };
+        /** CauseAnalysisComparisonJudgmentV2 */
+        CauseAnalysisComparisonJudgmentV2: {
+            /** Actionslikelycompleted */
+            actionsLikelyCompleted?: boolean[];
+            /** Improveddimensions */
+            improvedDimensions?: string[];
+            /** Newlyemergeddimensions */
+            newlyEmergedDimensions?: string[];
+            /**
+             * Overalltrend
+             * @enum {string}
+             */
+            overallTrend: "improved" | "partial_improvement" | "stagnant" | "regressed";
+            /** Persisteddimensions */
+            persistedDimensions?: string[];
+        };
+        /** CauseAnalysisDimensionOverrideV2 */
+        CauseAnalysisDimensionOverrideV2: {
+            /** Overriddenat */
+            overriddenAt: string;
+            /** Severityoverridden */
+            severityOverridden?: string | null;
+            /** Slugoriginal */
+            slugOriginal: string;
+            /** Slugoverridden */
+            slugOverridden: string;
+            /** Usernote */
+            userNote?: string | null;
+        };
+        /** CauseAnalysisDimensionV2 */
+        CauseAnalysisDimensionV2: {
+            /** Llm Original */
+            _llm_original?: {
+                [key: string]: unknown;
+            } | null;
+            /** Llm Original Slug */
+            _llm_original_slug?: string | null;
+            /** Namedisplay */
+            nameDisplay: string;
+            /**
+             * Severity
+             * @enum {string}
+             */
+            severity: "high" | "medium" | "low";
+            /** Slug */
+            slug: string;
+            /** Suggestion */
+            suggestion: string;
+            userOverride?: components["schemas"]["CauseAnalysisDimensionOverrideV2"] | null;
+        };
+        /** CauseAnalysisEvolutionContextV2 */
+        CauseAnalysisEvolutionContextV2: {
+            comparisonJudgment: components["schemas"]["CauseAnalysisComparisonJudgmentV2"];
+            /** Previousanalysisid */
+            previousAnalysisId?: number | null;
+            /** Previousanalyzedat */
+            previousAnalyzedAt?: string | null;
+            /** Previousconfidence */
+            previousConfidence?: string | null;
+            /** Previousdimensions */
+            previousDimensions?: components["schemas"]["CauseAnalysisDimensionV2"][];
+            /** Previoussuggestedactions */
+            previousSuggestedActions?: string[];
+        };
+        /** CauseAnalysisGroupRequestV2 */
+        CauseAnalysisGroupRequestV2: {
+            /** Itemids */
+            itemIds: number[];
+        };
+        /** CauseAnalysisRequestV2 */
+        CauseAnalysisRequestV2: {
+            /**
+             * Mode
+             * @default single
+             * @enum {string}
+             */
+            mode: "single" | "forced";
+        };
+        /** CauseAnalysisResponseV2 */
+        CauseAnalysisResponseV2: {
+            /** Analysisid */
+            analysisId: number;
+            /** Cached */
+            cached: boolean;
+            /** Expiresat */
+            expiresAt: string;
+            /** Llmcallid */
+            llmCallId: number;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "single" | "forced" | "group";
+            result: components["schemas"]["CauseAnalysisResultV2"];
+            /**
+             * Scope
+             * @enum {string}
+             */
+            scope: "single" | "group";
+            /** Version */
+            version: number;
+            /** Warningcode */
+            warningCode?: string | null;
+        };
+        /** CauseAnalysisResultV2 */
+        CauseAnalysisResultV2: {
+            /** Meta */
+            _meta?: {
+                [key: string]: unknown;
+            };
+            /** Dimensions */
+            dimensions?: components["schemas"]["CauseAnalysisDimensionV2"][];
+            evolutionContext?: components["schemas"]["CauseAnalysisEvolutionContextV2"] | null;
+            /**
+             * Mode
+             * @enum {string}
+             */
+            mode: "single" | "forced" | "group";
+            /** Relatedquestions */
+            relatedQuestions?: number[];
+            /** Suggestedactions */
+            suggestedActions?: string[];
+            /** Summary */
+            summary: string;
+        };
+        /** CauseDimensionOverrideRequestV2 */
+        CauseDimensionOverrideRequestV2: {
+            /** Expectedversion */
+            expectedVersion: number;
+            /** Slug */
+            slug: string;
+            /** Usernote */
+            userNote?: string | null;
+            /** Userseverity */
+            userSeverity?: ("high" | "medium" | "low") | null;
+        };
+        /** CauseTagItemV2 */
+        CauseTagItemV2: {
+            /** Category */
+            category: string;
+            /** Description */
+            description: string;
+            /** Displayorder */
+            displayOrder: number;
+            /** Id */
+            id: number;
+            /** Isactive */
+            isActive: boolean;
+            /** Name */
+            name: string;
+            /** Severitydefault */
+            severityDefault: string;
+            /** Slug */
+            slug: string;
+            /** Taxonomyversion */
+            taxonomyVersion: string;
+        };
+        /** CauseTagListResponseV2 */
+        CauseTagListResponseV2: {
+            /** Items */
+            items: components["schemas"]["CauseTagItemV2"][];
             /** Total */
             total: number;
         };
@@ -5386,6 +5635,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    invalidate_cause_tag_registry_api_v2_admin_review_cause_tags_invalidate_cache_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
                 };
             };
         };
@@ -9417,6 +9686,97 @@ export interface operations {
             };
         };
     };
+    create_cause_analysis_group_api_v2_review_cause_analysis_group_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CauseAnalysisGroupRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CauseAnalysisResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_cause_analysis_dimension_api_v2_review_cause_analysis__analysis_id__dimensions__dimension_index__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                analysis_id: number;
+                dimension_index: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CauseDimensionOverrideRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CauseAnalysisResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_cause_tags_api_v2_review_cause_tags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CauseTagListResponseV2"];
+                };
+            };
+        };
+    };
     list_review_items_api_v2_review_items_get: {
         parameters: {
             query?: {
@@ -9604,6 +9964,43 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReviewDetailResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    create_cause_analysis_single_api_v2_review_items__item_id__cause_analysis_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CauseAnalysisRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CauseAnalysisResponseV2"];
                 };
             };
             /** @description Validation Error */
