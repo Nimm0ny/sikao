@@ -27,6 +27,7 @@ from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from sikao_api.db.base import Base
+from sikao_api.db.enums_v2 import CauseAnalysisScope, ReviewItemStatus
 from sikao_api.modules.question_reports.domain.types import QuestionReportStatus
 from sqlalchemy import JSON
 
@@ -726,6 +727,10 @@ class ReviewItemV2(Base):
     __tablename__ = "review_items_v2"
     __table_args__ = (
         Index("ix_review_items_v2_user_created", "user_id", "created_at"),
+        Index("ix_review_items_v2_user_status", "user_id", "status"),
+        Index("ix_review_items_v2_user_next_review", "user_id", "next_review_at"),
+        Index("ix_review_items_v2_user_source_kind", "user_id", "source_kind"),
+        Index("ix_review_items_v2_question", "question_id"),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -733,7 +738,7 @@ class ReviewItemV2(Base):
     source_kind: Mapped[str] = mapped_column(String(32), nullable=False)
     source_id: Mapped[int | None] = mapped_column(Integer, nullable=True)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
-    status: Mapped[str] = mapped_column(String(32), nullable=False, default="pending")
+    status: Mapped[str] = mapped_column(String(32), nullable=False, default=ReviewItemStatus.PENDING.value)
     question_id: Mapped[int | None] = mapped_column(ForeignKey("questions_v2.id", ondelete="SET NULL"), nullable=True)
     essay_submission_id: Mapped[int | None] = mapped_column(
         ForeignKey("essay_submissions_v2.id", ondelete="SET NULL"), nullable=True
@@ -757,6 +762,17 @@ class ReviewItemV2(Base):
     )
     # PlanV2.source / RecommendationV2.status.
     reason: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    correct_streak: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
+    next_review_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default=text("1")
+    )
+    attempts: Mapped[list["ReviewAttemptV2"]] = relationship(
+        back_populates="review_item",
+        cascade="all, delete-orphan",
+    )
 
 
 class ReviewAttemptV2(Base):
@@ -770,6 +786,35 @@ class ReviewAttemptV2(Base):
     outcome: Mapped[str] = mapped_column(String(32), nullable=False)
     notes_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
     attempted_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    review_item: Mapped["ReviewItemV2"] = relationship(back_populates="attempts")
+
+
+class AiCauseAnalysisV2(Base):
+    __tablename__ = "ai_cause_analysis_v2"
+    __table_args__ = (
+        Index("ix_ai_cause_v2_user_question_hash", "user_id", "question_id", "input_hash"),
+        Index("ix_ai_cause_v2_user_signature", "user_id", "question_ids_signature"),
+        Index("ix_ai_cause_v2_expires", "expires_at"),
+        CheckConstraint(
+            "((scope = 'single' AND question_id IS NOT NULL AND question_ids_signature IS NULL) "
+            "OR (scope = 'group' AND question_id IS NULL AND question_ids_signature IS NOT NULL))",
+            name="ck_ai_cause_v2_scope_target",
+        ),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(ForeignKey("users_v2.id", ondelete="CASCADE"), nullable=False)
+    scope: Mapped[str] = mapped_column(String(16), nullable=False, default=CauseAnalysisScope.SINGLE.value)
+    question_id: Mapped[int | None] = mapped_column(
+        ForeignKey("questions_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    question_ids_signature: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    input_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    result_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, nullable=False)
+    llm_call_id: Mapped[int] = mapped_column(ForeignKey("llm_call_v2.id"), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
 
 class NoteV2(Base):
