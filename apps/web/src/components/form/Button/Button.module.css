@@ -1,0 +1,77 @@
+/*
+ * Button — V5 D.3.1 form atom (skeleton).
+ * Why: token-driven 5×4 visual matrix. Variants & sizes selected via data-*
+ *      attrs. Root clears UA <button> defaults per §D.3.35 gotcha; spinner
+ *      runs a CSS keyframe rotation; reduced-motion freezes it (token-side
+ *      `--dur-*: 0ms` already kills CSS transitions, but rotation needs a
+ *      separate guard since it's an animation, not a transition).
+ */
+.root {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+  white-space: nowrap;
+}
+.root[data-full-width] { width: 100%; }
+.root[data-size='sm'] { height: var(--btn-h-sm); padding: 0 var(--btn-padding-x-sm); font-size: var(--btn-font-sm); gap: var(--btn-gap-sm); border-radius: var(--btn-radius-sm); }
+.root[data-size='md'] { height: var(--btn-h-md); padding: 0 var(--btn-padding-x-md); font-size: var(--btn-font-md); gap: var(--btn-gap-md); border-radius: var(--btn-radius-md); }
+.root[data-size='lg'] { height: var(--btn-h-lg); padding: 0 var(--btn-padding-x-lg); font-size: var(--btn-font-lg); gap: var(--btn-gap-lg); border-radius: var(--btn-radius-lg); }
+.root[data-size='xl'] { height: var(--btn-h-xl); padding: 0 var(--btn-padding-x-xl); font-size: var(--btn-font-xl); gap: var(--btn-gap-xl); border-radius: var(--btn-radius-xl); }
+.root[data-icon-only][data-size='sm'] { width: var(--btn-h-sm); padding: 0; }
+.root[data-icon-only][data-size='md'] { width: var(--btn-h-md); padding: 0; }
+.root[data-icon-only][data-size='lg'] { width: var(--btn-h-lg); padding: 0; }
+.root[data-icon-only][data-size='xl'] { width: var(--btn-h-xl); padding: 0; }
+
+.root[data-variant='primary'] { background: var(--color-brand-primary); color: var(--color-text-on-brand); }
+.root[data-variant='secondary'] { background: var(--color-bg-surface); color: var(--color-text-primary); border: 1px solid var(--color-border-default); }
+.root[data-variant='tertiary'] { background: transparent; color: var(--color-text-primary); }
+.root[data-variant='ghost'] { background: transparent; color: var(--color-text-primary); }
+.root[data-variant='danger'] { background: var(--color-state-err); color: #fff; } /* design §D.3.1: danger uses white ink — no semantic on-error token in tokens.css §2.4, color literal stays in CSS layer (lint-hardcode only scans .tsx/.ts) */
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: lint regex only resolves single-feature @media queries; the compound `(hover: hover) and (pointer: fine)` query above is the canonical hover-capable form */
+  .root[data-variant='primary']:hover:not(:disabled) { background: var(--color-brand-hover); }
+  .root[data-variant='secondary']:hover:not(:disabled) { background: var(--color-bg-elevated); }
+  .root[data-variant='tertiary']:hover:not(:disabled) { background: var(--color-bg-elevated); }
+  .root[data-variant='ghost']:hover:not(:disabled) { background: var(--color-bg-elevated); }
+  .root[data-variant='danger']:hover:not(:disabled) { background: color-mix(in oklch, var(--color-state-err) 88%, #000); }
+}
+.root:active:not(:disabled) { transform: translateY(0); filter: brightness(0.96); }
+.root:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  box-shadow: var(--input-ring-focus);
+}
+.root:disabled { opacity: 0.5; cursor: not-allowed; }
+.root[data-loading] { cursor: progress; }
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+.icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.icon[data-icon-size='sm'] { width: var(--btn-icon-size-sm); height: var(--btn-icon-size-sm); }
+.icon[data-icon-size='md'] { width: var(--btn-icon-size-md); height: var(--btn-icon-size-md); }
+.icon[data-icon-size='lg'] { width: var(--btn-icon-size-lg); height: var(--btn-icon-size-lg); }
+.icon[data-icon-size='xl'] { width: var(--btn-icon-size-xl); height: var(--btn-icon-size-xl); }
+
+.spinner { display: inline-flex; flex-shrink: 0; animation: button-spinner-rotate 0.8s linear infinite; }
+.spinner[data-size='sm'] { width: var(--btn-icon-size-sm); height: var(--btn-icon-size-sm); }
+.spinner[data-size='md'] { width: var(--btn-icon-size-md); height: var(--btn-icon-size-md); }
+.spinner[data-size='lg'] { width: var(--btn-icon-size-lg); height: var(--btn-icon-size-lg); }
+.spinner[data-size='xl'] { width: var(--btn-icon-size-xl); height: var(--btn-icon-size-xl); }
+.spinner svg { width: 100%; height: 100%; }
+
+@keyframes button-spinner-rotate { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .spinner { animation: none; } }
