@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { usePracticeStore } from '../usePracticeStore';
+import type { PracticeSessionEnvelopeV2, TimingEventV2 } from '@sikao/api-client/types/practice';
 
 // SIKAO Phase 2a (2026-05-09): scratch clip 跨题持久化模型 unit test.
 
@@ -7,8 +8,16 @@ describe('usePracticeStore — scratchClips', () => {
   beforeEach(() => {
     usePracticeStore.setState({
       sessionData: null,
+      sessionEnvelope: null,
+      sessionLifecycle: null,
+      mockExamCountdown: null,
       answers: {},
       flaggedQuestions: new Set(),
+      favoritedQuestions: new Set(),
+      persistentFlaggedQuestions: new Set(),
+      viewedSolutionAnswerIds: new Set(),
+      noteDrafts: {},
+      pendingTimingEvents: [],
       scratchClips: [],
       currentVisibleQuestionId: null,
     });
@@ -67,5 +76,97 @@ describe('usePracticeStore — scratchClips', () => {
     expect(usePracticeStore.getState().currentVisibleQuestionId).toBe('q42');
     usePracticeStore.getState().setCurrentVisibleQuestionId(null);
     expect(usePracticeStore.getState().currentVisibleQuestionId).toBeNull();
+  });
+
+  it('bootstrapSessionEnvelope mirrors favorite / persistent flag / viewed solution state', () => {
+    usePracticeStore.getState().addScratchClip({ qid: '999', content: 'stale' });
+    usePracticeStore.getState().setNoteDraft('999', 'old draft');
+    usePracticeStore.getState().enqueueTimingEvents([
+      { answerId: 9, ts: '2026-05-24T00:00:00Z', type: 'answer_change' },
+    ]);
+    usePracticeStore.getState().setCurrentVisibleQuestionId('999');
+
+    const envelope: PracticeSessionEnvelopeV2 = {
+      actions: [],
+      entryKind: 'paper',
+      examMode: false,
+      forceSubmitted: false,
+      id: 11,
+      items: [
+        {
+          answerChangeCount: 0,
+          answerKind: 'single_choice',
+          flagged: true,
+          hasPersistentFlag: false,
+          hasUserNotes: false,
+          id: '1',
+          isFavorited: true,
+          isOvertime: false,
+          prompt: 'Q1',
+          questionKey: '101',
+          status: 'answered',
+          timeSpentMs: 0,
+          viewedSolution: false,
+          visitCount: 1,
+        },
+        {
+          answerChangeCount: 0,
+          answerKind: 'single_choice',
+          flagged: false,
+          hasPersistentFlag: true,
+          hasUserNotes: false,
+          id: '2',
+          isFavorited: false,
+          isOvertime: false,
+          prompt: 'Q2',
+          questionKey: '102',
+          status: 'answered',
+          timeSpentMs: 0,
+          viewedSolution: true,
+          visitCount: 1,
+        },
+      ],
+      pausedCount: 0,
+      pausedTotalSeconds: 0,
+      practiceMode: 'full_set',
+      sourceMode: 'paper',
+      startedAt: '2026-05-24T00:00:00Z',
+      status: 'in_progress',
+      totalActiveSeconds: 0,
+      track: 'xingce',
+    };
+
+    usePracticeStore.getState().bootstrapSessionEnvelope(envelope);
+
+    expect(usePracticeStore.getState().flaggedQuestions.has(101)).toBe(true);
+    expect(usePracticeStore.getState().favoritedQuestions.has(101)).toBe(true);
+    expect(usePracticeStore.getState().persistentFlaggedQuestions.has(102)).toBe(true);
+    expect(usePracticeStore.getState().viewedSolutionAnswerIds.has(2)).toBe(true);
+    expect(usePracticeStore.getState().scratchClips).toEqual([]);
+    expect(usePracticeStore.getState().noteDrafts).toEqual({});
+    expect(usePracticeStore.getState().pendingTimingEvents).toEqual([]);
+    expect(usePracticeStore.getState().currentVisibleQuestionId).toBeNull();
+  });
+
+  it('queues timing events and drains them atomically', () => {
+    const events: TimingEventV2[] = [
+      {
+        answerId: 1,
+        ts: '2026-05-24T00:00:00Z',
+        type: 'question_enter',
+      },
+      {
+        answerId: 1,
+        ts: '2026-05-24T00:00:05Z',
+        type: 'question_leave',
+      },
+    ];
+
+    usePracticeStore.getState().enqueueTimingEvents(events);
+    expect(usePracticeStore.getState().pendingTimingEvents).toHaveLength(2);
+
+    const drained = usePracticeStore.getState().drainTimingEvents();
+    expect(drained).toEqual(events);
+    expect(usePracticeStore.getState().pendingTimingEvents).toEqual([]);
   });
 });
