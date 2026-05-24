@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from typing import Any
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -28,6 +29,13 @@ from sikao_api.modules.progress.application.aggregates import (
     month_bounds_cn,
     today_cn,
     week_bounds_cn,
+)
+from sikao_api.modules.review.application.queue_items import (
+    ACTIVE_REVIEW_ITEM_STATUSES,
+    canonical_review_source_kind,
+    canonical_review_status,
+    load_review_presence_sets,
+    today_end_utc,
 )
 from sikao_api.modules.progress.application.dashboard_support import (
     build_plan_window_summary,
@@ -144,12 +152,28 @@ def build_dashboard_review(
     items = list(
         session.scalars(
             select(ReviewItemV2)
-            .where(ReviewItemV2.user_id == user.id, ReviewItemV2.status == "pending")
+            .where(
+                ReviewItemV2.user_id == user.id,
+                ReviewItemV2.status.in_(ACTIVE_REVIEW_ITEM_STATUSES),
+                (ReviewItemV2.next_review_at.is_(None) | (ReviewItemV2.next_review_at <= today_end_utc())),
+            )
             .order_by(ReviewItemV2.updated_at.asc(), ReviewItemV2.created_at.asc(), ReviewItemV2.id.asc())
         )
     )
+    note_question_ids, cause_question_ids = load_review_presence_sets(
+        session,
+        user_id=user.id,
+        items=items[:5],
+    )
     return DashboardReviewResponseV2(
-        items=[_serialize_review_item(item) for item in items[:5]],
+        items=[
+            _serialize_review_item(
+                item,
+                note_question_ids=note_question_ids,
+                cause_question_ids=cause_question_ids,
+            )
+            for item in items[:5]
+        ],
         total=len(items),
     )
 
@@ -289,7 +313,7 @@ def _load_window(
     from_date: date,
     to_date: date,
     include_practice_blocks: bool,
-) -> tuple[list, list]:
+) -> tuple[list[Any], list[Any]]:
     payload = EventQueryServiceV2(session).list_events(
         user=user,
         from_date=from_date,
@@ -305,19 +329,31 @@ def _load_window(
     return events, payload.data.practice_blocks
 
 
-def _sum_practice_minutes(practice_blocks: list) -> int:
+def _sum_practice_minutes(practice_blocks: list[Any]) -> int:
     return sum(
         int((item.end_at - item.start_at).total_seconds() // 60)
         for item in practice_blocks
     )
 
 
-def _serialize_review_item(item: ReviewItemV2) -> ReviewItemSchemaV2:
+def _serialize_review_item(
+    item: ReviewItemV2,
+    *,
+    note_question_ids: set[int],
+    cause_question_ids: set[int],
+) -> ReviewItemSchemaV2:
+    question_id = int(item.question_id) if item.question_id is not None else None
     return ReviewItemSchemaV2(
         id=item.id,
-        kind=item.source_kind,
+        kind=canonical_review_source_kind(source_kind=item.source_kind, reason=item.reason),
         title=item.title,
-        status=item.status,
+        status=canonical_review_status(item.status),
         href=f"/review/items/{item.id}",
         created_at=item.created_at,
+        updated_at=item.updated_at,
+        correct_streak=item.correct_streak,
+        next_review_at=item.next_review_at,
+        question_id=question_id,
+        has_user_notes=question_id in note_question_ids if question_id is not None else False,
+        has_cause_analysis=question_id in cause_question_ids if question_id is not None else False,
     )
