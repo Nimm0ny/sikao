@@ -1,31 +1,38 @@
 /*
- * Sikao Web Router — V5-M0.5 skeleton (2026-05-24).
+ * Sikao Web Router — V5-M3.5 Phase 4 desktop pages (2026-05-24).
  *
- * V5-M0.5 big-bang rebuild dropped the V4 router (OnboardingGate /
- * RouteHosts / RouteConvergence / RedirectPreserveQuery + 30+ route
- * declarations). This file is now a placeholder router with a single
- * "/" route that confirms the boot path is wired:
- *   - QueryClientProvider works
- *   - tokens.css is loaded
- *   - StrictMode renders without React errors
+ * V5-M3.5 wave 16 lands the SaaS shell (RootLayout) + 6 page slots:
+ *   - / Home (D.4.1)      — landed in this commit
+ *   - /practice Practice  — placeholder until 17.2
+ *   - /review Review      — placeholder until 17.6
+ *   - /note Note          — placeholder until 17.3
+ *   - /question-hub       — placeholder until 17.5
+ *   - /me Me              — placeholder until 17.4
  *
- * Real routes will be added by:
- *   - V5-M3 (SIK-75): 35 component skeletons mounted under storybook-style
- *     /sandbox routes for visual review
- *   - V5-M9 (SIK-81): real Home / Practice / Notes / Review / Profile /
- *     QuestionHub pages (D.4.1-D.4.5 from design.md §D.4)
- *   - Per business Phase: Home M11/M12 (SIK-29 family) re-implements
- *     /me + /profile/records + 5-tab nav under V5 framework
+ * Until each page view is implemented (waves 16-17), unfilled routes render
+ * the V5-M0.5 BootCard so the Rail nav links resolve to a usable surface
+ * without Page Not Found gaps. BootCard stays in-tree as the catch-all "*"
+ * fallback for typo / legacy URLs.
  *
  * dev port: 18080 (AGENT-H10).
  */
 import { createBrowserRouter } from 'react-router-dom';
+import { RootLayout } from '../layouts/RootLayout';
+import { Home } from '../views/Home';
 import { BootCard } from './BootCard';
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <BootCard />,
+    element: <RootLayout />,
+    children: [
+      { index: true, element: <Home /> },
+      { path: 'practice', element: <BootCard /> },
+      { path: 'review', element: <BootCard /> },
+      { path: 'note', element: <BootCard /> },
+      { path: 'question-hub', element: <BootCard /> },
+      { path: 'me', element: <BootCard /> },
+    ],
   },
   {
     path: '*',

@@ -1,0 +1,161 @@
+/*
+ * Home view — V5 D.4.1 desktop page skeleton.
+ * Why: 4-row Workspace grid (header / metric-row × 4 / Calendar / BottomRow × 3)
+ *      per design.md §D.4.1. Calendar panel takes 1.6fr; bottom row stays 1fr;
+ *      module spacing --space-4. Mobile collapses to single column.
+ */
+
+.root {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  width: 100%;
+  min-height: 0;
+}
+
+.metricRow {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.metricCard {
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow-rest);
+  padding: var(--card-padding);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  box-sizing: border-box;
+}
+
+.metricLabel {
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+}
+
+.metricDelta {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+}
+.metricDelta[data-direction='up']   { color: var(--color-state-ok); }
+.metricDelta[data-direction='down'] { color: var(--color-state-err); }
+
+.calendarTabs {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+}
+
+.calendarTabActive {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.calendarTab {
+  cursor: default;
+}
+
+.calendarPlaceholder {
+  display: grid;
+  place-items: center;
+  min-height: 220px;
+  color: var(--color-text-meta);
+  font-size: var(--font-body);
+}
+
+.bottomRow {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.taskItem {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+  font-size: var(--font-body);
+}
+.taskItem:last-child { border-bottom: 0; }
+
+.taskTitle {
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.taskStatus {
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+  white-space: nowrap;
+}
+
+.reviewSummary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.reviewBadges {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.recommendList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.recommendItem {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.recommendItem:last-child { border-bottom: 0; }
+
+.recommendTitle {
+  font-size: var(--font-body);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.recommendMeta {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+}
+
+@media (max-width: 1023.98px) {
+  .metricRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .bottomRow { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 767.98px) {
+  .metricRow { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,29 @@
+/*
+ * BootCard — V5-M0.5 placeholder.
+ * Why: minimal card surface for routes whose real view has not yet landed.
+ *      Lives inside <Workspace> so it inherits page padding; root size is
+ *      auto, fills available width.
+ */
+.root {
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow-rest);
+  padding: var(--card-padding);
+  color: var(--color-text-primary);
+  max-width: var(--max-w-form);
+  margin: 0 auto;
+}
+
+.title {
+  font-size: var(--font-h2);
+  font-weight: var(--font-weight-semibold);
+  margin: 0 0 var(--space-3);
+}
+
+.body {
+  font-size: var(--font-body);
+  color: var(--color-text-secondary);
+  line-height: 1.55;
+  margin: 0;
+}
