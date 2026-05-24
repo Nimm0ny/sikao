@@ -1,0 +1,60 @@
+/*
+ * AnswerSheet — V5 D.3.30 business component (skeleton).
+ * Why: token-driven answer-sheet grid. Cols configurable via CSS custom
+ *      property fed by [data-cols] -> grid-template-columns repeat. Cell
+ *      surfaces use V5 §2 surface tokens; marked uses warn border;
+ *      current uses brand fill.
+ */
+.root {
+  display: grid;
+  grid-template-columns: repeat(var(--answer-sheet-cols, 5), minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.root[data-cols='5']  { --answer-sheet-cols: 5; }
+.root[data-cols='10'] { --answer-sheet-cols: 10; }
+
+.cell {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--color-bg-sunken);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-10);
+  color: var(--color-text-primary);
+  font: inherit;
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-medium);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  padding: 0;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out);
+}
+
+.cell:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.cell[data-state='answered'] {
+  background: var(--color-bg-elevated);
+  border-color: var(--color-border-strong);
+}
+.cell[data-state='marked'] {
+  background: var(--color-state-warn-soft);
+  border-color: var(--color-state-warn);
+  color: var(--color-state-warn);
+}
+.cell[data-state='current'] {
+  background: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+  font-weight: var(--font-weight-bold);
+}

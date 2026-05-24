@@ -1,0 +1,104 @@
+/*
+ * OptionItem — V5 D.3.28 business component (skeleton).
+ * Why: 6-state visual contract from design.md §D.3.28. Surfaces use
+ *      --card-bg / --color-state-* soft tokens; never raw color literals.
+ *      Letter chip is monospaced via tabular-nums to keep ABCD aligned.
+ */
+.root {
+  appearance: none;
+  -webkit-appearance: none;
+  background: var(--card-bg);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-12);
+  color: var(--color-text-primary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: start;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  box-sizing: border-box;
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.root:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover gated by hover+fine pointer (CP.9). */
+  .root[data-state='rest']:hover {
+    background: var(--color-bg-elevated);
+  }
+}
+
+.root[data-state='selected'] {
+  background: var(--color-brand-soft);
+  border-color: var(--color-brand-primary);
+}
+.root[data-state='correct'] {
+  background: var(--color-state-ok-soft);
+  border-color: var(--color-state-ok);
+}
+.root[data-state='wrong'] {
+  background: var(--color-state-err-soft);
+  border-color: var(--color-state-err);
+}
+.root[data-state='reviewing'] {
+  background: var(--color-state-err-soft);
+  border-color: var(--color-state-err);
+}
+.root[data-state='disabled'] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.letter {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-999);
+  background: var(--color-bg-sunken);
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}
+.root[data-state='selected']  .letter { background: var(--color-brand-primary); color: var(--color-text-on-brand); }
+.root[data-state='correct']   .letter { background: var(--color-state-ok); color: var(--color-text-on-brand); }
+.root[data-state='wrong']     .letter,
+.root[data-state='reviewing'] .letter { background: var(--color-state-err); color: var(--color-text-on-brand); }
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-width: 0;
+}
+.text {
+  font-size: var(--font-body);
+  line-height: var(--line-height-body);
+}
+.explanation {
+  font-size: var(--font-meta);
+  line-height: var(--line-height-meta);
+  color: var(--color-text-secondary);
+}
+
+.glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.glyph[data-glyph='correct'] { color: var(--color-state-ok); }
+.glyph[data-glyph='wrong']   { color: var(--color-state-err); }

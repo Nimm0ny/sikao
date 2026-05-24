@@ -1,0 +1,17 @@
+/*
+ * TimerDisplay — V5 D.3.31 business component (skeleton).
+ * Why: tone palette wired via [data-tone]: rest → text-primary; warn →
+ *      --color-state-warn; err → --color-state-err. Numeric inside owns
+ *      tabular-nums + size scaling.
+ */
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-primary);
+  transition: color var(--dur-fast) var(--ease-out);
+}
+
+.root[data-tone='warn'] { color: var(--color-state-warn); }
+.root[data-tone='err']  { color: var(--color-state-err); }
+.root[data-paused]      { opacity: 0.6; }

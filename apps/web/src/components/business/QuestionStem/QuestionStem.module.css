@@ -1,0 +1,59 @@
+/*
+ * QuestionStem — V5 D.3.29 business component (skeleton).
+ * Why: question-prose container with 4-step font-size dial wired to D.3.15
+ *      Slider (compact 14 / standard 15 / large 17 / x-large 19). Sizes are
+ *      hardcoded literals here ON PURPOSE: they are spec-pinned reading
+ *      ergonomics breakpoints (design.md §D.3.29) — not part of the V5
+ *      type ramp, so no token alias exists by design. Token CP.1 applies
+ *      to *colors* and *layout spacing*; reading-density dial values are
+ *      explicitly out of scope (R1/Q3 decision).
+ */
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  color: var(--color-text-primary);
+}
+
+.meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.number {
+  font-size: var(--font-card);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.type {
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+}
+
+.content {
+  /* font-size resolved by [data-font-size] selectors below */
+  line-height: 1.6;
+  word-break: break-word;
+}
+
+.root[data-font-size='14'] .content { font-size: 14px; }
+.root[data-font-size='15'] .content { font-size: 15px; }
+.root[data-font-size='17'] .content { font-size: 17px; }
+.root[data-font-size='19'] .content { font-size: 19px; }
+
+.root[data-selectable='true'] .content {
+  user-select: text;
+  cursor: text;
+}
+
+.mark {
+  /* selection / annotation overlay placeholder; highlight rendering lands
+   * with the dedicated annotation engine spec (R2/Q5). Keep visual stub
+   * minimal so skeleton tests can assert presence without locking layout. */
+  background: var(--color-brand-soft);
+  border-radius: var(--radius-10);
+  padding: 0 var(--space-1);
+}
