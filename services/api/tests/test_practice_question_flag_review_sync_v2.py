@@ -60,6 +60,55 @@ def test_question_flag_create_and_review_sync(tmp_path: Path) -> None:
 
         review_rows = _review_rows(client)
         assert len(review_rows) == 1
+        assert review_rows[0].source_kind == "flagged_persistent"
         assert review_rows[0].reason == "flagged_persistent"
         assert review_rows[0].question_id == question_id
         assert review_rows[0].status == "pending"
+
+
+def test_question_flag_sync_preserves_legacy_source_metadata_when_normalizing(tmp_path: Path) -> None:
+    with build_client(tmp_path) as client:
+        user_id = register_user(client)
+        question_id = seed_paper(
+            client,
+            paper_code="XC-FLAG-LEGACY-01",
+            title="Flags Legacy Normalize",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "Legacy flag row",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "logic_fill",
+                }
+            ],
+        )[0]
+        app = cast(Any, client.app)
+        factory = app.state.db.session_factory
+        with factory() as session:
+            session.add(
+                ReviewItemV2(
+                    user_id=user_id,
+                    source_kind="question_flag",
+                    source_id=123,
+                    title="Legacy flag row",
+                    status="pending",
+                    question_id=question_id,
+                    metadata_json={"legacy": True},
+                    reason="flagged_persistent",
+                )
+            )
+            session.commit()
+
+        created = client.post(
+            f"/api/v2/practice/questions/{question_id}/flag",
+            json={"reason": "uncertain"},
+        )
+        assert created.status_code == 200, created.text
+
+        review_rows = _review_rows(client)
+        assert len(review_rows) == 1
+        assert review_rows[0].source_kind == "flagged_persistent"
+        assert review_rows[0].metadata_json["legacySourceKind"] == "question_flag"

@@ -68,7 +68,7 @@ def test_question_flag_recreate_preserves_resolved_history(tmp_path: Path) -> No
         review_rows = _review_rows(client)
         assert len(review_rows) == 2
         assert len([row for row in review_rows if row.status == "pending"]) == 1
-        assert len([row for row in review_rows if row.status == "resolved"]) == 1
+        assert len([row for row in review_rows if row.status == "archived"]) == 1
 
         client.patch(f"/api/v2/practice/questions/{question_id}/flag/resolve")
         recreated_again = client.post(
@@ -78,4 +78,4 @@ def test_question_flag_recreate_preserves_resolved_history(tmp_path: Path) -> No
         assert recreated_again.status_code == 200, recreated_again.text
         review_rows = _review_rows(client)
         assert len([row for row in review_rows if row.status == "pending"]) == 1
-        assert len([row for row in review_rows if row.status == "resolved"]) == 2
+        assert len([row for row in review_rows if row.status == "archived"]) == 2

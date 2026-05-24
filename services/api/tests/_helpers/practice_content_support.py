@@ -24,11 +24,13 @@ from sikao_api.db.models_v2 import (
     PaperV2,
     PracticeSessionAnswerV2,
     PracticeSessionV2,
+    QuestionOptionV2,
     QuestionV2,
     ReviewItemV2,
     UserV2,
 )
 from sikao_api.main import create_app
+from sikao_api.modules.review.application.queue_items import reason_compat_for_source
 
 
 REPO_ROOT = Path(__file__).resolve().parents[4]
@@ -183,14 +185,19 @@ def seed_paper(
         session.flush()
         question_ids: list[int] = []
         for item_no, payload in enumerate(questions, start=1):
+            content_json = dict(payload.get("content_json", {"stem": payload["prompt"]}))
+            if "correct_answer" in payload and "correct_answer" not in content_json:
+                content_json["correct_answer"] = str(payload["correct_answer"])
+            if "answerText" in payload and "answerText" not in content_json:
+                content_json["answerText"] = str(payload["answerText"])
             question = QuestionV2(
                     revision_id=revision.id,
                     item_no=item_no,
                     subject_kind=subject_kind,
                     prompt=str(payload["prompt"]),
-                    answer_kind="single_choice",
+                    answer_kind=str(payload.get("answer_kind", "single_choice")),
                     status="published",
-                    content_json={"stem": payload["prompt"]},
+                    content_json=content_json,
                     source="real_exam",
                     year=int(payload["year"]),
                     region=str(payload["region"]),
@@ -201,6 +208,22 @@ def seed_paper(
                 )
             session.add(question)
             session.flush()
+            option_payloads = payload.get("options", [])
+            for display_order, option_payload in enumerate(option_payloads, start=1):
+                if isinstance(option_payload, dict):
+                    option_key = str(option_payload.get("key", chr(64 + display_order)))
+                    option_text = str(option_payload.get("text", option_key))
+                else:
+                    option_key = chr(64 + display_order)
+                    option_text = str(option_payload)
+                session.add(
+                    QuestionOptionV2(
+                        question_id=question.id,
+                        option_key=option_key,
+                        option_text=option_text,
+                        display_order=display_order,
+                    )
+                )
             question_ids.append(question.id)
         session.commit()
         return question_ids
@@ -340,15 +363,17 @@ def seed_review_item(
     app = cast(Any, client.app)
     factory = app.state.db.session_factory
     with factory() as session:
+        source_kind = reason if reason in {"wrong_answer", "manual_add", "flagged_persistent"} else "wrong_answer"
+        canonical_status = "archived" if status in {"resolved", "removed"} else status
         item = ReviewItemV2(
             user_id=user_id,
-            source_kind="question",
+            source_kind=source_kind,
             source_id=question_id,
             title=title,
-            status=status,
+            status=canonical_status,
             question_id=question_id,
             metadata_json={},
-            reason=reason,
+            reason=reason_compat_for_source(source_kind),
         )
         session.add(item)
         session.commit()

@@ -63,4 +63,4 @@ def test_session_flag_stays_session_local_until_submit(tmp_path: Path) -> None:
         assert len(persistent) == 1
         assert persistent[0].reason == "uncertain"
         review = _review_items(client)
-        assert any(item.reason == "flagged_persistent" for item in review)
+        assert any(item.reason == "flagged_persistent" and item.source_kind == "flagged_persistent" for item in review)

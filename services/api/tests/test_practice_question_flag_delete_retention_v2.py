@@ -62,5 +62,4 @@ def test_question_flag_delete_hides_queue_and_keeps_history(tmp_path: Path) -> N
         assert recreated_after_delete.status_code == 200, recreated_after_delete.text
         review_rows = _review_rows(client)
         assert len([row for row in review_rows if row.status == "pending"]) == 1
-        assert len([row for row in review_rows if row.status == "resolved"]) == 1
-        assert len([row for row in review_rows if row.status == "removed"]) == 1
+        assert len([row for row in review_rows if row.status == "archived"]) == 2

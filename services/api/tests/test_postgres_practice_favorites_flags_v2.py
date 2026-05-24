@@ -76,7 +76,7 @@ def test_postgres_practice_favorites_and_flags_flow(tmp_path: Path) -> None:
         assert len([row for row in flags if row.resolved_at is None]) == 1
 
         reviews = _review_rows(client)
-        assert len([row for row in reviews if row.reason == "flagged_persistent" and row.status == "resolved"]) == 1
+        assert len([row for row in reviews if row.reason == "flagged_persistent" and row.status == "archived"]) == 1
         assert len([row for row in reviews if row.reason == "flagged_persistent" and row.status == "pending"]) == 1
 
         resolved_again = client.patch(f"/api/v2/practice/questions/{question_id}/flag/resolve")
@@ -88,7 +88,7 @@ def test_postgres_practice_favorites_and_flags_flow(tmp_path: Path) -> None:
         assert recreated_again.status_code == 200, recreated_again.text
         reviews = _review_rows(client)
         assert len([row for row in reviews if row.reason == "flagged_persistent" and row.status == "pending"]) == 1
-        assert len([row for row in reviews if row.reason == "flagged_persistent" and row.status == "resolved"]) == 2
+        assert len([row for row in reviews if row.reason == "flagged_persistent" and row.status == "archived"]) == 2
 
         review_queue = client.get("/api/v2/review/items")
         assert review_queue.status_code == 200, review_queue.text
