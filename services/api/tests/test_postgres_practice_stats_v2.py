@@ -40,13 +40,10 @@ def test_postgres_practice_stats_routes(tmp_path: Path) -> None:
         )
         app = cast(Any, client.app)
         factory = app.state.db.session_factory
-        with factory() as session:
-            recompute_user_stats(session, user_id=user_id)
-            session.commit()
-
         stats = client.get("/api/v2/practice/stats?type=xingce")
         assert stats.status_code == 200, stats.text
         assert stats.json()["overall"]["accuracy"] == 0.5
+        assert stats.json()["overall"]["percentileRank"] == 1.0
 
         cross = client.get("/api/v2/practice/stats/cross?type=xingce&category=verbal")
         assert cross.status_code == 200, cross.text
@@ -54,6 +51,7 @@ def test_postgres_practice_stats_routes(tmp_path: Path) -> None:
 
         percentile = client.get("/api/v2/practice/stats/percentile?type=xingce&category=verbal")
         assert percentile.status_code == 200, percentile.text
+        assert percentile.json()["percentileRank"] == 1.0
 
         essay_question_id = seed_paper(
             client,
