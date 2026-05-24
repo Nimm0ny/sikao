@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import importlib.util
 import os
 import sqlite3
 import subprocess
@@ -7,11 +8,12 @@ import sys
 from uuid import uuid4
 
 import pytest
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import make_url
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
+from sikao_api.db import schemas_v2
 from sikao_api.db.models_v2 import QuestionV2
 
 from _practice_phase_p1_support import (
@@ -151,3 +153,47 @@ def test_postgres_practice_p1_json_columns_use_jsonb() -> None:
         finally:
             cleanup_engine.dispose()
             admin_engine.dispose()
+
+
+@pytest.mark.skipif(not os.environ.get("TEST_POSTGRESQL_URL"), reason="TEST_POSTGRESQL_URL is not set")
+def test_postgres_question_metadata_phase1_invariants(tmp_path) -> None:
+    from _helpers.postgres_temp_db import build_postgres_engine
+    from _helpers.practice_content_support import build_client
+
+    with build_postgres_engine("sikao_practice_qmeta") as engine:
+        database_url = engine.url.render_as_string(hide_password=False)
+        env = os.environ.copy()
+        env["DATABASE_URL"] = database_url
+        env["PYTHONPATH"] = str(API_SRC)
+        subprocess.run(
+            [sys.executable, "-m", "alembic", "-c", str(ALEMBIC_INI), "upgrade", "head"],
+            check=True,
+            cwd=REPO_ROOT,
+            env=env,
+        )
+
+        with engine.connect() as connection:
+            assert connection.execute(text("SELECT COUNT(*) FROM knowledge_point_v2")).scalar_one() == 0
+            assert (
+                connection.execute(text("SELECT COUNT(*) FROM question_knowledge_point_v2")).scalar_one()
+                == 0
+            )
+
+        constraints = {
+            constraint["name"]
+            for constraint in inspect(engine).get_check_constraints("questions_v2")
+        }
+        assert "ck_q_v2_complexity_range" in constraints
+        assert "ck_q_v2_heat_non_negative" in constraints
+
+        with build_client(
+            tmp_path,
+            database_url=database_url,
+            initialize_schema=False,
+            schema_token="practice-qmeta-phase1",
+        ) as client:
+            paths = set(client.app.openapi()["paths"].keys())
+
+        assert not any("knowledge-point" in path for path in paths)
+        assert schemas_v2.QuestionEnvelopeV2.model_fields["metadata_preview"].default is None
+        assert importlib.util.find_spec("sikao_api.modules.question_metadata") is None
