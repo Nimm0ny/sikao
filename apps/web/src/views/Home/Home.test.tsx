@@ -25,12 +25,18 @@ describe('Home view (D.4.1)', () => {
     expect(screen.getByTestId('home-calendar-placeholder')).toBeInTheDocument();
   });
 
+  it('renders the PlanSection container in place of the calendar Panel', () => {
+    renderHome();
+    expect(screen.getByTestId('home-plan-section')).toBeInTheDocument();
+  });
+
   it('renders the bottom row with 3 panels (今日任务 / 错题回顾 / 推荐套题)', () => {
     renderHome();
     const root = screen.getByTestId('home-view');
     const panels = within(root).getAllByTestId('panel');
-    // Expect 4 panels total: calendar (1) + bottom row (3)
-    expect(panels.length).toBe(4);
+    // PlanSection replaced the calendar Panel in SIK-90 wave 1; the
+    // remaining 3 panels are the bottom row (今日任务 / 错题回顾 / 推荐套题).
+    expect(panels.length).toBe(3);
   });
 
   it('exposes a primary CTA in the page header', () => {

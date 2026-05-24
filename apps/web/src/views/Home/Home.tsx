@@ -2,10 +2,14 @@
 // for design.md §D.4.1 prose. ui-copy SSOT migration tracked under future
 // Phase 6+. Real strings will land via @/lib/ui-copy when business Phase
 // integrations replace the placeholders.
+import { useEffect } from 'react';
 import { Numeric } from '../../components/atom';
 import { Badge } from '../../components/atom';
 import { Panel, PageHeader } from '../../components/layout';
 import { Button } from '../../components/form';
+import { useDashboardPreferenceStore, usePlanStore } from '@sikao/domain';
+import type { PlanCalendarView } from '@sikao/domain/plan/usePlanStore';
+import { PlanSection } from './sections/PlanSection';
 import styles from './Home.module.css';
 
 /*
@@ -62,6 +66,12 @@ const PLACEHOLDER_RECOMMENDATIONS: ReadonlyArray<HomeRecommendation> = [
   { id: 'r3', title: '事业单位 · 综合能力', meta: '100 题 · 90 分钟' },
 ];
 
+const VIEW_KEYS = ['today', 'week', 'month'] as const satisfies ReadonlyArray<PlanCalendarView>;
+
+function isPlanCalendarView(value: unknown): value is PlanCalendarView {
+  return typeof value === 'string' && (VIEW_KEYS as ReadonlyArray<string>).includes(value);
+}
+
 function MetricCard({ metric }: { readonly metric: HomeMetric }) {
   if (!Number.isFinite(metric.value) || metric.value < 0) {
     throw new Error(`Home metric "${metric.key}" must be a non-negative finite number, got ${metric.value}`);
@@ -80,6 +90,19 @@ function MetricCard({ metric }: { readonly metric: HomeMetric }) {
 }
 
 export function Home() {
+  // SIK-90 Home M-A wave 1 (2026-05-24): hydrate the persisted calendar
+  // view (homeCalendarView preference) into usePlanStore once on mount so
+  // PlanSection / future calendar bodies render the right view without
+  // flashing the store default. patchPreferences happens elsewhere on
+  // user interaction; this is a one-way bootstrap.
+  useEffect(() => {
+    const persisted =
+      useDashboardPreferenceStore.getState().preferences?.['homeCalendarView'];
+    if (isPlanCalendarView(persisted)) {
+      usePlanStore.getState().setCurrentView(persisted);
+    }
+  }, []);
+
   return (
     <div className={styles.root} data-testid="home-view">
       <PageHeader
@@ -92,20 +115,11 @@ export function Home() {
         {PLACEHOLDER_METRICS.map((m) => <MetricCard key={m.key} metric={m} />)}
       </section>
 
-      <Panel
-        title="日程"
-        trailing={
-          <span className={styles.calendarTabs} aria-label="时间范围">
-            <span className={styles.calendarTabActive}>今天</span>
-            <span className={styles.calendarTab}>本周</span>
-            <span className={styles.calendarTab}>本月</span>
-          </span>
-        }
-      >
+      <PlanSection>
         <div className={styles.calendarPlaceholder} data-testid="home-calendar-placeholder">
           <p>日程视图占位 — 周视图 7×3 cell；today / practice / mock / milestone 事件由 calendar-engine 提供。</p>
         </div>
-      </Panel>
+      </PlanSection>
 
       <section className={styles.bottomRow} aria-label="底部模块">
         <Panel title="今日任务">
