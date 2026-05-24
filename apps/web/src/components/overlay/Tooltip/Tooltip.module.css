@@ -1,0 +1,47 @@
+/*
+ * Tooltip — V5 D.3.19 overlay (skeleton).
+ * Why: dark inverted floating label with shortcut chips. Coords are computed
+ *      in TS via getBoundingClientRect; this stylesheet only owns visual.
+ *      §D.3.19 mandates inverted color tokens (text-primary bg + bg-surface
+ *      ink) so the chip stands out against any panel/page background.
+ */
+.panel {
+  position: absolute;
+  z-index: var(--z-popover);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-text-primary);
+  color: var(--color-bg-surface);
+  border-radius: var(--radius-10);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--font-meta);
+  line-height: var(--line-height-meta);
+  box-shadow: var(--shadow-l3);
+  pointer-events: none;
+  max-width: 240px;
+}
+
+.content {
+  white-space: pre-line;
+}
+
+.shortcut {
+  display: inline-flex;
+  gap: var(--space-1);
+  margin-left: var(--space-1);
+}
+
+.kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  padding: 0 var(--space-1);
+  border-radius: var(--radius-10);
+  font-size: var(--font-tiny);
+  font-family: inherit;
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border-subtle);
+}
