@@ -65,3 +65,22 @@ last-reviewed: 2026-05-13
   1. ship server-side session revoke + 强制 retry (e.g. 长 session token, 必须真实 invalidate on logout, 用于安全敏感场景如 admin / 支付). 那时 backend 失败需要 retry / 提示 user 而非 silent clear.
   2. 引入跨设备 session 同步 — backend 状态权威, logout 必须等 server 确认才能视为已退出.
 - **关联 commit**: web_new Wave 1 Round 2（commit hash 在 web_new 仓库；sikao 迁移后 commit 待 git init 后补登）
+
+### mobile-bottom-nav-glassmorphism-fallback
+
+- **文件**: `apps/web/src/components/layout/BottomTabBar/BottomTabBar.module.css` (entire `.nav` rule + `@supports not (backdrop-filter)` + `@media (prefers-reduced-transparency: reduce)` blocks)
+- **授权日期**: 2026-05-24
+- **Why** (业务理由): 移动端底部导航默认玻璃拟态 (`backdrop-filter: blur(18px) saturate(140%) + rgba 0.55 bg`) 实现"视觉融入"调性 — 跟手机原生 bottom nav (iOS / Android) 视觉一致。但旧 WebView (Android < 8 / iOS < 12) 不支持 `backdrop-filter`; 部分用户启用 `prefers-reduced-transparency: reduce` 系统级偏好。两种情况下透明背景会让文字与下层内容重叠不可读 — 直接退化到不透明 `--color-bg-elevated` 是唯一正确选择。
+- **触发条件**:
+  - `@supports not (backdrop-filter: blur(1px))` (旧 WebView)
+  - `@media (prefers-reduced-transparency: reduce)` (用户系统偏好)
+  - 运行时检测 `CSS.supports('backdrop-filter', 'blur(1px)') === false` (TS 层兜底, BottomTabBar 当前不挂)
+- **降级行为**: 不透明背景 `var(--color-bg-elevated)` + `backdrop-filter: none` (CSS-only fallback, 无 React state, 无 silent catch)
+- **失效条件**:
+  - 2026-08-23 (V5 上线 ~3 个月) 复审: 是否还需要兼容 Android < 8 / iOS < 12; 用户使用 reduced-transparency 比例如何
+  - 玻璃拟态语言被替换为其他视觉 (圆角 / shadow / 半透明) 时, 整段 fallback 跟随移除
+- **不允许的处理方式**:
+  - silent catch (`try { ... } catch { /* swallow */ }`)
+  - `?? defaultValue` 把 backdrop-filter 写成可选 string
+  - 业务组件内手写 fallback 不走 token
+- **关联 commit / PR**: V5-M3 wave 13 (SIK-75) - 待提交

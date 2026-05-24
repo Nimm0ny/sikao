@@ -1,0 +1,35 @@
+/*
+ * MobileAppShell — V5 D.3.32+ mobile chrome (skeleton).
+ * Why: flex column 100vh; topbar/bottomNav fixed slot heights via §6 mobile
+ *      tokens; main flex 1 owns scroll. Safe-area insets land on .main via
+ *      padding-inline (left/right) — top/bottom are padded inside the
+ *      MobileTopBar / BottomTabBar so the slot heights stay token-stable.
+ */
+.shell {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100vh;
+  background: var(--color-bg-page);
+  box-sizing: border-box;
+}
+
+.topbar {
+  flex: 0 0 auto;
+  height: var(--mobile-topbar-h);
+}
+
+.main {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-left: var(--safe-left);
+  padding-right: var(--safe-right);
+  box-sizing: border-box;
+}
+
+.bottomNav {
+  flex: 0 0 auto;
+  height: var(--mobile-bottom-nav-h);
+}
