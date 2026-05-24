@@ -22,6 +22,7 @@ import { Home } from '../views/Home';
 import { Practice } from '../views/Practice';
 import { Note } from '../views/Note';
 import { Me } from '../views/Me';
+import { QuestionHub } from '../views/QuestionHub';
 import { BootCard } from './BootCard';
 
 export const router = createBrowserRouter([
@@ -33,7 +34,7 @@ export const router = createBrowserRouter([
       { path: 'practice', element: <Practice /> },
       { path: 'review', element: <BootCard /> },
       { path: 'note', element: <Note /> },
-      { path: 'question-hub', element: <BootCard /> },
+      { path: 'question-hub', element: <QuestionHub /> },
       { path: 'me', element: <Me /> },
     ],
   },

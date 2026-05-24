@@ -1,0 +1,112 @@
+/*
+ * Question Hub view — V5 D.4.5 desktop page skeleton.
+ * Why: 3-row Workspace grid (header / FilterBar / Panel with compact-grid).
+ *      Compact card uses --card-radius-sm (12px) to lift information
+ *      density vs Practice's specialty card.
+ */
+
+.root {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: var(--space-4);
+  width: 100%;
+  min-height: 0;
+}
+
+.filterBar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.filterGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.chip {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  height: 26px;
+  border-radius: var(--radius-999);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-subtle);
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-medium);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover gated by hover+fine pointer (CP.9). */
+  .chip:hover {
+    background: var(--color-bg-sunken);
+  }
+}
+
+.chip[data-active='true'] {
+  background: var(--color-text-primary);
+  color: var(--color-bg-surface);
+  border-color: var(--color-text-primary);
+}
+
+.compactGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.compactCard {
+  background: var(--card-bg);
+  border: var(--card-border);
+  /* Spec §D.4.5: --card-radius-sm 12px for higher info density */
+  border-radius: var(--card-radius-sm);
+  box-shadow: var(--card-shadow-rest);
+  padding: var(--space-3);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 0;
+}
+
+.compactHeader {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.compactNumber {
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-text-secondary);
+  font-variant-numeric: tabular-nums;
+}
+
+.compactState[data-state='mastered'] { color: var(--color-state-ok); }
+.compactState[data-state='doing']    { color: var(--color-state-warn); }
+.compactState[data-state='unsolved'] { color: var(--color-state-err); }
+
+@media (max-width: 1023.98px) {
+  .compactGrid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767.98px) {
+  .compactGrid { grid-template-columns: 1fr; }
+}
