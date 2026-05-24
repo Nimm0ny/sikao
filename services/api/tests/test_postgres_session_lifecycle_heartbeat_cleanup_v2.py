@@ -49,11 +49,22 @@ def test_postgres_session_lifecycle_heartbeat_and_cleanup(tmp_path: Path) -> Non
                 paused_at=seeded_at - timedelta(hours=1),
                 expires_at=seeded_at - timedelta(minutes=1),
             )
-            session.add_all([paused, stale_in_progress, stale_daily])
+            stale_daily_draft = PracticeSessionV2(
+                user_id=user_id,
+                track="xingce",
+                entry_kind="paper",
+                status="draft",
+                payload_json={},
+                started_at=seeded_at - timedelta(hours=3),
+                source_mode="daily",
+                expires_at=seeded_at - timedelta(minutes=1),
+            )
+            session.add_all([paused, stale_in_progress, stale_daily, stale_daily_draft])
             session.commit()
             paused_id = paused.id
             stale_in_progress_id = stale_in_progress.id
             stale_daily_id = stale_daily.id
+            stale_daily_draft_id = stale_daily_draft.id
 
         heartbeat = client.post(
             f"/api/v2/practice/sessions/{paused_id}/heartbeat",
@@ -71,10 +82,11 @@ def test_postgres_session_lifecycle_heartbeat_and_cleanup(tmp_path: Path) -> Non
             stale = session.get(PracticeSessionV2, stale_in_progress_id)
             daily = session.get(PracticeSessionV2, stale_daily_id)
             assert counts == {"paused": 1, "abandoned": 0, "draft_abandoned": 0}
-            assert expired == 1
+            assert expired == 2
             assert resumed is not None
             assert resumed.status == "in_progress"
             assert resumed.paused_at is None
             assert resumed.config_snapshot["last_seen_question_id"] == 321
             assert stale is not None and stale.status == "paused"
             assert daily is not None and daily.status == "expired"
+            assert session.get(PracticeSessionV2, stale_daily_draft_id).status == "expired"

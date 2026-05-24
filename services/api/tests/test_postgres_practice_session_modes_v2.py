@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime, timedelta
+from typing import Any, cast
+
 import os
 import pytest
 
@@ -10,6 +13,8 @@ from _helpers.practice_content_support import (
     seed_paper,
     seed_review_item,
 )
+from sikao_api.db.models_v2 import DailyPracticeV2, PracticeSessionV2
+from sikao_api.modules.session_lifecycle.application.cleanup import expire_daily_sessions
 from sikao_api.modules.progress.application.aggregates import today_cn
 
 
@@ -47,6 +52,30 @@ def test_postgres_session_modes_category_daily_and_wrong_redo(tmp_path) -> None:
         )
         assert daily.status_code == 200, daily.text
         assert daily.json()["sourceMode"] == "daily"
+        blocked_second_create = client.post(
+            "/api/v2/practice/sessions",
+            json={"track": "xingce", "entryKind": "daily", "mode": "daily", "config": {"daily_practice_id": daily_id}},
+        )
+        assert blocked_second_create.status_code == 404, blocked_second_create.text
+        assert blocked_second_create.json()["code"] == "daily_practice_not_found"
+        app = cast(Any, client.app)
+        factory = app.state.db.session_factory
+        with factory() as session:
+            created = session.get(PracticeSessionV2, daily.json()["id"])
+            daily_row = session.get(DailyPracticeV2, daily_id)
+            assert created is not None
+            assert created.expires_at is not None
+            assert daily_row is not None and daily_row.status == "started"
+            created.expires_at = datetime.now(UTC).replace(tzinfo=None) - timedelta(minutes=1)
+            session.add(created)
+            session.flush()
+            expired = expire_daily_sessions(session, now=datetime.now(UTC).replace(tzinfo=None))
+            session.commit()
+            created = session.get(PracticeSessionV2, daily.json()["id"])
+            daily_row = session.get(DailyPracticeV2, daily_id)
+            assert expired == 1
+            assert created is not None and created.status == "expired"
+            assert daily_row is not None and daily_row.status == "expired"
 
         seed_review_item(client, user_id=user_id, question_id=question_ids[0], title="Redo A")
         seed_review_item(client, user_id=user_id, question_id=question_ids[0], title="Redo A duplicate")

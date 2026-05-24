@@ -10,6 +10,8 @@ from _helpers.practice_content_support import (
     seed_daily_practice,
     seed_paper,
 )
+from sikao_api.db.models_v2 import DailyPracticeV2, PracticeSessionV2
+from sikao_api.modules.session_lifecycle.application.cleanup import expire_daily_sessions
 from sikao_api.modules.progress.application.aggregates import today_cn
 
 
@@ -36,6 +38,30 @@ def test_session_mode_daily_picks_daily_question_ids(tmp_path: Path) -> None:
         assert payload["sourceMode"] == "daily"
         assert [item["prompt"] for item in payload["items"]] == ["A", "B"]
         assert payload["configSnapshot"]["daily_practice_id"] == daily_id
+        blocked_second_create = client.post(
+            "/api/v2/practice/sessions",
+            json={"track": "xingce", "entryKind": "daily", "mode": "daily", "config": {"daily_practice_id": daily_id}},
+        )
+        assert blocked_second_create.status_code == 404, blocked_second_create.text
+        assert blocked_second_create.json()["code"] == "daily_practice_not_found"
+        app = client.app
+        factory = app.state.db.session_factory
+        with factory() as session:
+            created = session.get(PracticeSessionV2, payload["id"])
+            daily_row = session.get(DailyPracticeV2, daily_id)
+            assert created is not None
+            assert created.expires_at is not None
+            assert daily_row is not None and daily_row.status == "started"
+            created.expires_at = datetime.now(UTC).replace(tzinfo=None) - timedelta(minutes=1)
+            session.add(created)
+            session.flush()
+            expired = expire_daily_sessions(session, now=datetime.now(UTC).replace(tzinfo=None))
+            session.commit()
+            created = session.get(PracticeSessionV2, payload["id"])
+            daily_row = session.get(DailyPracticeV2, daily_id)
+            assert expired == 1
+            assert created is not None and created.status == "expired"
+            assert daily_row is not None and daily_row.status == "expired"
 
 
 def test_session_mode_daily_rejects_consumed_or_expired_records(tmp_path: Path) -> None:
