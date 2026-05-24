@@ -1,17 +1,21 @@
 import { describe, it, expect } from 'vitest';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import axe from 'axe-core';
 import { Home } from '../Home';
 import { Practice } from '../Practice';
+import { AiQuestionsGenerating } from '../AiQuestionsGenerating';
 import { Note } from '../Note';
 import { Me } from '../Me';
 import { PracticePreferences } from '../PracticePreferences';
 import { QuestionHub } from '../QuestionHub';
+import { PracticeSession } from '../PracticeSession';
 import { Review } from '../Review';
+import { SessionResult } from '../SessionResult';
 import { RootLayout } from '../../layouts/RootLayout';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import type { ReactElement } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 
 /*
@@ -65,6 +69,21 @@ function renderInRouter(view: ReactElement, path: string) {
   );
 }
 
+function renderWithQueryRouter(routes: Parameters<typeof createMemoryRouter>[0], initialEntries: string[]) {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0, staleTime: 0 },
+      mutations: { retry: false },
+    },
+  });
+  const router = createMemoryRouter(routes, { initialEntries });
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <RouterProvider router={router} />
+    </QueryClientProvider>,
+  );
+}
+
 describe('Phase 4 a11y baseline (task 18 checkpoint)', () => {
   it('Home view passes axe wcag2aa', async () => {
     const { container } = renderInRouter(<Home />, '/');
@@ -74,6 +93,18 @@ describe('Phase 4 a11y baseline (task 18 checkpoint)', () => {
 
   it('Practice view passes axe wcag2aa', async () => {
     const { container } = renderWithProviders(<Practice />, { initialEntries: ['/practice'] });
+    const results = await runAxe(container);
+    expect(results.violations, formatViolations(results.violations)).toEqual([]);
+  });
+
+  it('AiQuestionsGenerating view passes axe wcag2aa', async () => {
+    const { container } = renderWithQueryRouter(
+      [
+        { path: '/practice/ai-questions/generating', element: <AiQuestionsGenerating /> },
+        { path: '/practice/sessions/:sessionId', element: <div>session route</div> },
+      ],
+      ['/practice/ai-questions/generating?type=xingce&count=10&yearRange=recent_3&difficultyMin=0&difficultyMax=1&practiceMode=full_set&excludeDone=true&onlyWrong=false'],
+    );
     const results = await runAxe(container);
     expect(results.violations, formatViolations(results.violations)).toEqual([]);
   });
@@ -94,6 +125,26 @@ describe('Phase 4 a11y baseline (task 18 checkpoint)', () => {
     const { container } = renderWithProviders(<PracticePreferences />, {
       initialEntries: ['/profile/practice-preferences'],
     });
+    const results = await runAxe(container);
+    expect(results.violations, formatViolations(results.violations)).toEqual([]);
+  });
+
+  it('PracticeSession view passes axe wcag2aa', async () => {
+    const { container } = renderWithQueryRouter(
+      [{ path: '/practice/sessions/:sessionId', element: <PracticeSession /> }],
+      ['/practice/sessions/6001'],
+    );
+    const results = await runAxe(container);
+    expect(results.violations, formatViolations(results.violations)).toEqual([]);
+  });
+
+  it('SessionResult view passes axe wcag2aa', async () => {
+    const { container } = renderWithQueryRouter(
+      [{ path: '/practice/sessions/:sessionId/result', element: <SessionResult /> }],
+      ['/practice/sessions/6001/result'],
+    );
+    await screen.findByTestId('session-result-view');
+    await screen.findByText('Summary');
     const results = await runAxe(container);
     expect(results.violations, formatViolations(results.violations)).toEqual([]);
   });
