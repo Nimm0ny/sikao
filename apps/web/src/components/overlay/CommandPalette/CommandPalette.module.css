@@ -1,0 +1,64 @@
+/*
+ * CommandPalette — V5 D.3.26 overlay (skeleton).
+ * Why: portal-mounted command surface, 30vh top offset (cmd-k canonical).
+ *      Visual reuses --color-bg-surface + --shadow-l4 + --card-radius.
+ */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 30vh var(--space-5) 0;
+  background: var(--color-bg-overlay);
+}
+.panel {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 640px;
+  max-height: calc(70vh - var(--space-5));
+  background: var(--color-bg-surface);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-l4);
+  overflow: hidden;
+}
+.inputRow { border-bottom: 1px solid var(--color-border-subtle); padding: var(--space-3) var(--space-4); }
+.input {
+  width: 100%; border: none; outline: none; background: transparent;
+  font-size: var(--font-card); line-height: var(--line-height-card);
+  color: var(--color-text-primary);
+}
+.input::placeholder { color: var(--color-text-meta); }
+.list { flex: 1 1 auto; overflow-y: auto; padding: var(--space-2); }
+.group + .group { margin-top: var(--space-2); }
+.groupHeader {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-tiny); line-height: var(--line-height-tiny);
+  color: var(--color-text-meta);
+}
+.option {
+  display: flex; align-items: center; gap: var(--space-3);
+  width: 100%; min-height: var(--row-h-md);
+  padding: 0 var(--space-3);
+  border: none; background: transparent;
+  border-radius: var(--radius-10);
+  cursor: pointer; text-align: left;
+  font-size: var(--font-body); line-height: var(--line-height-body);
+  color: var(--color-text-primary);
+}
+.option[data-active] { background: var(--color-brand-soft); }
+.icon { display: inline-flex; flex: 0 0 auto; width: 16px; height: 16px; color: var(--color-text-secondary); }
+.label { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shortcut { display: inline-flex; gap: var(--space-1); flex: 0 0 auto; }
+.kbd {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-width: 18px; padding: 0 var(--space-1);
+  border-radius: var(--radius-10);
+  font-size: var(--font-tiny); font-family: inherit;
+  background: var(--color-bg-sunken);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-subtle);
+}
+.empty { padding: var(--space-5); text-align: center; color: var(--color-text-meta); font-size: var(--font-body); }

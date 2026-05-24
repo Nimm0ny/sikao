@@ -1,0 +1,49 @@
+/*
+ * AppShell — V5 D.3.32 layout (skeleton).
+ * Why: top-level flex layout. Rail is a sibling, so .shell is row-flex and
+ *      .column captures topbar + main + bottomNav. height:100vh + min-h:0 on
+ *      .column keeps inner scroll containers (Workspace) constrained to
+ *      viewport height so sticky topbars work.
+ */
+.shell {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  min-height: 100vh;
+  background: var(--color-bg-page);
+}
+
+.column {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 100vh;
+}
+
+.topbar {
+  flex: 0 0 auto;
+  height: var(--topbar-h);
+  display: flex;
+  align-items: center;
+  padding: 0 var(--space-4);
+  background: var(--color-bg-surface);
+  border-bottom: 1px solid var(--color-border-subtle);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-topbar);
+}
+
+.bottomNav {
+  flex: 0 0 auto;
+  height: var(--bottom-nav-h);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0 var(--space-4);
+  background: var(--color-bg-surface);
+  border-top: 1px solid var(--color-border-subtle);
+  position: sticky;
+  bottom: 0;
+  z-index: var(--z-topbar);
+}

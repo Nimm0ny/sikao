@@ -1,0 +1,35 @@
+/*
+ * Workspace — V5 D.3.32 layout (skeleton).
+ * Why: 1920+ ergonomic content cap. data-max-width attr selector flips
+ *      max-width between four content-shape tokens (--max-w-workspace,
+ *      --max-w-reading, --max-w-form, --max-w-prose) per design §C.4.1.
+ *      'none' removes the cap so pages with their own grid can opt out.
+ */
+.workspace {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  margin: 0 auto;
+  padding: var(--space-4) var(--space-5);
+  box-sizing: border-box;
+}
+
+.workspace[data-max-width='workspace'] {
+  max-width: var(--max-w-workspace);
+}
+
+.workspace[data-max-width='reading'] {
+  max-width: var(--max-w-reading);
+}
+
+.workspace[data-max-width='form'] {
+  max-width: var(--max-w-form);
+}
+
+.workspace[data-max-width='prose'] {
+  max-width: var(--max-w-prose);
+}
+
+.workspace[data-max-width='none'] {
+  max-width: none;
+}

@@ -33,3 +33,10 @@ export type { ToastViewProps, ToastVariant, ToastAction } from './Toast';
 
 export { ToastProvider, useToast } from './ToastProvider';
 export type { ToastProviderProps, ToastApi, ToastOptions } from './ToastProvider';
+
+export { CommandPalette } from './CommandPalette';
+export type {
+  CommandPaletteProps,
+  CommandPaletteGroup,
+  CommandPaletteItem,
+} from './CommandPalette';
