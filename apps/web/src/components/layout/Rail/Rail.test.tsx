@@ -113,4 +113,40 @@ describe('Rail', () => {
     const practiceLink = screen.getByRole('link', { name: '练习' });
     expect(practiceLink).not.toHaveAttribute('data-active');
   });
+
+  it('navItem onClick fires + preventDefault on plain left-click (SPA path)', () => {
+    const onClick = vi.fn();
+    const itemsWithClick: RailNavItem[] = [
+      { id: 'home', icon: <svg />, label: '首页', href: '/', onClick },
+    ];
+    render(
+      <Rail
+        brand={<span>BR</span>}
+        navItems={itemsWithClick}
+        me={<span>ME</span>}
+        collapsed={false}
+      />,
+    );
+    const link = screen.getByRole('link', { name: '首页' });
+    fireEvent.click(link, { button: 0 });
+    expect(onClick).toHaveBeenCalledTimes(1);
+  });
+
+  it('navItem onClick is bypassed on ctrl/meta-click (open in new tab)', () => {
+    const onClick = vi.fn();
+    const itemsWithClick: RailNavItem[] = [
+      { id: 'home', icon: <svg />, label: '首页', href: '/', onClick },
+    ];
+    render(
+      <Rail
+        brand={<span>BR</span>}
+        navItems={itemsWithClick}
+        me={<span>ME</span>}
+        collapsed={false}
+      />,
+    );
+    const link = screen.getByRole('link', { name: '首页' });
+    fireEvent.click(link, { button: 0, ctrlKey: true });
+    expect(onClick).not.toHaveBeenCalled();
+  });
 });

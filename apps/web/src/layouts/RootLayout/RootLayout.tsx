@@ -2,7 +2,7 @@
 // design tokens fixed by spec §D.4, not user-editable strings. ui-copy SSOT
 // migration tracked under future Phase 6+.
 import type { ReactNode } from 'react';
-import { Outlet, useLocation } from 'react-router-dom';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppShell,
   Rail,
@@ -88,15 +88,20 @@ interface RootLayoutProps {
 
 export function RootLayout({ user }: RootLayoutProps) {
   const { pathname } = useLocation();
+  const navigate = useNavigate();
   const isActive = (target: string) =>
     target === HOME_PATH ? pathname === HOME_PATH : pathname.startsWith(target);
+  // SPA-route via React Router instead of triggering a full-page reload.
+  // Modifier-clicks (Cmd/Ctrl/Shift) fall through to the native <a href>
+  // so "open in new tab" still works — Rail handles that branch internally.
+  const navTo = (path: string) => () => navigate(path);
 
   const navItems: RailNavItem[] = [
-    { id: 'home', icon: <NavIcon d={NAV_ICONS.home} />, label: '首页', href: HOME_PATH, active: isActive(HOME_PATH) },
-    { id: 'practice', icon: <NavIcon d={NAV_ICONS.practice} />, label: '练习', href: PRACTICE_PATH, active: isActive(PRACTICE_PATH) },
-    { id: 'review', icon: <NavIcon d={NAV_ICONS.review} />, label: '复盘', href: REVIEW_PATH, active: isActive(REVIEW_PATH) },
-    { id: 'note', icon: <NavIcon d={NAV_ICONS.note} />, label: '笔记', href: NOTE_PATH, active: isActive(NOTE_PATH) },
-    { id: 'question', icon: <NavIcon d={NAV_ICONS.question} />, label: '题库', href: QUESTION_HUB_PATH, active: isActive(QUESTION_HUB_PATH) },
+    { id: 'home', icon: <NavIcon d={NAV_ICONS.home} />, label: '首页', href: HOME_PATH, active: isActive(HOME_PATH), onClick: navTo(HOME_PATH) },
+    { id: 'practice', icon: <NavIcon d={NAV_ICONS.practice} />, label: '练习', href: PRACTICE_PATH, active: isActive(PRACTICE_PATH), onClick: navTo(PRACTICE_PATH) },
+    { id: 'review', icon: <NavIcon d={NAV_ICONS.review} />, label: '复盘', href: REVIEW_PATH, active: isActive(REVIEW_PATH), onClick: navTo(REVIEW_PATH) },
+    { id: 'note', icon: <NavIcon d={NAV_ICONS.note} />, label: '笔记', href: NOTE_PATH, active: isActive(NOTE_PATH), onClick: navTo(NOTE_PATH) },
+    { id: 'question', icon: <NavIcon d={NAV_ICONS.question} />, label: '题库', href: QUESTION_HUB_PATH, active: isActive(QUESTION_HUB_PATH), onClick: navTo(QUESTION_HUB_PATH) },
   ];
 
   const tabBarItems: BottomTabBarItem[] = [
@@ -121,6 +126,19 @@ export function RootLayout({ user }: RootLayoutProps) {
       data-testid="rail-me-link"
       aria-current={isActive(ME_PATH) ? 'page' : undefined}
       aria-label="我的"
+      onClick={(event) => {
+        if (
+          event.button !== 0 ||
+          event.metaKey ||
+          event.ctrlKey ||
+          event.shiftKey ||
+          event.altKey
+        ) {
+          return;
+        }
+        event.preventDefault();
+        navigate(ME_PATH);
+      }}
     >
       <Avatar
         src={user?.avatarSrc}

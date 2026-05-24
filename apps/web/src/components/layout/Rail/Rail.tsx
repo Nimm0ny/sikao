@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { ReactElement, ReactNode } from 'react';
+import type { MouseEvent, ReactElement, ReactNode } from 'react';
 import { Tooltip } from '../../overlay/Tooltip';
 import { KeyboardShortcuts } from '../../system/KeyboardShortcuts';
 import type { ShortcutEntry } from '../../system/KeyboardShortcuts';
@@ -31,6 +31,16 @@ export interface RailNavItem {
   readonly label: string;
   readonly href: string;
   readonly active?: boolean;
+  /**
+   * Optional click interceptor. When provided, the underlying <a> calls
+   * `e.preventDefault()` before invoking this handler so callers can
+   * route through React Router (`useNavigate`) without triggering a
+   * full-page reload. The `href` attribute is still rendered so middle-
+   * click / right-click / keyboard-with-modifier "open in new tab" /
+   * a11y reading flow keep working — handler is only for the plain
+   * left-click path.
+   */
+  readonly onClick?: (event: MouseEvent<HTMLAnchorElement>) => void;
 }
 
 export interface RailProps {
@@ -132,6 +142,24 @@ export function RailNav({ items, collapsed }: RailNavProps) {
   return (
     <ul className={styles.navList} role="list">
       {items.map((item) => {
+        const handleClick = item.onClick
+          ? (event: MouseEvent<HTMLAnchorElement>) => {
+              // Plain left-click without modifiers → SPA route via callback.
+              // Modifier-clicks (Cmd/Ctrl/Shift) and middle-click fall
+              // through to the native href so "open in new tab" still works.
+              if (
+                event.button !== 0 ||
+                event.metaKey ||
+                event.ctrlKey ||
+                event.shiftKey ||
+                event.altKey
+              ) {
+                return;
+              }
+              event.preventDefault();
+              item.onClick!(event);
+            }
+          : undefined;
         const row = (
           <a
             href={item.href}
@@ -140,6 +168,7 @@ export function RailNav({ items, collapsed }: RailNavProps) {
             data-collapsed={collapsed || undefined}
             aria-label={collapsed ? item.label : undefined}
             aria-current={item.active ? 'page' : undefined}
+            onClick={handleClick}
           >
             <span className={styles.navIcon} aria-hidden="true">{item.icon}</span>
             {!collapsed ? <span className={styles.navLabel}>{item.label}</span> : null}
