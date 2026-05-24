@@ -1,0 +1,66 @@
+/*
+ * Radio — V5 D.3.12 form atom (skeleton).
+ * Why: visually hide native input, render a token-driven circle. sm=16,
+ *      md=18 per skeleton plan; checked state uses --color-brand-primary
+ *      ring + filled dot. focus-visible uses global focus-ring token.
+ */
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--font-body);
+  color: var(--color-text-primary);
+  user-select: none;
+}
+.root[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+/* Native input visually hidden but kept focusable */
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px; /* spacing-allow: classic visually-hidden offset, not a layout step */
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid var(--color-border-strong);
+  border-radius: var(--radius-999);
+  background: var(--color-bg-surface);
+  transition: border-color var(--dur-fast) var(--ease-out), background var(--dur-fast) var(--ease-out);
+}
+.root[data-size='sm'] .circle { width: 16px; height: 16px; }
+.root[data-size='md'] .circle { width: 18px; height: 18px; }
+
+.dot {
+  width: 0;
+  height: 0;
+  border-radius: var(--radius-999);
+  background: var(--color-text-on-brand);
+  transition: width var(--dur-fast) var(--ease-out), height var(--dur-fast) var(--ease-out);
+}
+.root[data-checked] .circle {
+  background: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+}
+.root[data-size='sm'][data-checked] .dot { width: 6px; height: 6px; }
+.root[data-size='md'][data-checked] .dot { width: 8px; height: 8px; }
+
+.input:focus-visible + .circle {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.label { line-height: var(--line-height-body); }

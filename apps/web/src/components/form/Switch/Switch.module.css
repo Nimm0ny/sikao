@@ -1,0 +1,64 @@
+/*
+ * Switch — V5 D.3.12 form atom (skeleton).
+ * Why: token-driven track + thumb. Track height tracks size variant; thumb
+ *      translateX = (track-w - thumb-w - 2*pad) when checked. focus-visible
+ *      ring uses global focus-ring token; reduced-motion neutralizes
+ *      transitions via primitive --dur-base override.
+ */
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--font-body);
+  color: var(--color-text-primary);
+  user-select: none;
+}
+.root[data-disabled] { cursor: not-allowed; opacity: 0.5; }
+
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px; /* spacing-allow: classic visually-hidden offset, not a layout step */
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.track {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  background: var(--color-border-strong);
+  border-radius: var(--radius-999);
+  transition: background var(--dur-base) var(--ease-out);
+}
+.root[data-size='sm'] .track { width: 28px; height: 16px; }
+.root[data-size='md'] .track { width: 32px; height: 18px; }
+
+.thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  border-radius: var(--radius-999);
+  background: var(--color-bg-surface);
+  box-shadow: var(--shadow-l1);
+  transition: transform var(--dur-base) var(--ease-out);
+}
+.root[data-size='sm'] .thumb { width: 12px; height: 12px; }
+.root[data-size='md'] .thumb { width: 14px; height: 14px; }
+
+.root[data-checked] .track { background: var(--color-brand-primary); }
+.root[data-size='sm'][data-checked] .thumb { transform: translateX(12px); }
+.root[data-size='md'][data-checked] .thumb { transform: translateX(14px); }
+
+.input:focus-visible + .track {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.label { line-height: var(--line-height-body); }

@@ -1,0 +1,81 @@
+/*
+ * Input — V5 D.3.2 form atom (skeleton).
+ * Why: token-driven 7-state visual matrix. The outer .root carries the
+ *      visual chrome (border, bg, focus-within ring) so prefix/suffix slots
+ *      sit inside the same border. The inner <input> clears UA appearance
+ *      and keeps min-width:0 + flex:1 so prefix/suffix can't push it
+ *      outside the container (D.3.35 gotcha).
+ */
+.wrapper {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+.root {
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--input-bg);
+  border: var(--input-border);
+  border-radius: var(--input-radius);
+  padding: 0 var(--input-padding-x);
+  gap: var(--space-2);
+  color: var(--color-text-primary);
+  transition: border-color var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.root[data-size='sm'] { height: 32px; font-size: var(--font-meta); }
+.root[data-size='md'] { height: var(--input-h-md); font-size: var(--font-body); }
+.root[data-size='lg'] { height: 40px; font-size: var(--font-card); }
+
+.root:focus-within {
+  border: var(--input-border-focus);
+  box-shadow: var(--input-ring-focus);
+}
+.root[data-invalid] { border-color: var(--color-state-err); }
+.root[data-invalid]:focus-within {
+  border-color: var(--color-state-err);
+  box-shadow: 0 0 0 3px var(--color-state-err-soft);
+}
+.root[data-success] { border-color: var(--color-state-ok); }
+.root[data-success]:focus-within {
+  border-color: var(--color-state-ok);
+  box-shadow: 0 0 0 3px var(--color-state-ok-soft);
+}
+.root[data-disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-bg-elevated);
+}
+.root[data-readonly] { background: var(--color-bg-elevated); }
+
+.input {
+  flex: 1 1 auto;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  padding: 0;
+  margin: 0;
+  font: inherit;
+  color: inherit;
+  width: 100%;
+}
+.input::placeholder { color: var(--color-text-meta-soft); }
+.input:disabled { cursor: not-allowed; color: var(--color-text-disabled); }
+.input:read-only { cursor: default; }
+
+.prefix, .suffix {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--color-text-meta);
+}
+
+.helper {
+  font-size: var(--font-meta);
+  line-height: var(--line-height-meta);
+}
+.helper[data-kind='error']   { color: var(--color-state-err); }
+.helper[data-kind='success'] { color: var(--color-state-ok); }

@@ -1,0 +1,77 @@
+/*
+ * Banner — V5 D.3.23 overlay (skeleton).
+ * Why: full-width persistent alert. The four variants share layout chrome
+ *      and differ only in `--banner-color` / `--banner-bg` (state-soft +
+ *      state-color tokens). 4px accent bar uses inset box-shadow so no
+ *      extra DOM is needed. Action / dismiss buttons are minimal inline
+ *      (mirrors EmptyState pattern) so the overlay layer stays dep-free.
+ */
+.root {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: 100%;
+  box-sizing: border-box;
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-10);
+  background: var(--banner-bg);
+  color: var(--banner-color);
+  box-shadow: inset 4px 0 0 0 var(--banner-color);
+}
+.root[data-variant='info'] { --banner-color: var(--color-state-info); --banner-bg: var(--color-state-info-soft); }
+.root[data-variant='ok']   { --banner-color: var(--color-state-ok);   --banner-bg: var(--color-state-ok-soft); }
+.root[data-variant='warn'] { --banner-color: var(--color-state-warn); --banner-bg: var(--color-state-warn-soft); }
+.root[data-variant='err']  { --banner-color: var(--color-state-err);  --banner-bg: var(--color-state-err-soft); }
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px; /* spacing-allow: 2px nudge to align icon center with title cap-height */
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.title { margin: 0; font-size: var(--font-body); font-weight: var(--font-weight-semibold); line-height: var(--line-height-body); }
+.description { margin: 0; font-size: var(--font-meta); color: var(--color-text-secondary); line-height: var(--line-height-meta); }
+
+.action, .dismiss {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  font: inherit;
+  color: inherit;
+  border-radius: var(--radius-10);
+}
+.action {
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-1) var(--space-2);
+  text-decoration: underline;
+}
+.dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+.action:focus-visible, .dismiss:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: lint scans single-feature @media; this compound query is canonical hover-capable. */
+  .action:hover, .dismiss:hover {
+    background: color-mix(in oklch, currentColor 8%, transparent);
+  }
+}

@@ -1,0 +1,61 @@
+/*
+ * Checkbox — V5 D.3.12 form atom (skeleton).
+ * Why: visually hide native input; render token-driven box with checkmark
+ *      / dash SVG. checked + indeterminate share the brand fill; unchecked
+ *      shows a hollow box. focus-visible ring follows global token.
+ */
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--font-body);
+  color: var(--color-text-primary);
+  user-select: none;
+}
+.root[data-disabled] {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px; /* spacing-allow: classic visually-hidden offset, not a layout step */
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 2px solid var(--color-border-strong);
+  border-radius: var(--radius-10);
+  background: var(--color-bg-surface);
+  color: transparent;
+  transition: background var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out);
+}
+.root[data-size='sm'] .box { width: 16px; height: 16px; border-radius: 4px; }
+.root[data-size='md'] .box { width: 18px; height: 18px; border-radius: 4px; }
+
+.icon { width: 100%; height: 100%; }
+
+.root[data-state='checked'] .box,
+.root[data-state='indeterminate'] .box {
+  background: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+}
+
+.input:focus-visible + .box {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.label { line-height: var(--line-height-body); }

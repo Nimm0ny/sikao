@@ -1,0 +1,90 @@
+/*
+ * ListItem — V5 D.3.4 list atom (skeleton).
+ * Why: token-driven row; size sm/md/lg → --row-h-sm/md/lg. Selected state
+ *      uses --color-brand-soft fill + 4px brand accent bar via
+ *      box-shadow-inset (avoids extra DOM node). hover gated by hover+fine
+ *      pointer media query (CP.9, touch fallback intentionally drops hover).
+ */
+.root {
+  /* button reset (when interactive) */
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 var(--space-3);
+  gap: var(--space-3);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-10);
+  transition: background var(--dur-fast) var(--ease-out), box-shadow var(--dur-fast) var(--ease-out);
+}
+.root[data-size='sm'] { height: var(--row-h-sm); }
+.root[data-size='md'] { height: var(--row-h-md); }
+.root[data-size='lg'] { height: var(--row-h-lg); }
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: lint scans only single-feature @media; the compound
+   * `(hover: hover) and (pointer: fine)` query is the canonical form. */
+  .root:hover:not([data-disabled]) { background: var(--color-bg-elevated); }
+}
+.root:active:not([data-disabled]) { background: var(--color-bg-sunken); }
+.root:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+.root[data-selected] {
+  background: var(--color-brand-soft);
+  box-shadow: inset 4px 0 0 0 var(--color-brand-primary);
+}
+.root[data-disabled] { opacity: 0.5; cursor: not-allowed; }
+
+.root[data-draggable]:active { cursor: grabbing; }
+
+.dragHandle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: var(--color-text-meta-soft);
+  cursor: grab;
+}
+.dragHandle:active { cursor: grabbing; }
+
+.leading, .trailing {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  color: var(--color-text-secondary);
+}
+
+.body {
+  display: inline-flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: var(--space-1);
+}
+.title {
+  font-size: var(--font-body);
+  font-weight: var(--font-weight-medium);
+  line-height: var(--line-height-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.subtitle {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+  line-height: var(--line-height-meta);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}

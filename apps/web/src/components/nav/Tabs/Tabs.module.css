@@ -1,0 +1,84 @@
+/*
+ * Tabs — V5 D.3.3 nav primitive (skeleton).
+ * Why: 3 variants share root flex layout; per-variant chrome (underline /
+ *      pill / segmented border + bg) lives in scoped data-variant blocks.
+ *      Token-driven; no hardcoded colors.
+ */
+.root {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.root[data-variant='segmented'] {
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--radius-10);
+  padding: 2px; /* spacing-allow: 2px inner inset for segmented track, sub-token tight rim */
+  background: var(--color-bg-elevated);
+  gap: 0;
+}
+.root[data-variant='underline'] {
+  border-bottom: 1px solid var(--color-border-subtle);
+  gap: var(--space-4);
+}
+
+.tab {
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  border: 0;
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--color-text-secondary);
+  padding: 0 var(--space-3);
+  transition: background var(--dur-fast) var(--ease-out), color var(--dur-fast) var(--ease-out), border-color var(--dur-fast) var(--ease-out);
+}
+.root[data-size='sm'] .tab { height: 32px; font-size: var(--font-meta); }
+.root[data-size='md'] .tab { height: 36px; font-size: var(--font-body); }
+
+.tab[data-disabled] { opacity: 0.5; cursor: not-allowed; }
+.tab:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: lint scans single-feature @media; this compound query is canonical hover-capable. */
+  .tab:hover:not([data-disabled]):not([data-active]) { color: var(--color-text-primary); }
+}
+
+/* underline variant */
+.root[data-variant='underline'] .tab {
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px; /* spacing-allow: pull active 2px bar to overlap container 1px border */
+  padding: 0 var(--space-2);
+  border-radius: 0;
+}
+.root[data-variant='underline'] .tab[data-active] {
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-brand-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+/* pill variant */
+.root[data-variant='pill'] .tab {
+  border-radius: var(--radius-999);
+}
+.root[data-variant='pill'] .tab[data-active] {
+  background: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+}
+
+/* segmented variant */
+.root[data-variant='segmented'] .tab {
+  border-radius: 8px;
+}
+.root[data-variant='segmented'] .tab[data-active] {
+  background: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+}
+
+.icon { display: inline-flex; align-items: center; }
+.label { white-space: nowrap; }
