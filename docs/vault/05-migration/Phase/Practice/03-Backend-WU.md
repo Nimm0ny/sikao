@@ -190,7 +190,7 @@ POST /api/v2/practice/mock-exams                      # 创建模考
 
 文件：
 - `migrations/versions/xxx_question_v2_indexes.py`：3 复合索引 + source immutable trigger
-- 数据回填：现有题 source=real_exam / is_active=true / historical_accuracy=0.5
+- 数据回填：现有题 source=real_exam / is_active=true / historical_accuracy=0.0
 - `tests/db/test_question_v2_immutable.py`：尝试 UPDATE source 必须失败
 
 行数：~150。
@@ -1286,10 +1286,9 @@ POST   /api/v2/profile/practice-preferences/reset
 文件：
 - `db/models_v2.py`：两张表 + `__phase__ = "phase_2"` marker
 - `migrations/versions/xxx_question_meta_p1_tables.py`：含 UNIQUE 约束
-- `modules/question_metadata/__init__.py`：**仅注释 + marker，不导出任何 service**（QMeta-Phase1-Service-Hidden invariant）
-- `services/api/spec/openapi.json`：Phase 2 端点占位标 `x-phase: 2`（QMeta-Phase1-No-Endpoint invariant）
-- `tests/modules/question_metadata/test_phase1_empty.py`：含 QMeta-Phase1-Empty / No-Endpoint / Service-Hidden / Field-Default-Backfill invariant
-- `tests/spec/test_phase_marker.py`：x-phase=2 marker 不被前端 codegen 拉取
+- `services/api/src/sikao_api/modules/`：**Phase 1 不创建 `question_metadata` service 包**，以“模块不存在”证明 service hidden（QMeta-Phase1-Service-Hidden invariant）
+- `services/api/tests/test_practice_phase_p1_question_metadata.py`：含 QMeta-Phase1-Empty / No-Endpoint / Service-Hidden / `metadata_preview=None` / CHECK 约束 invariant（SQLite + PostgreSQL）
+- `services/api/tests/test_import_real_exams.py`：验证 Phase 1 importer 忽略 question metadata 预留字段、保留 `quality_score=0.0`、并覆盖 Field-Default-Backfill 与 PostgreSQL 导入路径
 
 行数 ~180。
 
@@ -1298,8 +1297,8 @@ POST   /api/v2/profile/practice-preferences/reset
 **验收**：
 - 9 条 QMeta-* invariant test 0 失败
 - 两张新表 alembic upgrade 后必为空
-- service 层尝试 import KnowledgePointService 失败（被 lint 检查捕获）
-- OpenAPI 不暴露任何 /knowledge-points 端点
+- `importlib.util.find_spec("sikao_api.modules.question_metadata") is None`
+- 运行时 OpenAPI 不暴露任何 `/knowledge-points` 端点（由 `test_practice_phase_p1_question_metadata.py` 断言）
 
 ---
 

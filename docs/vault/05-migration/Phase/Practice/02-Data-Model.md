@@ -177,7 +177,7 @@ class ExamType(StrEnum):
 # 现有题全部回填为 real_exam
 op.execute("UPDATE question_v2 SET source = 'real_exam' WHERE source IS NULL")
 op.execute("UPDATE question_v2 SET is_active = TRUE WHERE is_active IS NULL")
-op.execute("UPDATE question_v2 SET historical_accuracy = 0.5 WHERE historical_accuracy IS NULL")  # 中位数兜底
+op.execute("UPDATE question_v2 SET historical_accuracy = 0.0 WHERE historical_accuracy IS NULL")  # 无历史样本先从 0.0 起步
 # content_hash 回填：现有真题需要扫表批量计算 hash 后写回
 # 由 B10.3 中独立 data migration step 完成（避免长事务）
 ```
