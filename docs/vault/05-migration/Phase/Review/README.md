@@ -222,7 +222,7 @@ M14  week 11         WU-FR12：e2e（含 review-confidence + review-debt）+ a11
 |---|---|---|---|---|---|
 | `SIK-58` | `M0` | Review docs-only intake and SSOT lock | none | `done` | docs-only scoped validation + independent subagent review |
 | `SIK-59` | `M1` | `WU-R1` Schema Migration | `SIK-58`, Phase-Home `WU-B1` | `done` | backend schema gate |
-| `SIK-60` | `M2` | `WU-R2 + WU-R3 + WU-R4 + WU-R6` Review CRUD + SRS + cross-phase hook + prompts | `SIK-59`, Phase-Practice `session.commit hook`, Phase-Home `WU-B7` | `backlog` | backend runtime + prompt gate |
+| `SIK-60` | `M2` | `WU-R2 + WU-R3 + WU-R4 + WU-R6` Review CRUD + SRS + cross-phase hook + prompts | `SIK-59`, Phase-Practice `session.commit hook`, Phase-Home `WU-B7` | `done` | backend runtime + prompt gate |
 | `SIK-61` | `M3` | `WU-R5 + WU-R13` Cause Analysis + Taxonomy | `SIK-60` | `backlog` | LLM + taxonomy gate |
 | `SIK-62` | `M4` | `WU-R7 + WU-R8 + WU-R9` Weekly + Insights + Audit | `SIK-60`, Phase-Home `WU-B8` | `backlog` | scheduler + observability gate |
 | `SIK-63` | `M5` | `WU-R14` Debt Management | `SIK-60`, Phase-Home `WU-B8` | `backlog` | debt invariant gate |

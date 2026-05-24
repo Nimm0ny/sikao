@@ -218,6 +218,73 @@ This means M2 has both:
 - read compatibility for untouched historical rows
 - write-time normalization for rows it actively touches
 
+### 1.4 Review attempt write contract
+
+M2 also needs the real runtime write path that consumes the SRS engine:
+
+- `POST /api/v2/review/items/{item_id}/attempt`
+
+Request body in M2:
+
+- `is_correct: bool`
+- `user_answer: string`
+- `confidence: "guess" | "unsure" | "likely" | "certain" | null`
+- `recall_text: string | null`
+
+Response in M2:
+
+- reuse `ReviewDetailResponseV2`
+
+Rationale:
+
+- the caller needs the updated item state, new history events, action set, and metadata in one round-trip
+- returning only an ack would force an immediate second fetch and create another drift-prone contract
+
+Runtime routing rule:
+
+- `pending` / `in_progress` => `advance_on_correct()` or `regress_on_incorrect()`
+- `probationary` => `execute_probation_check()`
+- `graduated` / `archived` => fail-fast `409`
+
+Probation guard:
+
+- a `probationary` row is attemptable only when it is actually due
+- the due check is SRS-only, not debt-aware
+- `next_review_at is null` or `next_review_at > today_end_local` => fail-fast `409`
+
+Forced confidence gate:
+
+- `confidence_mismatch_count >= 1` or `is_hard=true` => `confidence` becomes required
+- backend must reject `confidence=null` for those rows even if a non-browser client bypasses UI
+
+Attempt persistence rule:
+
+- the route records the SRS event(s) emitted by the engine
+- each recorded event must also carry the request context needed by later M3 cause-analysis:
+  - `userAnswer`
+  - `isCorrect`
+  - `submittedConfidence`
+  - `effectiveConfidence`
+  - `usedRecall`
+  - `recallText` when present
+- M2 does not add a second synthetic `ATTEMPTED` event just to mirror the same payload
+
+Probation failure rule:
+
+- failed `execute_probation_check()` creates a new `re_failed` row immediately inside the same transaction
+- the original `probationary` row stays `probationary` with `next_review_at = null`
+- the new row uses canonical `source_kind = re_failed`
+- `source_id` points to the original review item id, not an invented session id
+
+M2 metadata side effects for any review attempt:
+
+- `last_answer_hash`
+- `used_recall`
+- `confidence_skipped_count` when `confidence=null`
+- `last_reviewed_at`
+- `last_confidence` as the effective confidence (`null -> likely`)
+- `confidence_prompted_forced` / `confidence_skipped` flags stay in attempt notes
+
 ### 2. Canonical active statuses in M2
 
 Use accepted Review states:
@@ -273,8 +340,12 @@ Metadata keys written in M2:
 - `forced_reason`
 - `is_hard`
 - `hard_marked_at`
+- `last_answer_hash`
+- `used_recall`
+- `confidence_skipped_count`
 - `original_review_item_id`
 - `from_probation_check`
+- `probation_failed_at`
 
 ### 5. Optimistic lock policy
 
@@ -380,6 +451,11 @@ Scoped validation target:
 - `mypy` on changed review/session/llm files
 - PostgreSQL-first targeted pytest for hook/runtime cases
 - pure unit pytest for SRS engine and parser cases
+
+Closeout note:
+
+- checked-in `services/api/spec/openapi.json` may require a user-approved H9 generated-artifact exception because it is a single deterministic export file
+- if that exception is used, it must be called out in both the final Multica Evidence Block and the delivery summary
 
 Explicit non-goal for validation wording:
 
