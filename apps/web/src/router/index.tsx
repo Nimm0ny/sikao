@@ -24,19 +24,30 @@ import { Note } from '../views/Note';
 import { Me } from '../views/Me';
 import { QuestionHub } from '../views/QuestionHub';
 import { Review } from '../views/Review';
+import { AuthGuard } from './AuthGuard';
 import { BootCard } from './BootCard';
 
+// SIK-89 Home M-Auth (2026-05-24): AuthGuard wraps RootLayout. If the user
+// is not logged in or hasn't completed onboarding, AuthGuard renders
+// <BootCard /> in place of the layout subtree. DEV bypass in main.tsx
+// pre-fills useAuthStore so dev sessions render through to RootLayout.
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <RootLayout />,
+    element: <AuthGuard />,
     children: [
-      { index: true, element: <Home /> },
-      { path: 'practice', element: <Practice /> },
-      { path: 'review', element: <Review /> },
-      { path: 'note', element: <Note /> },
-      { path: 'question-hub', element: <QuestionHub /> },
-      { path: 'me', element: <Me /> },
+      {
+        path: '/',
+        element: <RootLayout />,
+        children: [
+          { index: true, element: <Home /> },
+          { path: 'practice', element: <Practice /> },
+          { path: 'review', element: <Review /> },
+          { path: 'note', element: <Note /> },
+          { path: 'question-hub', element: <QuestionHub /> },
+          { path: 'me', element: <Me /> },
+        ],
+      },
     ],
   },
   {

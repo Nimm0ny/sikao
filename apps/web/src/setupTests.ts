@@ -1,13 +1,27 @@
 /*
  * Vitest setup — registered via vitest.config.ts setupFiles.
  *
- * V5-M0.5 skeleton (2026-05-24): jest-dom matchers + jsdom polyfills only.
- * V4 MSW handlers + renderWithProviders + REACT_FAIL_PATTERNS were dropped
- * with apps/web/src/test-utils/**. They will be reintroduced in V5-M3
- * (component test infrastructure) and V5-M9 (page integration tests),
- * sourced from @sikao/test-utils (tests/fixtures/*) when needed.
+ * V5-M0.5 skeleton (2026-05-24): jest-dom matchers + jsdom polyfills.
+ * SIK-89 Home M-Auth (2026-05-24): MSW node server lifecycle wired here so
+ * any Tab phase test (Home M-A handlers, Practice M-Api handlers, ...)
+ * gets an isolated mock network out of the box. Per-test handlers use
+ * `server.use(...)` (msw API).
  */
+import { afterAll, afterEach, beforeAll } from 'vitest';
 import '@testing-library/jest-dom/vitest';
+import { server } from './mocks/server';
+
+// MSW lifecycle:
+//   - beforeAll: start with current handler registry (fresh per file).
+//   - afterEach: reset to baseline handlers so per-test overrides don't
+//     leak between tests within the same file.
+//   - afterAll: clean up the underlying interceptor.
+//   - onUnhandledRequest 'error': fail-fast (AGENT-H7) when test code hits
+//     an endpoint no handler registered. Per-Tab handlers fill the registry
+//     in their feature milestones.
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
 
 // jsdom does not implement scrollIntoView / scrollTo. Component tests that
 // trigger DOM scroll side-effects need these as no-ops or they throw.

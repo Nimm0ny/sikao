@@ -26,6 +26,17 @@ export interface AuthUserSummary {
   readonly phone?: string | null;
   readonly phoneVerified?: boolean;
   readonly needsIdentifierSetup?: boolean;
+  // Onboarding Phase 信号 (SIK-89 Home M-Auth, 2026-05-24): 用户是否走完
+  // onboarding 流程. AuthGuard 在 user 已登录但 onboardingCompleted=false
+  // 时落 BootCard 占位 (Onboarding Phase 未 ready); Onboarding Phase 启动
+  // 后接管真正的跳转逻辑. 老 user 没有该字段 → undefined, 视为 true (放行,
+  // 不打扰已登录老用户).
+  readonly onboardingCompleted?: boolean;
+  // DEV-only 标记 (SIK-89 Home M-Auth): 真实 prod 鉴权走 httpOnly auth_token
+  // cookie + CSRF cookie, 这个字段只被 apps/web/src/main.tsx 的 DEV bypass
+  // 设置 ('dev-bypass'), 受 import.meta.env.DEV 守卫, vite tree-shake 后 prod
+  // bundle 不含字面量. 用于 grep 验证 tree-shake 生效.
+  readonly accessToken?: string;
 }
 
 interface AuthState {
