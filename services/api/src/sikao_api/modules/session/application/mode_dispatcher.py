@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Any
 
 from sqlalchemy.orm import Session
@@ -20,6 +21,7 @@ class SessionSelection:
     source_mode: str
     questions: list[QuestionV2]
     config_snapshot: dict[str, Any]
+    expires_at: datetime | None = None
 
 
 def resolve_session_selection(
@@ -44,7 +46,16 @@ def resolve_session_selection(
         return SessionSelection(source_mode="custom", questions=questions, config_snapshot=snapshot)
     if mode == "daily":
         questions, snapshot = pick_daily_questions(session, user_id=user.id, track=payload.track, config=payload.config)
-        return SessionSelection(source_mode="daily", questions=questions, config_snapshot=snapshot)
+        expires_at = None
+        raw_expires_at = snapshot.get("expires_at")
+        if isinstance(raw_expires_at, str):
+            expires_at = datetime.fromisoformat(raw_expires_at)
+        return SessionSelection(
+            source_mode="daily",
+            questions=questions,
+            config_snapshot=snapshot,
+            expires_at=expires_at,
+        )
     if mode == "wrong_redo":
         questions, snapshot = pick_wrong_redo_questions(
             session,

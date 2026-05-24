@@ -41,4 +41,8 @@ def pick_daily_questions(
     questions = [questions_by_id[question_id] for question_id in daily.question_ids if question_id in questions_by_id]
     if len(questions) != len(daily.question_ids):
         raise NotFoundError("daily practice questions missing", code="daily_practice_question_missing")
-    return questions, {"daily_practice_id": daily.id, "question_ids": list(daily.question_ids)}
+    return questions, {
+        "daily_practice_id": daily.id,
+        "question_ids": list(daily.question_ids),
+        "expires_at": daily.expired_at.isoformat(),
+    }

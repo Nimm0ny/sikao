@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import PracticeSessionAnswerV2, PracticeSessionV2, UserV2
@@ -26,8 +26,56 @@ def set_answer_flag(
     flagged: bool,
 ) -> PracticeSessionItemV2:
     practice_session, answer = load_session_answer(session, user_id=user.id, session_id=session_id, answer_id=answer_id)
+    locked_session = session.scalar(
+        select(PracticeSessionV2)
+        .where(PracticeSessionV2.id == practice_session.id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if locked_session is None:
+        raise ConflictError(
+            "practice session is not writable",
+            code="SESSION_NOT_WRITABLE",
+        )
+    practice_session = locked_session
+    if practice_session.status == "submitted":
+        raise ConflictError(
+            "practice session already submitted",
+            code="practice_session_submitted",
+        )
+    if practice_session.status in {"abandoned", "expired"}:
+        raise ConflictError(
+            "practice session is not writable",
+            code="SESSION_NOT_WRITABLE",
+        )
+    result = session.execute(
+        update(PracticeSessionAnswerV2)
+        .where(
+            PracticeSessionAnswerV2.id == answer.id,
+            PracticeSessionAnswerV2.session_id == practice_session.id,
+        )
+        .values(flagged=flagged)
+        .execution_options(synchronize_session=False)
+    )
+    if getattr(result, "rowcount", None) != 1:
+        current_status = session.scalar(
+            select(PracticeSessionV2.status).where(PracticeSessionV2.id == practice_session.id)
+        )
+        if current_status == "submitted":
+            raise ConflictError(
+                "practice session already submitted",
+                code="practice_session_submitted",
+            )
+        if current_status in {"abandoned", "expired"}:
+            raise ConflictError(
+                "practice session is not writable",
+                code="SESSION_NOT_WRITABLE",
+            )
+        raise ConflictError(
+            "invalid session transition",
+            code="INVALID_TRANSITION",
+        )
     answer.flagged = flagged
-    session.add(answer)
     session.flush()
     return serialize_answer_item(session, practice_session=practice_session, answer=answer)
 

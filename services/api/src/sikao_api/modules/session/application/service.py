@@ -2,19 +2,22 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from datetime import UTC, datetime, timedelta
-from typing import Any
+from typing import Any, cast
 
-from sqlalchemy import select, update
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from sikao_api.modules.admin.application.exam_support import is_answer_correct, normalize_answer_keys
-from sikao_api.db.models_v2 import EssaySubmissionV2, PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionFlagV2, QuestionV2, UserV2
+from sikao_api.db.models_v2 import DailyPracticeV2, EssaySubmissionV2, PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionFlagV2, QuestionV2, UserV2
 from sikao_api.modules.essay_grading.application.service import PracticeEssayGradingService
 from sikao_api.db.schemas_v2 import ActionLinkV2, PracticeAnswerPayloadV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionItemV2, PracticeSessionResultResponseV2, SectionCardV2, SummaryMetricV2
 from sikao_api.modules.daily_practice.application.state_sync import sync_daily_completion
 from sikao_api.modules.mock_exam.application.enforcer import assert_mock_exam_started
 from sikao_api.modules.session.application.answer_flag_ops import promote_flagged_answers
 from sikao_api.modules.session.application.mode_dispatcher import resolve_session_selection
+from sikao_api.modules.session_lifecycle.application.state_machine import evaluate_transition
+from sikao_api.modules.session_lifecycle.domain.types import SessionActor, SessionTrigger, SessionStatus
+from sikao_api.modules.session_lifecycle.domain.types import TransitionAttempt
 from sikao_api.modules.session_lifecycle.application.transition_support import apply_transition
 from sikao_api.modules.timing.application.submit_summary import apply_submit_timing_summary
 from sikao_api.modules.plans.domain.rrule_subset import build_occurrence_ref, end_of_local_day, expand_occurrences, parse_occurrence_ref, start_of_local_day
@@ -45,6 +48,7 @@ class SessionServiceV2:
             linked_plan_event_occurrence_ref=payload.linked_plan_event_occurrence_ref,
         )
         selection = resolve_session_selection(self.session, user=user, payload=payload)
+        self._claim_daily_selection_if_needed(selection=selection)
         paper_id, revision_id = self._resolve_paper_binding(payload.paper_code)
         selected_questions = self._resolve_questions(
             question_ids=payload.question_ids,
@@ -62,6 +66,7 @@ class SessionServiceV2:
             practice_mode=payload.practice_mode,
             source_mode=selection.source_mode,
             config_snapshot=selection.config_snapshot,
+            expires_at=selection.expires_at,
             linked_plan_event_id=payload.linked_plan_event_id,
             linked_plan_event_occurrence_ref=payload.linked_plan_event_occurrence_ref,
             linked_recommendation_id=payload.linked_recommendation_id,
@@ -102,7 +107,7 @@ class SessionServiceV2:
         answers: list[PracticeAnswerPayloadV2],
         request_id: str | None = None,
     ) -> None:
-        self.session.refresh(practice_session)
+        practice_session = self._lock_session_row(practice_session.id)
         self._ensure_session_is_writable(practice_session)
         assert_mock_exam_started(practice_session)
         self._ensure_distinct_answer_keys(answers)
@@ -169,12 +174,37 @@ class SessionServiceV2:
         practice_session: PracticeSessionV2,
         force_submitted_reason: str | None = None,
     ) -> None:
-        self.session.refresh(practice_session)
+        practice_session = self._lock_session_row(practice_session.id)
         expected_status = practice_session.status
-        self._ensure_session_can_submit(
-            practice_session=practice_session,
-            force_submitted_reason=force_submitted_reason,
+        if expected_status == "submitted":
+            raise ConflictError(
+                "practice session already submitted",
+                code="practice_session_submitted",
+            )
+        if expected_status in {"abandoned", "expired"}:
+            raise ConflictError(
+                "practice session is not writable",
+                code="SESSION_NOT_WRITABLE",
+            )
+        trigger = cast(
+            SessionTrigger,
+            "force_submit" if force_submitted_reason is not None else "user_submit",
         )
+        transition = evaluate_transition(
+            TransitionAttempt(
+                from_status=cast(SessionStatus, expected_status),
+                trigger=trigger,
+                actor=cast(
+                    SessionActor,
+                    "system" if force_submitted_reason is not None else "user",
+                ),
+            )
+        )
+        if not transition.ok or transition.new_status != "submitted":
+            raise ConflictError(
+                "invalid session transition",
+                code=transition.error_code or "INVALID_TRANSITION",
+            )
         submitted_at = self._resolve_submitted_at(
             practice_session=practice_session,
             force_submitted_reason=force_submitted_reason,
@@ -194,46 +224,6 @@ class SessionServiceV2:
             practice_session=practice_session,
             submitted_at=submitted_at,
         )
-        result = self.session.execute(
-            update(PracticeSessionV2)
-            .where(
-                PracticeSessionV2.id == practice_session.id,
-                PracticeSessionV2.status == expected_status,
-            )
-            .values(
-                status="submitted",
-                submitted_at=submitted_at,
-                force_submitted=force_submitted_reason is not None,
-                force_submitted_reason=force_submitted_reason,
-                delayed_review_until=delayed_review_until,
-                paused_at=None,
-                paused_total_seconds=paused_total_seconds,
-                last_activity_at=submitted_at,
-                total_active_seconds=practice_session.total_active_seconds,
-                payload_json=practice_session.payload_json,
-            )
-            .execution_options(synchronize_session=False)
-        )
-        if getattr(result, "rowcount", None) != 1:
-            current_status = self.session.scalar(
-                select(PracticeSessionV2.status).where(
-                    PracticeSessionV2.id == practice_session.id
-                )
-            )
-            if current_status == "submitted":
-                raise ConflictError(
-                    "practice session already submitted",
-                    code="practice_session_submitted",
-                )
-            if current_status in {"abandoned", "expired"}:
-                raise ConflictError(
-                    "practice session is not writable",
-                    code="SESSION_NOT_WRITABLE",
-                )
-            raise ConflictError(
-                "invalid session transition",
-                code="INVALID_TRANSITION",
-            )
         practice_session.status = "submitted"
         practice_session.submitted_at = submitted_at
         practice_session.force_submitted = force_submitted_reason is not None
@@ -242,25 +232,27 @@ class SessionServiceV2:
         practice_session.paused_at = None
         practice_session.paused_total_seconds = paused_total_seconds
         practice_session.last_activity_at = submitted_at
+        self.session.add(practice_session)
+        add_audit_log(
+            self.session,
+            user_id=practice_session.user_id,
+            actor_type="system" if force_submitted_reason is not None else "user",
+            actor_id="session.submit" if force_submitted_reason is not None else str(practice_session.user_id),
+            action="session.force_submitted" if force_submitted_reason is not None else "session.user_submit",
+            target_type="practice_session_v2",
+            target_id=practice_session.id,
+            before={"status": expected_status},
+            after={"status": "submitted"},
+            metadata={"trigger": trigger, "reason": force_submitted_reason}
+            if force_submitted_reason is not None
+            else {"trigger": trigger},
+            request_id=None,
+            ip=None,
+        )
         essay_submission = PracticeEssayGradingService(
             self.session,
         ).ensure_submission_for_session(practice_session=practice_session)
         sync_daily_completion(self.session, practice_session=practice_session)
-        if force_submitted_reason is not None:
-            add_audit_log(
-                self.session,
-                user_id=practice_session.user_id,
-                actor_type="system",
-                actor_id="session.submit",
-                action="session.force_submitted",
-                target_type="practice_session_v2",
-                target_id=practice_session.id,
-                before={"status": expected_status},
-                after={"status": "submitted"},
-                metadata={"reason": force_submitted_reason},
-                request_id=None,
-                ip=None,
-            )
         user = self.session.get(UserV2, practice_session.user_id)
         if user is not None:
             promote_flagged_answers(
@@ -282,6 +274,40 @@ class SessionServiceV2:
                 self.session.add(linked_event)
         if essay_submission is not None:
             self.session.add(essay_submission)
+
+    def _claim_daily_selection_if_needed(self, *, selection) -> None:
+        if selection.source_mode != "daily":
+            return
+        daily_id = selection.config_snapshot.get("daily_practice_id")
+        if not isinstance(daily_id, int):
+            raise ValidationError(
+                "daily session missing daily_practice_id",
+                code="daily_practice_not_found",
+            )
+        now = datetime.now(UTC).replace(tzinfo=None)
+        result = self.session.execute(
+            update(DailyPracticeV2)
+            .where(
+                DailyPracticeV2.id == daily_id,
+                DailyPracticeV2.status == "pending",
+                DailyPracticeV2.completed_session_id.is_(None),
+                DailyPracticeV2.expired_at > now,
+            )
+            .values(
+                status="started",
+                started_at=func.coalesce(DailyPracticeV2.started_at, now),
+            )
+            .execution_options(synchronize_session=False)
+        )
+        if getattr(result, "rowcount", None) == 1:
+            return
+        current = self.session.get(DailyPracticeV2, daily_id)
+        if current is None or current.completed_session_id is not None or current.expired_at <= now:
+            raise NotFoundError("daily practice not found", code="daily_practice_not_found")
+        raise ConflictError(
+            "daily practice already started",
+            code="daily_practice_already_started",
+        )
 
     def build_session_response(self, *, practice_session: PracticeSessionV2) -> PracticeSessionEnvelopeV2:
         answers = list(
@@ -599,16 +625,6 @@ class SessionServiceV2:
                 code="practice_session_submitted",
             )
         self._ensure_session_not_terminal(practice_session)
-        if force_submitted_reason is not None and practice_session.status not in {"in_progress", "paused"}:
-            raise ConflictError(
-                "invalid session transition",
-                code="INVALID_TRANSITION",
-            )
-        if force_submitted_reason is None and practice_session.exam_mode and practice_session.status == "draft":
-            raise ConflictError(
-                "invalid session transition",
-                code="INVALID_TRANSITION",
-            )
 
     def _load_existing_answers(
         self, session_id: int
@@ -666,6 +682,17 @@ class SessionServiceV2:
                 "practice session already submitted",
                 code="practice_session_submitted",
             )
+
+    def _lock_session_row(self, session_id: int) -> PracticeSessionV2:
+        practice_session = self.session.scalar(
+            select(PracticeSessionV2)
+            .where(PracticeSessionV2.id == session_id)
+            .with_for_update()
+            .execution_options(populate_existing=True)
+        )
+        if practice_session is None:
+            raise NotFoundError("practice session not found", code="practice_session_not_found")
+        return practice_session
 
     def _ensure_distinct_answer_keys(
         self, answers: list[PracticeAnswerPayloadV2]

@@ -20,6 +20,7 @@ _TRANSITIONS: dict[tuple[str, str], str] = {
     ("paused", "no_activity_24h"): "abandoned",
     ("in_progress", "user_discard"): "abandoned",
     ("paused", "user_discard"): "abandoned",
+    ("draft", "daily_expire_cron"): "expired",
     ("in_progress", "daily_expire_cron"): "expired",
     ("paused", "daily_expire_cron"): "expired",
     ("draft", "no_activity_draft_2h"): "abandoned",

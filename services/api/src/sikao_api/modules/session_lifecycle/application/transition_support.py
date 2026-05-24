@@ -4,6 +4,7 @@ from typing import cast
 
 from datetime import UTC, datetime
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import PracticeSessionV2
@@ -24,6 +25,16 @@ def apply_transition(
     reason: str | None = None,
     transition_ts: datetime | None = None,
 ) -> PracticeSessionV2:
+    session.flush()
+    locked_session = session.scalar(
+        select(PracticeSessionV2)
+        .where(PracticeSessionV2.id == practice_session.id)
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if locked_session is None:
+        raise ConflictError("practice session not found", code="practice_session_not_found")
+    practice_session = locked_session
     result = evaluate_transition(
         TransitionAttempt(
             from_status=cast(SessionStatus, practice_session.status),
