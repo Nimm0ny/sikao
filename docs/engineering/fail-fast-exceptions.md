@@ -70,17 +70,24 @@ last-reviewed: 2026-05-13
 
 - **文件**: `apps/web/src/components/layout/BottomTabBar/BottomTabBar.module.css` (entire `.nav` rule + `@supports not (backdrop-filter)` + `@media (prefers-reduced-transparency: reduce)` blocks)
 - **授权日期**: 2026-05-24
-- **Why** (业务理由): 移动端底部导航默认玻璃拟态 (`backdrop-filter: blur(18px) saturate(140%) + rgba 0.55 bg`) 实现"视觉融入"调性 — 跟手机原生 bottom nav (iOS / Android) 视觉一致。但旧 WebView (Android < 8 / iOS < 12) 不支持 `backdrop-filter`; 部分用户启用 `prefers-reduced-transparency: reduce` 系统级偏好。两种情况下透明背景会让文字与下层内容重叠不可读 — 直接退化到不透明 `--color-bg-elevated` 是唯一正确选择。
-- **触发条件**:
+- **负责人**: lhr
+- **复审日期**: 2026-08-23 (V5 上线 ~3 个月后)
+- **默认行为**: `background: rgba(255, 255, 255, .55); backdrop-filter: blur(18px) saturate(140%); -webkit-backdrop-filter: blur(18px) saturate(140%);` 实现"视觉融入"调性，跟手机原生 bottom nav (iOS / Android) 视觉一致。
+- **Why** (业务理由): 移动端底部导航默认玻璃拟态实现"视觉融入"调性 — 跟手机原生 bottom nav (iOS / Android) 视觉一致。但旧 WebView (Android < 8 / iOS < 12) 不支持 `backdrop-filter`; 部分用户启用 `prefers-reduced-transparency: reduce` 系统级偏好。两种情况下透明背景会让文字与下层内容重叠不可读 — 直接退化到不透明 `--color-bg-elevated` 是唯一正确选择。
+- **触发条件** (降级触发):
   - `@supports not (backdrop-filter: blur(1px))` (旧 WebView)
   - `@media (prefers-reduced-transparency: reduce)` (用户系统偏好)
   - 运行时检测 `CSS.supports('backdrop-filter', 'blur(1px)') === false` (TS 层兜底, BottomTabBar 当前不挂)
-- **降级行为**: 不透明背景 `var(--color-bg-elevated)` + `backdrop-filter: none` (CSS-only fallback, 无 React state, 无 silent catch)
+- **降级行为** (降级目标): `background: var(--color-bg-elevated); backdrop-filter: none;` (CSS-only fallback, 无 React state, 无 silent catch)。保持可读性优先。
 - **失效条件**:
-  - 2026-08-23 (V5 上线 ~3 个月) 复审: 是否还需要兼容 Android < 8 / iOS < 12; 用户使用 reduced-transparency 比例如何
+  - **2026-08-23 复审**: 是否还需要兼容 Android < 8 / iOS < 12; 用户使用 reduced-transparency 比例如何 (上线 ~3 个月后)
   - 玻璃拟态语言被替换为其他视觉 (圆角 / shadow / 半透明) 时, 整段 fallback 跟随移除
 - **不允许的处理方式**:
   - silent catch (`try { ... } catch { /* swallow */ }`)
   - `?? defaultValue` 把 backdrop-filter 写成可选 string
   - 业务组件内手写 fallback 不走 token
-- **关联 commit / PR**: V5-M3 wave 13 (SIK-75) - 待提交
+- **三处对齐**:
+  - design §E.1 (`.kiro/specs/frontend-style-guide-v5/design.md` line 1494)
+  - requirements §7.3 (`.kiro/specs/frontend-style-guide-v5/requirements.md` line 232)
+  - 本登记
+- **关联 commit / PR**: V5-M3 wave 13 BottomTabBar 落地 (commit `1fa88f871` per SIK-75 evidence).
