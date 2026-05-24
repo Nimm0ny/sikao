@@ -2,10 +2,15 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Header, Request
 from fastapi import Query
 
 from sikao_api.db.schemas_v2 import (
+    CauseAnalysisGroupRequestV2,
+    CauseAnalysisRequestV2,
+    CauseAnalysisResponseV2,
+    CauseDimensionOverrideRequestV2,
+    CauseTagListResponseV2,
     OperationAckV2,
     OverviewResponseV2,
     ReviewAttemptSubmitV2,
@@ -20,7 +25,17 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import UserV2
 from sikao_api.db.session import get_db_session
+from sikao_api.modules.auth.application.security import (
+    get_admin_principal,
+    verify_csrf_token_if_cookie_auth,
+)
 from sikao_api.modules.identity.application.security_v2 import get_current_user_v2, verify_csrf_v2
+from sikao_api.modules.question_reports.application.admin_actor import resolve_admin_actor
+from sikao_api.modules.review.application.cause_analysis_cache import invalidate_cause_tag_cache
+from sikao_api.modules.review.application.cause_analysis_queries import list_cause_tags_response
+from sikao_api.modules.review.application.cause_analysis_result import serialize_analysis_row
+from sikao_api.modules.review.application.cause_analysis_service import ReviewCauseAnalysisService
+from sikao_api.modules.review.application.cause_override_service import CauseOverrideService
 from sikao_api.modules.review.application.service import (
     apply_review_batch_action,
     archive_review_item,
@@ -33,12 +48,14 @@ from sikao_api.modules.review.application.service import (
     restore_review_item,
     submit_review_attempt,
 )
+from sikao_api.modules.system.application.audit_v2 import add_audit_log
 
 router = APIRouter(
     prefix="/api/v2/review",
     tags=["review-v2"],
     dependencies=[Depends(get_current_user_v2)],
 )
+admin_router = APIRouter(prefix="/api/v2/admin/review", tags=["review-admin-v2"])
 
 
 @router.get("/items", response_model=ReviewListResponseV2)
@@ -81,6 +98,86 @@ def get_review_item(
     session: Annotated[Session, Depends(get_db_session)],
 ) -> ReviewDetailResponseV2:
     return build_review_detail(session, user=user, item_id=item_id)
+
+
+@router.post(
+    "/items/{item_id}/cause-analysis",
+    response_model=CauseAnalysisResponseV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+async def create_cause_analysis_single(
+    item_id: int,
+    payload: CauseAnalysisRequestV2,
+    request: Request,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+) -> CauseAnalysisResponseV2:
+    service = ReviewCauseAnalysisService(session, request.app.state.settings)
+    response = await service.analyze_single(
+        user=user,
+        item_id=item_id,
+        payload=payload,
+        idempotency_key=idempotency_key or "",
+    )
+    session.commit()
+    return response
+
+
+@router.post(
+    "/cause-analysis/group",
+    response_model=CauseAnalysisResponseV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+async def create_cause_analysis_group(
+    payload: CauseAnalysisGroupRequestV2,
+    request: Request,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+) -> CauseAnalysisResponseV2:
+    service = ReviewCauseAnalysisService(session, request.app.state.settings)
+    response = await service.analyze_group(
+        user=user,
+        payload=payload,
+        idempotency_key=idempotency_key or "",
+    )
+    session.commit()
+    return response
+
+
+@router.patch(
+    "/cause-analysis/{analysis_id}/dimensions/{dimension_index}",
+    response_model=CauseAnalysisResponseV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def patch_cause_analysis_dimension(
+    analysis_id: int,
+    dimension_index: int,
+    payload: CauseDimensionOverrideRequestV2,
+    request: Request,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> CauseAnalysisResponseV2:
+    analysis = CauseOverrideService(session).override_dimension(
+        user=user,
+        analysis_id=analysis_id,
+        dimension_index=dimension_index,
+        payload=payload,
+        request_id=getattr(request.state, "request_id", None),
+    )
+    session.commit()
+    return serialize_analysis_row(analysis, cached=False)
+
+
+@router.get("/cause-tags", response_model=CauseTagListResponseV2)
+def list_cause_tags(
+    request: Request,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> CauseTagListResponseV2:
+    _ = request, user
+    return list_cause_tags_response(session)
 
 
 @router.post("/items", response_model=ReviewItemV2, dependencies=[Depends(verify_csrf_v2)])
@@ -157,3 +254,29 @@ def redo_review_item(
     session: Annotated[Session, Depends(get_db_session)],
 ) -> OperationAckV2:
     return build_redo_ack(session, user=user, item_id=item_id)
+
+
+@admin_router.post(
+    "/cause-tags/invalidate-cache",
+    response_model=OperationAckV2,
+    dependencies=[Depends(verify_csrf_token_if_cookie_auth)],
+)
+def invalidate_cause_tag_registry(
+    request: Request,
+    admin_username: Annotated[str, Depends(get_admin_principal)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> OperationAckV2:
+    invalidate_cause_tag_cache()
+    admin_user = resolve_admin_actor(session, admin_username=admin_username)
+    add_audit_log(
+        session,
+        user_id=admin_user.id,
+        actor_type="admin",
+        actor_id=admin_username,
+        action="review.cause_tag_cache_invalidated",
+        target_type="cause_tag_v2",
+        target_id=None,
+        request_id=getattr(request.state, "request_id", None),
+    )
+    session.commit()
+    return OperationAckV2(ok=True, status="invalidated")
