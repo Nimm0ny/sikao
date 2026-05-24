@@ -1,0 +1,91 @@
+/*
+ * Textarea — V5 D.3.11 form atom (skeleton).
+ * Why: shares input-* component tokens with single-line Input so the two
+ *      surfaces visually agree. Two height modes:
+ *        rows mode    → resize: vertical (user can drag handle)
+ *        autosize mode → resize: none (height is controlled in TS via
+ *                       scrollHeight clamp)
+ *      `.count` is positioned absolute inside the same border so the
+ *      counter sits in the bottom-right corner without consuming line space.
+ *      A 32px right padding reserves room for the counter so long text
+ *      never overlaps the counter glyph. box-sizing: border-box keeps the
+ *      padding inside the size budget.
+ */
+.wrapper {
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.root {
+  position: relative;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background: var(--input-bg);
+  border: var(--input-border);
+  border-radius: var(--input-radius);
+  padding: var(--space-2) var(--space-3);
+  color: var(--color-text-primary);
+  transition: border-color var(--dur-fast) var(--ease-out),
+              box-shadow var(--dur-fast) var(--ease-out);
+}
+
+.root:focus-within {
+  border: var(--input-border-focus);
+  box-shadow: var(--input-ring-focus);
+}
+.root[data-invalid] { border-color: var(--color-state-err); }
+.root[data-invalid]:focus-within {
+  border-color: var(--color-state-err);
+  box-shadow: 0 0 0 3px var(--color-state-err-soft);
+}
+.root[data-disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-bg-elevated);
+}
+.root[data-readonly] { background: var(--color-bg-elevated); }
+
+.textarea {
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  color: inherit;
+  resize: vertical;
+}
+.root[data-mode='autosize'] .textarea { resize: none; overflow: hidden; }
+
+.root[data-size='sm'] .textarea { font-size: var(--font-meta); line-height: 1.5; }
+.root[data-size='md'] .textarea { font-size: var(--font-body); line-height: 1.6; }
+.root[data-size='lg'] .textarea { font-size: var(--font-card); line-height: 1.5; }
+
+.textarea::placeholder { color: var(--color-text-meta-soft); }
+.textarea:disabled { cursor: not-allowed; color: var(--color-text-disabled); }
+.textarea:read-only { cursor: default; }
+
+/* Reserve room for the counter glyph at the bottom-right; if the counter
+ * is hidden the extra padding is harmless and keeps line geometry stable. */
+.count {
+  position: absolute;
+  right: var(--space-3);
+  bottom: var(--space-2);
+  font-size: var(--font-meta);
+  line-height: var(--line-height-meta);
+  color: var(--color-text-meta);
+  pointer-events: none;
+}
+.count[data-warn] { color: var(--color-state-warn); }
+
+.helper {
+  font-size: var(--font-meta);
+  line-height: var(--line-height-meta);
+}
+.helper[data-kind='error'] { color: var(--color-state-err); }

@@ -1,0 +1,93 @@
+/*
+ * Slider — V5 D.3.15 form atom (skeleton).
+ * Why: track + fill + marks + thumb composed as a 4px tall pill rail. The
+ *      <input type="range"> overlays the track at opacity 0 so native a11y
+ *      + keyboard stay intact while we paint the visual chrome ourselves.
+ *      Thumb is rendered via ::-webkit-slider-thumb / ::-moz-range-thumb.
+ *      --slider-fill is set inline as the fill ratio (0..100%).
+ */
+.root {
+  display: inline-flex; align-items: center;
+  gap: var(--space-3); width: 100%;
+  color: var(--color-text-primary);
+}
+.root[data-disabled] { opacity: 0.5; cursor: not-allowed; }
+
+.track {
+  position: relative; flex: 1 1 auto; height: 4px;
+  border-radius: var(--radius-999);
+  background: var(--color-border-default);
+}
+.fill {
+  position: absolute; inset: 0;
+  width: var(--slider-fill, 0%);
+  background: var(--color-brand-primary);
+  border-radius: var(--radius-999);
+  pointer-events: none;
+}
+
+/* Native input sits over the entire track; opacity 0 hides UA chrome but
+ * keeps focus + keyboard + pointer interaction intact. 24px hit-area gives
+ * finger taps room to land on the 4px rail. */
+.input {
+  position: absolute; inset: -10px 0;
+  width: 100%; height: 24px;
+  margin: 0; padding: 0;
+  background: transparent;
+  -webkit-appearance: none; appearance: none;
+  cursor: pointer; opacity: 0;
+}
+.root[data-disabled] .input { cursor: not-allowed; }
+
+.input::-webkit-slider-thumb {
+  -webkit-appearance: none; appearance: none;
+  width: 14px; height: 14px;
+  border-radius: var(--radius-999);
+  background: var(--color-brand-primary);
+  box-shadow: var(--shadow-l1); cursor: pointer;
+}
+.input::-moz-range-thumb {
+  width: 14px; height: 14px; border: 0;
+  border-radius: var(--radius-999);
+  background: var(--color-brand-primary);
+  box-shadow: var(--shadow-l1); cursor: pointer;
+}
+.input:focus-visible::-webkit-slider-thumb {
+  outline: 2px solid var(--color-focus-ring); outline-offset: 2px;
+}
+.input:focus-visible::-moz-range-thumb {
+  outline: 2px solid var(--color-focus-ring); outline-offset: 2px;
+}
+
+.marks { position: absolute; inset: 0; pointer-events: none; }
+.mark {
+  position: absolute; top: 50%;
+  transform: translate(-50%, -50%);
+  display: inline-flex; flex-direction: column;
+  align-items: center; gap: var(--space-1);
+}
+.markDot {
+  width: 4px; height: 4px;
+  border-radius: var(--radius-999);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-strong);
+}
+.mark[data-active] .markDot {
+  background: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+}
+.markLabel {
+  position: absolute; top: 12px;
+  font-size: var(--font-meta);
+  line-height: var(--line-height-meta);
+  color: var(--color-text-meta);
+  white-space: nowrap;
+}
+
+.valueText {
+  flex-shrink: 0; min-width: 32px;
+  font-size: var(--font-body);
+  line-height: var(--line-height-body);
+  color: var(--color-text-secondary);
+  text-align: right;
+}
