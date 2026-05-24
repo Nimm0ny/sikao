@@ -23,6 +23,7 @@ import { Practice } from '../views/Practice';
 import { Note } from '../views/Note';
 import { Me } from '../views/Me';
 import { QuestionHub } from '../views/QuestionHub';
+import { Review } from '../views/Review';
 import { BootCard } from './BootCard';
 
 export const router = createBrowserRouter([
@@ -32,7 +33,7 @@ export const router = createBrowserRouter([
     children: [
       { index: true, element: <Home /> },
       { path: 'practice', element: <Practice /> },
-      { path: 'review', element: <BootCard /> },
+      { path: 'review', element: <Review /> },
       { path: 'note', element: <Note /> },
       { path: 'question-hub', element: <QuestionHub /> },
       { path: 'me', element: <Me /> },
