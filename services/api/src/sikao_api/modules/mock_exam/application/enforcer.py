@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from sikao_api.db.models_v2 import PracticeSessionAnswerV2, PracticeSessionV2
+from sikao_api.db.models_v2 import PracticeSessionV2
 from sikao_api.modules.mock_exam.domain.errors import DELAYED_REVIEW_LOCKED, MOCK_EXAM_NOT_STARTED, MOCK_NOTES_FORBIDDEN, MOCK_PAUSE_FORBIDDEN
 from sikao_api.modules.system.application.errors import ConflictError, ForbiddenError, ValidationError
 
@@ -36,22 +36,15 @@ def assert_can_create_question_note(
         return
 
     active_mock_session_id = session.scalar(
-        select(PracticeSessionV2.id)
-        .join(
-            PracticeSessionAnswerV2,
-            PracticeSessionAnswerV2.session_id == PracticeSessionV2.id,
-        )
-        .where(
+        select(PracticeSessionV2.id).where(
             PracticeSessionV2.user_id == user_id,
             PracticeSessionV2.exam_mode.is_(True),
-            PracticeSessionV2.status == "in_progress",
-            PracticeSessionAnswerV2.question_id == linked_question_id,
-        )
-        .limit(1)
+            PracticeSessionV2.status.in_(("in_progress", "paused")),
+        ).limit(1)
     )
     if active_mock_session_id is not None:
         raise ValidationError(
-            "mock exam notes are forbidden while the exam is in progress",
+            "mock exam notes are forbidden while the exam is active",
             code=MOCK_NOTES_FORBIDDEN,
         )
 
