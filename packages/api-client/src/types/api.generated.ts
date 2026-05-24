@@ -4,6 +4,57 @@
  */
 
 export interface paths {
+    "/api/v2/admin/practice/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Question Reports Admin */
+        get: operations["list_question_reports_admin_api_v2_admin_practice_reports_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/admin/practice/reports/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Question Report Admin */
+        patch: operations["patch_question_report_admin_api_v2_admin_practice_reports__report_id__patch"];
+        trace?: never;
+    };
+    "/api/v2/admin/practice/reports/{report_id}/apply-fix": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Question Report Apply Fix Admin */
+        post: operations["post_question_report_apply_fix_admin_api_v2_admin_practice_reports__report_id__apply_fix_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/auth/login": {
         parameters: {
             query?: never;
@@ -361,6 +412,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/me/onboarding-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Onboarding Status */
+        get: operations["get_onboarding_status_api_v2_me_onboarding_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/notes": {
         parameters: {
             query?: never;
@@ -675,6 +743,57 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/practice/ai-questions/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Ai Questions */
+        post: operations["generate_ai_questions_api_v2_practice_ai_questions_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/ai-questions/requests/{request_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Ai Question Request */
+        get: operations["get_ai_question_request_api_v2_practice_ai_questions_requests__request_id__get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/ai-questions/{question_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Ai Question Feedback */
+        post: operations["post_ai_question_feedback_api_v2_practice_ai_questions__question_id__feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/practice/center": {
         parameters: {
             query?: never;
@@ -686,6 +805,57 @@ export interface paths {
         get: operations["get_practice_center_api_v2_practice_center_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/daily": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Daily Practice */
+        get: operations["get_daily_practice_api_v2_practice_daily_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/daily/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Daily Practice History */
+        get: operations["get_daily_practice_history_api_v2_practice_daily_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/daily/{daily_id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Start Daily Practice */
+        post: operations["start_daily_practice_api_v2_practice_daily__daily_id__start_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -726,6 +896,352 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/practice/essay/questions/{question_id}/reference-answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Reference Answers */
+        get: operations["get_reference_answers_api_v2_practice_essay_questions__question_id__reference_answers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/essay/reference-answers/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Generate Reference Answer */
+        post: operations["post_generate_reference_answer_api_v2_practice_essay_reference_answers_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/essay/reference-answers/{reference_id}/favorite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Reference Favorite */
+        post: operations["post_reference_favorite_api_v2_practice_essay_reference_answers__reference_id__favorite_post"];
+        /** Delete Reference Favorite */
+        delete: operations["delete_reference_favorite_api_v2_practice_essay_reference_answers__reference_id__favorite_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/essay/reference-answers/{reference_id}/like": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Reference Like */
+        post: operations["post_reference_like_api_v2_practice_essay_reference_answers__reference_id__like_post"];
+        /** Delete Reference Like */
+        delete: operations["delete_reference_like_api_v2_practice_essay_reference_answers__reference_id__like_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/essay/reference-answers/{reference_id}/report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Reference Report */
+        post: operations["post_reference_report_api_v2_practice_essay_reference_answers__reference_id__report_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/essay/submissions/{submission_id}/grade": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Trigger Essay Grading */
+        post: operations["trigger_essay_grading_api_v2_practice_essay_submissions__submission_id__grade_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/essay/submissions/{submission_id}/grading-status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Essay Grading Status */
+        get: operations["get_essay_grading_status_api_v2_practice_essay_submissions__submission_id__grading_status_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/essay/submissions/{submission_id}/result": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Essay Grading Result */
+        get: operations["get_essay_grading_result_api_v2_practice_essay_submissions__submission_id__result_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/favorites": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Question Favorites */
+        get: operations["get_question_favorites_api_v2_practice_favorites_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/favorites/count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Question Favorites Count */
+        get: operations["get_question_favorites_count_api_v2_practice_favorites_count_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/flags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Question Flags */
+        get: operations["get_question_flags_api_v2_practice_flags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/mock-exams": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Create Mock Exam */
+        post: operations["post_create_mock_exam_api_v2_practice_mock_exams_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/mock-exams/history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Mock Exam History */
+        get: operations["get_mock_exam_history_api_v2_practice_mock_exams_history_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/mock-exams/{session_id}/comparison": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Mock Exam Comparison */
+        get: operations["get_mock_exam_comparison_api_v2_practice_mock_exams__session_id__comparison_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/questions/{question_id}/favorite": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Question Favorite */
+        post: operations["post_question_favorite_api_v2_practice_questions__question_id__favorite_post"];
+        /** Remove Question Favorite */
+        delete: operations["remove_question_favorite_api_v2_practice_questions__question_id__favorite_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/questions/{question_id}/flag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Question Flag */
+        post: operations["post_question_flag_api_v2_practice_questions__question_id__flag_post"];
+        /** Remove Question Flag */
+        delete: operations["remove_question_flag_api_v2_practice_questions__question_id__flag_delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/questions/{question_id}/flag/resolve": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Question Flag Resolve */
+        patch: operations["patch_question_flag_resolve_api_v2_practice_questions__question_id__flag_resolve_patch"];
+        trace?: never;
+    };
+    "/api/v2/practice/questions/{question_id}/reports": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Question Reports */
+        get: operations["get_question_reports_api_v2_practice_questions__question_id__reports_get"];
+        put?: never;
+        /** Post Question Report */
+        post: operations["post_question_report_api_v2_practice_questions__question_id__reports_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/questions/{question_id}/timing-baseline": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Timing Baseline */
+        get: operations["get_timing_baseline_api_v2_practice_questions__question_id__timing_baseline_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/reports/{report_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Delete Question Report */
+        delete: operations["delete_question_report_api_v2_practice_reports__report_id__delete"];
+        options?: never;
+        head?: never;
+        /** Patch Question Report */
+        patch: operations["patch_question_report_api_v2_practice_reports__report_id__patch"];
+        trace?: never;
+    };
     "/api/v2/practice/sessions": {
         parameters: {
             query?: never;
@@ -737,6 +1253,23 @@ export interface paths {
         put?: never;
         /** Create Session */
         post: operations["create_session_api_v2_practice_sessions_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions/active": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Active Sessions */
+        get: operations["get_active_sessions_api_v2_practice_sessions_active_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -777,6 +1310,142 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/practice/sessions/{session_id}/answers/{answer_id}/flag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Flag Answer */
+        post: operations["flag_answer_api_v2_practice_sessions__session_id__answers__answer_id__flag_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions/{session_id}/answers/{answer_id}/view-solution": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** View Solution */
+        post: operations["view_solution_api_v2_practice_sessions__session_id__answers__answer_id__view_solution_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions/{session_id}/countdown": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Session Countdown */
+        get: operations["get_session_countdown_api_v2_practice_sessions__session_id__countdown_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions/{session_id}/discard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Session Discard */
+        post: operations["post_session_discard_api_v2_practice_sessions__session_id__discard_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions/{session_id}/heartbeat": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Session Heartbeat */
+        post: operations["post_session_heartbeat_api_v2_practice_sessions__session_id__heartbeat_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions/{session_id}/lifecycle": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Session Lifecycle */
+        get: operations["get_session_lifecycle_api_v2_practice_sessions__session_id__lifecycle_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions/{session_id}/pause": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Session Pause */
+        post: operations["post_session_pause_api_v2_practice_sessions__session_id__pause_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions/{session_id}/persistent-flag": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Persistent Flag */
+        post: operations["persistent_flag_api_v2_practice_sessions__session_id__persistent_flag_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/practice/sessions/{session_id}/result": {
         parameters: {
             query?: never;
@@ -794,6 +1463,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/practice/sessions/{session_id}/resume": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Session Resume */
+        post: operations["post_session_resume_api_v2_practice_sessions__session_id__resume_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions/{session_id}/start": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Session Start */
+        post: operations["post_session_start_api_v2_practice_sessions__session_id__start_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/practice/sessions/{session_id}/submit": {
         parameters: {
             query?: never;
@@ -805,6 +1508,142 @@ export interface paths {
         put?: never;
         /** Submit Session */
         post: operations["submit_session_api_v2_practice_sessions__session_id__submit_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions/{session_id}/timing-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Timing Report */
+        get: operations["get_timing_report_api_v2_practice_sessions__session_id__timing_report_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/sessions/{session_id}/timing/events": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Timing Events */
+        post: operations["post_timing_events_api_v2_practice_sessions__session_id__timing_events_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Practice Stats */
+        get: operations["get_practice_stats_api_v2_practice_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/stats/cross": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Practice Stats Cross */
+        get: operations["get_practice_stats_cross_api_v2_practice_stats_cross_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/stats/percentile": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Practice Stats Percentile */
+        get: operations["get_practice_stats_percentile_api_v2_practice_stats_percentile_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/stats/realtime": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Practice Stats Realtime */
+        get: operations["get_practice_stats_realtime_api_v2_practice_stats_realtime_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/stats/timing": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Timing Stats */
+        get: operations["get_timing_stats_api_v2_practice_stats_timing_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/practice/stats/trend": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Practice Stats Trend */
+        get: operations["get_practice_stats_trend_api_v2_practice_stats_trend_get"];
+        put?: never;
+        post?: never;
         delete?: never;
         options?: never;
         head?: never;
@@ -926,6 +1765,42 @@ export interface paths {
         get: operations["get_profile_overview_api_v2_profile_overview_get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/profile/practice-preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Practice Preferences */
+        get: operations["get_practice_preferences_api_v2_profile_practice_preferences_get"];
+        /** Put Practice Preferences */
+        put: operations["put_practice_preferences_api_v2_profile_practice_preferences_put"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Patch Practice Preferences */
+        patch: operations["patch_practice_preferences_api_v2_profile_practice_preferences_patch"];
+        trace?: never;
+    };
+    "/api/v2/profile/practice-preferences/reset": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Reset Practice Preferences */
+        post: operations["reset_practice_preferences_api_v2_profile_practice_preferences_reset_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -1276,6 +2151,165 @@ export interface components {
             /** Label */
             label: string;
         };
+        /** ActiveSessionProgress */
+        ActiveSessionProgress: {
+            /** Answered */
+            answered: number;
+            /** Total */
+            total: number;
+        };
+        /** ActiveSessionV2 */
+        ActiveSessionV2: {
+            /** Category */
+            category?: string | null;
+            /**
+             * Exammode
+             * @default false
+             */
+            examMode: boolean;
+            /** Id */
+            id: number;
+            /** Lastactivityat */
+            lastActivityAt?: string | null;
+            /** Papercode */
+            paperCode?: string | null;
+            /** Pausedat */
+            pausedAt?: string | null;
+            /** Practicemode */
+            practiceMode: string;
+            progress: components["schemas"]["ActiveSessionProgress"];
+            /** Sourcemode */
+            sourceMode: string;
+            /** Startedat */
+            startedAt: string;
+            /** Status */
+            status: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "xingce" | "essay";
+        };
+        /** ActiveSessionsResponseV2 */
+        ActiveSessionsResponseV2: {
+            /** Count */
+            count: number;
+            /** Sessions */
+            sessions?: components["schemas"]["ActiveSessionV2"][];
+        };
+        /** AiQuestionFeedbackRequestV2 */
+        AiQuestionFeedbackRequestV2: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "like" | "report";
+            /** Note */
+            note?: string | null;
+        };
+        /** AiQuestionFeedbackResponseV2 */
+        AiQuestionFeedbackResponseV2: {
+            /**
+             * Action
+             * @enum {string}
+             */
+            action: "like" | "report";
+            /** Isactive */
+            isActive: boolean;
+            /** Qualityscore */
+            qualityScore: number;
+            /** Questionid */
+            questionId: number;
+            /** Reportcount */
+            reportCount: number;
+        };
+        /** AiQuestionRequestDetailV2 */
+        AiQuestionRequestDetailV2: {
+            /** Completedat */
+            completedAt?: string | null;
+            /** Durationms */
+            durationMs?: number | null;
+            /** Errormessage */
+            errorMessage?: string | null;
+            /** Id */
+            id: number;
+            /** Llmcallid */
+            llmCallId?: number | null;
+            /** Llmgeneratedquestionids */
+            llmGeneratedQuestionIds: number[];
+            /** Llmselfauditpassedcount */
+            llmSelfAuditPassedCount: number;
+            /** Poolquestionids */
+            poolQuestionIds: number[];
+            /** Requestparams */
+            requestParams: {
+                [key: string]: unknown;
+            };
+            /** Startedat */
+            startedAt: string;
+            /** Status */
+            status: string;
+        };
+        /** AiQuestionsGenerateConfigV2 */
+        AiQuestionsGenerateConfigV2: {
+            /** Categoryl1 */
+            categoryL1?: string | null;
+            /** Categoryl2 */
+            categoryL2?: string | null;
+            /** Count */
+            count: number;
+            /**
+             * Difficultyrange
+             * @default [
+             *       0,
+             *       1
+             *     ]
+             */
+            difficultyRange: [
+                number,
+                number
+            ];
+            /**
+             * Excludealreadydone
+             * @default true
+             */
+            excludeAlreadyDone: boolean;
+            /**
+             * Onlywrong
+             * @default false
+             */
+            onlyWrong: boolean;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "xingce" | "essay";
+            /**
+             * Yearrange
+             * @default all
+             * @enum {string}
+             */
+            yearRange: "all" | "recent_3" | "recent_5" | "recent_10";
+        };
+        /** AiQuestionsGenerateRequestV2 */
+        AiQuestionsGenerateRequestV2: {
+            config: components["schemas"]["AiQuestionsGenerateConfigV2"];
+        };
+        /** AiQuestionsGenerateResponseV2 */
+        AiQuestionsGenerateResponseV2: {
+            /** Durationms */
+            durationMs: number;
+            /** Llmgeneratedcount */
+            llmGeneratedCount: number;
+            /** Poolcount */
+            poolCount: number;
+            /** Questionids */
+            questionIds?: number[];
+            /** Requestid */
+            requestId: number;
+            /** Status */
+            status: string;
+        };
         /** AuthAckV2 */
         AuthAckV2: {
             /** Message */
@@ -1321,6 +2355,33 @@ export interface components {
             /** Publicid */
             publicId: string;
         };
+        /** AutoSavePreferences */
+        AutoSavePreferences: {
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+            /**
+             * Intervalseconds
+             * @default 30
+             */
+            intervalSeconds: number;
+            /**
+             * Savetolocalstorage
+             * @default true
+             */
+            saveToLocalStorage: boolean;
+        };
+        /** AutoSavePreferencesPayloadWireV1 */
+        AutoSavePreferencesPayloadWireV1: {
+            /** Enabled */
+            enabled: boolean;
+            /** Intervalseconds */
+            intervalSeconds: number;
+            /** Savetolocalstorage */
+            saveToLocalStorage: boolean;
+        };
         /** BindPhoneRequestV2 */
         BindPhoneRequestV2: {
             /** Phone */
@@ -1343,16 +2404,43 @@ export interface components {
         };
         /** CatalogItemV2 */
         CatalogItemV2: {
+            /** Bestscore */
+            bestScore?: number | null;
+            /** Categoryl1 */
+            categoryL1?: string | null;
+            /** Categoryl2 */
+            categoryL2?: string | null;
+            /** Count */
+            count?: number | null;
+            /** Difficulty */
+            difficulty?: string | null;
+            /** Examtype */
+            examType?: string | null;
             /** Href */
             href: string;
             /** Id */
             id: string;
+            /**
+             * Iscompleted
+             * @default false
+             */
+            isCompleted: boolean;
+            /** Lastattemptat */
+            lastAttemptAt?: string | null;
+            /** Papercode */
+            paperCode?: string | null;
+            /** Questioncount */
+            questionCount?: number | null;
+            /** Region */
+            region?: string | null;
             /** Status */
             status: string;
             /** Subtitle */
             subtitle?: string | null;
             /** Title */
             title: string;
+            /** Year */
+            year?: number | null;
         };
         /** CatalogListResponseV2 */
         CatalogListResponseV2: {
@@ -1364,6 +2452,97 @@ export interface components {
             pageSize: number;
             /** Total */
             total: number;
+        };
+        /** CustomPracticeDefaults */
+        CustomPracticeDefaults: {
+            /**
+             * Lastusedcount
+             * @default 10
+             * @enum {integer}
+             */
+            lastUsedCount: 5 | 10 | 15 | 20 | 30;
+            /**
+             * Lastuseddifficultyrange
+             * @default [
+             *       0,
+             *       1
+             *     ]
+             */
+            lastUsedDifficultyRange: [
+                number,
+                number
+            ];
+            /**
+             * Lastusedexcludedone
+             * @default true
+             */
+            lastUsedExcludeDone: boolean;
+            /**
+             * Lastusedonlywrong
+             * @default false
+             */
+            lastUsedOnlyWrong: boolean;
+            /**
+             * Lastusedpracticemode
+             * @default full_set
+             * @enum {string}
+             */
+            lastUsedPracticeMode: "per_question" | "full_set";
+            /**
+             * Lastusedsourcemode
+             * @default real_exam
+             * @enum {string}
+             */
+            lastUsedSourceMode: "real_exam" | "ai_generated";
+            /**
+             * Lastusedyearrange
+             * @default recent_3
+             * @enum {string}
+             */
+            lastUsedYearRange: "all" | "recent_3" | "recent_5" | "recent_10";
+        };
+        /** CustomPracticeDefaultsPayloadWireV1 */
+        CustomPracticeDefaultsPayloadWireV1: {
+            /** Lastusedcount */
+            lastUsedCount: number;
+            /** Lastuseddifficultyrange */
+            lastUsedDifficultyRange: [
+                number,
+                number
+            ];
+            /** Lastusedexcludedone */
+            lastUsedExcludeDone: boolean;
+            /** Lastusedonlywrong */
+            lastUsedOnlyWrong: boolean;
+            /** Lastusedpracticemode */
+            lastUsedPracticeMode: string;
+            /** Lastusedsourcemode */
+            lastUsedSourceMode: string;
+            /** Lastusedyearrange */
+            lastUsedYearRange: string;
+        };
+        /** DailyPracticeResponseV2 */
+        DailyPracticeResponseV2: {
+            /** Completedaccuracy */
+            completedAccuracy?: number | null;
+            /** Completedsessionid */
+            completedSessionId?: number | null;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Id */
+            id: number;
+            /** Questioncount */
+            questionCount: number;
+            /** Status */
+            status: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "xingce" | "essay";
         };
         /** DashboardContinueResponseV2 */
         DashboardContinueResponseV2: {
@@ -1516,6 +2695,70 @@ export interface components {
              */
             weekStart: string;
         };
+        /** EssayGradingResponseV2 */
+        EssayGradingResponseV2: {
+            /** Errormessage */
+            errorMessage?: string | null;
+            /** Referenceanswers */
+            referenceAnswers?: components["schemas"]["EssayReferenceAnswerEnvelopeV2"][];
+            report?: components["schemas"]["EssayReportEnvelopeV2"] | null;
+            /** Status */
+            status: string;
+            /** Submissionid */
+            submissionId: number;
+        };
+        /** EssayReferenceAnswerEnvelopeV2 */
+        EssayReferenceAnswerEnvelopeV2: {
+            /** Content */
+            content: string;
+            /** Favoritescount */
+            favoritesCount: number;
+            /** Id */
+            id: number;
+            /** Likescount */
+            likesCount: number;
+            /** Publishedat */
+            publishedAt?: string | null;
+            /** Qualityscore */
+            qualityScore: number;
+            /** Questionid */
+            questionId: number;
+            /** Reportcount */
+            reportCount: number;
+            /** Source */
+            source: string;
+            /** Status */
+            status: string;
+        };
+        /** EssayReferenceGenerateRequestV2 */
+        EssayReferenceGenerateRequestV2: {
+            /** Questionid */
+            questionId: number;
+        };
+        /** EssayReferenceReportRequestV2 */
+        EssayReferenceReportRequestV2: {
+            /** Note */
+            note?: string | null;
+        };
+        /** EssayReportEnvelopeV2 */
+        EssayReportEnvelopeV2: {
+            /** Dimensions */
+            dimensions?: components["schemas"]["GradingDimensionV2"][];
+            /** Gradedat */
+            gradedAt: string;
+            /** Highlights */
+            highlights?: string[];
+            /** Improvementsuggestions */
+            improvementSuggestions?: string[];
+            /** Issues */
+            issues?: string[];
+            /** Llmcallid */
+            llmCallId: number;
+            /** Overallcomment */
+            overallComment: string;
+            /** Totalscore */
+            totalScore: number;
+        };
         /** EventConflictItemV2 */
         EventConflictItemV2: {
             /** Endat */
@@ -1610,6 +2853,17 @@ export interface components {
              */
             to: string;
         };
+        /** GradingDimensionV2 */
+        GradingDimensionV2: {
+            /** Comment */
+            comment?: string | null;
+            /** Fullscore */
+            fullScore?: number | null;
+            /** Name */
+            name: string;
+            /** Score */
+            score?: number | null;
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -1622,6 +2876,97 @@ export interface components {
              * @constant
              */
             status: "ok";
+        };
+        /** KeyBindings */
+        KeyBindings: {
+            /**
+             * Favorite
+             * @default s
+             */
+            favorite: string;
+            /**
+             * Flaguncertain
+             * @default f
+             */
+            flagUncertain: string;
+            /**
+             * Nextquestion
+             * @default ArrowRight
+             */
+            nextQuestion: string;
+            /**
+             * Note
+             * @default n
+             */
+            note: string;
+            /**
+             * Prevquestion
+             * @default ArrowLeft
+             */
+            prevQuestion: string;
+            /**
+             * Selecta
+             * @default a
+             */
+            selectA: string;
+            /**
+             * Selectb
+             * @default b
+             */
+            selectB: string;
+            /**
+             * Selectc
+             * @default c
+             */
+            selectC: string;
+            /**
+             * Selectd
+             * @default d
+             */
+            selectD: string;
+            /**
+             * Submit
+             * @default Ctrl+Enter
+             */
+            submit: string;
+        };
+        /** KeyBindingsPayloadWireV1 */
+        KeyBindingsPayloadWireV1: {
+            /** Favorite */
+            favorite: string;
+            /** Flaguncertain */
+            flagUncertain: string;
+            /** Nextquestion */
+            nextQuestion: string;
+            /** Note */
+            note: string;
+            /** Prevquestion */
+            prevQuestion: string;
+            /** Selecta */
+            selectA: string;
+            /** Selectb */
+            selectB: string;
+            /** Selectc */
+            selectC: string;
+            /** Selectd */
+            selectD: string;
+            /** Submit */
+            submit: string;
+        };
+        /** KeyboardPreferences */
+        KeyboardPreferences: {
+            bindings?: components["schemas"]["KeyBindings"];
+            /**
+             * Enabled
+             * @default true
+             */
+            enabled: boolean;
+        };
+        /** KeyboardPreferencesPayloadWireV1 */
+        KeyboardPreferencesPayloadWireV1: {
+            bindings: components["schemas"]["KeyBindingsPayloadWireV1"];
+            /** Enabled */
+            enabled: boolean;
         };
         /** LearningRecordItemV2 */
         LearningRecordItemV2: {
@@ -1651,12 +2996,120 @@ export interface components {
             /** Total */
             total: number;
         };
+        /** LifecycleTransition */
+        LifecycleTransition: {
+            /**
+             * Actor
+             * @enum {string}
+             */
+            actor: "user" | "system" | "cron" | "admin";
+            /** Fromstatus */
+            fromStatus: string;
+            /** Reason */
+            reason?: string | null;
+            /** Tostatus */
+            toStatus: string;
+            /** Trigger */
+            trigger: string;
+            /** Ts */
+            ts: string;
+        };
         /** LoginRequestV2 */
         LoginRequestV2: {
             /** Identifier */
             identifier: string;
             /** Password */
             password: string;
+        };
+        /** MockExamAggregate */
+        MockExamAggregate: {
+            /** Avgaccuracy */
+            avgAccuracy: number;
+            /** Bestaccuracy */
+            bestAccuracy: number;
+            /** Bestsessionid */
+            bestSessionId?: number | null;
+            /** Improvementtrend */
+            improvementTrend: number;
+            /** Totalcount */
+            totalCount: number;
+        };
+        /** MockExamComparisonResponseV2 */
+        MockExamComparisonResponseV2: {
+            /** Paperbaseline */
+            paperBaseline?: {
+                [key: string]: number | null;
+            };
+            self: components["schemas"]["MockExamHistoryItem"];
+            /** Selfhistory */
+            selfHistory?: components["schemas"]["MockExamHistoryItem"][];
+        };
+        /** MockExamCountdownResponseV2 */
+        MockExamCountdownResponseV2: {
+            /** Autosubmitat */
+            autoSubmitAt: string;
+            /** Elapsedseconds */
+            elapsedSeconds: number;
+            /** Remainingseconds */
+            remainingSeconds: number;
+            /** Servernow */
+            serverNow: string;
+            /** Status */
+            status: string;
+        };
+        /** MockExamCreateRequestV2 */
+        MockExamCreateRequestV2: {
+            /**
+             * Delayedreviewminutes
+             * @default 0
+             */
+            delayedReviewMinutes: number;
+            /** Papercode */
+            paperCode: string;
+            /** Timelimitminutes */
+            timeLimitMinutes?: number | null;
+        };
+        /** MockExamCreateResponseV2 */
+        MockExamCreateResponseV2: {
+            /** Autosubmitat */
+            autoSubmitAt?: string | null;
+            /** Expiresat */
+            expiresAt?: string | null;
+            /** Papercode */
+            paperCode: string;
+            /** Sessionid */
+            sessionId: number;
+            /** Status */
+            status: string;
+            /** Timelimitminutes */
+            timeLimitMinutes: number;
+        };
+        /** MockExamHistoryItem */
+        MockExamHistoryItem: {
+            /** Accuracy */
+            accuracy: number;
+            /** Actualactiveseconds */
+            actualActiveSeconds: number;
+            /** Completedat */
+            completedAt: string;
+            /** Isforcesubmitted */
+            isForceSubmitted: boolean;
+            /** Papercode */
+            paperCode: string;
+            /** Rankinself */
+            rankInSelf?: number | null;
+            /** Sessionid */
+            sessionId: number;
+            /** Timelimitminutes */
+            timeLimitMinutes: number;
+            /** Totalscore */
+            totalScore?: number | null;
+        };
+        /** MockExamHistoryResponseV2 */
+        MockExamHistoryResponseV2: {
+            aggregate: components["schemas"]["MockExamAggregate"];
+            /** Sessions */
+            sessions?: components["schemas"]["MockExamHistoryItem"][];
         };
         /** NoteCreateRequestV2 */
         NoteCreateRequestV2: {
@@ -1665,8 +3118,15 @@ export interface components {
              * @default
              */
             body: string;
+            /** Linkedquestionid */
+            linkedQuestionId?: number | null;
             /** Title */
             title: string;
+            /**
+             * Visibility
+             * @default private
+             */
+            visibility: string;
         };
         /** NoteDetailV2 */
         NoteDetailV2: {
@@ -1676,12 +3136,19 @@ export interface components {
             createdAt: string;
             /** Id */
             id: number;
+            /** Linkedquestionid */
+            linkedQuestionId?: number | null;
             /** Status */
             status: string;
             /** Title */
             title: string;
             /** Updatedat */
             updatedAt: string;
+            /**
+             * Visibility
+             * @default private
+             */
+            visibility: string;
         };
         /** NoteItemV2 */
         NoteItemV2: {
@@ -1691,12 +3158,19 @@ export interface components {
             excerpt: string;
             /** Id */
             id: number;
+            /** Linkedquestionid */
+            linkedQuestionId?: number | null;
             /** Status */
             status: string;
             /** Title */
             title: string;
             /** Updatedat */
             updatedAt: string;
+            /**
+             * Visibility
+             * @default private
+             */
+            visibility: string;
         };
         /** NoteListResponseV2 */
         NoteListResponseV2: {
@@ -1716,6 +3190,8 @@ export interface components {
              * @default
              */
             body: string;
+            /** Linkedquestionid */
+            linkedQuestionId?: number | null;
             /**
              * Status
              * @default active
@@ -1723,6 +3199,17 @@ export interface components {
             status: string;
             /** Title */
             title: string;
+            /** Visibility */
+            visibility?: string | null;
+        };
+        /** OnboardingStatusV2 */
+        OnboardingStatusV2: {
+            /** Hasexam */
+            hasExam: boolean;
+            /** Hasgoal */
+            hasGoal: boolean;
+            /** Isonboarded */
+            isOnboarded: boolean;
         };
         /** OperationAckV2 */
         OperationAckV2: {
@@ -1739,6 +3226,48 @@ export interface components {
             sections: components["schemas"]["SectionCardV2"][];
             /** Summary */
             summary: components["schemas"]["SummaryMetricV2"][];
+        };
+        /** PacingPreferences */
+        PacingPreferences: {
+            /**
+             * Autoadvanceafteranswer
+             * @default false
+             */
+            autoAdvanceAfterAnswer: boolean;
+            /**
+             * Autoadvancedelayseconds
+             * @default 1
+             */
+            autoAdvanceDelaySeconds: number;
+            /**
+             * Confirmbeforesubmit
+             * @default true
+             */
+            confirmBeforeSubmit: boolean;
+            /**
+             * Confirmwhenunansweredcountgte
+             * @default 1
+             */
+            confirmWhenUnansweredCountGte: number;
+            /**
+             * Defaultpracticemode
+             * @default full_set
+             * @enum {string}
+             */
+            defaultPracticeMode: "per_question" | "full_set";
+        };
+        /** PacingPreferencesPayloadWireV1 */
+        PacingPreferencesPayloadWireV1: {
+            /** Autoadvanceafteranswer */
+            autoAdvanceAfterAnswer: boolean;
+            /** Autoadvancedelayseconds */
+            autoAdvanceDelaySeconds: number;
+            /** Confirmbeforesubmit */
+            confirmBeforeSubmit: boolean;
+            /** Confirmwhenunansweredcountgte */
+            confirmWhenUnansweredCountGte: number;
+            /** Defaultpracticemode */
+            defaultPracticeMode: string;
         };
         /** PlanAdjustmentListResponseV2 */
         PlanAdjustmentListResponseV2: {
@@ -2039,6 +3568,11 @@ export interface components {
             /** Targetexamdate */
             targetExamDate?: string | null;
         };
+        /** PracticeAnswerFlagRequestV2 */
+        PracticeAnswerFlagRequestV2: {
+            /** Flagged */
+            flagged: boolean;
+        };
         /** PracticeAnswerPayloadV2 */
         PracticeAnswerPayloadV2: {
             /** Answer */
@@ -2085,8 +3619,83 @@ export interface components {
             /** Summary */
             summary: components["schemas"]["SummaryMetricV2"][];
         };
+        /** PracticePersistentFlagRequestV2 */
+        PracticePersistentFlagRequestV2: {
+            /** Questionid */
+            questionId: number;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "uncertain" | "revisit_later" | "needs_review";
+        };
+        /** PracticePreferencesPatchItemV2 */
+        PracticePreferencesPatchItemV2: {
+            /** Path */
+            path: string;
+            /** Value */
+            value: unknown;
+        };
+        /** PracticePreferencesPatchRequestV2 */
+        PracticePreferencesPatchRequestV2: {
+            /** Patches */
+            patches: components["schemas"]["PracticePreferencesPatchItemV2"][];
+            /** Schemaversion */
+            schemaVersion: number;
+        };
+        /** PracticePreferencesPayloadV1 */
+        PracticePreferencesPayloadV1: {
+            autoSave?: components["schemas"]["AutoSavePreferences"];
+            customPractice?: components["schemas"]["CustomPracticeDefaults"];
+            keyboard?: components["schemas"]["KeyboardPreferences"];
+            pacing?: components["schemas"]["PacingPreferences"];
+            reminders?: components["schemas"]["ReminderPreferences"];
+            ui?: components["schemas"]["UiPreferences"];
+        };
+        /** PracticePreferencesPayloadWireV1 */
+        PracticePreferencesPayloadWireV1: {
+            autoSave: components["schemas"]["AutoSavePreferencesPayloadWireV1"];
+            customPractice: components["schemas"]["CustomPracticeDefaultsPayloadWireV1"];
+            keyboard: components["schemas"]["KeyboardPreferencesPayloadWireV1"];
+            pacing: components["schemas"]["PacingPreferencesPayloadWireV1"];
+            reminders: components["schemas"]["ReminderPreferencesPayloadWireV1"];
+            ui: components["schemas"]["UiPreferencesPayloadWireV1"];
+        };
+        /** PracticePreferencesPutRequestV2 */
+        PracticePreferencesPutRequestV2: {
+            payload: components["schemas"]["PracticePreferencesPayloadWireV1"];
+            /** Schemaversion */
+            schemaVersion: number;
+        };
+        /** PracticePreferencesResetRequestV2 */
+        PracticePreferencesResetRequestV2: {
+            /** Sections */
+            sections?: ("ui" | "pacing" | "auto_save" | "keyboard" | "reminders" | "custom_practice")[];
+        };
+        /** PracticePreferencesResponseV2 */
+        PracticePreferencesResponseV2: {
+            /** Isdefault */
+            isDefault: boolean;
+            payload: components["schemas"]["PracticePreferencesPayloadV1"];
+            /** Schemaversion */
+            schemaVersion: number;
+            /** Updatedat */
+            updatedAt?: string | null;
+        };
+        /** PracticePreferencesWriteResponseV2 */
+        PracticePreferencesWriteResponseV2: {
+            payload: components["schemas"]["PracticePreferencesPayloadV1"];
+            /** Schemaversion */
+            schemaVersion: number;
+            /** Updatedat */
+            updatedAt?: string | null;
+        };
         /** PracticeSessionCreateRequestV2 */
         PracticeSessionCreateRequestV2: {
+            /** Config */
+            config?: {
+                [key: string]: unknown;
+            };
             /** Entrykind */
             entryKind: string;
             /** Linkedplaneventid */
@@ -2095,12 +3704,20 @@ export interface components {
             linkedPlanEventOccurrenceRef?: string | null;
             /** Linkedrecommendationid */
             linkedRecommendationId?: number | null;
+            /** Mode */
+            mode?: string | null;
             /** Papercode */
             paperCode?: string | null;
             /** Payload */
             payload?: {
                 [key: string]: unknown;
             };
+            /**
+             * Practicemode
+             * @default full_set
+             * @enum {string}
+             */
+            practiceMode: "per_question" | "full_set";
             /** Questionids */
             questionIds?: number[];
             /**
@@ -2113,33 +3730,135 @@ export interface components {
         PracticeSessionEnvelopeV2: {
             /** Actions */
             actions: components["schemas"]["ActionLinkV2"][];
+            /** Autosubmitat */
+            autoSubmitAt?: string | null;
+            /** Configsnapshot */
+            configSnapshot?: {
+                [key: string]: unknown;
+            };
+            /** Delayedreviewuntil */
+            delayedReviewUntil?: string | null;
             /** Entrykind */
             entryKind: string;
+            /**
+             * Exammode
+             * @default false
+             */
+            examMode: boolean;
+            /** Expiresat */
+            expiresAt?: string | null;
+            /** Firstquestionat */
+            firstQuestionAt?: string | null;
+            /**
+             * Forcesubmitted
+             * @default false
+             */
+            forceSubmitted: boolean;
+            /** Forcesubmittedreason */
+            forceSubmittedReason?: string | null;
             /** Id */
             id: number;
             /** Items */
             items: components["schemas"]["PracticeSessionItemV2"][];
+            /** Lastactivityat */
+            lastActivityAt?: string | null;
+            /** Lastheartbeatat */
+            lastHeartbeatAt?: string | null;
+            /** Pausedat */
+            pausedAt?: string | null;
+            /**
+             * Pausedcount
+             * @default 0
+             */
+            pausedCount: number;
+            /**
+             * Pausedtotalseconds
+             * @default 0
+             */
+            pausedTotalSeconds: number;
+            /**
+             * Practicemode
+             * @default full_set
+             */
+            practiceMode: string;
+            /**
+             * Sourcemode
+             * @default paper
+             */
+            sourceMode: string;
             /** Startedat */
             startedAt: string;
             /** Status */
             status: string;
             /** Submittedat */
             submittedAt?: string | null;
+            /** Timelimitminutes */
+            timeLimitMinutes?: number | null;
+            /**
+             * Totalactiveseconds
+             * @default 0
+             */
+            totalActiveSeconds: number;
             /** Track */
             track: string;
         };
         /** PracticeSessionItemV2 */
         PracticeSessionItemV2: {
+            /**
+             * Answerchangecount
+             * @default 0
+             */
+            answerChangeCount: number;
             /** Answerkind */
             answerKind: string;
+            /**
+             * Flagged
+             * @default false
+             */
+            flagged: boolean;
+            /**
+             * Haspersistentflag
+             * @default false
+             */
+            hasPersistentFlag: boolean;
+            /**
+             * Hasusernotes
+             * @default false
+             */
+            hasUserNotes: boolean;
             /** Id */
             id: string;
+            /**
+             * Isfavorited
+             * @default false
+             */
+            isFavorited: boolean;
+            /**
+             * Isovertime
+             * @default false
+             */
+            isOvertime: boolean;
             /** Prompt */
             prompt: string;
             /** Questionkey */
             questionKey: string;
             /** Status */
             status: string;
+            /**
+             * Timespentms
+             * @default 0
+             */
+            timeSpentMs: number;
+            /**
+             * Viewedsolution
+             * @default false
+             */
+            viewedSolution: boolean;
+            /**
+             * Visitcount
+             * @default 0
+             */
+            visitCount: number;
         };
         /** PracticeSessionResultResponseV2 */
         PracticeSessionResultResponseV2: {
@@ -2149,6 +3868,141 @@ export interface components {
             sections: components["schemas"]["SectionCardV2"][];
             /** Summary */
             summary: components["schemas"]["SummaryMetricV2"][];
+        };
+        /** PracticeStatsCellV2 */
+        PracticeStatsCellV2: {
+            /** Accuracy */
+            accuracy: number;
+            /** Averagescore */
+            averageScore?: number | null;
+            /** Categorykey */
+            categoryKey?: string | null;
+            /** Correctcount */
+            correctCount: number;
+            /** Label */
+            label: string;
+            /** Lastpracticedat */
+            lastPracticedAt?: string | null;
+            /** Percentilerank */
+            percentileRank?: number | null;
+            /** Recenttrend */
+            recentTrend?: components["schemas"]["PracticeStatsTrendPointV2"][];
+            /** Totalminutes */
+            totalMinutes: number;
+            /** Totalquestions */
+            totalQuestions: number;
+            /** Totalsessions */
+            totalSessions: number;
+        };
+        /** PracticeStatsCrossItemV2 */
+        PracticeStatsCrossItemV2: {
+            /** Accuracy */
+            accuracy: number;
+            /** Averagescore */
+            averageScore?: number | null;
+            /** Categorykey */
+            categoryKey: string;
+            /** Correctcount */
+            correctCount: number;
+            /**
+             * Difficulty
+             * @enum {string}
+             */
+            difficulty: "easy" | "medium" | "hard" | "unknown";
+            /** Label */
+            label: string;
+            /** Totalminutes */
+            totalMinutes: number;
+            /** Totalquestions */
+            totalQuestions: number;
+            /** Totalsessions */
+            totalSessions: number;
+        };
+        /** PracticeStatsCrossResponseV2 */
+        PracticeStatsCrossResponseV2: {
+            /** Category */
+            category?: string | null;
+            /** Items */
+            items?: components["schemas"]["PracticeStatsCrossItemV2"][];
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "xingce" | "essay";
+        };
+        /** PracticeStatsPercentileResponseV2 */
+        PracticeStatsPercentileResponseV2: {
+            /** Category */
+            category?: string | null;
+            /** Percentilerank */
+            percentileRank?: number | null;
+            /** Percentileupdatedat */
+            percentileUpdatedAt?: string | null;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "xingce" | "essay";
+        };
+        /** PracticeStatsResponseV2 */
+        PracticeStatsResponseV2: {
+            /** Bycategoryl1 */
+            byCategoryL1?: components["schemas"]["PracticeStatsCellV2"][];
+            /** Bycategoryl2 */
+            byCategoryL2?: components["schemas"]["PracticeStatsCellV2"][];
+            overall: components["schemas"]["PracticeStatsCellV2"];
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "xingce" | "essay";
+        };
+        /** PracticeStatsTimingResponseV2 */
+        PracticeStatsTimingResponseV2: {
+            /** Bycategoryl1 */
+            byCategoryL1?: components["schemas"]["TimingByCategory"][];
+            /** Bydifficulty */
+            byDifficulty?: components["schemas"]["TimingByDifficulty"][];
+            overall: components["schemas"]["TimingOverall"];
+            overtimeQuestions: components["schemas"]["TimingOvertimeBucket"];
+            /**
+             * Pacingpattern
+             * @enum {string}
+             */
+            pacingPattern: "steady" | "fast_start_slow_end" | "slow_start_fast_end" | "irregular";
+        };
+        /** PracticeStatsTrendPointV2 */
+        PracticeStatsTrendPointV2: {
+            /** Accuracy */
+            accuracy: number;
+            /** Averagescore */
+            averageScore?: number | null;
+            /** Count */
+            count: number;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Sessionid */
+            sessionId: number;
+        };
+        /** PracticeStatsTrendResponseV2 */
+        PracticeStatsTrendResponseV2: {
+            /** Category */
+            category?: string | null;
+            /**
+             * Period
+             * @enum {string}
+             */
+            period: "7d" | "30d" | "90d";
+            /** Points */
+            points?: components["schemas"]["PracticeStatsTrendPointV2"][];
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "xingce" | "essay";
         };
         /** ProfileGoalsResponseV2 */
         ProfileGoalsResponseV2: {
@@ -2381,6 +4235,294 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** QuestionFavoriteCountV2 */
+        QuestionFavoriteCountV2: {
+            /** Count */
+            count: number;
+        };
+        /** QuestionFavoriteCreateV2 */
+        QuestionFavoriteCreateV2: {
+            /** Note */
+            note?: string | null;
+        };
+        /** QuestionFavoriteItemV2 */
+        QuestionFavoriteItemV2: {
+            /** Categoryl1 */
+            categoryL1: string;
+            /** Categoryl2 */
+            categoryL2?: string | null;
+            /** Createdat */
+            createdAt: string;
+            /** Examtype */
+            examType: string;
+            /** Href */
+            href?: string | null;
+            /** Id */
+            id: number;
+            /** Note */
+            note?: string | null;
+            /** Questionid */
+            questionId: number;
+            /** Questionstatus */
+            questionStatus: string;
+            /** Region */
+            region?: string | null;
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "xingce" | "essay";
+            /** Year */
+            year?: number | null;
+        };
+        /** QuestionFavoriteListV2 */
+        QuestionFavoriteListV2: {
+            /** Items */
+            items: components["schemas"]["QuestionFavoriteItemV2"][];
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Total */
+            total: number;
+        };
+        /** QuestionFlagCreateV2 */
+        QuestionFlagCreateV2: {
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "uncertain" | "revisit_later" | "needs_review";
+        };
+        /** QuestionFlagItemV2 */
+        QuestionFlagItemV2: {
+            /** Categoryl1 */
+            categoryL1: string;
+            /** Categoryl2 */
+            categoryL2?: string | null;
+            /** Createdat */
+            createdAt: string;
+            /** Examtype */
+            examType: string;
+            /** Href */
+            href?: string | null;
+            /** Id */
+            id: number;
+            /** Questionid */
+            questionId: number;
+            /** Questionstatus */
+            questionStatus: string;
+            /**
+             * Reason
+             * @enum {string}
+             */
+            reason: "uncertain" | "revisit_later" | "needs_review";
+            /** Region */
+            region?: string | null;
+            /** Resolvedat */
+            resolvedAt?: string | null;
+            /** Sourcesessionid */
+            sourceSessionId?: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "active" | "resolved";
+            /** Title */
+            title: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "xingce" | "essay";
+            /** Year */
+            year?: number | null;
+        };
+        /** QuestionFlagListV2 */
+        QuestionFlagListV2: {
+            /** Items */
+            items: components["schemas"]["QuestionFlagItemV2"][];
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Total */
+            total: number;
+        };
+        /** QuestionReportAdminItemV2 */
+        QuestionReportAdminItemV2: {
+            /** Activereportcount */
+            activeReportCount: number;
+            /** Adminresponse */
+            adminResponse?: string | null;
+            /** Appliedfix */
+            appliedFix?: {
+                [key: string]: unknown;
+            } | null;
+            category: components["schemas"]["QuestionReportCategory"];
+            /** Createdat */
+            createdAt: string;
+            /** Description */
+            description: string;
+            /** Duplicateofreportid */
+            duplicateOfReportId?: number | null;
+            /** Handledat */
+            handledAt?: string | null;
+            /** Id */
+            id: number;
+            /** Questionid */
+            questionId: number;
+            /** Questionisactive */
+            questionIsActive: boolean;
+            /** Questionprompt */
+            questionPrompt: string;
+            /** Questionsource */
+            questionSource: string;
+            /** Reporterdisplayname */
+            reporterDisplayName?: string | null;
+            /** Reporteruserid */
+            reporterUserId: number;
+            /** Selectedansweratreport */
+            selectedAnswerAtReport?: unknown | null;
+            /** Sourcesessionid */
+            sourceSessionId?: number | null;
+            status: components["schemas"]["QuestionReportStatus"];
+            /** Updatedat */
+            updatedAt: string;
+        };
+        /** QuestionReportAdminListResponseV2 */
+        QuestionReportAdminListResponseV2: {
+            /** Items */
+            items: components["schemas"]["QuestionReportAdminItemV2"][];
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Pendingcount */
+            pendingCount: number;
+            /** Total */
+            total: number;
+        };
+        /** QuestionReportAdminUpdateRequestV2 */
+        QuestionReportAdminUpdateRequestV2: {
+            /** Adminresponse */
+            adminResponse?: string | null;
+            /** Duplicateofreportid */
+            duplicateOfReportId?: number | null;
+            /**
+             * Status
+             * @enum {string}
+             */
+            status: "acknowledged" | "resolved_invalid" | "resolved_duplicate";
+        };
+        /** QuestionReportApplyFixRequestV2 */
+        QuestionReportApplyFixRequestV2: {
+            /** Adminresponse */
+            adminResponse: string;
+            field: components["schemas"]["QuestionReportFixField"];
+            /** Optionsafter */
+            optionsAfter?: components["schemas"]["QuestionReportOptionFixEntryV2"][];
+            /** Textafter */
+            textAfter?: string | null;
+        };
+        /**
+         * QuestionReportCategory
+         * @enum {string}
+         */
+        QuestionReportCategory: "stem_typo" | "option_missing" | "answer_disputed" | "explanation_wrong" | "formatting" | "other";
+        /** QuestionReportCreateRequestV2 */
+        QuestionReportCreateRequestV2: {
+            category: components["schemas"]["QuestionReportCategory"];
+            /** Description */
+            description: string;
+            /** Selectedansweratreport */
+            selectedAnswerAtReport?: unknown | null;
+            /** Sourcesessionid */
+            sourceSessionId?: number | null;
+        };
+        /** QuestionReportEnvelopeV2 */
+        QuestionReportEnvelopeV2: {
+            /** Adminresponse */
+            adminResponse?: string | null;
+            /** Appliedfix */
+            appliedFix?: {
+                [key: string]: unknown;
+            } | null;
+            category: components["schemas"]["QuestionReportCategory"];
+            /** Createdat */
+            createdAt: string;
+            /** Description */
+            description: string;
+            /** Duplicateofreportid */
+            duplicateOfReportId?: number | null;
+            /** Handledat */
+            handledAt?: string | null;
+            /** Id */
+            id: number;
+            /** Questionid */
+            questionId: number;
+            /** Selectedansweratreport */
+            selectedAnswerAtReport?: unknown | null;
+            /** Sourcesessionid */
+            sourceSessionId?: number | null;
+            status: components["schemas"]["QuestionReportStatus"];
+            /** Updatedat */
+            updatedAt: string;
+        };
+        /**
+         * QuestionReportFixField
+         * @enum {string}
+         */
+        QuestionReportFixField: "stem" | "options" | "correct_answer" | "explanation";
+        /** QuestionReportListResponseV2 */
+        QuestionReportListResponseV2: {
+            /** Items */
+            items: components["schemas"]["QuestionReportEnvelopeV2"][];
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Total */
+            total: number;
+        };
+        /** QuestionReportOptionFixEntryV2 */
+        QuestionReportOptionFixEntryV2: {
+            /** Key */
+            key: string;
+            /** Text */
+            text: string;
+        };
+        /**
+         * QuestionReportStatus
+         * @enum {string}
+         */
+        QuestionReportStatus: "pending" | "acknowledged" | "resolved_fixed" | "resolved_invalid" | "resolved_duplicate";
+        /** QuestionReportUpdateRequestV2 */
+        QuestionReportUpdateRequestV2: {
+            /** Description */
+            description: string;
+        };
+        /** QuestionTimingItemV2 */
+        QuestionTimingItemV2: {
+            /** Answerchangecount */
+            answerChangeCount: number;
+            /** Answerid */
+            answerId: number;
+            /** Baselinep50Ms */
+            baselineP50Ms?: number | null;
+            /** Baselinep95Ms */
+            baselineP95Ms?: number | null;
+            /** Isovertime */
+            isOvertime: boolean;
+            /** Questionid */
+            questionId: number;
+            /** Timespentms */
+            timeSpentMs: number;
+            /** Visitcount */
+            visitCount: number;
+        };
         /** ReadyzDependency */
         ReadyzDependency: {
             /** Detail */
@@ -2503,6 +4645,47 @@ export interface components {
             /** Smscode */
             smsCode: string;
         };
+        /** ReminderPreferences */
+        ReminderPreferences: {
+            /**
+             * Dailypracticereminderenabled
+             * @default false
+             */
+            dailyPracticeReminderEnabled: boolean;
+            /**
+             * Dailypracticeremindertime
+             * @default 20:00
+             */
+            dailyPracticeReminderTime: string;
+            /**
+             * Longsessionbreakreminderminutes
+             * @default 0
+             */
+            longSessionBreakReminderMinutes: number;
+            /**
+             * Overtimethresholdseconds
+             * @default 0
+             */
+            overtimeThresholdSeconds: number;
+            /**
+             * Weeklysummaryreminderenabled
+             * @default false
+             */
+            weeklySummaryReminderEnabled: boolean;
+        };
+        /** ReminderPreferencesPayloadWireV1 */
+        ReminderPreferencesPayloadWireV1: {
+            /** Dailypracticereminderenabled */
+            dailyPracticeReminderEnabled: boolean;
+            /** Dailypracticeremindertime */
+            dailyPracticeReminderTime: string;
+            /** Longsessionbreakreminderminutes */
+            longSessionBreakReminderMinutes: number;
+            /** Overtimethresholdseconds */
+            overtimeThresholdSeconds: number;
+            /** Weeklysummaryreminderenabled */
+            weeklySummaryReminderEnabled: boolean;
+        };
         /** ResetPasswordRequestV2 */
         ResetPasswordRequestV2: {
             /** Code */
@@ -2574,7 +4757,7 @@ export interface components {
              * Purpose
              * @enum {string}
              */
-            purpose: "register" | "reset_password" | "login" | "bind";
+            purpose: "register" | "reset_password" | "login";
             /**
              * Targetkind
              * @enum {string}
@@ -2591,6 +4774,75 @@ export interface components {
             ok: boolean;
             /** Purpose */
             purpose: string;
+        };
+        /** SessionDiscardRequestV2 */
+        SessionDiscardRequestV2: {
+            /** Reason */
+            reason?: string | null;
+        };
+        /** SessionHeartbeatRequestV2 */
+        SessionHeartbeatRequestV2: {
+            /** Clientts */
+            clientTs?: string | null;
+            /** Currentquestionid */
+            currentQuestionId?: number | null;
+        };
+        /** SessionHeartbeatResponseV2 */
+        SessionHeartbeatResponseV2: {
+            /** Serverts */
+            serverTs: string;
+            /** Status */
+            status: string;
+        };
+        /** SessionLifecycleResponseV2 */
+        SessionLifecycleResponseV2: {
+            /** Abandonedat */
+            abandonedAt?: string | null;
+            /** Abandonedreason */
+            abandonedReason?: string | null;
+            /** Expiresat */
+            expiresAt?: string | null;
+            /** Firstquestionat */
+            firstQuestionAt?: string | null;
+            /**
+             * Forcesubmitted
+             * @default false
+             */
+            forceSubmitted: boolean;
+            /** Forcesubmittedreason */
+            forceSubmittedReason?: string | null;
+            /** Lastactivityat */
+            lastActivityAt?: string | null;
+            /** Lastheartbeatat */
+            lastHeartbeatAt?: string | null;
+            /** Pausedat */
+            pausedAt?: string | null;
+            /**
+             * Pausedcount
+             * @default 0
+             */
+            pausedCount: number;
+            /**
+             * Pausedtotalseconds
+             * @default 0
+             */
+            pausedTotalSeconds: number;
+            /** Status */
+            status: string;
+            /** Transitions */
+            transitions?: components["schemas"]["LifecycleTransition"][];
+        };
+        /** SessionTimingReportV2 */
+        SessionTimingReportV2: {
+            /** Pausedtotalseconds */
+            pausedTotalSeconds: number;
+            /** Questions */
+            questions?: components["schemas"]["QuestionTimingItemV2"][];
+            summary: components["schemas"]["TimingSummaryV2"];
+            /** Totalactiveseconds */
+            totalActiveSeconds: number;
+            /** Totalwallseconds */
+            totalWallSeconds: number;
         };
         /** SubjectAccuracyV2 */
         SubjectAccuracyV2: {
@@ -2619,6 +4871,160 @@ export interface components {
             /** Value */
             value: string;
         };
+        /** TimingBaselineResponseV2 */
+        TimingBaselineResponseV2: {
+            /** Meanms */
+            meanMs: number;
+            /** P50Ms */
+            p50Ms: number;
+            /** P90Ms */
+            p90Ms: number;
+            /** P95Ms */
+            p95Ms: number;
+            /** Samplesize */
+            sampleSize: number;
+        };
+        /** TimingByCategory */
+        TimingByCategory: {
+            /** Avgseconds */
+            avgSeconds: number;
+            /** Category */
+            category: string;
+            /** Samplecount */
+            sampleCount: number;
+            /** Vsbaselineratio */
+            vsBaselineRatio: number;
+        };
+        /** TimingByDifficulty */
+        TimingByDifficulty: {
+            /** Avgseconds */
+            avgSeconds: number;
+            /** Difficultybucket */
+            difficultyBucket: string;
+            /** Vsbaselineratio */
+            vsBaselineRatio: number;
+        };
+        /** TimingEventBatchAckV2 */
+        TimingEventBatchAckV2: {
+            /** Accepted */
+            accepted: number;
+            /** Lastackeventidx */
+            lastAckEventIdx: number;
+            /** Rejected */
+            rejected: number;
+        };
+        /** TimingEventBatchRequestV2 */
+        TimingEventBatchRequestV2: {
+            /** Clientclockskewms */
+            clientClockSkewMs?: number | null;
+            /** Events */
+            events?: components["schemas"]["TimingEventV2"][];
+        };
+        /** TimingEventV2 */
+        TimingEventV2: {
+            /** Answerid */
+            answerId: number;
+            /** From */
+            from?: string | null;
+            /** To */
+            to?: string | null;
+            /**
+             * Ts
+             * Format: date-time
+             */
+            ts: string;
+            /**
+             * Type
+             * @enum {string}
+             */
+            type: "question_enter" | "question_leave" | "answer_change";
+        };
+        /** TimingOverall */
+        TimingOverall: {
+            /** Avgsecondsperquestion */
+            avgSecondsPerQuestion: number;
+            /** Totalminutes */
+            totalMinutes: number;
+            /** Vsbaselineratio */
+            vsBaselineRatio: number;
+        };
+        /** TimingOvertimeBucket */
+        TimingOvertimeBucket: {
+            /** Count */
+            count: number;
+            /** Top5Questionids */
+            top5QuestionIds?: number[];
+        };
+        /** TimingSummaryV2 */
+        TimingSummaryV2: {
+            /** Fastestanswerid */
+            fastestAnswerId?: number | null;
+            /** Mostchangedanswerid */
+            mostChangedAnswerId?: number | null;
+            /** Overtimecount */
+            overtimeCount: number;
+            /** Slowestanswerid */
+            slowestAnswerId?: number | null;
+        };
+        /** UiPreferences */
+        UiPreferences: {
+            /**
+             * Answerpanelposition
+             * @default right
+             * @enum {string}
+             */
+            answerPanelPosition: "right" | "bottom";
+            /**
+             * Fontsize
+             * @default base
+             * @enum {string}
+             */
+            fontSize: "sm" | "base" | "lg" | "xl";
+            /**
+             * Lineheight
+             * @default comfortable
+             * @enum {string}
+             */
+            lineHeight: "compact" | "comfortable" | "spacious";
+            /**
+             * Showovertimewarning
+             * @default true
+             */
+            showOvertimeWarning: boolean;
+            /**
+             * Showquestionindex
+             * @default true
+             */
+            showQuestionIndex: boolean;
+            /**
+             * Showtimingindicator
+             * @default true
+             */
+            showTimingIndicator: boolean;
+            /**
+             * Themepreference
+             * @default system
+             * @enum {string}
+             */
+            themePreference: "system" | "light" | "dark";
+        };
+        /** UiPreferencesPayloadWireV1 */
+        UiPreferencesPayloadWireV1: {
+            /** Answerpanelposition */
+            answerPanelPosition: string;
+            /** Fontsize */
+            fontSize: string;
+            /** Lineheight */
+            lineHeight: string;
+            /** Showovertimewarning */
+            showOvertimeWarning: boolean;
+            /** Showquestionindex */
+            showQuestionIndex: boolean;
+            /** Showtimingindicator */
+            showTimingIndicator: boolean;
+            /** Themepreference */
+            themePreference: string;
+        };
         /** ValidationError */
         ValidationError: {
             /** Context */
@@ -2640,7 +5046,7 @@ export interface components {
              * Purpose
              * @enum {string}
              */
-            purpose: "register" | "reset_password" | "login" | "bind";
+            purpose: "register" | "reset_password" | "login";
             /**
              * Targetkind
              * @enum {string}
@@ -2699,6 +5105,111 @@ export interface components {
 }
 export type $defs = Record<string, never>;
 export interface operations {
+    list_question_reports_admin_api_v2_admin_practice_reports_get: {
+        parameters: {
+            query?: {
+                status?: components["schemas"]["QuestionReportStatus"] | null;
+                category?: components["schemas"]["QuestionReportCategory"] | null;
+                question_id?: number | null;
+                limit?: number;
+                offset?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionReportAdminListResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_question_report_admin_api_v2_admin_practice_reports__report_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuestionReportAdminUpdateRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionReportAdminItemV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_question_report_apply_fix_admin_api_v2_admin_practice_reports__report_id__apply_fix_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuestionReportApplyFixRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionReportAdminItemV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     login_api_v2_auth_login_post: {
         parameters: {
             query?: never;
@@ -3253,6 +5764,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["DashboardTodayCompletionResponseV2"];
+                };
+            };
+        };
+    };
+    get_onboarding_status_api_v2_me_onboarding_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OnboardingStatusV2"];
                 };
             };
         };
@@ -4082,6 +6613,107 @@ export interface operations {
             };
         };
     };
+    generate_ai_questions_api_v2_practice_ai_questions_generate_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiQuestionsGenerateRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiQuestionsGenerateResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_ai_question_request_api_v2_practice_ai_questions_requests__request_id__get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                request_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiQuestionRequestDetailV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_ai_question_feedback_api_v2_practice_ai_questions__question_id__feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AiQuestionFeedbackRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AiQuestionFeedbackResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_practice_center_api_v2_practice_center_get: {
         parameters: {
             query?: never;
@@ -4102,9 +6734,106 @@ export interface operations {
             };
         };
     };
-    list_essay_categories_api_v2_practice_essay_categories_get: {
+    get_daily_practice_api_v2_practice_daily_get: {
+        parameters: {
+            query: {
+                type: "xingce" | "essay";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyPracticeResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_daily_practice_history_api_v2_practice_daily_history_get: {
+        parameters: {
+            query?: {
+                period?: "7d" | "30d";
+                type?: ("xingce" | "essay") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["DailyPracticeResponseV2"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    start_daily_practice_api_v2_practice_daily__daily_id__start_post: {
         parameters: {
             query?: never;
+            header?: never;
+            path: {
+                daily_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeSessionEnvelopeV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_essay_categories_api_v2_practice_essay_categories_get: {
+        parameters: {
+            query?: {
+                level?: number;
+                category_l1?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4120,9 +6849,420 @@ export interface operations {
                     "application/json": components["schemas"]["CatalogListResponseV2"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     list_essay_papers_api_v2_practice_essay_papers_get: {
+        parameters: {
+            query?: {
+                category_l1?: string | null;
+                category_l2?: string | null;
+                year?: number | null;
+                region?: string | null;
+                exam_type?: string | null;
+                sort?: "year_desc" | "difficulty" | "recent";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CatalogListResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_reference_answers_api_v2_practice_essay_questions__question_id__reference_answers_get: {
+        parameters: {
+            query?: {
+                response?: unknown;
+            };
+            header?: never;
+            path: {
+                question_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EssayReferenceAnswerEnvelopeV2"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_generate_reference_answer_api_v2_practice_essay_reference_answers_generate_post: {
+        parameters: {
+            query?: {
+                response?: unknown;
+            };
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EssayReferenceGenerateRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_reference_favorite_api_v2_practice_essay_reference_answers__reference_id__favorite_post: {
+        parameters: {
+            query?: {
+                response?: unknown;
+            };
+            header?: never;
+            path: {
+                reference_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EssayReferenceAnswerEnvelopeV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_reference_favorite_api_v2_practice_essay_reference_answers__reference_id__favorite_delete: {
+        parameters: {
+            query?: {
+                response?: unknown;
+            };
+            header?: never;
+            path: {
+                reference_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EssayReferenceAnswerEnvelopeV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_reference_like_api_v2_practice_essay_reference_answers__reference_id__like_post: {
+        parameters: {
+            query?: {
+                response?: unknown;
+            };
+            header?: never;
+            path: {
+                reference_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EssayReferenceAnswerEnvelopeV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_reference_like_api_v2_practice_essay_reference_answers__reference_id__like_delete: {
+        parameters: {
+            query?: {
+                response?: unknown;
+            };
+            header?: never;
+            path: {
+                reference_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EssayReferenceAnswerEnvelopeV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_reference_report_api_v2_practice_essay_reference_answers__reference_id__report_post: {
+        parameters: {
+            query?: {
+                response?: unknown;
+            };
+            header?: never;
+            path: {
+                reference_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["EssayReferenceReportRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EssayReferenceAnswerEnvelopeV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    trigger_essay_grading_api_v2_practice_essay_submissions__submission_id__grade_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path: {
+                submission_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EssayGradingResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_essay_grading_status_api_v2_practice_essay_submissions__submission_id__grading_status_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EssayGradingResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_essay_grading_result_api_v2_practice_essay_submissions__submission_id__result_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                submission_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["EssayGradingResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_question_favorites_api_v2_practice_favorites_get: {
+        parameters: {
+            query?: {
+                type?: ("xingce" | "essay") | null;
+                category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionFavoriteListV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_question_favorites_count_api_v2_practice_favorites_count_get: {
         parameters: {
             query?: never;
             header?: never;
@@ -4137,7 +7277,462 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["CatalogListResponseV2"];
+                    "application/json": components["schemas"]["QuestionFavoriteCountV2"];
+                };
+            };
+        };
+    };
+    get_question_flags_api_v2_practice_flags_get: {
+        parameters: {
+            query?: {
+                reason?: ("uncertain" | "revisit_later" | "needs_review") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionFlagListV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_create_mock_exam_api_v2_practice_mock_exams_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MockExamCreateRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MockExamCreateResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_mock_exam_history_api_v2_practice_mock_exams_history_get: {
+        parameters: {
+            query?: {
+                period?: string;
+                paper_code?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MockExamHistoryResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_mock_exam_comparison_api_v2_practice_mock_exams__session_id__comparison_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MockExamComparisonResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_question_favorite_api_v2_practice_questions__question_id__favorite_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuestionFavoriteCreateV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionFavoriteItemV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_question_favorite_api_v2_practice_questions__question_id__favorite_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_question_flag_api_v2_practice_questions__question_id__flag_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuestionFlagCreateV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionFlagItemV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_question_flag_api_v2_practice_questions__question_id__flag_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_question_flag_resolve_api_v2_practice_questions__question_id__flag_resolve_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionFlagItemV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_question_reports_api_v2_practice_questions__question_id__reports_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionReportListResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_question_report_api_v2_practice_questions__question_id__reports_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuestionReportCreateRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionReportEnvelopeV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_timing_baseline_api_v2_practice_questions__question_id__timing_baseline_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                question_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimingBaselineResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_question_report_api_v2_practice_reports__report_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_question_report_api_v2_practice_reports__report_id__patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                report_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["QuestionReportUpdateRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["QuestionReportEnvelopeV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -4171,6 +7766,26 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_active_sessions_api_v2_practice_sessions_active_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActiveSessionsResponseV2"];
                 };
             };
         };
@@ -4241,6 +7856,272 @@ export interface operations {
             };
         };
     };
+    flag_answer_api_v2_practice_sessions__session_id__answers__answer_id__flag_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+                answer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticeAnswerFlagRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeSessionItemV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    view_solution_api_v2_practice_sessions__session_id__answers__answer_id__view_solution_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+                answer_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeSessionItemV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_session_countdown_api_v2_practice_sessions__session_id__countdown_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MockExamCountdownResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_session_discard_api_v2_practice_sessions__session_id__discard_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionDiscardRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionLifecycleResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_session_heartbeat_api_v2_practice_sessions__session_id__heartbeat_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SessionHeartbeatRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionHeartbeatResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_session_lifecycle_api_v2_practice_sessions__session_id__lifecycle_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionLifecycleResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_session_pause_api_v2_practice_sessions__session_id__pause_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionLifecycleResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    persistent_flag_api_v2_practice_sessions__session_id__persistent_flag_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticePersistentFlagRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeSessionItemV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     get_result_api_v2_practice_sessions__session_id__result_get: {
         parameters: {
             query?: never;
@@ -4259,6 +8140,68 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["PracticeSessionResultResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_session_resume_api_v2_practice_sessions__session_id__resume_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionLifecycleResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_session_start_api_v2_practice_sessions__session_id__start_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionLifecycleResponseV2"];
                 };
             };
             /** @description Validation Error */
@@ -4303,9 +8246,272 @@ export interface operations {
             };
         };
     };
-    list_xingce_categories_api_v2_practice_xingce_categories_get: {
+    get_timing_report_api_v2_practice_sessions__session_id__timing_report_get: {
         parameters: {
             query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["SessionTimingReportV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_timing_events_api_v2_practice_sessions__session_id__timing_events_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                session_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TimingEventBatchRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TimingEventBatchAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_practice_stats_api_v2_practice_stats_get: {
+        parameters: {
+            query: {
+                type: "xingce" | "essay";
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeStatsResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_practice_stats_cross_api_v2_practice_stats_cross_get: {
+        parameters: {
+            query: {
+                type: "xingce" | "essay";
+                category?: string | null;
+                difficulty?: ("easy" | "medium" | "hard" | "unknown") | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeStatsCrossResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_practice_stats_percentile_api_v2_practice_stats_percentile_get: {
+        parameters: {
+            query: {
+                type: "xingce" | "essay";
+                category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeStatsPercentileResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_practice_stats_realtime_api_v2_practice_stats_realtime_get: {
+        parameters: {
+            query: {
+                type: "xingce" | "essay";
+                category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeStatsResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_timing_stats_api_v2_practice_stats_timing_get: {
+        parameters: {
+            query: {
+                type: string;
+                period?: "7d" | "30d" | "90d";
+                category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeStatsTimingResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_practice_stats_trend_api_v2_practice_stats_trend_get: {
+        parameters: {
+            query: {
+                type: "xingce" | "essay";
+                period?: "7d" | "30d" | "90d";
+                category?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeStatsTrendResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_xingce_categories_api_v2_practice_xingce_categories_get: {
+        parameters: {
+            query?: {
+                level?: number;
+                category_l1?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4321,11 +8527,28 @@ export interface operations {
                     "application/json": components["schemas"]["CatalogListResponseV2"];
                 };
             };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     list_xingce_papers_api_v2_practice_xingce_papers_get: {
         parameters: {
-            query?: never;
+            query?: {
+                category_l1?: string | null;
+                category_l2?: string | null;
+                year?: number | null;
+                region?: string | null;
+                exam_type?: string | null;
+                difficulty?: ("easy" | "medium" | "hard") | null;
+                sort?: "year_desc" | "difficulty" | "recent";
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -4339,6 +8562,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CatalogListResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -4533,6 +8765,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ProfileOverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_practice_preferences_api_v2_profile_practice_preferences_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticePreferencesResponseV2"];
+                };
+            };
+        };
+    };
+    put_practice_preferences_api_v2_profile_practice_preferences_put: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticePreferencesPutRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticePreferencesWriteResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    patch_practice_preferences_api_v2_profile_practice_preferences_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["PracticePreferencesPatchRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticePreferencesWriteResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    reset_practice_preferences_api_v2_profile_practice_preferences_reset_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: {
+            content: {
+                "application/json": components["schemas"]["PracticePreferencesResetRequestV2"] | null;
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticePreferencesWriteResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

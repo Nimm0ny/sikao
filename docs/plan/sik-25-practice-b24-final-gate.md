@@ -71,6 +71,18 @@ The final backend gate for this issue must include direct PASS evidence for:
   - legacy wrong-book, notebook, llm, exam-events, user-exams, old profile helpers when those routes are not mounted in `main.py`
 - route tests that are still in-scope must be rewritten to the current contract instead of being archived
 
+### H9 Exception
+
+- `openapi.json` and `api.generated.ts` are generated contract artifacts and drift together by design
+- user explicitly approved a one-off `AGENT-H9` exception for the final B24 artifact lock because the generated diff cannot be meaningfully split below the normal small-batch line budget without corrupting the generated outputs
+- this exception applies only to:
+  - `services/api/spec/openapi.json`
+  - `packages/api-client/src/types/api.generated.ts`
+- the exception must be called out in:
+  - the commit message
+  - the multica evidence comment
+  - the final delivery note
+
 ## Validation Plan
 
 - `ruff check` for changed files
