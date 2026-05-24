@@ -111,7 +111,7 @@ class RegisterPhoneRequestV2(CamelModel):
 class SendCodeRequestV2(CamelModel):
     target_kind: Literal["email", "phone"]
     target_value: str = Field(min_length=3, max_length=255)
-    purpose: Literal["register", "reset_password", "login", "bind"]
+    purpose: Literal["register", "reset_password", "login"]
 
 
 class SendCodeResponseV2(CamelModel):
@@ -123,7 +123,7 @@ class SendCodeResponseV2(CamelModel):
 class VerifyCodeRequestV2(CamelModel):
     target_kind: Literal["email", "phone"]
     target_value: str = Field(min_length=3, max_length=255)
-    purpose: Literal["register", "reset_password", "login", "bind"]
+    purpose: Literal["register", "reset_password", "login"]
     code: str = Field(min_length=4, max_length=16)
 
 

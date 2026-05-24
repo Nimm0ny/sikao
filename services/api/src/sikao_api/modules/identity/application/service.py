@@ -28,7 +28,7 @@ from sikao_api.modules.identity.application.security_v2 import (
 from sikao_api.modules.system.application.errors import ConflictError, NotFoundError, UnauthorizedError, ValidationError
 
 
-VerificationPurpose = Literal["register", "reset_password", "login", "bind"]
+VerificationPurpose = Literal["register", "reset_password", "login"]
 TargetKind = Literal["email", "phone"]
 _RESERVED_ADMIN_EMAIL_PREFIX = "__admin__."
 _RESERVED_ADMIN_EMAIL_DOMAIN = "@system.local"

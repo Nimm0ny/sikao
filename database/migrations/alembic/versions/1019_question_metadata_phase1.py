@@ -77,6 +77,16 @@ BEGIN
 END;
 """
 
+_SOURCE_IMMUTABLE_TRIGGER_SQLITE = """
+CREATE TRIGGER questions_v2_source_protect
+BEFORE UPDATE OF source ON questions_v2
+FOR EACH ROW
+WHEN OLD.source IS NOT NEW.source
+BEGIN
+  SELECT RAISE(ABORT, 'questions_v2.source is immutable');
+END;
+"""
+
 
 def _create_ability_dimension_triggers() -> None:
     dialect = op.get_bind().dialect.name
@@ -109,6 +119,15 @@ def _drop_ability_dimension_triggers() -> None:
         "1019_question_metadata_phase1 requires ability-dimension trigger "
         f"downgrade support for dialect {dialect!r}"
     )
+
+
+def _restore_source_trigger_if_sqlite() -> None:
+    """SQLite batch_alter_table recreates questions_v2 and drops prior triggers."""
+
+    if op.get_bind().dialect.name != "sqlite":
+        return
+    op.execute("DROP TRIGGER IF EXISTS questions_v2_source_protect")
+    op.execute(_SOURCE_IMMUTABLE_TRIGGER_SQLITE)
 
 
 def upgrade() -> None:
@@ -147,6 +166,7 @@ def upgrade() -> None:
             "ck_q_v2_heat_non_negative",
             "heat_score >= 0.0",
         )
+    _restore_source_trigger_if_sqlite()
 
     op.create_index("ix_questions_v2_heat", "questions_v2", ["heat_score"])
 
@@ -251,3 +271,4 @@ def downgrade() -> None:
         batch_op.drop_column("heat_score")
         batch_op.drop_column("discrimination_index")
         batch_op.drop_column("ability_dimensions")
+    _restore_source_trigger_if_sqlite()

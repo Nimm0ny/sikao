@@ -938,6 +938,8 @@ class QuestionReportV2(Base):
             sqlite_where=text("status IN ('pending', 'acknowledged') AND deleted_at IS NULL"),
             postgresql_where=text("status IN ('pending', 'acknowledged') AND deleted_at IS NULL"),
         ),
+        Index("ix_qreport_v2_user_id", "user_id"),
+        Index("ix_qreport_v2_question_id", "question_id"),
         Index("ix_qreport_v2_status_created", "status", "created_at"),
         CheckConstraint(
             "length(description) >= 10 AND length(description) <= 1000",
@@ -964,12 +966,10 @@ class QuestionReportV2(Base):
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users_v2.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
     question_id: Mapped[int] = mapped_column(
         ForeignKey("questions_v2.id", ondelete="CASCADE"),
         nullable=False,
-        index=True,
     )
     category: Mapped[str] = mapped_column(String(32), nullable=False)
     description: Mapped[str] = mapped_column(String(1000), nullable=False)

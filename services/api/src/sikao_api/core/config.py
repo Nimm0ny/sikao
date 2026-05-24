@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import json
 import re
 from functools import lru_cache
 from pathlib import Path
-from typing import Literal
+from typing import Annotated, Literal
 
 from argon2 import PasswordHasher
 from pydantic import ValidationInfo, computed_field, field_validator
-from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic_settings import BaseSettings, NoDecode, SettingsConfigDict
 
 # Match `sqlite:///` or `sqlite+<driver>:///` (3 slashes 后跟 path-part).
 # `sqlite://` (in-memory, 2 slashes) 不 match → passthrough.
@@ -46,14 +47,17 @@ def _is_absolute_db_path(path_str: str) -> bool:
 # 后者在 git bash on Windows 用 `&` 后台启动 uvicorn 时 cwd 不一定 == shell cwd，
 # 导致 cli create-user 写到 A 文件、uvicorn 读 B 文件，user 看似创建成功但
 # 登录 401。Absolute path 消除歧义。
-# 计算自 config.py 文件位置：app/core/config.py → app/ → exam-api/，再 + var/。
-_EXAM_API_ROOT = Path(__file__).resolve().parents[2]
+# 计算自 config.py 文件位置：
+#   services/api/src/sikao_api/core/config.py
+#                └─────── parents[3] = services/api
+# 路径型默认值统一锚到 services/api，而不是 src/。
+_EXAM_API_ROOT = Path(__file__).resolve().parents[3]
 _DEFAULT_DB_PATH = _EXAM_API_ROOT / "var" / "exam_papers.db"
 DEFAULT_DATABASE_URL = f"sqlite:///{_DEFAULT_DB_PATH.as_posix()}"
 
 # Slice 0a (LLM infra): apikey 文件 fallback 路径.
 # `<repo_root>/.env/apikey` — gitignored 目录, lhr 把 DeepSeek apikey 放这.
-# `_EXAM_API_ROOT.parent.parent` = services/api/.parent.parent = repo root.
+# `_EXAM_API_ROOT.parent.parent` = repo root.
 _APIKEY_FILE = _EXAM_API_ROOT.parent.parent / ".env" / "apikey"
 
 
@@ -112,7 +116,7 @@ class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         # 绝对路径让 BaseSettings 不依赖 cwd (root cwd 会撞 repo 根的 .env/
         # 目录, 导致 BaseSettings fallback 默认值 → backend 用错 db). 走
-        # _EXAM_API_ROOT (config.py 文件位置推算) 直接锚到 services/api/src/.env.
+        # _EXAM_API_ROOT (config.py 文件位置推算) 直接锚到 services/api/.env.
         env_file=str(_EXAM_API_ROOT / ".env"),
         env_file_encoding="utf-8",
         case_sensitive=False,
@@ -130,7 +134,7 @@ class Settings(BaseSettings):
     schema_version: str = "unmigrated"
     log_level: str = "info"
 
-    # Default 见 DEFAULT_DATABASE_URL —— absolute path 指向 services/api/src/var/exam_papers.db，
+    # Default 见 DEFAULT_DATABASE_URL —— absolute path 指向 services/api/var/exam_papers.db，
     # cwd-independent。dev 启动 + cli 任何 entry point 不传 DATABASE_URL 都进同一个 DB。
     database_url: str = DEFAULT_DATABASE_URL
     db_pool_size: int = 5
@@ -156,7 +160,7 @@ class Settings(BaseSettings):
     admin_username: str = "admin"
     admin_password_hash: str = DEFAULT_ADMIN_PASSWORD_HASH
 
-    cors_allowed_origins: tuple[str, ...] = (
+    cors_allowed_origins: Annotated[tuple[str, ...], NoDecode] = (
         "http://127.0.0.1:3000",
         "http://localhost:3000",
         "http://127.0.0.1:18080",
@@ -313,7 +317,10 @@ class Settings(BaseSettings):
             if not stripped:
                 return ()
             if stripped.startswith("["):
-                return value
+                parsed = json.loads(stripped)
+                if not isinstance(parsed, list):
+                    raise ValueError("cors_allowed_origins JSON value must be a list")
+                return tuple(str(item).strip() for item in parsed if str(item).strip())
             return tuple(item.strip() for item in stripped.split(",") if item.strip())
         return value
 
