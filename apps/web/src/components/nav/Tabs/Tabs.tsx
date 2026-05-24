@@ -13,6 +13,15 @@ import styles from './Tabs.module.css';
  *      on each item with `aria-selected` synced to the active key.
  *      Visuals are token-driven via data-* attrs; the underline/pill/seg
  *      shapes live in Tabs.module.css.
+ *
+ *      `noPanel` (default false): when true, drops the `aria-controls`
+ *      attribute. Use this when the tab acts as a state-flipper rather
+ *      than the heading of a sibling tabpanel — the canonical case is
+ *      ScopeToggle (variant="segmented" + business state flip; caller
+ *      owns the body, no `<div role="tabpanel" id="tabpanel-<key>">`
+ *      sibling exists). Without this prop the axe rule
+ *      `aria-valid-attr-value` fires because the referenced tabpanel
+ *      element is missing.
  */
 
 export interface TabItem {
@@ -31,6 +40,7 @@ export interface TabsProps {
   readonly active: string;
   readonly onChange: (key: string) => void;
   readonly size?: TabsSize;
+  readonly noPanel?: boolean;
   readonly 'aria-label'?: string;
 }
 
@@ -40,6 +50,7 @@ export function Tabs({
   active,
   onChange,
   size = 'md',
+  noPanel = false,
   'aria-label': ariaLabel,
 }: TabsProps) {
   return (
@@ -59,7 +70,7 @@ export function Tabs({
             role="tab"
             id={`tab-${item.key}`}
             aria-selected={isActive}
-            aria-controls={`tabpanel-${item.key}`}
+            aria-controls={noPanel ? undefined : `tabpanel-${item.key}`}
             tabIndex={isActive ? 0 : -1}
             disabled={item.disabled}
             className={styles.tab}

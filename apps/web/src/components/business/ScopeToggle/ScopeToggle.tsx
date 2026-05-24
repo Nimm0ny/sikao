@@ -32,6 +32,7 @@ export function ScopeToggle({ scopes, active, onChange, 'aria-label': ariaLabel 
       items={items}
       active={active}
       onChange={onChange}
+      noPanel
       aria-label={ariaLabel}
     />
   );

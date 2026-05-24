@@ -50,16 +50,6 @@ const AXE_OPTIONS: axe.RunOptions = {
     // region rule similarly expects every node to live inside a landmark;
     // skeleton fragments are intentionally rendered without their shell.
     'region': { enabled: false },
-    // Known Phase 3 component debt (TODO Phase 5 fix-up): Tabs with
-    // variant="segmented" (ScopeToggle / similar) emits
-    // aria-controls="tabpanel-<key>" assuming the caller renders a
-    // sibling <div role="tabpanel" id="tabpanel-<key>">. ScopeToggle's
-    // contract is "click to flip caller-owned state", so the panel is
-    // never rendered. Fix is at the Tabs component layer (add a
-    // noPanel?: boolean prop) — out of Phase 4 scope. Suppress the
-    // axe rule here so the baseline is meaningful while the underlying
-    // fix is tracked separately.
-    'aria-valid-attr-value': { enabled: false },
   },
 };
 

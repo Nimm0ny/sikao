@@ -46,4 +46,16 @@ describe('Tabs', () => {
     rerender(<Tabs items={items} active="a" onChange={() => {}} variant="segmented" />);
     expect(screen.getByRole('tablist').dataset.variant).toBe('segmented');
   });
+
+  it('emits aria-controls by default (paired tabpanel pattern)', () => {
+    render(<Tabs items={items} active="a" onChange={() => {}} />);
+    const tab = screen.getByRole('tab', { name: '今日' });
+    expect(tab.getAttribute('aria-controls')).toBe('tabpanel-a');
+  });
+
+  it('drops aria-controls when noPanel is true (state-flipper pattern)', () => {
+    render(<Tabs items={items} active="a" onChange={() => {}} noPanel />);
+    const tab = screen.getByRole('tab', { name: '今日' });
+    expect(tab.getAttribute('aria-controls')).toBeNull();
+  });
 });
