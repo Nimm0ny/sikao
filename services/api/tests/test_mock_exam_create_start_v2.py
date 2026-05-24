@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
@@ -201,6 +201,13 @@ def test_mock_exam_forbids_question_linked_notes_but_normal_sessions_allow_them(
             subject_kind="xingce",
             questions=_mock_questions(count=30, track="xingce"),
         )
+        other_question_id = seed_paper(
+            client,
+            paper_code="XC-MOCK-NOTE-OTHER-001",
+            title="Mock Note Guard Other",
+            subject_kind="xingce",
+            questions=[_mock_questions(count=1, track="xingce")[0]],
+        )[0]
 
         normal = client.post(
             "/api/v2/practice/sessions",
@@ -218,19 +225,18 @@ def test_mock_exam_forbids_question_linked_notes_but_normal_sessions_allow_them(
                 .first()
             )
             assert normal_answer is not None
-            normal_question_id = normal_answer.question_id
 
         allowed_note = client.post(
             "/api/v2/notes",
             json={
                 "title": "Allowed note",
                 "body": "outside mock exam",
-                "linkedQuestionId": normal_question_id,
+                "linkedQuestionId": other_question_id,
                 "visibility": "private",
             },
         )
         assert allowed_note.status_code == 200, allowed_note.text
-        assert allowed_note.json()["linkedQuestionId"] == normal_question_id
+        assert allowed_note.json()["linkedQuestionId"] == other_question_id
         assert allowed_note.json()["visibility"] == "private"
         note_id = allowed_note.json()["id"]
 
@@ -250,7 +256,7 @@ def test_mock_exam_forbids_question_linked_notes_but_normal_sessions_allow_them(
             json={
                 "title": "Blocked note",
                 "body": "during mock exam",
-                "linkedQuestionId": normal_question_id,
+                "linkedQuestionId": other_question_id,
                 "visibility": "private",
             },
         )
@@ -263,9 +269,30 @@ def test_mock_exam_forbids_question_linked_notes_but_normal_sessions_allow_them(
                 "title": "Allowed note",
                 "body": "edited during mock exam",
                 "status": "active",
-                "linkedQuestionId": normal_question_id,
+                "linkedQuestionId": other_question_id,
                 "visibility": "private",
             },
         )
         assert blocked_update.status_code == 422, blocked_update.text
         assert blocked_update.json()["code"] == "MOCK_NOTES_FORBIDDEN"
+
+        with factory() as session:
+            mock_session = session.get(PracticeSessionV2, session_id)
+            assert mock_session is not None
+            mock_session.status = "paused"
+            mock_session.paused_at = datetime.now(UTC).replace(tzinfo=None)
+            session.add(mock_session)
+            session.commit()
+
+        blocked_while_paused = client.put(
+            f"/api/v2/notes/{note_id}",
+            json={
+                "title": "Allowed note",
+                "body": "edited during paused mock exam",
+                "status": "active",
+                "linkedQuestionId": other_question_id,
+                "visibility": "private",
+            },
+        )
+        assert blocked_while_paused.status_code == 422, blocked_while_paused.text
+        assert blocked_while_paused.json()["code"] == "MOCK_NOTES_FORBIDDEN"

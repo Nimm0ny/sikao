@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from datetime import timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any, cast
 
@@ -84,6 +84,13 @@ def test_postgres_mock_exam_forbids_question_linked_notes(tmp_path: Path) -> Non
             subject_kind="xingce",
             questions=_mock_questions(),
         )
+        other_question_id = seed_paper(
+            client,
+            paper_code="XC-MOCK-PG-NOTE-OTHER-001",
+            title="Mock PG Note Guard Other",
+            subject_kind="xingce",
+            questions=[_mock_questions()[0]],
+        )[0]
         created = client.post(
             "/api/v2/practice/mock-exams",
             json={"paperCode": "XC-MOCK-PG-NOTE-001"},
@@ -102,14 +109,13 @@ def test_postgres_mock_exam_forbids_question_linked_notes(tmp_path: Path) -> Non
                 .first()
             )
             assert answer is not None
-            question_id = answer.question_id
 
         allowed_note = client.post(
             "/api/v2/notes",
             json={
                 "title": "Allowed note",
                 "body": "before mock exam starts",
-                "linkedQuestionId": question_id,
+                "linkedQuestionId": other_question_id,
                 "visibility": "private",
             },
         )
@@ -124,7 +130,7 @@ def test_postgres_mock_exam_forbids_question_linked_notes(tmp_path: Path) -> Non
             json={
                 "title": "Blocked note",
                 "body": "during mock exam",
-                "linkedQuestionId": question_id,
+                "linkedQuestionId": other_question_id,
                 "visibility": "private",
             },
         )
@@ -137,9 +143,30 @@ def test_postgres_mock_exam_forbids_question_linked_notes(tmp_path: Path) -> Non
                 "title": "Allowed note",
                 "body": "edited during mock exam",
                 "status": "active",
-                "linkedQuestionId": question_id,
+                "linkedQuestionId": other_question_id,
                 "visibility": "private",
             },
         )
         assert blocked_update.status_code == 422, blocked_update.text
         assert blocked_update.json()["code"] == "MOCK_NOTES_FORBIDDEN"
+
+        with factory() as session:
+            mock_session = session.get(PracticeSessionV2, session_id)
+            assert mock_session is not None
+            mock_session.status = "paused"
+            mock_session.paused_at = datetime.now(UTC).replace(tzinfo=None)
+            session.add(mock_session)
+            session.commit()
+
+        blocked_while_paused = client.put(
+            f"/api/v2/notes/{note_id}",
+            json={
+                "title": "Allowed note",
+                "body": "edited during paused mock exam",
+                "status": "active",
+                "linkedQuestionId": other_question_id,
+                "visibility": "private",
+            },
+        )
+        assert blocked_while_paused.status_code == 422, blocked_while_paused.text
+        assert blocked_while_paused.json()["code"] == "MOCK_NOTES_FORBIDDEN"

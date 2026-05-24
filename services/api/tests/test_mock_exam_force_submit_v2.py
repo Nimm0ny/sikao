@@ -81,8 +81,12 @@ def test_mock_exam_force_submitter_and_delayed_review(tmp_path: Path) -> None:
             assert practice_session.force_submitted is True
             assert practice_session.force_submitted_reason == "mock_exam_timeout"
             assert practice_session.delayed_review_until is not None
-            assert any(audit.action == "session.force_submitted" for audit in audits)
+            assert sum(1 for audit in audits if audit.action == "session.force_submitted") == 1
             assert any(audit.action == "mock_exam.force_submitted" for audit in audits)
+
+        lifecycle = client.get(f"/api/v2/practice/sessions/{session_id}/lifecycle")
+        assert lifecycle.status_code == 200, lifecycle.text
+        assert [item["trigger"] for item in lifecycle.json()["transitions"]].count("force_submit") == 1
 
         session_view = client.get(f"/api/v2/practice/sessions/{session_id}")
         assert session_view.status_code == 200, session_view.text

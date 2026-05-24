@@ -71,6 +71,10 @@ def test_postgres_mock_exam_force_submitter(tmp_path: Path) -> None:
             assert practice_session.force_submitted is True
             assert practice_session.force_submitted_reason == "mock_exam_timeout"
 
+        lifecycle = client.get(f"/api/v2/practice/sessions/{session_id}/lifecycle")
+        assert lifecycle.status_code == 200, lifecycle.text
+        assert [item["trigger"] for item in lifecycle.json()["transitions"]].count("force_submit") == 1
+
 
 @pytest.mark.skipif(not os.environ.get("TEST_POSTGRESQL_URL"), reason="TEST_POSTGRESQL_URL is not set")
 def test_postgres_mock_exam_runtime_auto_submit_refreshes_progress_hooks(tmp_path: Path) -> None:
