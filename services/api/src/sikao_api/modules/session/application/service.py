@@ -7,6 +7,7 @@ from typing import Any
 from sqlalchemy import select, update
 from sqlalchemy.orm import Session
 
+from sikao_api.modules.admin.application.exam_support import is_answer_correct, normalize_answer_keys
 from sikao_api.db.models_v2 import EssaySubmissionV2, PaperRevisionV2, PaperV2, PlanEventV2, PracticeSessionAnswerV2, PracticeSessionV2, QuestionFlagV2, QuestionV2, UserV2
 from sikao_api.modules.essay_grading.application.service import PracticeEssayGradingService
 from sikao_api.db.schemas_v2 import ActionLinkV2, PracticeAnswerPayloadV2, PracticeSessionCreateRequestV2, PracticeSessionEnvelopeV2, PracticeSessionItemV2, PracticeSessionResultResponseV2, SectionCardV2, SummaryMetricV2
@@ -186,6 +187,7 @@ class SessionServiceV2:
             practice_session=practice_session,
             submitted_at=submitted_at,
         )
+        self._refresh_objective_answer_correctness(practice_session=practice_session)
         practice_session.paused_total_seconds = paused_total_seconds
         apply_submit_timing_summary(
             self.session,
@@ -437,6 +439,102 @@ class SessionServiceV2:
                         code="paper_code_mismatch",
                     )
         return ordered_questions
+
+    def _refresh_objective_answer_correctness(
+        self,
+        *,
+        practice_session: PracticeSessionV2,
+    ) -> None:
+        if practice_session.track == "essay":
+            return
+        answers = list(
+            self.session.scalars(
+                select(PracticeSessionAnswerV2).where(
+                    PracticeSessionAnswerV2.session_id == practice_session.id
+                )
+            )
+        )
+        question_ids = {
+            int(answer.question_id)
+            for answer in answers
+            if answer.question_id is not None
+        }
+        if not question_ids:
+            return
+        questions_by_id = {
+            question.id: question
+            for question in self.session.scalars(
+                select(QuestionV2).where(QuestionV2.id.in_(question_ids))
+            )
+        }
+        for answer in answers:
+            if answer.question_id is None:
+                continue
+            question = questions_by_id.get(int(answer.question_id))
+            if question is None:
+                continue
+            answer.is_correct = self._compute_answer_correctness(
+                question=question,
+                response_json=answer.response_json,
+            )
+            self.session.add(answer)
+
+    def _compute_answer_correctness(
+        self,
+        *,
+        question: QuestionV2,
+        response_json: Mapping[str, Any],
+    ) -> bool | None:
+        if question.answer_kind not in {"single_choice", "multiple_choice", "checkbox"}:
+            return None
+        selected_keys = self._extract_selected_answer_keys(response_json)
+        if not selected_keys:
+            return None
+        correct_keys = self._extract_correct_answer_keys(question)
+        if not correct_keys:
+            return None
+        return is_answer_correct(selected_keys, correct_keys)
+
+    def _extract_selected_answer_keys(self, response_json: Mapping[str, Any]) -> list[str]:
+        raw_selected = response_json.get("selected")
+        if isinstance(raw_selected, str):
+            return normalize_answer_keys([raw_selected])
+        if isinstance(raw_selected, Sequence) and not isinstance(raw_selected, (str, bytes, bytearray)):
+            return normalize_answer_keys([str(item) for item in raw_selected])
+        raw_single = response_json.get("selectedAnswer")
+        if isinstance(raw_single, str):
+            return normalize_answer_keys([raw_single])
+        raw_keys = response_json.get("selectedAnswerKeys")
+        if isinstance(raw_keys, Sequence) and not isinstance(raw_keys, (str, bytes, bytearray)):
+            return normalize_answer_keys([str(item) for item in raw_keys])
+        return []
+
+    def _extract_correct_answer_keys(self, question: QuestionV2) -> list[str]:
+        content_json = question.content_json if isinstance(question.content_json, Mapping) else {}
+        candidates = (
+            content_json.get("correct_answer"),
+            content_json.get("correctAnswer"),
+            content_json.get("answerText"),
+        )
+        for candidate in candidates:
+            keys = self._normalize_correct_answer_value(candidate)
+            if keys:
+                return keys
+        return []
+
+    def _normalize_correct_answer_value(self, raw_value: object) -> list[str]:
+        if isinstance(raw_value, Sequence) and not isinstance(raw_value, (str, bytes, bytearray)):
+            return normalize_answer_keys([str(item) for item in raw_value])
+        if not isinstance(raw_value, str):
+            return []
+        value = raw_value.strip().upper()
+        if not value:
+            return []
+        if "," in value:
+            return normalize_answer_keys([part for part in value.split(",") if part.strip()])
+        if len(value) > 1 and value.isalpha():
+            return normalize_answer_keys(list(value))
+        return normalize_answer_keys([value])
 
     def _ensure_session_not_submitted(self, session_id: int) -> None:
         status = self.session.scalar(

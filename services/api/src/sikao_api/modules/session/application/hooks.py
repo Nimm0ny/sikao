@@ -6,6 +6,7 @@ from typing import Protocol
 
 from sqlalchemy.orm import Session
 
+from sikao_api.modules.review.application.hooks import run_review_submit_hooks
 from sikao_api.modules.session.application.submit_hooks import run_progress_submit_hooks
 
 logger = logging.getLogger(__name__)
@@ -57,6 +58,11 @@ def on_session_submit(
             user_id=user_id,
             session_id=session_id,
         )
+    run_review_submit_hooks_isolated(
+        session_factory=session_factory,
+        user_id=user_id,
+        session_id=session_id,
+    )
 
     if home_scheduler is None:
         return
@@ -95,6 +101,29 @@ def run_progress_submit_hooks_isolated(
         session.rollback()
         logger.exception(
             "submit_progress_fallback_failed user_id=%s session_id=%s",
+            user_id,
+            session_id,
+        )
+        return False
+    finally:
+        session.close()
+
+
+def run_review_submit_hooks_isolated(
+    *,
+    session_factory: Callable[[], Session],
+    user_id: int,
+    session_id: int,
+) -> bool:
+    session = session_factory()
+    try:
+        run_review_submit_hooks(session, user_id=user_id, session_id=session_id)
+        session.commit()
+        return True
+    except Exception:  # noqa: BLE001
+        session.rollback()
+        logger.exception(
+            "submit_review_hook_failed user_id=%s session_id=%s",
             user_id,
             session_id,
         )
