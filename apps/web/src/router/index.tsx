@@ -4,6 +4,9 @@
 import { createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from '../layouts/RootLayout';
 import { Home } from '../views/Home';
+import { MockExamComparisonView } from '../views/MockExamComparisonView';
+import { MockExamHistoryView } from '../views/MockExamHistoryView';
+import { MockExamStartView } from '../views/MockExamStartView';
 import { Practice } from '../views/Practice';
 import { PracticePreferences } from '../views/PracticePreferences';
 import { PracticeSession } from '../views/PracticeSession';
@@ -27,6 +30,9 @@ export const router = createBrowserRouter([
         children: [
           { index: true, element: <Home /> },
           { path: 'practice', element: <Practice /> },
+          { path: 'practice/mock-exam/start', element: <MockExamStartView /> },
+          { path: 'practice/mock-exam/history', element: <MockExamHistoryView /> },
+          { path: 'practice/mock-exam/:sessionId/comparison', element: <MockExamComparisonView /> },
           { path: 'profile/practice-preferences', element: <PracticePreferences /> },
           { path: 'review', element: <Review /> },
           { path: 'note', element: <Note /> },

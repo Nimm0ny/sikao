@@ -553,8 +553,94 @@ export const practiceHandlers = [
     };
     return HttpResponse.json(makePreferencesWriteResponse(practicePreferencesState.payload, practicePreferencesState.schemaVersion));
   }),
+  http.get('/api/v2/practice/mock-exams/history', () =>
+    HttpResponse.json({
+      aggregate: {
+        totalCount: 2,
+        bestAccuracy: 0.82,
+        bestSessionId: 7302,
+        avgAccuracy: 0.78,
+        improvementTrend: 0.04,
+      },
+      sessions: [
+        {
+          sessionId: 7302,
+          paperCode: 'XC-MOCK-HISTORY-001',
+          completedAt: '2026-05-24T08:00:00Z',
+          timeLimitMinutes: 120,
+          actualActiveSeconds: 6700,
+          accuracy: 0.82,
+          totalScore: null,
+          isForceSubmitted: false,
+          rankInSelf: 1,
+        },
+        {
+          sessionId: 7301,
+          paperCode: 'XC-MOCK-HISTORY-001',
+          completedAt: '2026-05-17T08:00:00Z',
+          timeLimitMinutes: 120,
+          actualActiveSeconds: 6900,
+          accuracy: 0.74,
+          totalScore: null,
+          isForceSubmitted: true,
+          rankInSelf: 2,
+        },
+      ],
+    }),
+  ),
+  http.get('/api/v2/practice/mock-exams/:sessionId/comparison', ({ params }) =>
+    HttpResponse.json({
+      self: {
+        sessionId: Number(params.sessionId),
+        paperCode: 'XC-MOCK-HISTORY-001',
+        completedAt: '2026-05-24T08:00:00Z',
+        timeLimitMinutes: 120,
+        actualActiveSeconds: 6700,
+        accuracy: 0.82,
+        totalScore: null,
+        isForceSubmitted: false,
+        rankInSelf: 1,
+      },
+      selfHistory: [
+        {
+          sessionId: 7301,
+          paperCode: 'XC-MOCK-HISTORY-001',
+          completedAt: '2026-05-17T08:00:00Z',
+          timeLimitMinutes: 120,
+          actualActiveSeconds: 6900,
+          accuracy: 0.74,
+          totalScore: null,
+          isForceSubmitted: true,
+          rankInSelf: 2,
+        },
+      ],
+      paperBaseline: {},
+    }),
+  ),
   http.post('/api/v2/practice/mock-exams', async ({ request }) => {
-    const payload = (await request.json()) as { paperCode: string; timeLimitMinutes?: number };
-    return HttpResponse.json(makeMockExamCreateResponse(payload, nextSessionId++));
+    const payload = (await request.json()) as { paperCode: string; timeLimitMinutes?: number; delayedReviewMinutes?: number };
+    const sessionId = nextSessionId++;
+    const track = payload.paperCode.startsWith('ES') ? 'essay' : 'xingce';
+    const session = makeSessionEnvelope(sessionId, {
+      track,
+      entryKind: 'mock_exam',
+      mode: 'paper',
+      practiceMode: 'full_set',
+      paperCode: payload.paperCode,
+    });
+    session.examMode = true;
+    session.status = 'draft';
+    seedRuntimeSession(session, {
+      status: 'draft',
+      transitions: [],
+      forceSubmitted: false,
+    });
+    return HttpResponse.json(
+      makeMockExamCreateResponse(
+        { paperCode: payload.paperCode, timeLimitMinutes: payload.timeLimitMinutes },
+        sessionId,
+      ),
+      { status: 201 },
+    );
   }),
 ];

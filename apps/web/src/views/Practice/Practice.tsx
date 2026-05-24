@@ -224,6 +224,9 @@ export function Practice() {
           aria-label="练习范围"
         />
         <div className={styles.quickActions}>
+          <Button variant="secondary" onClick={() => navigate('/practice/mock-exam/start')}>
+            Mock exam
+          </Button>
           <Button variant="secondary" onClick={() => void handleCreateDaily()} disabled={dailyQuery.isLoading}>
             {dailyQuery.data ? `每日一练 ${dailyQuery.data.questionCount} 题` : '每日一练'}
           </Button>
