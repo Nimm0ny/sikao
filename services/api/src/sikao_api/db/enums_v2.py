@@ -25,11 +25,15 @@ class ReviewAttemptOutcome(StrEnum):
     CORRECT = "correct"
     INCORRECT = "incorrect"
     PROBATION_ENTERED = "probation_entered"
+    PROBATION_FAILED = "probation_failed"
     GRADUATED = "graduated"
     ARCHIVED = "archived"
     RESTORED = "restored"
     RECALL_FILLED = "recall_filled"
     CONFIDENCE_MISMATCH = "confidence_mismatch"
+    HARD_MARKED = "hard_marked"
+    MARK_RESOLVED = "mark_resolved"
+    ALGORITHM_MIGRATED = "algorithm_migrated"
 
 
 class CauseAnalysisScope(StrEnum):
