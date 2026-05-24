@@ -1,0 +1,40 @@
+/*
+ * FormField — V5 D.3.16 form wrapper (skeleton).
+ * Why: vertical layout label → control → helper/error with --space-2
+ *      rhythm (closest snap on V5 spacing scale to the spec's 6px). helper
+ *      uses meta-secondary ink, error uses state-err ink.
+ */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  width: 100%;
+}
+
+.label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-body);
+  line-height: var(--line-height-body);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+}
+
+.required {
+  color: var(--color-state-err);
+  font-weight: var(--font-weight-bold);
+  line-height: 1;
+}
+
+.helper {
+  font-size: var(--font-meta);
+  line-height: var(--line-height-meta);
+  color: var(--color-text-meta);
+}
+
+.error {
+  font-size: var(--font-meta);
+  line-height: var(--line-height-meta);
+  color: var(--color-state-err);
+}

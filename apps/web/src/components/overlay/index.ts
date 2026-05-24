@@ -14,3 +14,6 @@ export type { TooltipProps } from './Tooltip';
 
 export { Banner } from './Banner';
 export type { BannerProps, BannerVariant, BannerAction } from './Banner';
+
+export { Modal } from './Modal';
+export type { ModalProps, ModalPrimaryAction, ModalSecondaryAction } from './Modal';
