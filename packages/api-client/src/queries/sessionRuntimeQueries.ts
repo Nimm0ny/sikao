@@ -12,6 +12,9 @@ import { invalidateSessionSurface, practiceSessionKeys } from './sessionQueries'
 import type {
   MockExamCountdownResponseV2,
   OperationAckV2,
+  SessionDiscardRequestV2,
+  SessionHeartbeatRequestV2,
+  SessionHeartbeatResponseV2,
   SessionLifecycleResponseV2,
   SessionTimingReportV2,
   TimingBaselineResponseV2,
@@ -25,12 +28,24 @@ export function fetchPracticeSessionCountdown(
   return api.get<MockExamCountdownResponseV2>(`/practice/sessions/${sessionId}/countdown`);
 }
 
-export function discardPracticeSession(sessionId: number): Promise<SessionLifecycleResponseV2> {
-  return api.post<SessionLifecycleResponseV2>(`/practice/sessions/${sessionId}/discard`);
+export function discardPracticeSession(
+  sessionId: number,
+  payload: SessionDiscardRequestV2 = {},
+): Promise<SessionLifecycleResponseV2> {
+  return api.post<SessionLifecycleResponseV2, SessionDiscardRequestV2>(
+    `/practice/sessions/${sessionId}/discard`,
+    payload,
+  );
 }
 
-export function postPracticeSessionHeartbeat(sessionId: number): Promise<SessionLifecycleResponseV2> {
-  return api.post<SessionLifecycleResponseV2>(`/practice/sessions/${sessionId}/heartbeat`);
+export function postPracticeSessionHeartbeat(
+  sessionId: number,
+  payload: SessionHeartbeatRequestV2 = {},
+): Promise<SessionHeartbeatResponseV2> {
+  return api.post<SessionHeartbeatResponseV2, SessionHeartbeatRequestV2>(
+    `/practice/sessions/${sessionId}/heartbeat`,
+    payload,
+  );
 }
 
 export function fetchPracticeSessionLifecycle(
@@ -103,12 +118,34 @@ function useLifecycleMutation(
   });
 }
 
-export function useDiscardPracticeSession(): UseMutationResult<SessionLifecycleResponseV2, unknown, number> {
-  return useLifecycleMutation(discardPracticeSession);
+export function useDiscardPracticeSession(): UseMutationResult<
+  SessionLifecycleResponseV2,
+  unknown,
+  { readonly sessionId: number; readonly payload?: SessionDiscardRequestV2 }
+> {
+  const queryClient = useQueryClient();
+  return useMutation<
+    SessionLifecycleResponseV2,
+    unknown,
+    { readonly sessionId: number; readonly payload?: SessionDiscardRequestV2 }
+  >({
+    mutationFn: ({ sessionId, payload }) => discardPracticeSession(sessionId, payload),
+    retry: false,
+    onSuccess: (_data, vars) => {
+      invalidateSessionSurface(queryClient, vars.sessionId);
+    },
+  });
 }
 
-export function usePracticeSessionHeartbeat(): UseMutationResult<SessionLifecycleResponseV2, unknown, number> {
-  return useLifecycleMutation(postPracticeSessionHeartbeat);
+export function usePracticeSessionHeartbeat(): UseMutationResult<SessionHeartbeatResponseV2, unknown, number> {
+  const queryClient = useQueryClient();
+  return useMutation<SessionHeartbeatResponseV2, unknown, number>({
+    mutationFn: (sessionId) => postPracticeSessionHeartbeat(sessionId, {}),
+    retry: false,
+    onSuccess: (_data, sessionId) => {
+      invalidateSessionSurface(queryClient, sessionId);
+    },
+  });
 }
 
 export function usePracticeSessionLifecycle(

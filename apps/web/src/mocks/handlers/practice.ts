@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 
-import type { PracticePreferencesResponseV2, PracticeSessionCreateRequestV2 } from '@sikao/api-client/types/practice';
+import type { PracticePreferencesResponseV2, PracticeSessionCreateRequestV2, SessionLifecycleResponseV2 } from '@sikao/api-client/types/practice';
 import {
   makeCatalogItems,
   makeCenterResponse,
@@ -25,20 +25,36 @@ const DEFAULT_RUNTIME_SESSION_ID = 6001;
 let nextSessionId = DEFAULT_RUNTIME_SESSION_ID + 1;
 let nextAiRequestId = 701;
 const runtimeSessions = new Map<number, ReturnType<typeof makeSessionEnvelope>>();
+const runtimeLifecycleStates = new Map<number, SessionLifecycleResponseV2>();
 let practicePreferencesState: PracticePreferencesResponseV2;
+
+type RuntimeTransition = NonNullable<SessionLifecycleResponseV2['transitions']>[number];
 
 export function resetPracticeMocks(): void {
   nextSessionId = DEFAULT_RUNTIME_SESSION_ID + 1;
   nextAiRequestId = 701;
   runtimeSessions.clear();
-  runtimeSessions.set(
-    DEFAULT_RUNTIME_SESSION_ID,
+  runtimeLifecycleStates.clear();
+  seedRuntimeSession(
     makeSessionEnvelope(DEFAULT_RUNTIME_SESSION_ID, {
       track: 'xingce',
       entryKind: 'paper',
       practiceMode: 'full_set',
       paperCode: 'XC-2024-01',
     }),
+    {
+      status: 'in_progress',
+      transitions: [
+        {
+          fromStatus: 'draft',
+          toStatus: 'in_progress',
+          trigger: 'user_start',
+          actor: 'user',
+          ts: new Date().toISOString(),
+          reason: null,
+        },
+      ],
+    },
   );
   practicePreferencesState = {
     isDefault: false,
@@ -70,25 +86,80 @@ function schemaMismatchResponse() {
   );
 }
 
+function buildLifecycleState(
+  session: ReturnType<typeof makeSessionEnvelope>,
+  overrides: Partial<SessionLifecycleResponseV2> = {},
+): SessionLifecycleResponseV2 {
+  return {
+    status: session.status,
+    firstQuestionAt: session.startedAt,
+    lastActivityAt: session.startedAt,
+    pausedAt: null,
+    pausedCount: 0,
+    pausedTotalSeconds: 0,
+    lastHeartbeatAt: session.startedAt,
+    expiresAt: null,
+    abandonedAt: null,
+    abandonedReason: null,
+    forceSubmitted: false,
+    forceSubmittedReason: null,
+    transitions: [],
+    ...overrides,
+  };
+}
+
+function seedRuntimeSession(
+  session: ReturnType<typeof makeSessionEnvelope>,
+  lifecycleOverrides: Partial<SessionLifecycleResponseV2> = {},
+): void {
+  if (lifecycleOverrides.status) {
+    session.status = lifecycleOverrides.status;
+  }
+  runtimeSessions.set(session.id, session);
+  runtimeLifecycleStates.set(session.id, buildLifecycleState(session, lifecycleOverrides));
+}
+
+function appendTransition(
+  sessionId: number,
+  transition: RuntimeTransition,
+  patch: Partial<SessionLifecycleResponseV2>,
+): SessionLifecycleResponseV2 {
+  const current = runtimeLifecycleStates.get(sessionId);
+  if (!current) {
+    throw new Error(`missing lifecycle state for session ${sessionId}`);
+  }
+  const nextState: SessionLifecycleResponseV2 = {
+    ...current,
+    ...patch,
+    transitions: [...(current.transitions ?? []), transition],
+  };
+  runtimeLifecycleStates.set(sessionId, nextState);
+  return nextState;
+}
+
 function buildActiveSessionsResponse() {
   const sessions = Array.from(runtimeSessions.values())
-    .filter((session) => session.status === 'draft' || session.status === 'in_progress' || session.status === 'paused')
+    .map((session) => {
+      const lifecycle = runtimeLifecycleStates.get(session.id);
+      return { lifecycle, session };
+    })
+    .filter(({ lifecycle }) => lifecycle && (lifecycle.status === 'draft' || lifecycle.status === 'in_progress' || lifecycle.status === 'paused'))
     .map((session) => ({
-      id: session.id,
-      type: session.track,
-      examMode: session.examMode,
-      practiceMode: session.practiceMode,
+      id: session.session.id,
+      type: session.session.track,
+      examMode: session.session.examMode,
+      practiceMode: session.session.practiceMode,
       progress: {
-        answered: session.items.filter((item) => item.status === 'answered').length,
-        total: session.items.length,
+        answered: session.session.items.filter((item) => item.status === 'answered').length,
+        total: session.session.items.length,
       },
-      sourceMode: session.sourceMode,
-      startedAt: session.startedAt,
-      status: session.status,
+      sourceMode: session.session.sourceMode,
+      startedAt: session.session.startedAt,
+      status: session.lifecycle!.status,
       category: null,
       paperCode: null,
-      lastActivityAt: null,
-      pausedAt: null,
+      lastActivityAt: session.lifecycle!.lastActivityAt ?? null,
+      pausedAt: session.lifecycle!.pausedAt ?? null,
     }))
     .sort((left, right) => right.id - left.id);
 
@@ -129,14 +200,14 @@ export const practiceHandlers = [
   http.post('/api/v2/practice/daily/:dailyId/start', ({ params }) => {
     const track = String(params.dailyId).startsWith('2') ? 'essay' : 'xingce';
     const session = makeSessionEnvelope(nextSessionId++, { entryKind: 'daily', mode: 'daily', track });
-    runtimeSessions.set(session.id, session);
+    seedRuntimeSession(session);
     return HttpResponse.json(session);
   }),
   http.get('/api/v2/practice/sessions/active', () => HttpResponse.json(buildActiveSessionsResponse())),
   http.post('/api/v2/practice/sessions', async ({ request }) => {
     const payload = (await request.json()) as PracticeSessionCreateRequestV2;
     const session = makeSessionEnvelope(nextSessionId++, payload);
-    runtimeSessions.set(session.id, session);
+    seedRuntimeSession(session);
     return HttpResponse.json(session);
   }),
   http.get('/api/v2/practice/sessions/:sessionId', ({ params }) => {
@@ -153,38 +224,161 @@ export const practiceHandlers = [
   http.post('/api/v2/practice/sessions/:sessionId/start', ({ params }) => {
     const sessionId = Number(params.sessionId);
     const session = runtimeSessions.get(sessionId);
-    if (session) {
-      session.status = 'in_progress';
-      runtimeSessions.set(sessionId, session);
+    if (!session) {
+      return HttpResponse.json(
+        { code: 'practice_session_not_found', detail: 'session not found' },
+        { status: 404 },
+      );
     }
+    session.status = 'in_progress';
+    runtimeSessions.set(sessionId, session);
+    return HttpResponse.json(
+      appendTransition(
+        sessionId,
+        {
+          fromStatus: 'draft',
+          toStatus: 'in_progress',
+          trigger: 'user_start',
+          actor: 'user',
+          ts: new Date().toISOString(),
+          reason: null,
+        },
+        {
+          status: 'in_progress',
+          firstQuestionAt: new Date().toISOString(),
+          lastActivityAt: new Date().toISOString(),
+          pausedAt: null,
+        },
+      ),
+    );
+  }),
+  http.post('/api/v2/practice/sessions/:sessionId/heartbeat', ({ params }) => {
+    const sessionId = Number(params.sessionId);
+    const lifecycle = runtimeLifecycleStates.get(sessionId);
+    if (!lifecycle) {
+      return HttpResponse.json(
+        { code: 'practice_session_not_found', detail: 'session not found' },
+        { status: 404 },
+      );
+    }
+    const nextState = {
+      ...lifecycle,
+      lastHeartbeatAt: new Date().toISOString(),
+      lastActivityAt: new Date().toISOString(),
+    };
+    runtimeLifecycleStates.set(sessionId, nextState);
     return HttpResponse.json({
-      status: 'in_progress',
-      pausedCount: 0,
-      pausedTotalSeconds: 0,
-      forceSubmitted: false,
-      firstQuestionAt: new Date().toISOString(),
-      transitions: [],
+      serverTs: new Date().toISOString(),
+      status: nextState.status,
     });
   }),
-  http.post('/api/v2/practice/sessions/:sessionId/heartbeat', () =>
-    HttpResponse.json({
-      status: 'in_progress',
-      pausedCount: 0,
-      pausedTotalSeconds: 0,
-      forceSubmitted: false,
-      transitions: [],
-    }),
-  ),
   http.get('/api/v2/practice/sessions/:sessionId/lifecycle', ({ params }) => {
     const sessionId = Number(params.sessionId);
+    const lifecycle = runtimeLifecycleStates.get(sessionId);
+    if (!lifecycle) {
+      return HttpResponse.json(
+        { code: 'practice_session_not_found', detail: 'session not found' },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json(lifecycle);
+  }),
+  http.post('/api/v2/practice/sessions/:sessionId/pause', ({ params }) => {
+    const sessionId = Number(params.sessionId);
     const session = runtimeSessions.get(sessionId);
-    return HttpResponse.json({
-      status: session?.status ?? 'draft',
-      pausedCount: 0,
-      pausedTotalSeconds: 0,
-      forceSubmitted: false,
-      transitions: [],
-    });
+    const lifecycle = runtimeLifecycleStates.get(sessionId);
+    if (!session || !lifecycle) {
+      return HttpResponse.json(
+        { code: 'practice_session_not_found', detail: 'session not found' },
+        { status: 404 },
+      );
+    }
+    session.status = 'paused';
+    runtimeSessions.set(sessionId, session);
+    return HttpResponse.json(
+      appendTransition(
+        sessionId,
+        {
+          fromStatus: lifecycle.status,
+          toStatus: 'paused',
+          trigger: 'user_pause',
+          actor: 'user',
+          ts: new Date().toISOString(),
+          reason: 'manual_pause',
+        },
+        {
+          status: 'paused',
+          pausedAt: new Date().toISOString(),
+          pausedCount: (lifecycle.pausedCount ?? 0) + 1,
+          lastActivityAt: new Date().toISOString(),
+        },
+      ),
+    );
+  }),
+  http.post('/api/v2/practice/sessions/:sessionId/resume', ({ params }) => {
+    const sessionId = Number(params.sessionId);
+    const session = runtimeSessions.get(sessionId);
+    const lifecycle = runtimeLifecycleStates.get(sessionId);
+    if (!session || !lifecycle) {
+      return HttpResponse.json(
+        { code: 'practice_session_not_found', detail: 'session not found' },
+        { status: 404 },
+      );
+    }
+    session.status = 'in_progress';
+    runtimeSessions.set(sessionId, session);
+    return HttpResponse.json(
+      appendTransition(
+        sessionId,
+        {
+          fromStatus: lifecycle.status,
+          toStatus: 'in_progress',
+          trigger: 'user_resume',
+          actor: 'user',
+          ts: new Date().toISOString(),
+          reason: null,
+        },
+        {
+          status: 'in_progress',
+          pausedAt: null,
+          pausedTotalSeconds: (lifecycle.pausedTotalSeconds ?? 0) + 300,
+          lastActivityAt: new Date().toISOString(),
+        },
+      ),
+    );
+  }),
+  http.post('/api/v2/practice/sessions/:sessionId/discard', async ({ params, request }) => {
+    const sessionId = Number(params.sessionId);
+    const session = runtimeSessions.get(sessionId);
+    const lifecycle = runtimeLifecycleStates.get(sessionId);
+    if (!session || !lifecycle) {
+      return HttpResponse.json(
+        { code: 'practice_session_not_found', detail: 'session not found' },
+        { status: 404 },
+      );
+    }
+    const payload = (await request.json()) as { reason?: string } | null;
+    session.status = 'abandoned';
+    runtimeSessions.set(sessionId, session);
+    return HttpResponse.json(
+      appendTransition(
+        sessionId,
+        {
+          fromStatus: lifecycle.status,
+          toStatus: 'abandoned',
+          trigger: 'user_discard',
+          actor: 'user',
+          ts: new Date().toISOString(),
+          reason: payload?.reason ?? 'user_discard',
+        },
+        {
+          status: 'abandoned',
+          abandonedAt: new Date().toISOString(),
+          abandonedReason: payload?.reason ?? 'user_discard',
+          lastActivityAt: new Date().toISOString(),
+        },
+      ),
+    );
   }),
   http.post('/api/v2/practice/sessions/:sessionId/answers', () =>
     HttpResponse.json({ ok: true }),
@@ -213,10 +407,30 @@ export const practiceHandlers = [
   http.post('/api/v2/practice/sessions/:sessionId/submit', ({ params }) => {
     const sessionId = Number(params.sessionId);
     const session = runtimeSessions.get(sessionId);
-    if (session) {
-      session.status = 'submitted';
-      runtimeSessions.set(sessionId, session);
+    const lifecycle = runtimeLifecycleStates.get(sessionId);
+    if (!session || !lifecycle) {
+      return HttpResponse.json(
+        { code: 'practice_session_not_found', detail: 'session not found' },
+        { status: 404 },
+      );
     }
+    session.status = 'submitted';
+    runtimeSessions.set(sessionId, session);
+    appendTransition(
+      sessionId,
+      {
+        fromStatus: lifecycle.status,
+        toStatus: 'submitted',
+        trigger: 'user_submit',
+        actor: 'user',
+        ts: new Date().toISOString(),
+        reason: null,
+      },
+      {
+        status: 'submitted',
+        lastActivityAt: new Date().toISOString(),
+      },
+    );
     return HttpResponse.json({ ok: true });
   }),
   http.get('/api/v2/practice/sessions/:sessionId/result', ({ params }) => {
