@@ -6,11 +6,13 @@ import { Home } from '../Home';
 import { Practice } from '../Practice';
 import { Note } from '../Note';
 import { Me } from '../Me';
+import { PracticePreferences } from '../PracticePreferences';
 import { QuestionHub } from '../QuestionHub';
 import { Review } from '../Review';
 import { RootLayout } from '../../layouts/RootLayout';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import type { ReactElement } from 'react';
+import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
 
 /*
  * Phase 4 task 18 checkpoint — axe a11y self-check.
@@ -71,7 +73,7 @@ describe('Phase 4 a11y baseline (task 18 checkpoint)', () => {
   });
 
   it('Practice view passes axe wcag2aa', async () => {
-    const { container } = renderInRouter(<Practice />, '/practice');
+    const { container } = renderWithProviders(<Practice />, { initialEntries: ['/practice'] });
     const results = await runAxe(container);
     expect(results.violations, formatViolations(results.violations)).toEqual([]);
   });
@@ -84,6 +86,14 @@ describe('Phase 4 a11y baseline (task 18 checkpoint)', () => {
 
   it('Me view passes axe wcag2aa', async () => {
     const { container } = renderInRouter(<Me />, '/me');
+    const results = await runAxe(container);
+    expect(results.violations, formatViolations(results.violations)).toEqual([]);
+  });
+
+  it('PracticePreferences view passes axe wcag2aa', async () => {
+    const { container } = renderWithProviders(<PracticePreferences />, {
+      initialEntries: ['/profile/practice-preferences'],
+    });
     const results = await runAxe(container);
     expect(results.violations, formatViolations(results.violations)).toEqual([]);
   });
