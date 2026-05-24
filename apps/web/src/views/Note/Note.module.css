@@ -1,0 +1,190 @@
+/*
+ * Note view — V5 D.4.3 desktop page skeleton.
+ * Why: 3-row Workspace grid (header / FilterBar+SubBar / sticky cards).
+ *      Sticky cards use the spec's bespoke shadow visual (design.md §D.4.3
+ *      "0 1px 0 rgba(255,255,255,.6) inset, 0 12px 28px -10px ..."); for
+ *      the V5-M3.5 skeleton phase we ship --card-shadow-rest as the
+ *      placeholder and leave a TODO for the dedicated sticky shadow token
+ *      to land in §C.4.6 token table (Phase 5+ design-system follow-up).
+ *      Tilt is data-driven via [data-tilt='-2..2'] so callers don't write
+ *      inline styles.
+ */
+
+.root {
+  display: grid;
+  grid-template-rows: auto auto auto minmax(0, 1fr);
+  gap: var(--space-4);
+  width: 100%;
+  min-height: 0;
+}
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.filterGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.chip {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0 var(--space-3);
+  height: 28px;
+  border-radius: var(--radius-999);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-subtle);
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-medium);
+  transition:
+    background var(--dur-fast) var(--ease-out),
+    color var(--dur-fast) var(--ease-out),
+    border-color var(--dur-fast) var(--ease-out);
+}
+
+.chip:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover gated by hover+fine pointer (CP.9). */
+  .chip:hover {
+    background: var(--color-bg-sunken);
+  }
+}
+
+.chip[data-active='true'] {
+  background: var(--color-text-primary);
+  color: var(--color-bg-surface);
+  border-color: var(--color-text-primary);
+}
+
+.chip[data-toggle='favorite'][data-active='true'] {
+  background: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+  border-color: var(--color-brand-primary);
+}
+
+.subBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+}
+
+.notesGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: var(--space-4);
+  align-content: start;
+}
+
+.sticky {
+  appearance: none;
+  -webkit-appearance: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--card-padding);
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius-sm);
+  /* TODO §C.4.6 sticky-shadow token (Phase 5+); placeholder uses
+   * --card-shadow-rest until the dedicated token lands in design-system. */
+  box-shadow: var(--card-shadow-rest);
+  min-height: 140px;
+  color: var(--color-text-primary);
+  transition:
+    transform var(--dur-fast) var(--ease-out),
+    box-shadow var(--dur-fast) var(--ease-out);
+}
+
+/* Data-driven tilt: 5 buckets from -2deg .. +2deg. Stored on the element
+ * via [data-tilt] so callers don't write inline styles. */
+.sticky[data-tilt='-2'] { transform: rotate(-2deg); }
+.sticky[data-tilt='-1'] { transform: rotate(-1deg); }
+.sticky[data-tilt='0']  { transform: rotate(0deg); }
+.sticky[data-tilt='1']  { transform: rotate(1deg); }
+.sticky[data-tilt='2']  { transform: rotate(2deg); }
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover gated by hover+fine pointer. hover lifts -2px and
+   * resets rotation per design.md §D.4.3 visual contract. */
+  .sticky:hover {
+    transform: translateY(-2px) rotate(0deg);
+    box-shadow: var(--card-shadow-hover);
+  }
+}
+
+.sticky:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+.stickyHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.stickyTitle {
+  font-size: var(--font-card);
+  font-weight: var(--font-weight-semibold);
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.stickySummary {
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  line-clamp: 3;
+  overflow: hidden;
+}
+
+.stickyMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+  margin-top: auto;
+}
+
+.detailBody {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.headerActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
