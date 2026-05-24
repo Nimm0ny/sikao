@@ -813,8 +813,43 @@ class AiCauseAnalysisV2(Base):
     input_hash: Mapped[str] = mapped_column(String(64), nullable=False)
     result_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, nullable=False)
     llm_call_id: Mapped[int] = mapped_column(ForeignKey("llm_call_v2.id"), nullable=False)
+    version: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default=text("1")
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+
+class CauseTagV2(Base):
+    __tablename__ = "cause_tag_v2"
+    __table_args__ = (
+        UniqueConstraint("slug", name="uq_cause_tag_v2_slug"),
+        Index("ix_cause_tag_v2_category_order", "category", "display_order"),
+        Index("ix_cause_tag_v2_active", "is_active"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug: Mapped[str] = mapped_column(String(64), nullable=False)
+    name: Mapped[str] = mapped_column(String(64), nullable=False)
+    category: Mapped[str] = mapped_column(String(32), nullable=False)
+    severity_default: Mapped[str] = mapped_column(String(16), nullable=False)
+    description: Mapped[str] = mapped_column(Text, nullable=False)
+    display_order: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
+    is_active: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=True, server_default=true()
+    )
+    taxonomy_version: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="v1", server_default="v1"
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
 
 
 class NoteV2(Base):

@@ -33,9 +33,23 @@ class ReviewAttemptOutcome(StrEnum):
     CONFIDENCE_MISMATCH = "confidence_mismatch"
     HARD_MARKED = "hard_marked"
     MARK_RESOLVED = "mark_resolved"
+    CAUSE_TAG_OVERRIDDEN = "cause_tag_overridden"
     ALGORITHM_MIGRATED = "algorithm_migrated"
 
 
 class CauseAnalysisScope(StrEnum):
     SINGLE = "single"
     GROUP = "group"
+
+
+class TaxonomyCategory(StrEnum):
+    KNOWLEDGE = "knowledge"
+    REASONING = "reasoning"
+    STATE = "state"
+    OTHER = "other"
+
+
+class CauseTagSeverity(StrEnum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"

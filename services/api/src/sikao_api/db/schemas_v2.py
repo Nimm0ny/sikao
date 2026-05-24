@@ -392,6 +392,126 @@ class ReviewBatchActionResultV2(CamelModel):
     affected_count: int
 
 
+class CauseAnalysisComparisonJudgmentV2(CamelModel):
+    improved_dimensions: list[str] = Field(default_factory=list)
+    persisted_dimensions: list[str] = Field(default_factory=list)
+    newly_emerged_dimensions: list[str] = Field(default_factory=list)
+    actions_likely_completed: list[bool] = Field(default_factory=list)
+    overall_trend: Literal["improved", "partial_improvement", "stagnant", "regressed"]
+
+
+class CauseAnalysisDimensionOverrideV2(CamelModel):
+    slug_original: str
+    slug_overridden: str
+    severity_overridden: str | None = None
+    user_note: str | None = None
+    overridden_at: UtcDatetime
+
+
+class CauseAnalysisDimensionV2(CamelModel):
+    slug: str
+    name_display: str
+    severity: Literal["high", "medium", "low"]
+    suggestion: str
+    user_override: CauseAnalysisDimensionOverrideV2 | None = None
+    llm_original: dict[str, Any] | None = Field(
+        default=None,
+        alias="_llm_original",
+        serialization_alias="_llm_original",
+    )
+    llm_original_slug: str | None = Field(
+        default=None,
+        alias="_llm_original_slug",
+        serialization_alias="_llm_original_slug",
+    )
+
+
+class CauseAnalysisEvolutionContextV2(CamelModel):
+    previous_analysis_id: int | None = None
+    previous_analyzed_at: UtcDatetime | None = None
+    previous_dimensions: list[CauseAnalysisDimensionV2] = Field(default_factory=list)
+    previous_suggested_actions: list[str] = Field(default_factory=list)
+    previous_confidence: str | None = None
+    comparison_judgment: CauseAnalysisComparisonJudgmentV2
+
+
+class CauseAnalysisResultV2(CamelModel):
+    mode: Literal["single", "forced", "group"]
+    summary: str
+    dimensions: list[CauseAnalysisDimensionV2] = Field(default_factory=list)
+    suggested_actions: list[str] = Field(default_factory=list)
+    related_questions: list[int] = Field(default_factory=list)
+    evolution_context: CauseAnalysisEvolutionContextV2 | None = None
+    meta: dict[str, Any] = Field(default_factory=dict, alias="_meta", serialization_alias="_meta")
+
+
+class CauseAnalysisResponseV2(CamelModel):
+    analysis_id: int
+    scope: Literal["single", "group"]
+    mode: Literal["single", "forced", "group"]
+    version: int
+    cached: bool
+    expires_at: UtcDatetime
+    llm_call_id: int
+    warning_code: str | None = None
+    result: CauseAnalysisResultV2
+
+
+class CauseAnalysisRequestV2(CamelModel):
+    mode: Literal["single", "forced"] = "single"
+
+
+class CauseAnalysisGroupRequestV2(CamelModel):
+    item_ids: list[int] = Field(min_length=2, max_length=20)
+
+    @field_validator("item_ids")
+    @classmethod
+    def _validate_distinct_item_ids(cls, value: list[int]) -> list[int]:
+        if len(set(value)) != len(value):
+            raise ValueError("item_ids must be distinct")
+        return value
+
+
+class CauseDimensionOverrideRequestV2(CamelModel):
+    slug: str = Field(min_length=1, max_length=64)
+    user_severity: Literal["high", "medium", "low"] | None = None
+    user_note: str | None = Field(default=None, max_length=500)
+    expected_version: int = Field(ge=1)
+
+    @field_validator("slug")
+    @classmethod
+    def _normalize_slug(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if not normalized:
+            raise ValueError("slug cannot be blank")
+        return normalized
+
+    @field_validator("user_note")
+    @classmethod
+    def _normalize_user_note(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        return stripped or None
+
+
+class CauseTagItemV2(CamelModel):
+    id: int
+    slug: str
+    name: str
+    category: str
+    severity_default: str
+    description: str
+    display_order: int
+    is_active: bool
+    taxonomy_version: str
+
+
+class CauseTagListResponseV2(CamelModel):
+    items: list[CauseTagItemV2]
+    total: int
+
+
 class NoteItemV2(CamelModel):
     id: int
     title: str
