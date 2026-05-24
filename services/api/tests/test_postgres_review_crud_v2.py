@@ -6,10 +6,13 @@ from typing import Any, cast
 
 import pytest
 from fastapi.testclient import TestClient
+from sqlalchemy import select
 
 from _helpers.practice_content_support import build_postgres_client, register_user, seed_paper
-from sikao_api.db.models_v2 import AiCauseAnalysisV2, LlmCallV2, NoteV2, ReviewItemV2
+from sikao_api.db.models_v2 import AiCauseAnalysisV2, LlmCallV2, NoteV2, ReviewItemV2, UserV2
 from sikao_api.modules.review.application.queue_items import today_end_utc
+from sikao_api.modules.review.application.service import graduate_review_item
+from sikao_api.modules.system.application.errors import ConflictError
 
 
 def _review_rows(client: TestClient) -> list[ReviewItemV2]:
@@ -227,6 +230,10 @@ def test_postgres_review_graduate_filters_and_dashboard_consumer(tmp_path: Path)
         assert promoted.json()["correctStreak"] == 4
         assert promoted.json()["nextReviewAt"] is not None
 
+        detail = client.get(f"/api/v2/review/items/{graduated.json()['id']}")
+        assert detail.status_code == 200, detail.text
+        assert detail.json()["history"][0]["outcome"] == "mark_resolved"
+
         filtered = client.get(
             "/api/v2/review/items",
             params={"status": "probationary", "order_by": "correct_streak", "order_dir": "desc"},
@@ -379,3 +386,97 @@ def test_postgres_today_review_includes_item_due_later_today(tmp_path: Path) -> 
         detail = client.get(f"/api/v2/review/items/{dashboard.json()['items'][0]['id']}")
         assert detail.status_code == 200, detail.text
         assert detail.json()["srsState"]["isDueToday"] is True
+        assert detail.json()["srsState"]["intervalDays"] == 1
+
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_postgres_review_graduate_detects_version_conflict(tmp_path: Path) -> None:
+    with build_postgres_client(tmp_path) as client:
+        register_user(client, email="cas@example.com", display_name="Cas Owner")
+        question_id = seed_paper(
+            client,
+            paper_code="XC-REVIEW-CRUD-CAS",
+            title="Review CRUD CAS",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "CAS item",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "logic_fill",
+                }
+            ],
+        )[0]
+        created = client.post("/api/v2/review/items", json={"questionId": question_id})
+        assert created.status_code == 200, created.text
+        item_id = created.json()["id"]
+
+        app = cast(Any, client.app)
+        factory = app.state.db.session_factory
+        with factory() as session_a:
+            owner = session_a.scalar(select(UserV2).where(UserV2.display_name == "Cas Owner"))
+            assert owner is not None
+            stale_row = session_a.get(ReviewItemV2, item_id)
+            assert stale_row is not None
+
+            with factory() as session_b:
+                fresh_row = session_b.get(ReviewItemV2, item_id)
+                assert fresh_row is not None
+                fresh_row.version += 1
+                session_b.add(fresh_row)
+                session_b.commit()
+
+            with pytest.raises(ConflictError) as excinfo:
+                graduate_review_item(session_a, user=owner, item_id=item_id)
+            assert excinfo.value.code == "review_item_optimistic_lock"
+
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_postgres_probationary_without_next_review_is_not_due_today_in_detail(tmp_path: Path) -> None:
+    with build_postgres_client(tmp_path) as client:
+        user_id = register_user(client, email="probation@example.com", display_name="Probation User")
+        question_id = seed_paper(
+            client,
+            paper_code="XC-REVIEW-CRUD-PROB",
+            title="Review CRUD Probationary",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "Probationary stale row",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "logic_fill",
+                }
+            ],
+        )[0]
+        app = cast(Any, client.app)
+        factory = app.state.db.session_factory
+        with factory() as session:
+            row = ReviewItemV2(
+                user_id=user_id,
+                source_kind="re_failed",
+                source_id=question_id,
+                title="Probationary stale row",
+                status="probationary",
+                question_id=question_id,
+                metadata_json={"algorithm_version": "simple_v1"},
+                correct_streak=4,
+                next_review_at=None,
+            )
+            session.add(row)
+            session.commit()
+            item_id = row.id
+
+        detail = client.get(f"/api/v2/review/items/{item_id}")
+        assert detail.status_code == 200, detail.text
+        assert detail.json()["srsState"]["isDueToday"] is False

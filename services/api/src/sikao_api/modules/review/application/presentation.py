@@ -112,14 +112,18 @@ def build_srs_state(item: ReviewItemV2) -> SrsStateV2:
     interval_days = None
     if item.status == ReviewItemStatus.PROBATIONARY.value:
         interval_days = 30
-    elif item.correct_streak > 0:
-        intervals = {1: 1, 2: 3, 3: 7, 4: 21}
+    elif 0 <= item.correct_streak < 4:
+        intervals = {0: 1, 1: 3, 2: 7, 3: 21}
         interval_days = intervals.get(item.correct_streak)
     today_end = today_end_utc()
-    is_due_today = (
-        canonical_review_status(item.status) in ACTIVE_REVIEW_ITEM_STATUSES
-        and (next_review_at is None or next_review_at <= today_end)
-    )
+    canonical_status = canonical_review_status(item.status)
+    if next_review_at is None:
+        is_due_today = canonical_status in {
+            ReviewItemStatus.PENDING.value,
+            ReviewItemStatus.IN_PROGRESS.value,
+        }
+    else:
+        is_due_today = canonical_status in ACTIVE_REVIEW_ITEM_STATUSES and next_review_at <= today_end
     return SrsStateV2(
         algorithm_version=str(metadata.get("algorithm_version", "simple_v1")),
         correct_streak=item.correct_streak,

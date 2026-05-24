@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from sqlalchemy import func, select
+from sqlalchemy import func, select, update
 from sqlalchemy.orm import Session
 
 from sikao_api.db.enums_v2 import ReviewAttemptOutcome, ReviewItemStatus, ReviewSourceKind
@@ -26,7 +26,6 @@ from sikao_api.modules.review.application.presentation import (
     build_redo_action,
     build_review_actions,
     build_srs_state,
-    compute_probation_check_at,
     serialize_review_item,
 )
 from sikao_api.modules.review.application.queue_items import (
@@ -42,6 +41,7 @@ from sikao_api.modules.review.application.validators import (
     review_status_clause,
     validate_manual_add_target,
 )
+from sikao_api.modules.review.application.srs_engine import mark_resolved
 from sikao_api.modules.system.application.errors import ConflictError, NotFoundError
 
 
@@ -211,35 +211,20 @@ def graduate_review_item(
     item_id: int,
 ) -> ReviewItemSchemaV2:
     item = _load_owned_item(session, user=user, item_id=item_id)
+    expected_version = item.version
     status = canonical_review_status(item.status)
     if status not in {ReviewItemStatus.PENDING.value, ReviewItemStatus.IN_PROGRESS.value}:
         raise ConflictError("review item cannot graduate from current status", code="review_item_status_invalid")
     normalize_flagged_review_row(item)
-    before_status = canonical_review_status(item.status)
-    before_streak = item.correct_streak
-    probation_check_at = compute_probation_check_at()
-    item.status = ReviewItemStatus.PROBATIONARY.value
-    item.correct_streak = max(item.correct_streak, 4)
-    item.next_review_at = probation_check_at
-    item.metadata_json = {
-        **item.metadata_json,
-        "algorithm_version": item.metadata_json.get("algorithm_version", "simple_v1"),
-        "probation_started_at": utc_now().isoformat(),
-        "probation_check_at": probation_check_at.isoformat(),
-        "probation_attempts": item.metadata_json.get("probation_attempts", 0),
-    }
-    session.add(item)
-    record_review_attempt(
-        session,
-        item_id=item.id,
-        outcome=ReviewAttemptOutcome.PROBATION_ENTERED.value,
-        notes_json={
-            "beforeStatus": before_status,
-            "afterStatus": ReviewItemStatus.PROBATIONARY.value,
-            "beforeStreak": before_streak,
-            "afterStreak": item.correct_streak,
-        },
-    )
+    result = mark_resolved(item, user_tz="Asia/Shanghai")
+    _persist_review_state_with_cas(session, item=item, user_id=user.id, expected_version=expected_version)
+    for event in result.attempts:
+        record_review_attempt(
+            session,
+            item_id=item.id,
+            outcome=event.outcome,
+            notes_json=event.notes_json,
+        )
     note_question_ids, cause_question_ids = load_review_presence_sets(
         session,
         user_id=user.id,
@@ -255,6 +240,7 @@ def archive_review_item(
     item_id: int,
 ) -> ReviewItemSchemaV2:
     item = _load_owned_item(session, user=user, item_id=item_id)
+    expected_version = item.version
     status = canonical_review_status(item.status)
     if status == ReviewItemStatus.ARCHIVED.value:
         raise ConflictError("review item already archived", code="review_item_status_invalid")
@@ -265,7 +251,8 @@ def archive_review_item(
         **item.metadata_json,
         "archived_at": utc_now().isoformat(),
     }
-    session.add(item)
+    item.version = max(int(item.version), 1) + 1
+    _persist_review_state_with_cas(session, item=item, user_id=user.id, expected_version=expected_version)
     record_review_attempt(
         session,
         item_id=item.id,
@@ -287,6 +274,7 @@ def restore_review_item(
     item_id: int,
 ) -> ReviewItemSchemaV2:
     item = _load_owned_item(session, user=user, item_id=item_id)
+    expected_version = item.version
     status = canonical_review_status(item.status)
     if status != ReviewItemStatus.ARCHIVED.value:
         raise ConflictError("review item is not archived", code="review_item_status_invalid")
@@ -298,7 +286,8 @@ def restore_review_item(
         **item.metadata_json,
         "restored_at": utc_now().isoformat(),
     }
-    session.add(item)
+    item.version = max(int(item.version), 1) + 1
+    _persist_review_state_with_cas(session, item=item, user_id=user.id, expected_version=expected_version)
     record_review_attempt(
         session,
         item_id=item.id,
@@ -371,3 +360,37 @@ def _load_owned_item(session: Session, *, user: UserV2, item_id: int) -> ReviewI
     if item is None:
         raise NotFoundError("review item not found", code="review_item_not_found")
     return item
+
+
+def _persist_review_state_with_cas(
+    session: Session,
+    *,
+    item: ReviewItemV2,
+    user_id: int,
+    expected_version: int,
+) -> None:
+    item.updated_at = utc_now()
+    result = session.execute(
+        update(ReviewItemV2)
+        .where(
+            ReviewItemV2.id == item.id,
+            ReviewItemV2.user_id == user_id,
+            ReviewItemV2.version == expected_version,
+        )
+        .values(
+            source_kind=item.source_kind,
+            source_id=item.source_id,
+            title=item.title,
+            status=item.status,
+            question_id=item.question_id,
+            metadata_json=item.metadata_json,
+            reason=item.reason,
+            correct_streak=item.correct_streak,
+            next_review_at=item.next_review_at,
+            version=item.version,
+            updated_at=item.updated_at,
+        )
+        .execution_options(synchronize_session=False)
+    )
+    if getattr(result, "rowcount", None) != 1:
+        raise ConflictError("review item version conflict", code="review_item_optimistic_lock")

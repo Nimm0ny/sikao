@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import date
 from typing import Any
 
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import PracticeSessionV2, ReviewItemV2, UserV2
@@ -155,7 +155,13 @@ def build_dashboard_review(
             .where(
                 ReviewItemV2.user_id == user.id,
                 ReviewItemV2.status.in_(ACTIVE_REVIEW_ITEM_STATUSES),
-                (ReviewItemV2.next_review_at.is_(None) | (ReviewItemV2.next_review_at <= today_end_utc())),
+                or_(
+                    and_(
+                        ReviewItemV2.status.in_(("pending", "in_progress")),
+                        ReviewItemV2.next_review_at.is_(None),
+                    ),
+                    ReviewItemV2.next_review_at <= today_end_utc(),
+                ),
             )
             .order_by(ReviewItemV2.updated_at.asc(), ReviewItemV2.created_at.asc(), ReviewItemV2.id.asc())
         )
