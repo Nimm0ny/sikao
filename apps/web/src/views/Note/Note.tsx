@@ -3,7 +3,7 @@
 // Phase 6+. Real strings will land via @/lib/ui-copy when business Phase
 // integrations replace the placeholders.
 import { useState } from 'react';
-import { Badge, Chip } from '../../components/atom';
+import { Badge, Chip, SpriteIcon } from '../../components/atom';
 import { Drawer } from '../../components/overlay';
 import { PageHeader } from '../../components/layout';
 import { Search } from '../../components/form';
@@ -187,19 +187,5 @@ function labelForSource(s: Source): string {
 }
 
 function StarIcon() {
-  return (
-    <svg
-      width="14"
-      height="14"
-      viewBox="0 0 14 14"
-      fill="currentColor"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinejoin="round"
-      focusable="false"
-      aria-label="已收藏"
-    >
-      <path d="M7 1.5l1.7 3.5 3.8.6-2.8 2.7.7 3.8L7 10.4 3.6 12.1l.7-3.8L1.5 5.6l3.8-.6Z" />
-    </svg>
-  );
+  return <SpriteIcon id="bookmark" size={14} aria-label="已收藏" />;
 }

@@ -3,7 +3,7 @@
 // Phase 6+. Real strings will land via @/lib/ui-copy when business Phase
 // integrations replace the placeholders.
 import { useState } from 'react';
-import { Badge, Chip } from '../../components/atom';
+import { Badge, Chip, SpriteIcon } from '../../components/atom';
 import { Pagination } from '../../components/nav';
 import { Panel, PageHeader } from '../../components/layout';
 import styles from './QuestionHub.module.css';
@@ -73,24 +73,14 @@ const PLACEHOLDER_QUESTIONS: ReadonlyArray<QuestionCard> = Array.from({ length: 
 
 function StateGlyph({ state }: { readonly state: QuestionCard['state'] }) {
   if (state === 'mastered') {
-    return (
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" focusable="false" aria-label="已掌握">
-        <path d="M3 7.5l3 3 5-5" />
-      </svg>
-    );
+    return <SpriteIcon id="check" size={14} aria-label="已掌握" />;
   }
   if (state === 'doing') {
-    return (
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" focusable="false" aria-label="进行中">
-        <circle cx="7" cy="7" r="5" />
-      </svg>
-    );
+    // "doing" reuses the timer icon as a "in-progress" semantic. Sprite
+    // doesn't ship a dedicated half-circle / spinner glyph at this size.
+    return <SpriteIcon id="timer" size={14} aria-label="进行中" />;
   }
-  return (
-    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" focusable="false" aria-label="未掌握">
-      <path d="M3 3l8 8M11 3l-8 8" />
-    </svg>
-  );
+  return <SpriteIcon id="close" size={14} aria-label="未掌握" />;
 }
 
 interface FilterChipProps {

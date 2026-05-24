@@ -40,3 +40,6 @@ export type { EmptyStateProps, EmptyStatePrimaryAction } from './EmptyState';
 
 export { Skeleton } from './Skeleton';
 export type { SkeletonProps, SkeletonVariant } from './Skeleton';
+
+export { SpriteIcon } from './SpriteIcon';
+export type { SpriteIconProps } from './SpriteIcon';

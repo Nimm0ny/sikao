@@ -12,7 +12,7 @@ import {
 } from '../../components/layout';
 import type { RailNavItem } from '../../components/layout';
 import type { BottomTabBarItem } from '../../components/layout';
-import { Avatar } from '../../components/atom';
+import { Avatar, SpriteIcon } from '../../components/atom';
 import styles from './RootLayout.module.css';
 
 /*
@@ -36,7 +36,15 @@ import styles from './RootLayout.module.css';
  *      hides it under RailMe.
  *
  *      Active tab is derived from the current URL pathname so deep links
- *      land correctly. No router/state plumbing beyond this.
+ *      land correctly. Plain-click navigation goes through `useNavigate`
+ *      so React state survives nav switches; modifier-clicks fall through
+ *      to the native href so "open in new tab" still works.
+ *
+ *      Nav icons are sprite consumers via <SpriteIcon> — the build script
+ *      `npm run build:icons -w @sikao/design-system` compiles
+ *      `packages/design-system/src/icons/nav-*.svg` into the public sprite
+ *      at `apps/web/public/icons.svg`. Each icon is rendered as
+ *      <svg><use href="/icons.svg#nav-<key>" /></svg>.
  */
 
 const HOME_PATH = '/';
@@ -45,39 +53,6 @@ const REVIEW_PATH = '/review';
 const NOTE_PATH = '/note';
 const QUESTION_HUB_PATH = '/question-hub';
 const ME_PATH = '/me';
-
-interface NavIconProps {
-  readonly d: string;
-}
-function NavIcon({ d }: NavIconProps) {
-  // V5-M4 SIK-76 will swap these inline paths for the icon sprite. For
-  // skeleton purposes a single-path SVG keeps lint-icon-style happy
-  // (currentColor stroke, 18×18 viewBox per design §C.5.3 nav row).
-  return (
-    <svg
-      width="18"
-      height="18"
-      viewBox="0 0 18 18"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      focusable="false"
-      aria-hidden="true"
-    >
-      <path d={d} />
-    </svg>
-  );
-}
-
-const NAV_ICONS = {
-  home: 'M3 7.5 9 3l6 4.5V14.5a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1Z M7 15.5V11h4v4.5',
-  practice: 'M4 4h10v10H4Z M4 7.5h10 M7.5 4v10',
-  review: 'M3 9a6 6 0 0 1 11-3 M15 9a6 6 0 0 1-11 3 M14 3v3h-3 M4 15v-3h3',
-  note: 'M5 3h6l3 3v9a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1Z M11 3v3h3 M6.5 9h5 M6.5 11.5h5',
-  question: 'M9 2a7 7 0 1 1 0 14 7 7 0 0 1 0-14Z M7 7.5a2 2 0 1 1 3 1.5c-1 .5-1 1.2-1 2 M9 12.5h.01',
-} as const;
 
 interface RootLayoutProps {
   readonly user?: {
@@ -91,24 +66,21 @@ export function RootLayout({ user }: RootLayoutProps) {
   const navigate = useNavigate();
   const isActive = (target: string) =>
     target === HOME_PATH ? pathname === HOME_PATH : pathname.startsWith(target);
-  // SPA-route via React Router instead of triggering a full-page reload.
-  // Modifier-clicks (Cmd/Ctrl/Shift) fall through to the native <a href>
-  // so "open in new tab" still works — Rail handles that branch internally.
   const navTo = (path: string) => () => navigate(path);
 
   const navItems: RailNavItem[] = [
-    { id: 'home', icon: <NavIcon d={NAV_ICONS.home} />, label: '首页', href: HOME_PATH, active: isActive(HOME_PATH), onClick: navTo(HOME_PATH) },
-    { id: 'practice', icon: <NavIcon d={NAV_ICONS.practice} />, label: '练习', href: PRACTICE_PATH, active: isActive(PRACTICE_PATH), onClick: navTo(PRACTICE_PATH) },
-    { id: 'review', icon: <NavIcon d={NAV_ICONS.review} />, label: '复盘', href: REVIEW_PATH, active: isActive(REVIEW_PATH), onClick: navTo(REVIEW_PATH) },
-    { id: 'note', icon: <NavIcon d={NAV_ICONS.note} />, label: '笔记', href: NOTE_PATH, active: isActive(NOTE_PATH), onClick: navTo(NOTE_PATH) },
-    { id: 'question', icon: <NavIcon d={NAV_ICONS.question} />, label: '题库', href: QUESTION_HUB_PATH, active: isActive(QUESTION_HUB_PATH), onClick: navTo(QUESTION_HUB_PATH) },
+    { id: 'home', icon: <SpriteIcon id="nav-home" size={18} />, label: '首页', href: HOME_PATH, active: isActive(HOME_PATH), onClick: navTo(HOME_PATH) },
+    { id: 'practice', icon: <SpriteIcon id="nav-practice" size={18} />, label: '练习', href: PRACTICE_PATH, active: isActive(PRACTICE_PATH), onClick: navTo(PRACTICE_PATH) },
+    { id: 'review', icon: <SpriteIcon id="nav-review" size={18} />, label: '复盘', href: REVIEW_PATH, active: isActive(REVIEW_PATH), onClick: navTo(REVIEW_PATH) },
+    { id: 'note', icon: <SpriteIcon id="nav-note" size={18} />, label: '笔记', href: NOTE_PATH, active: isActive(NOTE_PATH), onClick: navTo(NOTE_PATH) },
+    { id: 'question', icon: <SpriteIcon id="nav-question" size={18} />, label: '题库', href: QUESTION_HUB_PATH, active: isActive(QUESTION_HUB_PATH), onClick: navTo(QUESTION_HUB_PATH) },
   ];
 
   const tabBarItems: BottomTabBarItem[] = [
-    { id: 'home', icon: <NavIcon d={NAV_ICONS.home} />, label: '首页', href: HOME_PATH, active: isActive(HOME_PATH) },
-    { id: 'practice', icon: <NavIcon d={NAV_ICONS.practice} />, label: '练习', href: PRACTICE_PATH, active: isActive(PRACTICE_PATH) },
-    { id: 'review', icon: <NavIcon d={NAV_ICONS.review} />, label: '复盘', href: REVIEW_PATH, active: isActive(REVIEW_PATH) },
-    { id: 'note', icon: <NavIcon d={NAV_ICONS.note} />, label: '笔记', href: NOTE_PATH, active: isActive(NOTE_PATH) },
+    { id: 'home', icon: <SpriteIcon id="nav-home" size={18} />, label: '首页', href: HOME_PATH, active: isActive(HOME_PATH) },
+    { id: 'practice', icon: <SpriteIcon id="nav-practice" size={18} />, label: '练习', href: PRACTICE_PATH, active: isActive(PRACTICE_PATH) },
+    { id: 'review', icon: <SpriteIcon id="nav-review" size={18} />, label: '复盘', href: REVIEW_PATH, active: isActive(REVIEW_PATH) },
+    { id: 'note', icon: <SpriteIcon id="nav-note" size={18} />, label: '笔记', href: NOTE_PATH, active: isActive(NOTE_PATH) },
     { id: 'me', icon: <Avatar fallback={getInitials(user)} size="xs" />, label: '我的', href: ME_PATH, active: isActive(ME_PATH) },
   ];
 
