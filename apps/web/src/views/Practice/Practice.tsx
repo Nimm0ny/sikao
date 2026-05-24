@@ -1,7 +1,5 @@
-// lint-allow-ui-copy: SIK-27 PracticeCenter and custom-practice entry land as
-// business skeleton copy before shared ui-copy namespaces are expanded for
-// the full Practice phase. Strings will be moved into @/lib/ui-copy when the
-// runtime pages and final copy pass arrive in later milestones.
+// lint-allow-ui-copy: SIK-27/28 PracticeCenter copy stays inline until the
+// shared Practice ui-copy namespace lands.
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
@@ -11,7 +9,6 @@ import { Skeleton } from '../../components/atom';
 import { PageHeader, Panel } from '../../components/layout';
 import { Banner } from '../../components/overlay';
 import { fetchPracticeHistory, historyKeys } from '@sikao/api-client/apiQueries';
-import { classifyAiQuestionGenerateError, useGenerateAiQuestions } from '@sikao/api-client/queries/aiQuestionsQueries';
 import { useDailyPractice, useDailyPracticeHistory } from '@sikao/api-client/queries/dailyPracticeQueries';
 import { useEssayCategories, useEssayPapers, usePracticeCenter, useXingceCategories, useXingcePapers } from '@sikao/api-client/queries/practiceContentQueries';
 import { usePracticePreferences } from '@sikao/api-client/queries/practicePreferencesQueries';
@@ -21,7 +18,8 @@ import type { CatalogItemV2, PracticePreferencesResponseV2 } from '@sikao/api-cl
 import type { PracticeHistoryResponseV2 } from '@sikao/api-client/types/api';
 import { usePracticeCenterStore, useSessionConfigStore } from '@sikao/domain';
 import { useDevice } from '@sikao/shared-utils';
-import { CatalogSection, CustomPracticeDialog, PapersSection, SectionA } from './PracticeParts';
+import { CustomPracticeDialog } from './CustomPracticeDialog';
+import { CatalogSection, PapersSection, SectionA } from './PracticeSections';
 import { buildCategoryGroups, buildCustomSessionPayload, type CustomPracticeDraft } from './PracticeModel';
 import styles from './Practice.module.css';
 
@@ -33,7 +31,7 @@ function buildDialogKey(
   scope: PracticeScope,
   preset: Pick<CustomPracticeDraft, 'categoryL1' | 'categoryL2'> | null,
   preferences?: PracticePreferencesResponseV2,
-): string {
+) {
   return [
     open ? 'open' : 'closed',
     scope,
@@ -101,7 +99,6 @@ export function Practice() {
   const dialogKey = buildDialogKey(dialogOpen, segment, preset, preferencesQuery.data);
 
   const createSession = useCreatePracticeSession();
-  const generateAiQuestions = useGenerateAiQuestions();
 
   useEffect(() => {
     useSessionConfigStore.getState().hydrateFromLocalFallback();
@@ -125,11 +122,7 @@ export function Practice() {
         practiceMode: 'full_set',
         config: { dailyPracticeId: dailyQuery.data.id },
       });
-      setNotice({
-        variant: 'ok',
-        title: '每日一练已创建',
-        description: `Session #${session.id} 已创建。答题运行时将在下一阶段接入，当前入口链路可用。`,
-      });
+      navigate(`/practice/sessions/${session.id}`);
     } catch (error) {
       setNotice({ variant: 'err', title: '每日一练创建失败', description: String(error) });
     }
@@ -138,11 +131,7 @@ export function Practice() {
   function handleContinueLast() {
     const active = activeSessionsQuery.data?.sessions?.[0];
     if (!active) return;
-    setNotice({
-      variant: 'warn',
-      title: '检测到未完成练习',
-      description: `Session #${active.id} 仍处于 ${active.status}。答题运行时将在下一阶段接入。`,
-    });
+    navigate(`/practice/sessions/${active.id}`);
   }
 
   async function handleStartPaper(item: CatalogItemV2) {
@@ -153,11 +142,7 @@ export function Practice() {
         practiceMode: 'full_set',
         paperCode: item.paperCode ?? undefined,
       });
-      setNotice({
-        variant: 'ok',
-        title: '套卷练习已创建',
-        description: `Session #${session.id} 已创建，入口链路可用。`,
-      });
+      navigate(`/practice/sessions/${session.id}`);
     } catch (error) {
       setNotice({ variant: 'err', title: '套卷创建失败', description: String(error) });
     }
@@ -166,67 +151,35 @@ export function Practice() {
   async function handleSubmitCustom(draft: CustomPracticeDraft) {
     try {
       if (draft.sourceMode === 'ai_generated') {
-        const generated = await generateAiQuestions.mutateAsync({
-          payload: {
-            config: {
-              type: segment,
-              categoryL1: draft.categoryL1 || undefined,
-              categoryL2: draft.categoryL2 || undefined,
-              yearRange: draft.yearRange,
-              difficultyRange: [draft.difficultyMin, draft.difficultyMax],
-              count: draft.count,
-              excludeAlreadyDone: draft.excludeDone,
-              onlyWrong: draft.onlyWrong,
-            },
-          },
-        });
-        const session = await createSession.mutateAsync({
-          track: segment,
-          entryKind: 'ai_questions',
-          mode: 'ai_generated',
+        const params = new URLSearchParams({
+          type: segment,
+          yearRange: draft.yearRange,
+          difficultyMin: String(draft.difficultyMin),
+          difficultyMax: String(draft.difficultyMax),
+          count: String(draft.count),
           practiceMode: draft.practiceMode,
-          config: { aiRequestId: generated.requestId },
+          excludeDone: String(draft.excludeDone),
+          onlyWrong: String(draft.onlyWrong),
         });
-        await useSessionConfigStore.getState().patchDefaults({
-          lastUsedSourceMode: draft.sourceMode,
-          lastUsedYearRange: draft.yearRange,
-          lastUsedDifficultyRange: [draft.difficultyMin, draft.difficultyMax],
-          lastUsedCount: draft.count,
-          lastUsedPracticeMode: draft.practiceMode,
-          lastUsedExcludeDone: draft.excludeDone,
-          lastUsedOnlyWrong: draft.onlyWrong,
-        });
-        setNotice({
-          variant: 'ok',
-          title: 'AI 刷题入口已闭环',
-          description: `AI 请求 #${generated.requestId} 与 Session #${session.id} 已创建。`,
-        });
-      } else {
-        const session = await createSession.mutateAsync(buildCustomSessionPayload(segment, draft));
-        await useSessionConfigStore.getState().patchDefaults({
-          lastUsedSourceMode: draft.sourceMode,
-          lastUsedYearRange: draft.yearRange,
-          lastUsedDifficultyRange: [draft.difficultyMin, draft.difficultyMax],
-          lastUsedCount: draft.count,
-          lastUsedPracticeMode: draft.practiceMode,
-          lastUsedExcludeDone: draft.excludeDone,
-          lastUsedOnlyWrong: draft.onlyWrong,
-        });
-        setNotice({
-          variant: 'ok',
-          title: '自定义刷题已创建',
-          description: `Session #${session.id} 已创建，customPractice 默认值也已同步。`,
-        });
+        if (draft.categoryL1) params.set('categoryL1', draft.categoryL1);
+        if (draft.categoryL2) params.set('categoryL2', draft.categoryL2);
+        navigate(`/practice/ai-questions/generating?${params.toString()}`);
+        return;
       }
-      setDialogOpen(false);
-      setPreset(null);
+
+      const session = await createSession.mutateAsync(buildCustomSessionPayload(segment, draft));
+      await useSessionConfigStore.getState().patchDefaults({
+        lastUsedSourceMode: draft.sourceMode,
+        lastUsedYearRange: draft.yearRange,
+        lastUsedDifficultyRange: [draft.difficultyMin, draft.difficultyMax],
+        lastUsedCount: draft.count,
+        lastUsedPracticeMode: draft.practiceMode,
+        lastUsedExcludeDone: draft.excludeDone,
+        lastUsedOnlyWrong: draft.onlyWrong,
+      });
+      navigate(`/practice/sessions/${session.id}`);
     } catch (error) {
-      const aiError = classifyAiQuestionGenerateError(error);
-      if (aiError === 'rate_limited') {
-        setNotice({ variant: 'warn', title: '今日 AI 出题次数已用完', description: '请切回真题模式，或稍后再试。' });
-      } else {
-        setNotice({ variant: 'err', title: '创建练习失败', description: String(error) });
-      }
+      setNotice({ variant: 'err', title: '创建练习失败', description: String(error) });
     }
   }
 
@@ -252,7 +205,7 @@ export function Practice() {
 
       {notice ? (
         <Banner
-          variant={notice.variant as 'info' | 'ok' | 'warn' | 'err'}
+          variant={notice.variant}
           title={notice.title}
           description={notice.description}
           dismissible
@@ -322,10 +275,7 @@ export function Practice() {
               groups={categoryGroups}
               onRetry={() => void categoriesQuery.refetch()}
               onOpen={(item) => {
-                setPreset({
-                  categoryL1: item.categoryL1 ?? '',
-                  categoryL2: item.categoryL2 ?? '',
-                });
+                setPreset({ categoryL1: item.categoryL1 ?? '', categoryL2: item.categoryL2 ?? '' });
                 setDialogOpen(true);
               }}
             />
@@ -357,7 +307,7 @@ export function Practice() {
         preferencesResponse={preferencesQuery.data}
         preset={preset}
         device={device}
-        busy={createSession.isPending || generateAiQuestions.isPending}
+        busy={createSession.isPending}
         onClose={() => { setDialogOpen(false); setPreset(null); }}
         onSubmit={(draft: CustomPracticeDraft) => void handleSubmitCustom(draft)}
       />

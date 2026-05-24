@@ -1,26 +1,14 @@
 /*
- * Sikao Web Router — V5-M3.5 Phase 4 desktop pages (2026-05-24).
- *
- * V5-M3.5 wave 16 lands the SaaS shell (RootLayout) + 6 page slots:
- *   - / Home (D.4.1)      — landed in this commit
- *   - /practice Practice  — placeholder until 17.2
- *   - /review Review      — placeholder until 17.6
- *   - /note Note          — placeholder until 17.3
- *   - /question-hub       — placeholder until 17.5
- *   - /me Me              — placeholder until 17.4
- *
- * Until each page view is implemented (waves 16-17), unfilled routes render
- * the V5-M0.5 BootCard so the Rail nav links resolve to a usable surface
- * without Page Not Found gaps. BootCard stays in-tree as the catch-all "*"
- * fallback for typo / legacy URLs.
- *
- * dev port: 18080 (AGENT-H10).
+ * Sikao Web Router.
  */
 import { createBrowserRouter } from 'react-router-dom';
 import { RootLayout } from '../layouts/RootLayout';
 import { Home } from '../views/Home';
 import { Practice } from '../views/Practice';
 import { PracticePreferences } from '../views/PracticePreferences';
+import { PracticeSession } from '../views/PracticeSession';
+import { AiQuestionsGenerating } from '../views/AiQuestionsGenerating';
+import { SessionResult } from '../views/SessionResult';
 import { Note } from '../views/Note';
 import { Me } from '../views/Me';
 import { QuestionHub } from '../views/QuestionHub';
@@ -28,10 +16,6 @@ import { Review } from '../views/Review';
 import { AuthGuard } from './AuthGuard';
 import { BootCard } from './BootCard';
 
-// SIK-89 Home M-Auth (2026-05-24): AuthGuard wraps RootLayout. If the user
-// is not logged in or hasn't completed onboarding, AuthGuard renders
-// <BootCard /> in place of the layout subtree. DEV bypass in main.tsx
-// pre-fills useAuthStore so dev sessions render through to RootLayout.
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -49,6 +33,18 @@ export const router = createBrowserRouter([
           { path: 'question-hub', element: <QuestionHub /> },
           { path: 'me', element: <Me /> },
         ],
+      },
+      {
+        path: 'practice/ai-questions/generating',
+        element: <AiQuestionsGenerating />,
+      },
+      {
+        path: 'practice/sessions/:sessionId/result',
+        element: <SessionResult />,
+      },
+      {
+        path: 'practice/sessions/:sessionId',
+        element: <PracticeSession />,
       },
     ],
   },
