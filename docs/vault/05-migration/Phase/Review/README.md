@@ -1,4 +1,4 @@
-# Sikao 复盘 Phase 落地 Plan（索引）
+﻿# Sikao 复盘 Phase 落地 Plan（索引）
 
 > **Status**: ACCEPTED
 > **Scope**: 一级导航 Tab 3 = 复盘（默认今日 + 智能三卡 + 周回顾条）+ `/review/all` 全部错题 + `/review/insights` 数据洞察 + `/q/:id` 题目中枢页（独立路由，跨 tab 共用）
@@ -211,6 +211,52 @@ M14  week 11         WU-FR12：e2e（含 review-confidence + review-debt）+ a11
 
 ---
 
+
+### 7.3 Multica Child Matrix
+
+> This table is the Review Phase execution ledger mirror.
+> The parent Multica issue `SIK-45` and this table must stay semantically aligned.
+> If they drift, update both in the same task before any child issue proceeds.
+
+| Identifier | Milestone | Focus | Depends on | Status | Gate |
+|---|---|---|---|---|---|
+| `SIK-58` | `M0` | Review docs-only intake and SSOT lock | none | `in_progress` | docs-only scoped validation + independent subagent review |
+| `SIK-59` | `M1` | `WU-R1` Schema Migration | `SIK-58`, Phase-Home `WU-B1` | `backlog` | backend schema gate |
+| `SIK-60` | `M2` | `WU-R2 + WU-R3 + WU-R4 + WU-R6` Review CRUD + SRS + cross-phase hook + prompts | `SIK-59`, Phase-Practice `session.commit hook`, Phase-Home `WU-B7` | `backlog` | backend runtime + prompt gate |
+| `SIK-61` | `M3` | `WU-R5 + WU-R13` Cause Analysis + Taxonomy | `SIK-60` | `backlog` | LLM + taxonomy gate |
+| `SIK-62` | `M4` | `WU-R7 + WU-R8 + WU-R9` Weekly + Insights + Audit | `SIK-60`, Phase-Home `WU-B8` | `backlog` | scheduler + observability gate |
+| `SIK-63` | `M5` | `WU-R14` Debt Management | `SIK-60`, Phase-Home `WU-B8` | `backlog` | debt invariant gate |
+| `SIK-64` | `M6` | `WU-R10` RecommendationV2 Integration | `SIK-60`, Phase-Home `RecommendationV2` | `backlog` | recommendation bridge gate |
+| `SIK-65` | `M7` | `WU-R11 + WU-R12` OpenAPI lock + backend e2e | `SIK-59` through `SIK-64` | `backlog` | final backend gate |
+| `SIK-66` | `M8` | `WU-FR1 + WU-FR2` API client + domain stores | `SIK-65`, `FE-SSOT-v2` | `backlog` | frontend gate locked; must not enter `in_progress` |
+| `SIK-67` | `M9` | `WU-FR3 + WU-FR4 + WU-FR5 + WU-FR6` ReviewToday + Smart + All + Insights | `SIK-66` | `backlog` | frontend gate locked; must not enter `in_progress` |
+| `SIK-68` | `M10` | `WU-FR7 + WU-FR8 + WU-FR9 + WU-FR10` QuestionHub + Redo + Cause + Weekly UI | `SIK-67` | `backlog` | frontend gate locked; must not enter `in_progress` |
+| `SIK-69` | `M11` | `WU-FR13 + WU-FR14` Confidence + Debt UI | `SIK-68` | `backlog` | frontend gate locked; must not enter `in_progress` |
+| `SIK-70` | `M12` | `WU-FR11 + WU-FR12` Route migration + e2e + a11y | `SIK-69` | `backlog` | frontend gate locked; must not enter `in_progress` |
+
+### 7.4 Frontend Visual SSOT Gate
+
+- Gate key: `FE-SSOT-v2`
+- Unlock condition:
+  - `docs/vault/04-design/Design-System.md` v2 is complete and ACCEPTED
+  - `packages/design-system/src/tokens.css` is locked as the only token SSOT
+  - Review-specific lint / visual / interaction constraints are written and executable
+- Before unlock:
+  - `SIK-66` through `SIK-70` stay in `backlog`
+  - no Review frontend issue may enter `in_progress`
+  - docs-only discussion, prototype comparison, and requirement clarification are allowed; implementation ledger movement is not
+
+### 7.5 Cross-Phase Blocked Conditions
+
+| Blocked item | Condition | Owner |
+|---|---|---|
+| `SIK-59` | Phase-Home `WU-B1` not complete | Home |
+| `SIK-60` | Phase-Practice `session.commit hook` not ready, or Phase-Home `WU-B7` not complete | Practice / Home |
+| `SIK-62` / `SIK-63` | Phase-Home `WU-B8` scheduler substrate not complete | Home |
+| `SIK-64` | `RecommendationV2` contract not stable | Home |
+| `SIK-66` through `SIK-70` | `FE-SSOT-v2` still locked | Design System / Frontend governance |
+| any implementation Review child issue | `SIK-58` SSOT intake not closed | Review |
+
 ## 8. 完工门槛
 
 详见各 WU 文档与 [11-Testing §6](./11-Testing.md#6-完工-gate)。
@@ -313,3 +359,5 @@ M14  week 11         WU-FR12：e2e（含 review-confidence + review-debt）+ a11
 | 题目中枢页（跨 tab 共用） | `/q/:id` | [`.tmp_review/out/_cross/Question Hub v2.html`](../../../../.tmp_review/out/_cross/Question%20Hub%20v2.html) |
 
 历史 V4 一屏混合视图（`Review.html` / `Review v1.html` / `Review Redo v1.html`）保留作版本对照，新实施以上面 v1 子路由原型为准（D-Review-Default-View）。
+
+
