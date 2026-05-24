@@ -112,42 +112,62 @@ all materialized:
 | **CP.9 Hover-Touch Affordance** | `lint-touch-target` | active, 0 hits |
 | **CP.10 Multi-device Continuity** | `playwright` 6-viewport visual baseline | active, 36/36 PASS |
 
-## Known carry-forward debt (non-blocking)
+## Carry-forward debt — cleared (Phase 8 wave 31-35)
 
-These items are surfaced in the Phase 7 baseline report's Top-5 fix
+The Phase 7 baseline report originally surfaced 5 non-blocking debt
+items as carry-forward. Phase 8 cleared all 5 before closing the V5
+spec; each is recorded below with its closing commit.
+
+| # | Item | Closing commit | Notes |
+|---|---|---|---|
+| 1 | Tabs `aria-controls` axe debt | `80a44c33a` | Added `Tabs.noPanel?: boolean` prop; ScopeToggle passes `noPanel`; views.a11y.test.tsx drops the `aria-valid-attr-value` axe suppression — wcag2aa rule re-enabled. |
+| 2 | Sprite consumer rewiring | `df97ca68b` | New `<SpriteIcon>` atom helper. RootLayout NAV_ICONS / OptionItem Check+Close / Note Star / QuestionHub StateGlyph all switched from inline SVG paths to `<svg><use href="/icons.svg#<id>" />`. Visual regression baseline regenerated 36/36. |
+| 3 | Chip primitive `active?: boolean` | `53985413d` | Chip selectable-mode added (`onSelect` + `active` + `aria-pressed`); Note / QuestionHub / Review FilterBars use the new selectable Chip; ~180 lines of duplicated bespoke `.chip` CSS deleted across 3 view module.css files. |
+| 4 | ui-copy SSOT module + 2 violation cleanup | `ba2dbffb5` | `apps/web/src/lib/ui-copy/index.ts` seeded with PAGINATION + COMMAND_PALETTE namespaces; 2 warn-only inline strings (Pagination L185 + CommandPalette L135) migrated; **`lint-ui-copy-ssot` flipped to `error` mode** (env-var + CLI flag escapes preserved). |
+| 5 | Rail SPA-routing prop | `17a39185b` | `RailNavItem.onClick?: (event) => void` prop added; RootLayout wires `useNavigate` for plain left-clicks; modifier-clicks (Cmd/Ctrl/Shift/Alt) and middle-click fall through to the native `<a href>` so "open in new tab" still works. |
+
+Final verification at HEAD `df97ca68b`:
+
+- typecheck PASS
+- lint PASS — **0 hard violations / 0 warn-only items** (`lint-ui-copy-ssot`
+  in error mode reports 0 violations across 60 files)
+- vitest **62 test files / 271 tests PASS** (+1 file SpriteIcon /
+  +14 cases across the 5 cleanup commits vs. Phase 7 close baseline)
+- `npm run test:a11y` 7/7 PASS with the wcag2aa `aria-valid-attr-value`
+  rule active
+- `npm run test:visual` 36/36 PASS against the post-sprite-rewire
+  baseline
+
+## ~~Known carry-forward debt (non-blocking)~~ — cleared 2026-05-24
+
+> **All 5 items below were cleared in Phase 8 waves 31-35; see the
+> "Carry-forward debt — cleared" table above for the closing commits.
+> Section retained for historical context.**
+
+These items were surfaced in the Phase 7 baseline report's Top-5 fix
 priority list. None of them block the V5 spec close; each has a
 clear owner-Phase for the next iteration:
 
-1. **Tabs `aria-controls` axe debt** — Tabs emits
-   `aria-controls="tabpanel-<key>"` regardless of caller rendering a
-   tabpanel; ScopeToggle does not render one. Add `noPanel?: boolean`
-   prop. Phase 7 axe baseline currently suppresses the rule.
-2. **Sprite consumer rewiring** — RootLayout NAV_ICONS / OptionItem
-   correct/wrong glyphs / Note StarIcon / QuestionHub StateGlyph /
-   Review StateGlyph still emit inline SVG paths; swap to
-   `<svg><use href="/icons.svg#<name>" />` references.
-3. **Chip primitive `active?: boolean`** — Note / QuestionHub / Review
-   each ship a bespoke 60-line `.chip` rule; collapse via Chip prop
-   expansion.
-4. **ui-copy SSOT module + 2 violation cleanup** — author
-   `@/lib/ui-copy` namespace; migrate Pagination + CommandPalette
-   warn-only strings; flip `lint-ui-copy-ssot` mode to error.
-5. **Rail SPA-routing prop** — Rail's `<a href>` triggers full reload;
-   add `as?: ComponentType` or `onClick?` so callers can inject
-   `<Link>` from react-router-dom.
+1. ~~**Tabs `aria-controls` axe debt**~~ — **CLEARED** (`80a44c33a`).
+2. ~~**Sprite consumer rewiring**~~ — **CLEARED** (`df97ca68b`).
+3. ~~**Chip primitive `active?: boolean`**~~ — **CLEARED** (`53985413d`).
+4. ~~**ui-copy SSOT module + 2 violation cleanup**~~ — **CLEARED** (`ba2dbffb5`).
+5. ~~**Rail SPA-routing prop**~~ — **CLEARED** (`17a39185b`).
 
 ## Verdict
 
 V5 spec **closed** at this commit. `requirements.md` 12 REQ blocks
 are all green; `design.md` 35 component contracts are all skeleton-
-landed; `tasks.md` waves 0-29 (Phase 1-8) are done; phases 21-24
+landed; `tasks.md` waves 0-30 (Phase 1-8) are done; waves 21-24
 (V4→V5 surface migration) are ARCHIVED by V5-M0.5 and require no
-follow-up.
+follow-up. **All 5 carry-forward debt items from the Phase 7
+baseline report have been cleared in Phase 8 waves 31-35** — the
+V5 surface ships clean.
 
 Next iteration: business Phases (Home / Practice / Notes / Review /
-Profile families) consume the V5 surface directly. The 5 carry-
-forward debt items above are the recommended starting point for the
-next maintenance cycle.
+Profile families) consume the V5 surface directly. There is **no
+recommended carry-forward starting point** — every item flagged
+during the V5 cycle has been resolved before close.
 
 ## Sign-off
 
