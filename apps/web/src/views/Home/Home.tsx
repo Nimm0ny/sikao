@@ -10,6 +10,7 @@ import { Button } from '../../components/form';
 import { useDashboardPreferenceStore, usePlanStore } from '@sikao/domain';
 import type { PlanCalendarView } from '@sikao/domain/plan/usePlanStore';
 import { PlanSection } from './sections/PlanSection';
+import { TodayCalendarView } from './sections/TodayCalendarView';
 import styles from './Home.module.css';
 
 /*
@@ -72,6 +73,20 @@ function isPlanCalendarView(value: unknown): value is PlanCalendarView {
   return typeof value === 'string' && (VIEW_KEYS as ReadonlyArray<string>).includes(value);
 }
 
+function CalendarBody() {
+  const view = usePlanStore((s) => s.currentView);
+  if (view === 'today') return <TodayCalendarView />;
+  // Week / Month bodies land in SIK-90 wave 2 (per plan §3.2 Wave Plan).
+  return (
+    <div className={styles.calendarPlaceholder} data-testid="home-calendar-placeholder">
+      <p>
+        {view === 'week' ? '周视图' : '月视图'}
+        骨架将在 SIK-90 wave 2 落地，包含 7×3 cell / month grid + 跨日事件分片。
+      </p>
+    </div>
+  );
+}
+
 function MetricCard({ metric }: { readonly metric: HomeMetric }) {
   if (!Number.isFinite(metric.value) || metric.value < 0) {
     throw new Error(`Home metric "${metric.key}" must be a non-negative finite number, got ${metric.value}`);
@@ -116,9 +131,7 @@ export function Home() {
       </section>
 
       <PlanSection>
-        <div className={styles.calendarPlaceholder} data-testid="home-calendar-placeholder">
-          <p>日程视图占位 — 周视图 7×3 cell；today / practice / mock / milestone 事件由 calendar-engine 提供。</p>
-        </div>
+        <CalendarBody />
       </PlanSection>
 
       <section className={styles.bottomRow} aria-label="底部模块">
