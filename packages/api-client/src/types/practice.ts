@@ -74,6 +74,9 @@ export type UiPreferences = components['schemas']['UiPreferences'];
 
 export type ActiveSessionsResponseV2 =
   SuccessResponse<operations['get_active_sessions_api_v2_practice_sessions_active_get']>;
+export type ActiveSessionV2 = components['schemas']['ActiveSessionV2'];
+export type CatalogItemV2 = components['schemas']['CatalogItemV2'];
+export type CatalogListResponseV2 = components['schemas']['CatalogListResponseV2'];
 export type ListDailyPracticeHistoryResponseV2 =
   SuccessResponse<operations['get_daily_practice_history_api_v2_practice_daily_history_get']>;
 export type ListEssayCategoriesResponseV2 =
