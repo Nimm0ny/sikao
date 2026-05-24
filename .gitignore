@@ -42,3 +42,9 @@ database/seeds/mvp-demo/generated/
 tmp/
 .multica/
 .playwright-cli/
+
+# Playwright local artifacts (visual regression baselines + report + traces)
+# Visual baseline PNGs are gitignored per apps/web/e2e/.gitignore — see that
+# file for rationale. These two roots hold the run-time outputs.
+apps/web/playwright-report/
+apps/web/test-results/

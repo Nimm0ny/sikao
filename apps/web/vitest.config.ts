@@ -35,6 +35,11 @@ export default defineConfig({
     testTimeout: 15000,
     setupFiles: ['./src/setupTests.ts'],
     include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    // Playwright lives at apps/web/e2e/ with its own runner + config; vitest
+    // would otherwise try to evaluate the @playwright/test imports there
+    // and fail with matchMedia / window.location errors when 36 specs spool
+    // up under jsdom.
+    exclude: ['e2e/**', 'node_modules/**', 'dist/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],

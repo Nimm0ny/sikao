@@ -1,0 +1,27 @@
+# Playwright artifact gitignore.
+#
+# Visual regression baselines (PNG screenshots) are NOT committed because
+# Windows / Linux CI / macOS pixel rendering drift makes binary baselines
+# fragile across environments. Each developer / CI environment regenerates
+# its own baseline on first run via:
+#
+#     npm run test:visual:update -w @sikao/web
+#
+# The spec files + playwright.config.ts ARE tracked so the test
+# infrastructure reproduces; baseline PNGs are local artifacts.
+#
+# Snapshot directories playwright produces:
+#   <spec-name>.spec.ts-snapshots/   (default naming)
+#   __snapshots__/                    (alternative if snapshotDir is set)
+
+# All snapshot directories
+**/*-snapshots/
+**/__snapshots__/
+
+# Catch-all for stray PNG / WebM trace artifacts in this tree
+*.png
+*.webm
+*.zip
+
+# Playwright run results / HTML report (also rooted at apps/web/)
+# These already live outside e2e/, see apps/web/.gitignore for those.
