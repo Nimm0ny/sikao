@@ -1,0 +1,116 @@
+/*
+ * Pagination — V5 D.3.24 nav primitive (skeleton).
+ * Why: row of page buttons + optional size-changer Select + optional
+ *      jumper input. Compact mode is default; aux controls render right-
+ *      aligned when enabled.
+ */
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.list {
+  list-style: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: 0;
+  margin: 0;
+}
+
+.item {
+  display: inline-flex;
+}
+
+.btn {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 1px solid var(--color-border-subtle);
+  cursor: pointer;
+  font: inherit;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-10);
+  min-width: 32px; /* spacing-allow: pagination cell visual size, not touch target */
+  height: 32px; /* spacing-allow: see above */
+  padding: 0 var(--space-2);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--font-meta);
+  line-height: 1;
+}
+
+.root[data-size='md'] .btn {
+  min-width: 36px; /* spacing-allow: md cell visual size */
+  height: 36px; /* spacing-allow: md cell visual size */
+  font-size: var(--font-body);
+}
+
+.btn[data-active] {
+  background: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+  color: var(--color-text-on-brand);
+  font-weight: var(--font-weight-semibold);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: compound hover-capable query */
+  .btn:not(:disabled):not([data-active]):hover {
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+  }
+}
+
+.ellipsis {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px; /* spacing-allow: visual compact ellipsis cell */
+  color: var(--color-text-meta);
+  font-size: var(--font-meta);
+}
+
+.aux {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.jumperLabel {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+}
+
+.jumperInput {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 64px; /* spacing-allow: numeric input visual width */
+  height: 32px; /* spacing-allow: matches sm pagination cell */
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-sunken);
+  border-radius: var(--radius-10);
+  padding: 0 var(--space-2);
+  font: inherit;
+  font-size: var(--font-meta);
+  color: var(--color-text-primary);
+  text-align: center;
+}
+
+.jumperInput:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 1px; /* spacing-allow: keep ring tight to input box */
+  border-color: var(--color-focus-ring);
+}

@@ -1,0 +1,90 @@
+/*
+ * Toast — V5 D.3.7 overlay (skeleton, single item view).
+ * Why: visual surface for one toast row. Background --color-bg-surface,
+ *      shadow --shadow-l4 (toast-specific layer per spec §D.3.7),
+ *      4px state-color bar via inset box-shadow (mirrors Banner).
+ *      ToastProvider owns layout (stacking + slide-in animation).
+ */
+.root {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  border-radius: var(--radius-12);
+  box-shadow: var(--shadow-l4), inset 4px 0 0 var(--toast-color);
+  min-width: 280px;
+  max-width: 420px;
+  box-sizing: border-box;
+}
+
+.root[data-variant='info'] { --toast-color: var(--color-state-info); }
+.root[data-variant='ok']   { --toast-color: var(--color-state-ok); }
+.root[data-variant='warn'] { --toast-color: var(--color-state-warn); }
+.root[data-variant='err']  { --toast-color: var(--color-state-err); }
+
+.body {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-body);
+  line-height: var(--line-height-body);
+  font-weight: var(--font-weight-semibold);
+}
+
+.description {
+  margin: 0;
+  font-size: var(--font-meta);
+  line-height: var(--line-height-meta);
+  color: var(--color-text-secondary);
+}
+
+.action,
+.dismiss {
+  -webkit-appearance: none;
+  appearance: none;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  flex-shrink: 0;
+  font: inherit;
+  color: inherit;
+  border-radius: var(--radius-10);
+}
+
+.action {
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-1) var(--space-2);
+  text-decoration: underline;
+  color: var(--toast-color);
+}
+
+.dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px; /* spacing-allow: hit-area icon-only chrome — visually 24x24 ghost icon */
+  height: 24px; /* spacing-allow: same as width */
+  color: var(--color-text-meta);
+}
+
+.action:focus-visible,
+.dismiss:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: compound hover-capable query is canonical */
+  .action:hover,
+  .dismiss:hover {
+    background: color-mix(in oklch, currentColor 8%, transparent);
+  }
+}

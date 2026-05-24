@@ -1,0 +1,83 @@
+/*
+ * Breadcrumb — V5 D.3.25 nav primitive (skeleton).
+ * Why: inline trail of links + separators. Last item bold + primary text;
+ *      earlier items use meta color and hover underline. Hidden under
+ *      768px (mobile uses TopBar back button per D.3.25).
+ */
+.root {
+  font-size: var(--font-meta);
+  line-height: var(--line-height-meta);
+  color: var(--color-text-meta);
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+.li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.link {
+  color: var(--color-text-meta);
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  border-radius: var(--radius-10);
+}
+
+.link:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: compound hover-capable query */
+  .link:hover {
+    color: var(--color-text-primary);
+    text-decoration: underline;
+  }
+}
+
+.current {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-meta);
+}
+
+.current[data-current] {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.icon {
+  display: inline-flex;
+  align-items: center;
+}
+
+.separator {
+  display: inline-flex;
+  align-items: center;
+  color: var(--color-text-meta-soft);
+  margin: 0 var(--space-1);
+}
+
+.ellipsis {
+  color: var(--color-text-meta-soft);
+}
+
+@media (max-width: 768px) {
+  .root {
+    display: none;
+  }
+}
