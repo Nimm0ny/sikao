@@ -183,6 +183,10 @@ class Settings(BaseSettings):
 
     redis_url: str | None = None
     storage_healthcheck_url: str | None = None
+    meili_url: str | None = None
+    meili_master_key: str | None = None
+    meili_index_name: str = "notes"
+    meili_timeout_seconds: int = 3
 
     # Phase B (auth recovery) settings ——
     # email_provider: stub (dev logger) / noop (silent drop) / resend (真 SaaS).
@@ -512,6 +516,24 @@ class Settings(BaseSettings):
                 "APP_ENV=prod requires REDIS_URL for rate limiting "
                 "(fastapi-limiter; 阻爆破 + SMS 烧钱)."
             )
+
+
+        meili_url_present = bool(self.meili_url)
+        meili_key_present = bool(self.meili_master_key)
+        if meili_url_present != meili_key_present:
+            raise RuntimeError(
+                "MEILI_URL and MEILI_MASTER_KEY must be configured together, or both left unset."
+            )
+        if self.meili_timeout_seconds < 1:
+            raise RuntimeError("MEILI_TIMEOUT_SECONDS must be >= 1.")
+
+    @field_validator("meili_url", "meili_master_key", mode="before")
+    @classmethod
+    def _normalize_blank_meili_values(cls, value: object) -> object:
+        if isinstance(value, str):
+            stripped = value.strip()
+            return stripped or None
+        return value
 
 
 @lru_cache(maxsize=1)

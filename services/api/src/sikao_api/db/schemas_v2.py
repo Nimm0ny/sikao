@@ -776,6 +776,26 @@ class NoteImageUploadResponseV2(CamelModel):
     height: int | None = None
 
 
+class NoteSearchItemV2(CamelModel):
+    id: int
+    title: str
+    type: str
+    visibility: str
+    body_preview: str
+    linked_question_id: int | None = None
+    tags: list[str] = Field(default_factory=list)
+    highlights: list[str] = Field(default_factory=list)
+    updated_at: UtcDatetime
+
+
+class NoteSearchResponseV2(CamelModel):
+    items: list[NoteSearchItemV2] = Field(default_factory=list)
+    total: int
+    page: int
+    page_size: int
+    facet_distribution: dict[str, dict[str, int]] = Field(default_factory=dict)
+
+
 class TrendPointV2(CamelModel):
     date: date
     session_id: int
