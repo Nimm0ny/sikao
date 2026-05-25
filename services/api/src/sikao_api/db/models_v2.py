@@ -1572,14 +1572,39 @@ class RecommendationV2(Base):
 
 class RecommendationFeedbackV2(Base):
     __tablename__ = "recommendation_feedback_v2"
+    __table_args__ = (
+        Index("ix_recommendation_feedback_v2_recommendation", "recommendation_id"),
+        Index("ix_recommendation_feedback_v2_analysis", "analysis_id"),
+        Index(
+            "ix_recommendation_feedback_v2_type_rating_created",
+            "feedback_type",
+            "rating",
+            "created_at",
+        ),
+        CheckConstraint(
+            "("
+            "(feedback_type = 'recommendation_reject' AND recommendation_id IS NOT NULL AND analysis_id IS NULL AND rating IS NULL)"
+            " OR "
+            "(feedback_type IN ('cause_analysis_single', 'cause_analysis_group') AND recommendation_id IS NULL AND analysis_id IS NOT NULL AND rating IN ('up', 'down'))"
+            ")",
+            name="ck_recommendation_feedback_v2_target_type",
+        ),
+    )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    recommendation_id: Mapped[int] = mapped_column(
+    recommendation_id: Mapped[int | None] = mapped_column(
         ForeignKey("recommendation_v2.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
     )
+    analysis_id: Mapped[int | None] = mapped_column(
+        ForeignKey("ai_cause_analysis_v2.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    feedback_type: Mapped[str] = mapped_column(String(32), nullable=False, default="recommendation_reject")
     reason: Mapped[str] = mapped_column(String(40), nullable=False)
+    rating: Mapped[str | None] = mapped_column(String(16), nullable=True)
     note: Mapped[str | None] = mapped_column(Text, nullable=True)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 

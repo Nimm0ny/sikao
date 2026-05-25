@@ -99,7 +99,8 @@ def prepare_nested_paper(root_dir: Path, relative_dir: str, *, paper_code: str, 
     target_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(SAMPLE_ASSET_PATH, target_dir / SAMPLE_ASSET_PATH.name)
 
-    filename = f"{relative_dir.replace('\\', '/')}/{paper_code.lower()}.standard.json"
+    normalized_relative_dir = relative_dir.replace("\\", "/")
+    filename = f"{normalized_relative_dir}/{paper_code.lower()}.standard.json"
     return filename, encode_payload(payload)
 
 

@@ -32,6 +32,10 @@ _cause_failures_counter = _meter.create_counter(
     "review_cause_analysis_failures_total",
     description="Review cause-analysis failures.",
 )
+_cause_taxonomy_fallback_counter = _meter.create_counter(
+    "cause_taxonomy_other_fallback_total",
+    description="Cause taxonomy fallback-to-other events.",
+)
 _weekly_snapshot_counter = _meter.create_counter(
     "review_weekly_snapshots_generated_total",
     description="Generated review weekly snapshots.",
@@ -86,6 +90,11 @@ def increment_cause_failure(*, scope: str, mode: str, error_type: str) -> None:
     _record("review_cause_analysis_failures_total")
 
 
+def increment_cause_taxonomy_other_fallback() -> None:
+    _cause_taxonomy_fallback_counter.add(1)
+    _record("cause_taxonomy_other_fallback_total")
+
+
 def increment_weekly_snapshot_generated() -> None:
     _weekly_snapshot_counter.add(1)
     _record("review_weekly_snapshots_generated_total")
@@ -100,4 +109,3 @@ def observe_cause_duration_ms(*, scope: str, mode: str, started_at: float) -> in
 def _record(name: str) -> None:
     with _snapshot_lock:
         _snapshot[name] = _snapshot.get(name, 0) + 1
-

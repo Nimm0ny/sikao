@@ -20,6 +20,21 @@ def provider_name(service: HomeLlmService, *, provider_label: str) -> str:
     return service.settings.llm_provider
 
 
+def _default_timeout_seconds(service: HomeLlmService) -> float:
+    return float(service.settings.llm_timeout_seconds)
+
+
+def _timeout_seconds_for_purpose(service: HomeLlmService, *, purpose: str) -> float:
+    if purpose in {
+        "plan_generate",
+        "plan_regenerate_range",
+        "recommend_today",
+        "plan_adjust",
+    }:
+        return float(service.settings.llm_timeout_study_plan_seconds)
+    return _default_timeout_seconds(service)
+
+
 async def collect_stream_text(
     service: HomeLlmService,
     *,
@@ -33,7 +48,7 @@ async def collect_stream_text(
         service.settings,
         db=service.session,
         user_id=user_id,
-        timeout_seconds_override=float(service.settings.llm_timeout_study_plan_seconds),
+        timeout_seconds_override=_timeout_seconds_for_purpose(service, purpose=purpose),
     )
     full_text = ""
     final_usage: dict[str, int | None] = {
@@ -69,7 +84,7 @@ async def call_json_completion(
         service.settings,
         db=service.session,
         user_id=user_id,
-        timeout_seconds_override=float(service.settings.llm_timeout_study_plan_seconds),
+        timeout_seconds_override=_timeout_seconds_for_purpose(service, purpose=purpose),
     )
     result = await provider.chat_completion(
         messages=messages,

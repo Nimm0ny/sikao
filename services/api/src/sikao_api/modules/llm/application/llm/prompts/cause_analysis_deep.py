@@ -11,10 +11,10 @@ from sikao_api.modules.llm.application.llm.provider import LLMMessage
 from sikao_api.modules.review.application.cause_analysis_cache import render_taxonomy_block
 
 
-PROMPT_VERSION = "cause_analysis_forced@v1"
+PROMPT_VERSION = "cause_analysis_deep@v1"
 
 
-def build_cause_analysis_forced_messages(
+def build_cause_analysis_deep_messages(
     *,
     question_type: str,
     category_l1: str,
@@ -28,7 +28,9 @@ def build_cause_analysis_forced_messages(
     confidence_history: str,
     avg_duration_s: float,
     duration_ratio: float,
-    mismatch_count: int,
+    re_fail_count: int,
+    total_wrong_count: int,
+    historical_dimensions_freq: dict[str, int],
     taxonomy_block: str | None = None,
 ) -> list[LLMMessage]:
     resolved_taxonomy_block = taxonomy_block or render_taxonomy_block(DEFAULT_TAG_DEFINITIONS)
@@ -51,10 +53,12 @@ def build_cause_analysis_forced_messages(
         f"AvgDurationSeconds: {avg_duration_s:.2f}\n"
         f"DurationRatio: {duration_ratio:.2f}\n\n"
         f"AnswerHistory:\n{answer_history_block}\n\n"
-        "ForcedMismatchContext:\n"
-        f"- mismatchCount: {mismatch_count}\n"
-        "- this analysis was triggered because the user answered incorrectly with high confidence\n"
-        "- emphasize why the user thought they understood the concept but still failed"
+        "DeepHardQuestionContext:\n"
+        f"- reFailCount: {re_fail_count}\n"
+        f"- totalWrongCount: {total_wrong_count}\n"
+        f"- historicalDimensionsFreq: {historical_dimensions_freq}\n"
+        "- this item is already marked as a hard question and needs a deeper diagnosis than the normal single analysis\n"
+        "- focus on repeated failure pattern, misconception persistence, and a tighter corrective action plan"
     )
     return [
         LLMMessage(role="system", content=system_content),
@@ -64,5 +68,5 @@ def build_cause_analysis_forced_messages(
 
 __all__ = [
     "PROMPT_VERSION",
-    "build_cause_analysis_forced_messages",
+    "build_cause_analysis_deep_messages",
 ]

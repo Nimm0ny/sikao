@@ -21,6 +21,10 @@ from sikao_api.modules.llm.application.idempotency import (
     store_replay,
     validate_idempotency_key,
 )
+from sikao_api.modules.llm.application.llm.prompts.cause_analysis_deep import (
+    PROMPT_VERSION as DEEP_PROMPT_VERSION,
+    build_cause_analysis_deep_messages,
+)
 from sikao_api.modules.llm.application.llm.prompts.cause_analysis_forced import (
     PROMPT_VERSION as FORCED_PROMPT_VERSION,
     build_cause_analysis_forced_messages,
@@ -75,6 +79,7 @@ from sikao_api.modules.review.application.metrics import (
     increment_cause_request,
     observe_cause_duration_ms,
 )
+from sikao_api.modules.review.application.queue_items import utc_now
 from sikao_api.modules.system.application.errors import ConflictError
 
 _ACTIVE_REVIEW_STATUSES = {
@@ -83,6 +88,7 @@ _ACTIVE_REVIEW_STATUSES = {
     ReviewItemStatus.PROBATIONARY.value,
 }
 _CAUSE_ANALYSIS_PURPOSE = "review_cause_analysis"
+_CAUSE_ANALYSIS_DEEP_PURPOSE = "review_cause_analysis_deep"
 _CAUSE_ANALYSIS_TTL_DAYS = 30
 
 
@@ -141,6 +147,11 @@ class ReviewCauseAnalysisService:
                     "forced cause analysis is not pending for this item",
                     code="review_cause_analysis_mode_invalid",
                 )
+            if payload.mode == "deep" and item.metadata_json.get("is_hard") is not True:
+                raise ConflictError(
+                    "deep cause analysis requires hard review item",
+                    code="review_cause_analysis_mode_invalid",
+                )
             tags = load_active_cause_tags(self.session)
             tag_map = {tag.slug: tag for tag in tags}
             single_context = build_single_analysis_context(
@@ -149,18 +160,32 @@ class ReviewCauseAnalysisService:
                 item=item,
                 question=question,
             )
+            input_hash = compute_single_input_hash(
+                user_id=user.id,
+                question_id=question.id,
+                last_answer_hash=single_context["last_answer_hash"],
+                mode=payload.mode,
+                current_confidence=single_context["current_confidence"],
+                error_count=single_context["error_count"],
+                mismatch_count=single_context["mismatch_count"],
+                re_fail_count=single_context["re_fail_count"],
+                total_wrong_count=single_context["total_wrong_count"],
+                historical_dimensions_freq=single_context["historical_dimensions_freq"],
+            )
             cached_row = load_cached_single_row(
                 self.session,
                 user_id=user.id,
                 question_id=question.id,
-                last_answer_hash=single_context["last_answer_hash"],
-                current_confidence=single_context["current_confidence"],
-                error_count=single_context["error_count"],
-                mode=payload.mode,
+                input_hash=input_hash,
             )
             if cached_row is not None:
                 if payload.mode == "forced":
                     clear_forced_pending(item)
+                    self.session.add(item)
+                elif payload.mode == "deep":
+                    metadata = dict(item.metadata_json)
+                    metadata["last_deep_analysis_at"] = utc_now().isoformat()
+                    item.metadata_json = metadata
                     self.session.add(item)
                 log_review_cause_analysis_cache_hit(
                     self.session,
@@ -186,15 +211,10 @@ class ReviewCauseAnalysisService:
                 user_id=user.id,
                 question_id=question.id,
             ) if payload.mode == "single" else None
-            input_hash = compute_single_input_hash(
-                user_id=user.id,
-                question_id=question.id,
-                last_answer_hash=single_context["last_answer_hash"],
-                mode=payload.mode,
-            )
 
+            purpose = _CAUSE_ANALYSIS_DEEP_PURPOSE if payload.mode == "deep" else _CAUSE_ANALYSIS_PURPOSE
             if payload.mode != "forced":
-                self.quotas.check_quota(user_id=user.id, purpose=_CAUSE_ANALYSIS_PURPOSE)
+                self.quotas.check_quota(user_id=user.id, purpose=purpose)
             messages, prompt_version = self._build_single_messages(
                 payload_mode=payload.mode,
                 context=single_context,
@@ -212,6 +232,7 @@ class ReviewCauseAnalysisService:
                 input_hash=input_hash,
                 previous_analysis=previous_analysis,
                 mode=payload.mode,
+                purpose=purpose,
                 prompt_version=prompt_version,
                 messages=messages,
                 tag_map=tag_map,
@@ -446,6 +467,28 @@ class ReviewCauseAnalysisService:
                     taxonomy_block=taxonomy_block,
                 ),
                 FORCED_PROMPT_VERSION,
+            )
+        if payload_mode == "deep":
+            return (
+                build_cause_analysis_deep_messages(
+                    question_type=context["question_type"],
+                    category_l1=context["category_l1"],
+                    category_l2=context["category_l2"],
+                    question_body=context["question_body"],
+                    options_text=context["options_text"],
+                    correct_answer=context["correct_answer"],
+                    explanation=context["explanation"],
+                    error_count=context["error_count"],
+                    answer_history_block=context["answer_history_block"],
+                    confidence_history=context["confidence_history"],
+                    avg_duration_s=context["avg_duration_s"],
+                    duration_ratio=context["duration_ratio"],
+                    re_fail_count=context["re_fail_count"],
+                    total_wrong_count=context["total_wrong_count"],
+                    historical_dimensions_freq=context["historical_dimensions_freq"],
+                    taxonomy_block=taxonomy_block,
+                ),
+                DEEP_PROMPT_VERSION,
             )
         evolution_block = (
             None

@@ -1,0 +1,32 @@
+from __future__ import annotations
+
+# ruff: noqa: F401
+
+from test_postgres_review_attempt_v2 import (
+    test_postgres_probationary_attempt_requires_due_and_failed_creates_re_failed as test_confidence_probationary_gate,
+    test_postgres_review_attempt_certain_incorrect_marks_mismatch as test_confidence_mismatch_gate,
+    test_postgres_review_attempt_correct_records_context_and_hash as test_confidence_correct_context_gate,
+    test_postgres_review_attempt_detects_version_conflict as test_confidence_optimistic_lock_gate,
+    test_postgres_review_attempt_rejects_skip_after_repeated_confidence_skips as test_confidence_skip_threshold_gate,
+    test_postgres_review_attempt_null_confidence_defaults_likely_and_counts_skip as test_confidence_skip_defaults_gate,
+    test_postgres_review_attempt_rejects_skip_when_confidence_is_forced as test_confidence_forced_prompt_gate,
+)
+from test_postgres_review_debt_rampup_hard_v2 import (
+    test_review_debt_hard_item_caps_positive_multiplier as test_confidence_hard_multiplier_gate,
+    test_review_debt_second_mismatch_marks_hard as test_confidence_second_mismatch_hard_gate,
+)
+from test_postgres_review_cause_analysis_v2 import (
+    test_postgres_forced_cache_miss_when_mismatch_count_changes as test_confidence_forced_cache_miss_gate,
+)
+from test_srs_state_machine import (
+    test_srs_certain_with_recall_enters_early_probationary as test_confidence_certain_recall_gate,
+    test_srs_guess_correct_does_not_increment_or_reward_recall as test_confidence_guess_correct_gate,
+    test_srs_guess_incorrect_regresses_normally as test_confidence_guess_incorrect_gate,
+    test_srs_hard_item_caps_positive_multiplier as test_confidence_hard_interval_cap_gate,
+    test_srs_likely_correct_advances_pending_to_in_progress_with_standard_interval as test_confidence_likely_standard_gate,
+    test_srs_likely_recall_applies_one_point_five_multiplier as test_confidence_likely_recall_gate,
+    test_srs_null_confidence_defaults_likely_and_tracks_skip_count as test_confidence_skip_unit_gate,
+    test_srs_unsure_blocks_graduation_at_threshold as test_confidence_unsure_block_graduation_gate,
+    test_srs_unsure_correct_halves_interval as test_confidence_unsure_halved_interval_gate,
+    test_srs_unsure_with_recall_cancels_penalty as test_confidence_unsure_recall_gate,
+)

@@ -16,7 +16,12 @@ from sikao_api.modules.review.application.queue_items import (
     today_end_utc,
     utc_now,
 )
-from sikao_api.modules.review.application.validators import ReviewListFilters, review_source_clause, review_status_clause
+from sikao_api.modules.review.application.validators import (
+    ReviewListFilters,
+    review_source_clause,
+    review_status_clause,
+    validate_review_item_source_contract,
+)
 
 
 _DEFAULT_TZ = ZoneInfo("Asia/Shanghai")
@@ -28,6 +33,11 @@ def serialize_review_item(
     note_question_ids: set[int],
     cause_question_ids: set[int],
 ) -> ReviewItemSchemaV2:
+    validate_review_item_source_contract(
+        source_kind=item.source_kind,
+        question_id=item.question_id,
+        metadata_json=item.metadata_json,
+    )
     question_id = int(item.question_id) if item.question_id is not None else None
     return ReviewItemSchemaV2(
         id=item.id,

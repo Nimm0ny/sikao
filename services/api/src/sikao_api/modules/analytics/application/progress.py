@@ -15,14 +15,13 @@ from __future__ import annotations
 
 from datetime import date, datetime, timedelta, timezone
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from sikao_api.db import schemas
 from sikao_api.db.models import (
     EssayGradingRecord,
     PracticeSessionAnswer,
-    StudyPlan,
     StudyPlanTask,
 )
 
@@ -63,21 +62,20 @@ def get_weekly_progress(db: Session, *, user_id: int) -> schemas.WeeklyProgressS
         )
     ) or 0
 
-    task_rows = db.execute(
-        select(
-            func.count(StudyPlanTask.id).label("total"),
-            func.sum(
-                (StudyPlanTask.status == "completed").cast(int)
-            ).label("completed"),
-        ).where(
-            StudyPlanTask.plan.has(user_id=user_id),
-            StudyPlanTask.created_at >= week_start_dt,
-            StudyPlanTask.created_at <= week_end_dt,
-        )
-    ).one()
+    task_totals_stmt = select(
+        func.count(StudyPlanTask.id).label("total"),
+        func.sum(
+            case((StudyPlanTask.status == "completed", 1), else_=0)
+        ).label("completed"),
+    ).where(
+        StudyPlanTask.plan.has(user_id=user_id),
+        StudyPlanTask.created_at >= week_start_dt,
+        StudyPlanTask.created_at <= week_end_dt,
+    )
+    task_total_row = db.execute(task_totals_stmt).one()
 
-    tasks_total = task_rows.total or 0
-    tasks_completed = task_rows.completed or 0
+    tasks_total = task_total_row.total or 0
+    tasks_completed = task_total_row.completed or 0
 
     streak_days = _compute_streak(db, user_id=user_id, today=today)
 

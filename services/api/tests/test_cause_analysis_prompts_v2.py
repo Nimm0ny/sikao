@@ -8,12 +8,19 @@ from sikao_api.modules.llm.application.llm.prompts.cause_analysis_group import (
 from sikao_api.modules.llm.application.llm.prompts.cause_analysis_forced import (
     build_cause_analysis_forced_messages,
 )
+from sikao_api.modules.llm.application.llm.prompts.cause_analysis_deep import (
+    build_cause_analysis_deep_messages,
+)
 from sikao_api.modules.llm.application.llm.prompts.cause_analysis_single import (
     build_cause_analysis_single_messages,
 )
 from sikao_api.modules.llm.application.parsers.cause_analysis_parser import (
     parse_cause_analysis,
     parse_cause_analysis_with_meta,
+)
+from sikao_api.modules.review.application.metrics import (
+    get_review_metric_snapshot,
+    reset_review_metric_snapshot,
 )
 
 
@@ -69,6 +76,30 @@ def test_build_cause_analysis_forced_messages_embed_mismatch_context() -> None:
     assert "mismatchCount: 2" in messages[1].content
 
 
+def test_build_cause_analysis_deep_messages_embed_hard_question_context() -> None:
+    messages = build_cause_analysis_deep_messages(
+        question_type="single_choice",
+        category_l1="verbal",
+        category_l2="logic_fill",
+        question_body="Question body here",
+        options_text="A. one\nB. two\nC. three\nD. four",
+        correct_answer="B",
+        explanation="Detailed explanation for the source question.",
+        error_count=7,
+        answer_history_block="2026-05-24 wrong -> A",
+        confidence_history="likely,certain",
+        avg_duration_s=40.0,
+        duration_ratio=2.4,
+        re_fail_count=3,
+        total_wrong_count=7,
+        historical_dimensions_freq={"concept_confusion": 2, "trap_option": 1},
+    )
+    assert "DeepHardQuestionContext:" in messages[1].content
+    assert "reFailCount: 3" in messages[1].content
+    assert "totalWrongCount: 7" in messages[1].content
+    assert "historicalDimensionsFreq: {'concept_confusion': 2, 'trap_option': 1}" in messages[1].content
+
+
 def test_parse_cause_analysis_accepts_valid_single_payload() -> None:
     raw = """
     {
@@ -122,7 +153,32 @@ def test_parse_cause_analysis_accepts_group_payload_with_null_evolution() -> Non
     assert payload.dimensions[0].slug == "comprehension_unclear"
 
 
+def test_parse_cause_analysis_drops_malformed_evolution_context_without_comparison() -> None:
+    raw = """
+    {
+      "summary": "deep payload with malformed evolution context",
+      "dimensions": [
+        {
+          "slug": "concept_confusion",
+          "name_display": "概念混淆",
+          "severity": "high",
+          "suggestion": "先拆定义，再对照题干限定语。"
+        }
+      ],
+      "suggested_actions": ["整理概念对照表"],
+      "related_questions": [],
+      "evolution_context": {
+        "reFailCount": 3,
+        "pattern": "repeated_error_no_progress"
+      }
+    }
+    """
+    payload = parse_cause_analysis(raw)
+    assert payload.evolution_context is None
+
+
 def test_parse_cause_analysis_falls_back_unknown_slug_to_other() -> None:
+    reset_review_metric_snapshot()
     raw = """
     {
       "summary": "This payload uses an unknown slug but should still parse via fallback.",
@@ -143,6 +199,8 @@ def test_parse_cause_analysis_falls_back_unknown_slug_to_other() -> None:
     assert payload.dimensions[0].slug == "other"
     assert payload.dimensions[0].llm_original is not None
     assert parsed.fallback_count == 1
+    metrics_snapshot = get_review_metric_snapshot()
+    assert metrics_snapshot["cause_taxonomy_other_fallback_total"] >= 1
 
 
 def test_parse_cause_analysis_rejects_invalid_json() -> None:

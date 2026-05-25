@@ -3,7 +3,7 @@
 > **Status**: ACCEPTED · 详细规格完成
 > **IA 位置**：Main App Layer · Tab 4
 > **Phase 父目录**：[../README.md](../README.md)
-> **Last Updated**: 2026-05-21
+> **Last Updated**: 2026-05-25
 
 ---
 
@@ -169,8 +169,116 @@ Community P1:   PATCH /notes/{id}/visibility, GET /notes/community
 
 | view | 路由 | 原型文件 |
 |---|---|---|
-| Notes 主视图（v2 / v2.1） | `/notes` | [`.tmp_review/out/Tab4-Notes/Note v2.1.html`](../../../../.tmp_review/out/Tab4-Notes/Note%20v2.1.html) |
-| NoteEditor（全屏脱壳，3 列：大纲 / 编辑器 / 元数据） | `/notes/:id` | [`.tmp_review/out/Tab4-Notes/NoteEditor v1.html`](../../../../.tmp_review/out/Tab4-Notes/NoteEditor%20v1.html) |
-| NoteTagsManagement | `/notes/tags` | [`.tmp_review/out/Tab4-Notes/NoteTagsManagement v1.html`](../../../../.tmp_review/out/Tab4-Notes/NoteTagsManagement%20v1.html) |
+| Notes 主视图（v2 / v2.1） | `/notes` | [`.tmp_review/out/Tab4-Notes/Note v2.1.html`](../../../../../.tmp_review/out/Tab4-Notes/Note%20v2.1.html) |
+| NoteEditor（全屏脱壳，3 列：大纲 / 编辑器 / 元数据） | `/notes/:id` | [`.tmp_review/out/Tab4-Notes/NoteEditor v1.html`](../../../../../.tmp_review/out/Tab4-Notes/NoteEditor%20v1.html) |
+| NoteTagsManagement | `/notes/tags` | [`.tmp_review/out/Tab4-Notes/NoteTagsManagement v1.html`](../../../../../.tmp_review/out/Tab4-Notes/NoteTagsManagement%20v1.html) |
 
 原型对齐 N-D1（3 segment 结构）、N-D5（编辑器 toolbar），与本 Phase 03-Frontend-WU 落地 React 时直接消费。记账见 SIK-85。
+
+---
+
+## 11. Notes Phase 里程碑图
+
+| Milestone | Focus |
+|---|---|
+| `M0` | Notes docs-only intake，SSOT 对齐与依赖闸门锁定 |
+| `M1` | `WU-N1` Notes CRUD（含 NoteV2 schema 扩展 + body_extractor + content_hash） |
+| `M2` | `WU-N2 + WU-N4 + WU-N7` Tags / Image Upload / Export 三个轻量模块打捆 |
+| `M3` | `WU-N3` Meilisearch 集成（索引同步 + 搜索端点 + 启动初始化） |
+| `M4` | `WU-N5 + WU-N6` LLM 驱动：周回顾生成 + AI 摘要拆复盘卡 |
+| `M5` | `WU-N8` Community Notes P1（可见性切换 + 公开列表，只读） |
+| `M6` | Backend e2e + OpenAPI 锁定 + audit / 孤儿图片 cron |
+| `M7` | `WU-FN1 + WU-FN4` 路由 + Tab + TipTap 全屏脱壳编辑器 |
+| `M8` | `WU-FN2 + WU-FN3` 笔记主视图 + 筛选系统 |
+| `M9` | `WU-FN5 + WU-FN6` 标签 UI + Meilisearch 搜索 UI |
+| `M10` | `WU-FN7 + WU-FN8 + WU-FN9 + WU-FN10` AI 摘要 / 周回顾 / 社区 / 跨 Tab wiring |
+| `M11` | 前端 e2e + a11y + Chrome MCP 验收 |
+
+后续任何 Notes issue 开工都必须引用这个 milestone map，而不是退回旧的 WU-only 拆法。
+
+---
+
+## 12. Define-First 清单
+
+以下边界在进入实现前必须先有定义性文档 / schema / contract，不能边写边猜：
+
+| Surface | Define-First artifact |
+|---|---|
+| `NoteV2` 字段扩展 | [01-Data-Model.md](./01-Data-Model.md) 的 `body_json / body_text / word_count / content_hash / type / visibility / linked_question_id / deleted_at / counters` |
+| 5 张新表 | [01-Data-Model.md](./01-Data-Model.md) 的 `NoteTagV2 / NoteImageV2 / NoteReactionV2 / NoteCommentV2 / NoteBookmarkV2` |
+| Pydantic schema | [01-Data-Model.md](./01-Data-Model.md) §7 请求 / 响应 shape |
+| TipTap `body_json` 形态 | [04-Editor-Integration.md](./04-Editor-Integration.md) |
+| Meilisearch index shape | [01-Data-Model.md](./01-Data-Model.md) §6 + [00-Decisions.md](./00-Decisions.md) §5 |
+| AI 摘要 / 周回顾 prompt + parser | [05-AI-Summary.md](./05-AI-Summary.md) |
+| WU 拆分与依赖 | [02-Backend-WU.md](./02-Backend-WU.md) + [03-Frontend-WU.md](./03-Frontend-WU.md) |
+
+---
+
+## 13. Multica Child Matrix
+
+> This table mirrors the Notes Phase execution ledger shape.
+> `SIK-44` 是父账本，`SIK-46` 起的子 issue 必须按本表推进；如果里程碑拆分、依赖或 gate 语义漂移，必须在同一任务里一起修正本地 SSOT 与 Multica 账本。
+
+| Identifier | Milestone | Focus | Depends on | Status | Gate |
+|---|---|---|---|---|---|
+| `SIK-46` | `M0` | Notes docs-only intake 与 SSOT 锁定 | none | `in_progress` | docs-only scoped validation + independent subagent review |
+| `SIK-47` | `M1` | `WU-N1` Notes CRUD + NoteV2 schema 扩展 | `SIK-46`, Phase-Home `WU-B1` | `backlog` | backend schema + CRUD gate |
+| `SIK-48` | `M2` | `WU-N2 + WU-N4 + WU-N7` Tags / Image Upload / Export | `SIK-47` | `backlog` | tags / upload / export gate |
+| `SIK-49` | `M3` | `WU-N3` Meilisearch 集成 | `SIK-47` | `backlog` | search index + user isolation gate |
+| `SIK-50` | `M4` | `WU-N5 + WU-N6` Weekly Review + AI Summary | `SIK-47`, Phase-Home `WU-B7 / WU-B8`, Phase-Review `WU-R2 / WU-R7` | `backlog` | LLM + quota + parser gate |
+| `SIK-51` | `M5` | `WU-N8` Community Notes P1 | `SIK-47`, `SIK-49` | `backlog` | visibility + community feed gate |
+| `SIK-52` | `M6` | Backend e2e + OpenAPI 锁定 + audit + cron 注册 | `SIK-48`, `SIK-49`, `SIK-50`, `SIK-51` | `backlog` | final backend gate |
+| `SIK-53` | `M7` | `WU-FN1 + WU-FN4` Route + TipTap 全屏脱壳编辑器 | `SIK-52`, `FE-SSOT-v2` | `backlog` | frontend gate locked; must not enter `in_progress` |
+| `SIK-54` | `M8` | `WU-FN2 + WU-FN3` Notes 主视图 + 筛选系统 | `SIK-53` | `backlog` | frontend gate locked; must not enter `in_progress` |
+| `SIK-55` | `M9` | `WU-FN5 + WU-FN6` 标签 UI + Meilisearch 搜索 UI | `SIK-54` | `backlog` | frontend gate locked; must not enter `in_progress` |
+| `SIK-56` | `M10` | `WU-FN7 + WU-FN8 + WU-FN9 + WU-FN10` AI / Weekly / Community / Cross-Tab UI | `SIK-55` | `backlog` | frontend gate locked; must not enter `in_progress` |
+| `SIK-57` | `M11` | Notes 前端 e2e + a11y + Chrome MCP 验收 | `SIK-56` | `backlog` | frontend gate locked; must not enter `in_progress` |
+
+### 13.1 Frontend Visual SSOT Gate
+
+- Gate key: `FE-SSOT-v2`
+- Unlock condition:
+  - `docs/vault/04-design/Design-System.md` v2 完稿并 ACCEPTED
+  - `packages/design-system/src/tokens.css` 锁定为唯一 token SSOT
+  - Notes 视图所需的 lint / visual / interaction 约束都已写清并可执行
+- Before unlock:
+  - `SIK-53` through `SIK-57` 保持 `backlog`
+  - 任何 Notes 前端 issue 不得进入 `in_progress`
+  - 允许 docs-only 对齐、原型比对、需求澄清；不允许前端实现 ledger movement
+
+### 13.2 Cross-Phase Blocked Conditions
+
+| Blocked item | Condition | Owner |
+|---|---|---|
+| `SIK-47` | Phase-Home `WU-B1` 未稳定，或 NoteV2 基础字段 contract 漂移 | Home |
+| `SIK-49` | `SIK-47` 未完工，无法稳定消费 `body_text / content_hash` | Notes |
+| `SIK-50` | Phase-Home `WU-B7 / WU-B8` 未稳定，或 Phase-Review `WU-R2 / WU-R7` 未稳定 | Home / Review |
+| `SIK-51` | `SIK-49` 未完工，community feed 无法依赖搜索索引 | Notes |
+| `SIK-52` | `SIK-48~51` 任一 contract 未稳定 | Notes |
+| `SIK-53` through `SIK-57` | `FE-SSOT-v2` 仍锁定 | Design System / Frontend governance |
+| any implementation Notes child issue | `SIK-46` SSOT intake 未关闭 | Notes |
+
+---
+
+## 14. Completion Gate
+
+### 14.1 M0 Docs-only
+
+- markdown 链接 / 引用矩阵自查通过
+- Notes README / 子文档 / Multica 账本语义一致
+- 独立 subagent review 通过并落档
+
+### 14.2 Backend M6
+
+- pytest 全绿（含 Notes CRUD / tags / search / images / weekly / AI / community / audit / cron）
+- alembic upgrade head 干净
+- OpenAPI drift 0 diff
+- Mock LLM provider 跑通 weekly review + ai summary
+- 真 provider 手动联调至少覆盖 `weekly-review` 或 `ai-summary`
+
+### 14.3 Frontend M11
+
+- vitest / e2e / a11y 全绿
+- typecheck strict 0 errors
+- Chrome MCP 主链路验收通过
+- `SIK-53` through `SIK-57` 全部 done 后才允许关闭 Notes 前端阶段

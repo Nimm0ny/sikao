@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 from sikao_api.db.enums_v2 import ReviewAttemptOutcome, ReviewItemStatus, ReviewSourceKind
 from sikao_api.db.models_v2 import AiCauseAnalysisV2, NoteV2, QuestionV2, ReviewAttemptV2, ReviewItemV2
+from sikao_api.modules.review.application.validators import validate_review_item_source_contract
 
 
 ACTIVE_REVIEW_ITEM_STATUSES = (
@@ -85,6 +86,11 @@ def create_review_item(
     status: str = ReviewItemStatus.PENDING.value,
     reason: str | None = None,
 ) -> ReviewItemV2:
+    validate_review_item_source_contract(
+        source_kind=source_kind,
+        question_id=question_id,
+        metadata_json=metadata_json,
+    )
     item = ReviewItemV2(
         user_id=user_id,
         question_id=question_id,
@@ -161,6 +167,13 @@ def normalize_flagged_review_row(
     *,
     legacy_settled_status: str | None = None,
 ) -> ReviewItemV2:
+    is_flagged_row = (
+        item.source_kind in FLAGGED_SOURCE_ALIASES
+        or item.reason == "flagged_persistent"
+    )
+    if not is_flagged_row:
+        return item
+
     metadata_json = dict(item.metadata_json)
     if item.source_kind != ReviewSourceKind.FLAGGED_PERSISTENT.value:
         metadata_json.setdefault("legacySourceKind", item.source_kind)

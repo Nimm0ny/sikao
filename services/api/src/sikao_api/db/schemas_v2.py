@@ -439,7 +439,7 @@ class CauseAnalysisEvolutionContextV2(CamelModel):
 
 
 class CauseAnalysisResultV2(CamelModel):
-    mode: Literal["single", "forced", "group"]
+    mode: Literal["single", "forced", "deep", "group"]
     summary: str
     dimensions: list[CauseAnalysisDimensionV2] = Field(default_factory=list)
     suggested_actions: list[str] = Field(default_factory=list)
@@ -451,7 +451,7 @@ class CauseAnalysisResultV2(CamelModel):
 class CauseAnalysisResponseV2(CamelModel):
     analysis_id: int
     scope: Literal["single", "group"]
-    mode: Literal["single", "forced", "group"]
+    mode: Literal["single", "forced", "deep", "group"]
     version: int
     cached: bool
     expires_at: UtcDatetime
@@ -461,7 +461,7 @@ class CauseAnalysisResponseV2(CamelModel):
 
 
 class CauseAnalysisRequestV2(CamelModel):
-    mode: Literal["single", "forced"] = "single"
+    mode: Literal["single", "forced", "deep"] = "single"
 
 
 class CauseAnalysisGroupRequestV2(CamelModel):
@@ -496,6 +496,48 @@ class CauseDimensionOverrideRequestV2(CamelModel):
             return None
         stripped = value.strip()
         return stripped or None
+
+
+class CauseAnalysisFeedbackRequestV2(CamelModel):
+    rating: Literal["up", "down"]
+    comment: str | None = Field(default=None, max_length=500)
+    dimensions_disagreed: list[str] = Field(default_factory=list, max_length=5)
+    actions_unhelpful: list[int] = Field(default_factory=list, max_length=5)
+
+    @field_validator("comment")
+    @classmethod
+    def _normalize_feedback_comment(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        return stripped or None
+
+    @field_validator("dimensions_disagreed")
+    @classmethod
+    def _normalize_disagreed_dimensions(cls, value: list[str]) -> list[str]:
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for raw in value:
+            slug = raw.strip().lower()
+            if not slug:
+                raise ValueError("dimensions_disagreed cannot contain blank slug")
+            if slug in seen:
+                raise ValueError("dimensions_disagreed must be distinct")
+            seen.add(slug)
+            normalized.append(slug)
+        return normalized
+
+    @field_validator("actions_unhelpful")
+    @classmethod
+    def _validate_actions_unhelpful(cls, value: list[int]) -> list[int]:
+        seen: set[int] = set()
+        for index in value:
+            if index < 0:
+                raise ValueError("actions_unhelpful must be >= 0")
+            if index in seen:
+                raise ValueError("actions_unhelpful must be distinct")
+            seen.add(index)
+        return value
 
 
 class CauseTagItemV2(CamelModel):

@@ -13,7 +13,7 @@ from _helpers.practice_content_support import (
     seed_paper,
     seed_review_item,
 )
-from sikao_api.db.models_v2 import DailyPracticeV2, PracticeSessionV2
+from sikao_api.db.models_v2 import DailyPracticeV2, PracticeSessionV2, QuestionV2
 from sikao_api.modules.session_lifecycle.application.cleanup import expire_daily_sessions
 from sikao_api.modules.progress.application.aggregates import today_cn
 
@@ -94,6 +94,7 @@ def test_postgres_session_modes_category_daily_and_wrong_redo(tmp_path) -> None:
             json={"track": "xingce", "entryKind": "wrong_redo", "mode": "wrong_redo", "config": {"count": 1}},
         )
         assert wrong_redo.status_code == 200, wrong_redo.text
+        assert wrong_redo.json()["practiceMode"] == "per_question"
         assert wrong_redo.json()["items"][0]["prompt"] == "A"
 
         conflict = client.post(
@@ -102,3 +103,45 @@ def test_postgres_session_modes_category_daily_and_wrong_redo(tmp_path) -> None:
         )
         assert conflict.status_code == 422, conflict.text
         assert conflict.json()["code"] == "practice_session_mode_conflict"
+
+
+@pytest.mark.skipif(not os.environ.get("TEST_POSTGRESQL_URL"), reason="TEST_POSTGRESQL_URL is not set")
+def test_postgres_wrong_redo_allows_inactive_review_questions_and_forces_per_question(tmp_path) -> None:
+    with build_postgres_client(tmp_path) as client:
+        user_id = register_user(client)
+        question_id = seed_paper(
+            client,
+            paper_code="XC-PG-MODES-INACTIVE",
+            title="PG Session Modes Inactive",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "Inactive redo question",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "logic_fill",
+                }
+            ],
+        )[0]
+        app = cast(Any, client.app)
+        factory = app.state.db.session_factory
+        with factory() as session:
+            question = session.get(QuestionV2, question_id)
+            assert question is not None
+            question.is_active = False
+            session.add(question)
+            session.commit()
+
+        seed_review_item(client, user_id=user_id, question_id=question_id, title="Inactive redo review item")
+
+        wrong_redo = client.post(
+            "/api/v2/practice/sessions",
+            json={"track": "xingce", "entryKind": "wrong_redo", "mode": "wrong_redo", "config": {"count": 1}},
+        )
+        assert wrong_redo.status_code == 200, wrong_redo.text
+        payload = wrong_redo.json()
+        assert payload["sourceMode"] == "wrong_redo"
+        assert payload["practiceMode"] == "per_question"
+        assert [item["prompt"] for item in payload["items"]] == ["Inactive redo question"]

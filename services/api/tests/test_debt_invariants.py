@@ -1,0 +1,14 @@
+from __future__ import annotations
+
+# ruff: noqa: F401
+
+from test_postgres_review_debt_rampup_hard_v2 import (
+    test_postgres_review_rampup_start_advance_complete_and_skip as test_debt_rampup_gate,
+    test_postgres_review_refail_marks_hard_and_manual_clear_preserves_refail_count as test_debt_refail_hard_gate,
+    test_review_debt_hard_item_caps_positive_multiplier as test_debt_hard_multiplier_gate,
+    test_review_debt_second_mismatch_marks_hard as test_debt_mismatch_hard_gate,
+)
+from test_postgres_review_debt_snapshot_v2 import (
+    test_postgres_review_debt_heavy_redistribute_preserves_streak_version_and_plan as test_debt_redistribute_gate,
+    test_postgres_review_debt_snapshot_classifies_and_profile_contract as test_debt_snapshot_profile_gate,
+)

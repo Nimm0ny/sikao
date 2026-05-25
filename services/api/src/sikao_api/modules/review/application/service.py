@@ -574,6 +574,7 @@ def _is_confidence_required(item: ReviewItemV2) -> bool:
     return (
         coerce_int(metadata.get("confidence_mismatch_count"), default=0) >= 1
         or bool(metadata.get("is_hard", False))
+        or coerce_int(metadata.get("confidence_skipped_count"), default=0) >= 5
     )
 
 

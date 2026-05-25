@@ -2014,6 +2014,23 @@ export interface paths {
         patch: operations["patch_cause_analysis_dimension_api_v2_review_cause_analysis__analysis_id__dimensions__dimension_index__patch"];
         trace?: never;
     };
+    "/api/v2/review/cause-analysis/{analysis_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Cause Analysis Feedback */
+        post: operations["post_cause_analysis_feedback_api_v2_review_cause_analysis__analysis_id__feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/review/cause-tags": {
         parameters: {
             query?: never;
@@ -2023,6 +2040,125 @@ export interface paths {
         };
         /** List Cause Tags */
         get: operations["list_cause_tags_api_v2_review_cause_tags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/debt/plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Review Debt Plan */
+        get: operations["get_review_debt_plan_api_v2_review_debt_plan_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/debt/redistribute": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Review Debt Redistribute */
+        post: operations["post_review_debt_redistribute_api_v2_review_debt_redistribute_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/debt/skip-rampup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Review Debt Skip Rampup */
+        post: operations["post_review_debt_skip_rampup_api_v2_review_debt_skip_rampup_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/debt/snapshot": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Review Debt Snapshot */
+        get: operations["get_review_debt_snapshot_api_v2_review_debt_snapshot_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/insights/causes": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Review Insights Causes */
+        get: operations["get_review_insights_causes_api_v2_review_insights_causes_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/insights/redo-accuracy": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Review Insights Redo Accuracy */
+        get: operations["get_review_insights_redo_accuracy_api_v2_review_insights_redo_accuracy_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/insights/trends": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Review Insights Trends */
+        get: operations["get_review_insights_trends_api_v2_review_insights_trends_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2077,6 +2213,23 @@ export interface paths {
         get: operations["get_review_item_api_v2_review_items__item_id__get"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/items/{item_id}/add-to-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Review Item To Plan */
+        post: operations["add_review_item_to_plan_api_v2_review_items__item_id__add_to_plan_post"];
         delete?: never;
         options?: never;
         head?: never;
@@ -2194,6 +2347,23 @@ export interface paths {
         };
         /** Get Smart Review */
         get: operations["get_smart_review_api_v2_review_smart_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/review/weekly-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Weekly Summary */
+        get: operations["get_weekly_summary_api_v2_review_weekly_summary_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -2688,6 +2858,20 @@ export interface components {
             /** Previoussuggestedactions */
             previousSuggestedActions?: string[];
         };
+        /** CauseAnalysisFeedbackRequestV2 */
+        CauseAnalysisFeedbackRequestV2: {
+            /** Actionsunhelpful */
+            actionsUnhelpful?: number[];
+            /** Comment */
+            comment?: string | null;
+            /** Dimensionsdisagreed */
+            dimensionsDisagreed?: string[];
+            /**
+             * Rating
+             * @enum {string}
+             */
+            rating: "up" | "down";
+        };
         /** CauseAnalysisGroupRequestV2 */
         CauseAnalysisGroupRequestV2: {
             /** Itemids */
@@ -2700,7 +2884,7 @@ export interface components {
              * @default single
              * @enum {string}
              */
-            mode: "single" | "forced";
+            mode: "single" | "forced" | "deep";
         };
         /** CauseAnalysisResponseV2 */
         CauseAnalysisResponseV2: {
@@ -2716,7 +2900,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "single" | "forced" | "group";
+            mode: "single" | "forced" | "deep" | "group";
             result: components["schemas"]["CauseAnalysisResultV2"];
             /**
              * Scope
@@ -2741,7 +2925,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "single" | "forced" | "group";
+            mode: "single" | "forced" | "deep" | "group";
             /** Relatedquestions */
             relatedQuestions?: number[];
             /** Suggestedactions */
@@ -4075,6 +4259,8 @@ export interface components {
             delayedReviewUntil?: string | null;
             /** Entrykind */
             entryKind: string;
+            /** Essaysubmissionid */
+            essaySubmissionId?: number | null;
             /**
              * Exammode
              * @default false
@@ -4146,6 +4332,8 @@ export interface components {
             answerChangeCount: number;
             /** Answerkind */
             answerKind: string;
+            /** Answertext */
+            answerText?: string | null;
             /**
              * Flagged
              * @default false
@@ -4177,6 +4365,8 @@ export interface components {
             prompt: string;
             /** Questionkey */
             questionKey: string;
+            /** Selectedanswerkeys */
+            selectedAnswerKeys?: string[];
             /** Status */
             status: string;
             /**
@@ -4384,6 +4574,26 @@ export interface components {
             };
             /** Region */
             region?: string | null;
+            /**
+             * Reviewdailylimit
+             * @default 30
+             */
+            reviewDailyLimit: number;
+            /**
+             * Reviewdebtredistributeenabled
+             * @default true
+             */
+            reviewDebtRedistributeEnabled: boolean;
+            /**
+             * Reviewhardquestionautodeepanalysis
+             * @default true
+             */
+            reviewHardQuestionAutoDeepAnalysis: boolean;
+            /**
+             * Reviewrampupenabled
+             * @default true
+             */
+            reviewRampupEnabled: boolean;
         };
         /** ProfileInfoUpdateRequestV2 */
         ProfileInfoUpdateRequestV2: {
@@ -4405,6 +4615,14 @@ export interface components {
             } | null;
             /** Region */
             region?: string | null;
+            /** Reviewdailylimit */
+            reviewDailyLimit?: number | null;
+            /** Reviewdebtredistributeenabled */
+            reviewDebtRedistributeEnabled?: boolean | null;
+            /** Reviewhardquestionautodeepanalysis */
+            reviewHardQuestionAutoDeepAnalysis?: boolean | null;
+            /** Reviewrampupenabled */
+            reviewRampupEnabled?: boolean | null;
         };
         /** ProfileOverviewResponseV2 */
         ProfileOverviewResponseV2: {
@@ -5063,6 +5281,78 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** ReviewCauseFrequencyV2 */
+        ReviewCauseFrequencyV2: {
+            /** Count */
+            count: number;
+            /** Name */
+            name: string;
+            /** Severitydistribution */
+            severityDistribution?: {
+                [key: string]: number;
+            };
+            /** Slug */
+            slug: string;
+        };
+        /** ReviewDebtPlanBucketV2 */
+        ReviewDebtPlanBucketV2: {
+            /** Count */
+            count: number;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+        };
+        /** ReviewDebtPlanResponseV2 */
+        ReviewDebtPlanResponseV2: {
+            /** Buckets */
+            buckets?: components["schemas"]["ReviewDebtPlanBucketV2"][];
+            /**
+             * Spreaddays
+             * @default 0
+             */
+            spreadDays: number;
+            /**
+             * Totalcount
+             * @default 0
+             */
+            totalCount: number;
+        };
+        /** ReviewDebtSnapshotResponseV2 */
+        ReviewDebtSnapshotResponseV2: {
+            /**
+             * Canredistribute
+             * @default false
+             */
+            canRedistribute: boolean;
+            /** Dailylimit */
+            dailyLimit: number;
+            /** Debtseverity */
+            debtSeverity: string;
+            /** Oldestoverduedays */
+            oldestOverdueDays: number;
+            /** Overduecount */
+            overdueCount: number;
+            /**
+             * Rampupactive
+             * @default false
+             */
+            rampupActive: boolean;
+            /** Rampupphase */
+            rampupPhase?: string | null;
+            /** Rampupstartedat */
+            rampupStartedAt?: string | null;
+            /** Rampupunlockat */
+            rampupUnlockAt?: string | null;
+            /** Recommendedtodaycount */
+            recommendedTodayCount: number;
+            /**
+             * Redistributedcount
+             * @default 0
+             */
+            redistributedCount: number;
+        };
         /** ReviewDetailResponseV2 */
         ReviewDetailResponseV2: {
             /** Actions */
@@ -5075,6 +5365,35 @@ export interface components {
                 [key: string]: unknown;
             };
             srsState?: components["schemas"]["SrsStateV2"] | null;
+        };
+        /** ReviewInsightsCausesResponseV2 */
+        ReviewInsightsCausesResponseV2: {
+            /** Causes */
+            causes?: components["schemas"]["ReviewCauseFrequencyV2"][];
+        };
+        /** ReviewInsightsDayPointV2 */
+        ReviewInsightsDayPointV2: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Graduated */
+            graduated: number;
+            /** Netaccumulation */
+            netAccumulation: number;
+            /** Newincorrect */
+            newIncorrect: number;
+        };
+        /** ReviewInsightsRedoAccuracyResponseV2 */
+        ReviewInsightsRedoAccuracyResponseV2: {
+            /** Weeks */
+            weeks?: components["schemas"]["ReviewWeekAccuracyPointV2"][];
+        };
+        /** ReviewInsightsTrendsResponseV2 */
+        ReviewInsightsTrendsResponseV2: {
+            /** Days */
+            days?: components["schemas"]["ReviewInsightsDayPointV2"][];
         };
         /** ReviewItemBatchActionV2 */
         ReviewItemBatchActionV2: {
@@ -5139,6 +5458,58 @@ export interface components {
             pageSize: number;
             /** Total */
             total: number;
+        };
+        /** ReviewWeekAccuracyPointV2 */
+        ReviewWeekAccuracyPointV2: {
+            /** Accuracypct */
+            accuracyPct: number;
+            /** Correctcount */
+            correctCount: number;
+            /** Totalattempts */
+            totalAttempts: number;
+            /** Week */
+            week: string;
+        };
+        /** ReviewWeeklyConcernHighlightV2 */
+        ReviewWeeklyConcernHighlightV2: {
+            /** Label */
+            label: string;
+            /** Slug */
+            slug?: string | null;
+            /** Summary */
+            summary: string;
+        };
+        /** ReviewWeeklyProgressHighlightV2 */
+        ReviewWeeklyProgressHighlightV2: {
+            /** Fromconfidence */
+            fromConfidence?: string | null;
+            /** Questionid */
+            questionId?: number | null;
+            /** Summary */
+            summary: string;
+            /** Title */
+            title: string;
+            /** Toconfidence */
+            toConfidence?: string | null;
+        };
+        /** ReviewWeeklySummaryResponseV2 */
+        ReviewWeeklySummaryResponseV2: {
+            biggestConcern?: components["schemas"]["ReviewWeeklyConcernHighlightV2"] | null;
+            biggestProgress?: components["schemas"]["ReviewWeeklyProgressHighlightV2"] | null;
+            /** Generatednoteid */
+            generatedNoteId?: number | null;
+            /** Itemsreviewed */
+            itemsReviewed: number;
+            /** Newgraduatedcount */
+            newGraduatedCount: number;
+            /** Newnotescount */
+            newNotesCount: number;
+            /** Nextweekfocus */
+            nextWeekFocus?: string | null;
+            /** Redoaccuracypct */
+            redoAccuracyPct: number;
+            /** Week */
+            week: string;
         };
         /** SectionCardV2 */
         SectionCardV2: {
@@ -9757,6 +10128,41 @@ export interface operations {
             };
         };
     };
+    post_cause_analysis_feedback_api_v2_review_cause_analysis__analysis_id__feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                analysis_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CauseAnalysisFeedbackRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_cause_tags_api_v2_review_cause_tags_get: {
         parameters: {
             query?: never;
@@ -9773,6 +10179,168 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["CauseTagListResponseV2"];
+                };
+            };
+        };
+    };
+    get_review_debt_plan_api_v2_review_debt_plan_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDebtPlanResponseV2"];
+                };
+            };
+        };
+    };
+    post_review_debt_redistribute_api_v2_review_debt_redistribute_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDebtSnapshotResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    post_review_debt_skip_rampup_api_v2_review_debt_skip_rampup_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDebtSnapshotResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_review_debt_snapshot_api_v2_review_debt_snapshot_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewDebtSnapshotResponseV2"];
+                };
+            };
+        };
+    };
+    get_review_insights_causes_api_v2_review_insights_causes_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewInsightsCausesResponseV2"];
+                };
+            };
+        };
+    };
+    get_review_insights_redo_accuracy_api_v2_review_insights_redo_accuracy_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewInsightsRedoAccuracyResponseV2"];
+                };
+            };
+        };
+    };
+    get_review_insights_trends_api_v2_review_insights_trends_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewInsightsTrendsResponseV2"];
                 };
             };
         };
@@ -9898,6 +10466,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ReviewDetailResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_review_item_to_plan_api_v2_review_items__item_id__add_to_plan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationReadV2"];
                 };
             };
             /** @description Validation Error */
@@ -10123,6 +10722,37 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["OverviewResponseV2"];
+                };
+            };
+        };
+    };
+    get_weekly_summary_api_v2_review_weekly_summary_get: {
+        parameters: {
+            query?: {
+                week?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewWeeklySummaryResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };

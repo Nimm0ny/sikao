@@ -27,7 +27,6 @@ class RecommendationDraft(BaseModel):
         data = dict(value)
         if "action_type" not in data and isinstance(data.get("actionType"), str):
             data["action_type"] = data.pop("actionType")
-        action_type = data.get("action_type")
         if "reason" not in data and isinstance(data.get("description"), str):
             data["reason"] = data.pop("description")
         if "estimated_minutes" not in data and isinstance(data.get("estimatedMinutes"), int):

@@ -1149,6 +1149,51 @@
         "title": "CauseAnalysisEvolutionContextV2",
         "type": "object"
       },
+      "CauseAnalysisFeedbackRequestV2": {
+        "properties": {
+          "actionsUnhelpful": {
+            "items": {
+              "type": "integer"
+            },
+            "maxItems": 5,
+            "title": "Actionsunhelpful",
+            "type": "array"
+          },
+          "comment": {
+            "anyOf": [
+              {
+                "maxLength": 500,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Comment"
+          },
+          "dimensionsDisagreed": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 5,
+            "title": "Dimensionsdisagreed",
+            "type": "array"
+          },
+          "rating": {
+            "enum": [
+              "up",
+              "down"
+            ],
+            "title": "Rating",
+            "type": "string"
+          }
+        },
+        "required": [
+          "rating"
+        ],
+        "title": "CauseAnalysisFeedbackRequestV2",
+        "type": "object"
+      },
       "CauseAnalysisGroupRequestV2": {
         "properties": {
           "itemIds": {
@@ -1173,7 +1218,8 @@
             "default": "single",
             "enum": [
               "single",
-              "forced"
+              "forced",
+              "deep"
             ],
             "title": "Mode",
             "type": "string"
@@ -1204,6 +1250,7 @@
             "enum": [
               "single",
               "forced",
+              "deep",
               "group"
             ],
             "title": "Mode",
@@ -1277,6 +1324,7 @@
             "enum": [
               "single",
               "forced",
+              "deep",
               "group"
             ],
             "title": "Mode",
@@ -5799,6 +5847,26 @@
               }
             ],
             "title": "Region"
+          },
+          "reviewDailyLimit": {
+            "default": 30,
+            "title": "Reviewdailylimit",
+            "type": "integer"
+          },
+          "reviewDebtRedistributeEnabled": {
+            "default": true,
+            "title": "Reviewdebtredistributeenabled",
+            "type": "boolean"
+          },
+          "reviewHardQuestionAutoDeepAnalysis": {
+            "default": true,
+            "title": "Reviewhardquestionautodeepanalysis",
+            "type": "boolean"
+          },
+          "reviewRampupEnabled": {
+            "default": true,
+            "title": "Reviewrampupenabled",
+            "type": "boolean"
           }
         },
         "required": [
@@ -5892,6 +5960,52 @@
               }
             ],
             "title": "Region"
+          },
+          "reviewDailyLimit": {
+            "anyOf": [
+              {
+                "maximum": 100.0,
+                "minimum": 10.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewdailylimit"
+          },
+          "reviewDebtRedistributeEnabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewdebtredistributeenabled"
+          },
+          "reviewHardQuestionAutoDeepAnalysis": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewhardquestionautodeepanalysis"
+          },
+          "reviewRampupEnabled": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reviewrampupenabled"
           }
         },
         "title": "ProfileInfoUpdateRequestV2",
@@ -7812,6 +7926,129 @@
           "count"
         ],
         "title": "ReviewCauseFrequencyV2",
+        "type": "object"
+      },
+      "ReviewDebtPlanBucketV2": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "count"
+        ],
+        "title": "ReviewDebtPlanBucketV2",
+        "type": "object"
+      },
+      "ReviewDebtPlanResponseV2": {
+        "properties": {
+          "buckets": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewDebtPlanBucketV2"
+            },
+            "title": "Buckets",
+            "type": "array"
+          },
+          "spreadDays": {
+            "default": 0,
+            "title": "Spreaddays",
+            "type": "integer"
+          },
+          "totalCount": {
+            "default": 0,
+            "title": "Totalcount",
+            "type": "integer"
+          }
+        },
+        "title": "ReviewDebtPlanResponseV2",
+        "type": "object"
+      },
+      "ReviewDebtSnapshotResponseV2": {
+        "properties": {
+          "canRedistribute": {
+            "default": false,
+            "title": "Canredistribute",
+            "type": "boolean"
+          },
+          "dailyLimit": {
+            "title": "Dailylimit",
+            "type": "integer"
+          },
+          "debtSeverity": {
+            "title": "Debtseverity",
+            "type": "string"
+          },
+          "oldestOverdueDays": {
+            "title": "Oldestoverduedays",
+            "type": "integer"
+          },
+          "overdueCount": {
+            "title": "Overduecount",
+            "type": "integer"
+          },
+          "rampupActive": {
+            "default": false,
+            "title": "Rampupactive",
+            "type": "boolean"
+          },
+          "rampupPhase": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rampupphase"
+          },
+          "rampupStartedAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rampupstartedat"
+          },
+          "rampupUnlockAt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rampupunlockat"
+          },
+          "recommendedTodayCount": {
+            "title": "Recommendedtodaycount",
+            "type": "integer"
+          },
+          "redistributedCount": {
+            "default": 0,
+            "title": "Redistributedcount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "debtSeverity",
+          "overdueCount",
+          "oldestOverdueDays",
+          "dailyLimit",
+          "recommendedTodayCount"
+        ],
+        "title": "ReviewDebtSnapshotResponseV2",
         "type": "object"
       },
       "ReviewDetailResponseV2": {
@@ -16353,6 +16590,63 @@
         ]
       }
     },
+    "/api/v2/review/cause-analysis/{analysis_id}/feedback": {
+      "post": {
+        "operationId": "post_cause_analysis_feedback_api_v2_review_cause_analysis__analysis_id__feedback_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "analysis_id",
+            "required": true,
+            "schema": {
+              "title": "Analysis Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CauseAnalysisFeedbackRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationAckV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Post Cause Analysis Feedback",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
     "/api/v2/review/cause-tags": {
       "get": {
         "operationId": "list_cause_tags_api_v2_review_cause_tags_get",
@@ -16374,6 +16668,166 @@
           }
         ],
         "summary": "List Cause Tags",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/debt/plan": {
+      "get": {
+        "operationId": "get_review_debt_plan_api_v2_review_debt_plan_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDebtPlanResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Review Debt Plan",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/debt/redistribute": {
+      "post": {
+        "operationId": "post_review_debt_redistribute_api_v2_review_debt_redistribute_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDebtSnapshotResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Post Review Debt Redistribute",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/debt/skip-rampup": {
+      "post": {
+        "operationId": "post_review_debt_skip_rampup_api_v2_review_debt_skip_rampup_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDebtSnapshotResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Post Review Debt Skip Rampup",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/debt/snapshot": {
+      "get": {
+        "operationId": "get_review_debt_snapshot_api_v2_review_debt_snapshot_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewDebtSnapshotResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Review Debt Snapshot",
         "tags": [
           "review-v2"
         ]
@@ -16715,6 +17169,53 @@
           }
         ],
         "summary": "Get Review Item",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/items/{item_id}/add-to-plan": {
+      "post": {
+        "operationId": "add_review_item_to_plan_api_v2_review_items__item_id__add_to_plan_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecommendationReadV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add Review Item To Plan",
         "tags": [
           "review-v2"
         ]

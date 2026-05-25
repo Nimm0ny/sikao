@@ -410,8 +410,12 @@ class RecommendationServiceV2:
         self.session.add(
             RecommendationFeedbackV2(
                 recommendation_id=recommendation.id,
+                analysis_id=None,
+                feedback_type="recommendation_reject",
                 reason=payload.reason,
+                rating=None,
                 note=payload.note,
+                metadata_json={},
             )
         )
         add_audit_log(

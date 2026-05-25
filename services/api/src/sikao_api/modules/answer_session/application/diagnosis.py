@@ -29,7 +29,11 @@ def update_wrong_reason(
         )
     )
     if practice_session is None:
-        raise ServiceError(404, "Practice session not found for user")
+        raise ServiceError(
+            "Practice session not found for user",
+            status_code=404,
+            code="practice_session_not_found",
+        )
 
     answer = db.scalar(
         select(PracticeSessionAnswer).where(
@@ -38,7 +42,11 @@ def update_wrong_reason(
         )
     )
     if answer is None:
-        raise ServiceError(404, "Answer not found in session")
+        raise ServiceError(
+            "Answer not found in session",
+            status_code=404,
+            code="practice_session_answer_not_found",
+        )
 
     answer.wrong_reason_code = payload.wrong_reason_code
     answer.wrong_reason_source = payload.source

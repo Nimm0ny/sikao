@@ -50,7 +50,11 @@ def get_accuracy_trend(
     try:
         return _get(session, user_id=user.id, days=days)
     except ValueError as exc:
-        raise ServiceError(422, str(exc)) from exc
+        raise ServiceError(
+            str(exc),
+            status_code=422,
+            code="progress_days_invalid",
+        ) from exc
 
 
 @router.post(

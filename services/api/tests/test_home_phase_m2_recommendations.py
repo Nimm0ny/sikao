@@ -226,6 +226,10 @@ def test_refresh_replay_accept_and_reject(tmp_path: Path) -> None:
             assert planned_event is not None and planned_event.source == "ai_generated"
             assert planned_event.change_log
             assert feedback is not None and feedback.reason == "already_done"
+            assert feedback.feedback_type == "recommendation_reject"
+            assert feedback.analysis_id is None
+            assert feedback.rating is None
+            assert feedback.metadata_json == {}
             assert "plan_event.create_from_recommendation" in audit_actions
         finally:
             session.close()

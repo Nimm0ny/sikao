@@ -18,6 +18,7 @@ _PER_PURPOSE_DAILY_LIMITS: dict[str, int] = {
     "plan_adjust": 3,
     "recommend_today": 50,
     "review_cause_analysis": 20,
+    "review_cause_analysis_deep": 5,
     "question_generation": 30,
     "essay_grading": 5,
     "reference_generation": 10,
