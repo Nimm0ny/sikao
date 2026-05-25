@@ -101,8 +101,34 @@ def validate_manual_add_target(
         raise ConflictError(
             "review item already active for this question",
             code="review_item_already_active",
-        )
+    )
     return question
+
+
+def validate_review_item_source_contract(
+    *,
+    source_kind: str,
+    question_id: int | None,
+    metadata_json: dict[str, object],
+) -> None:
+    source_note_id = metadata_json.get("source_note_id") or metadata_json.get("sourceNoteId")
+    if source_kind == ReviewSourceKind.NOTE_CARD.value:
+        if source_note_id is None:
+            raise ValidationError(
+                "note_card review items require metadata_json.source_note_id",
+                code="review_source_contract_invalid",
+            )
+        return
+    if question_id is None:
+        raise ValidationError(
+            "non-note review items require question_id",
+            code="review_source_contract_invalid",
+        )
+    if source_note_id is not None:
+        raise ValidationError(
+            "non-note review items cannot carry metadata_json.source_note_id",
+            code="review_source_contract_invalid",
+        )
 
 
 def review_status_clause(statuses: tuple[str, ...]) -> Any:

@@ -63,7 +63,10 @@ class SessionServiceV2:
             paper_id=paper_id,
             revision_id=revision_id,
             payload_json=payload.payload,
-            practice_mode=payload.practice_mode,
+            practice_mode=self._resolve_practice_mode(
+                payload=payload,
+                selection=selection,
+            ),
             source_mode=selection.source_mode,
             config_snapshot=selection.config_snapshot,
             expires_at=selection.expires_at,
@@ -703,6 +706,16 @@ class SessionServiceV2:
                 "practice session already submitted",
                 code="practice_session_submitted",
             )
+
+    def _resolve_practice_mode(
+        self,
+        *,
+        payload: PracticeSessionCreateRequestV2,
+        selection: SessionSelection,
+    ) -> str:
+        if selection.source_mode == "wrong_redo":
+            return "per_question"
+        return payload.practice_mode
 
     def _lock_session_row(self, session_id: int) -> PracticeSessionV2:
         practice_session = self.session.scalar(
