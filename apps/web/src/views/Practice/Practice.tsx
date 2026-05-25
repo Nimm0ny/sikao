@@ -101,6 +101,7 @@ export function Practice() {
   const createSession = useCreatePracticeSession();
 
   useEffect(() => {
+    usePracticeCenterStore.getState().hydrate();
     useSessionConfigStore.getState().hydrateFromLocalFallback();
   }, []);
 

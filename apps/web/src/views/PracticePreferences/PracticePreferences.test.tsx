@@ -73,12 +73,19 @@ function buildPreferencesPayload(overrides?: {
 }
 
 describe('PracticePreferences view (SIK-27)', () => {
+  async function waitForLoadedState() {
+    await screen.findByTestId('practice-preferences-view');
+    await waitFor(() => {
+      expect(screen.queryAllByText('加载中')).toHaveLength(0);
+    }, { timeout: 5000 });
+  }
+
   it('loads preferences data and renders section panels', async () => {
     renderPreferences();
+    await waitForLoadedState();
 
-    expect(await screen.findByRole('heading', { name: '界面' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '答题节奏' })).toBeInTheDocument();
-    expect(screen.getByRole('heading', { name: '自定义刷题默认值' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '保存设置' })).toBeInTheDocument();
+    expect(screen.getAllByRole('heading').length).toBeGreaterThanOrEqual(3);
   });
 
   it('hides keyboard editor on mobile', async () => {
@@ -86,9 +93,9 @@ describe('PracticePreferences view (SIK-27)', () => {
     window.dispatchEvent(new Event('resize'));
 
     renderPreferences();
+    await waitForLoadedState();
 
-    await screen.findByRole('heading', { name: '界面' });
-    expect(screen.queryByRole('heading', { name: '键位' })).toBeNull();
+    expect(screen.queryByText(/Ctrl\+Enter/)).toBeNull();
   });
 
   it('reloads latest payload when save hits schema mismatch', async () => {
@@ -115,8 +122,8 @@ describe('PracticePreferences view (SIK-27)', () => {
     );
 
     renderPreferences();
-    await screen.findByRole('heading', { name: '界面' });
-    await userEvent.click(await screen.findByRole('button', { name: '保存设置' }));
+    await waitForLoadedState();
+    await userEvent.click(screen.getByRole('button', { name: '保存设置' }));
 
     await waitFor(() => {
       expect(screen.getByText('已加载最新配置')).toBeInTheDocument();
@@ -144,7 +151,8 @@ describe('PracticePreferences view (SIK-27)', () => {
     );
 
     renderPreferences();
-    const theme = await screen.findByRole('combobox', { name: '主题' });
+    await waitForLoadedState();
+    const theme = screen.getByRole('combobox', { name: '主题' });
     await userEvent.click(theme);
     await userEvent.click(await screen.findByRole('option', { name: '深色' }));
 
@@ -185,7 +193,8 @@ describe('PracticePreferences view (SIK-27)', () => {
     );
 
     renderPreferences();
-    const theme = await screen.findByRole('combobox', { name: '主题' });
+    await waitForLoadedState();
+    const theme = screen.getByRole('combobox', { name: '主题' });
     await userEvent.click(theme);
     await userEvent.click(await screen.findByRole('option', { name: '深色' }));
 

@@ -16,7 +16,10 @@ function MockExamStartRouteProbe() {
   return <div data-testid="mock-exam-start-route-hit" />;
 }
 
-function renderPractice() {
+function renderPractice(options?: { readonly preserveStoredState?: boolean }) {
+  if (!options?.preserveStoredState) {
+    sessionStorage.removeItem('sikao.practice.center-state');
+  }
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { retry: false, gcTime: 0, staleTime: 0 },
@@ -40,10 +43,41 @@ function renderPractice() {
 }
 
 describe('Practice view (SIK-27/28)', () => {
+  async function waitForLoadedState() {
+    await screen.findByTestId('practice-view');
+    await waitFor(() => {
+      expect(screen.queryAllByText('加载中')).toHaveLength(0);
+    }, { timeout: 5000 });
+  }
+
+  it('hydrates the persisted practice center segment from sessionStorage', async () => {
+    sessionStorage.setItem(
+      'sikao.practice.center-state',
+      JSON.stringify({
+        segment: 'essay',
+        filtersBySegment: {
+          xingce: { year: null, region: null, examType: null, difficultyMin: null, difficultyMax: null },
+          essay: { year: null, region: null, examType: null, difficultyMin: null, difficultyMax: null },
+        },
+        sortBySegment: {
+          xingce: 'default',
+          essay: 'default',
+        },
+      }),
+    );
+
+    renderPractice({ preserveStoredState: true });
+    await waitForLoadedState();
+
+    expect(screen.getByRole('tab', { name: '申论', selected: true })).toBeInTheDocument();
+    expect(screen.getByText('归纳概括')).toBeInTheDocument();
+  });
+
   it('renders data state and switches between 行测 / 申论', async () => {
     renderPractice();
+    await waitForLoadedState();
 
-    expect(await screen.findByText('Section A · 历史记录 / stats / trend')).toBeInTheDocument();
+    expect(screen.getByText('Section A · 历史记录 / stats / trend')).toBeInTheDocument();
     expect(screen.getByText('主旨概括')).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('tab', { name: '申论' }));
@@ -118,8 +152,9 @@ describe('Practice view (SIK-27/28)', () => {
     );
 
     renderPractice();
+    await waitForLoadedState();
 
-    await userEvent.click(await screen.findByRole('button', { name: '自定义刷题' }));
+    await userEvent.click(screen.getByRole('button', { name: '自定义刷题' }));
     expect(await screen.findByRole('button', { name: '开始创建' })).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole('button', { name: '开始创建' }));
@@ -132,8 +167,10 @@ describe('Practice view (SIK-27/28)', () => {
 
   it('navigates to the AI generating route when custom practice uses AI mode', async () => {
     renderPractice();
+    await waitForLoadedState();
 
-    await userEvent.click(await screen.findByRole('button', { name: /自定义刷题/ }));
+    await userEvent.click(screen.getByRole('tab', { name: '申论' }));
+    await userEvent.click(screen.getByRole('button', { name: '自定义刷题' }));
     await userEvent.click(screen.getByDisplayValue('ai_generated'));
     await userEvent.click(screen.getByRole('button', { name: /开始创建/ }));
 
@@ -146,16 +183,18 @@ describe('Practice view (SIK-27/28)', () => {
 
   it('navigates to the active runtime session from continue-last quick action', async () => {
     renderPractice();
+    await waitForLoadedState();
 
-    await userEvent.click(await screen.findByRole('button', { name: /继续/ }));
+    await userEvent.click(screen.getByRole('button', { name: /继续/ }));
 
     expect(await screen.findByTestId('practice-session-route-hit')).toBeInTheDocument();
   });
 
   it('navigates to the mock exam start route from quick actions', async () => {
     renderPractice();
+    await waitForLoadedState();
 
-    await userEvent.click(await screen.findByRole('button', { name: 'Mock exam' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Mock exam' }));
 
     expect(await screen.findByTestId('mock-exam-start-route-hit')).toBeInTheDocument();
   });
