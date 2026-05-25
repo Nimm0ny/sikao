@@ -281,8 +281,40 @@ def _inline_content(text: str) -> list[dict[str, Any]]:
     segments = normalized.split("\n")
     content: list[dict[str, Any]] = []
     for idx, segment in enumerate(segments):
-        if segment:
-            content.append({"type": "text", "text": segment})
+        content.extend(_parse_inline_marks(segment))
         if idx < len(segments) - 1:
             content.append({"type": "hardBreak"})
     return content
+
+
+def _parse_inline_marks(text: str) -> list[dict[str, Any]]:
+    nodes: list[dict[str, Any]] = []
+    index = 0
+    while index < len(text):
+        if text.startswith("**", index):
+            end = text.find("**", index + 2)
+            if end != -1:
+                inner = text[index + 2 : end]
+                nodes.append({"type": "text", "text": inner, "marks": [{"type": "bold"}]})
+                index = end + 2
+                continue
+        if text.startswith("*", index):
+            end = text.find("*", index + 1)
+            if end != -1:
+                inner = text[index + 1 : end]
+                nodes.append({"type": "text", "text": inner, "marks": [{"type": "italic"}]})
+                index = end + 1
+                continue
+        next_special = _next_special_index(text, index)
+        chunk = text[index:next_special]
+        if chunk:
+            nodes.append({"type": "text", "text": chunk})
+        index = next_special
+    return nodes
+
+
+def _next_special_index(text: str, start: int) -> int:
+    positions = [pos for pos in (text.find("**", start), text.find("*", start)) if pos != -1]
+    if not positions:
+        return len(text)
+    return min(positions)
