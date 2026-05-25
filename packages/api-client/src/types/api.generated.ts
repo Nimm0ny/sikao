@@ -2884,7 +2884,7 @@ export interface components {
              * @default single
              * @enum {string}
              */
-            mode: "single" | "forced";
+            mode: "single" | "forced" | "deep";
         };
         /** CauseAnalysisResponseV2 */
         CauseAnalysisResponseV2: {
@@ -2900,7 +2900,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "single" | "forced" | "group";
+            mode: "single" | "forced" | "deep" | "group";
             result: components["schemas"]["CauseAnalysisResultV2"];
             /**
              * Scope
@@ -2925,7 +2925,7 @@ export interface components {
              * Mode
              * @enum {string}
              */
-            mode: "single" | "forced" | "group";
+            mode: "single" | "forced" | "deep" | "group";
             /** Relatedquestions */
             relatedQuestions?: number[];
             /** Suggestedactions */
