@@ -25,12 +25,16 @@ describe('practice router placement', () => {
     expect(shellPaths).not.toContain('practice/sessions/:sessionId');
     expect(shellPaths).not.toContain('practice/ai-questions/generating');
     expect(shellPaths).not.toContain('practice/sessions/:sessionId/result');
+    expect(shellPaths).not.toContain('practice/sessions/:sessionId/grading');
 
     const fullscreenPaths = authChildren.map((route) => route.path).filter(Boolean);
     expect(fullscreenPaths).toEqual(expect.arrayContaining([
       'practice/ai-questions/generating',
       'practice/sessions/:sessionId',
       'practice/sessions/:sessionId/result',
+      'practice/sessions/:sessionId/grading',
+      'practice/essay/submissions/:submissionId/grading-status',
+      'practice/essay/submissions/:submissionId/result',
     ]));
   });
 });

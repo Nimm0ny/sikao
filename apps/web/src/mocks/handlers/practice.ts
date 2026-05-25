@@ -23,18 +23,53 @@ import {
 const DEFAULT_RUNTIME_SESSION_ID = 6001;
 
 let nextSessionId = DEFAULT_RUNTIME_SESSION_ID + 1;
+let nextEssaySubmissionId = 9001;
 let nextAiRequestId = 701;
 const runtimeSessions = new Map<number, ReturnType<typeof makeSessionEnvelope>>();
 const runtimeLifecycleStates = new Map<number, SessionLifecycleResponseV2>();
+const runtimeEssaySubmissionSession = new Map<number, number>();
+const runtimeEssayGradingStates = new Map<
+  number,
+  {
+    status: 'submitted' | 'pending_grading' | 'graded' | 'failed';
+    pollsRemaining: number;
+    report: {
+      totalScore: number;
+      dimensions: Array<{ name: string; score: number; fullScore: number; comment: string }>;
+      highlights: string[];
+      issues: string[];
+      overallComment: string;
+      improvementSuggestions: string[];
+      gradedAt: string;
+      llmCallId: number;
+    } | null;
+    referenceAnswers: Array<{
+      id: number;
+      questionId: number;
+      content: string;
+      source: string;
+      likesCount: number;
+      favoritesCount: number;
+      reportCount: number;
+      qualityScore: number;
+      status: string;
+      publishedAt: string | null;
+    }>;
+    errorMessage: string | null;
+  }
+>();
 let practicePreferencesState: PracticePreferencesResponseV2;
 
 type RuntimeTransition = NonNullable<SessionLifecycleResponseV2['transitions']>[number];
 
 export function resetPracticeMocks(): void {
   nextSessionId = DEFAULT_RUNTIME_SESSION_ID + 1;
+  nextEssaySubmissionId = 9001;
   nextAiRequestId = 701;
   runtimeSessions.clear();
   runtimeLifecycleStates.clear();
+  runtimeEssaySubmissionSession.clear();
+  runtimeEssayGradingStates.clear();
   seedRuntimeSession(
     makeSessionEnvelope(DEFAULT_RUNTIME_SESSION_ID, {
       track: 'xingce',
@@ -56,6 +91,57 @@ export function resetPracticeMocks(): void {
       ],
     },
   );
+  const essaySession = makeSessionEnvelope(DEFAULT_RUNTIME_SESSION_ID + 1, {
+    track: 'essay',
+    entryKind: 'paper',
+    practiceMode: 'full_set',
+    paperCode: 'SL-2024-01',
+  });
+  essaySession.status = 'submitted';
+  seedRuntimeSession(essaySession, {
+    status: 'submitted',
+    forceSubmitted: false,
+    transitions: [
+      {
+        fromStatus: 'draft',
+        toStatus: 'in_progress',
+        trigger: 'user_start',
+        actor: 'user',
+        ts: new Date().toISOString(),
+        reason: null,
+      },
+      {
+        fromStatus: 'in_progress',
+        toStatus: 'submitted',
+        trigger: 'user_submit',
+        actor: 'user',
+        ts: new Date().toISOString(),
+        reason: null,
+      },
+    ],
+  });
+  const seededEssaySubmissionId = ensureEssaySubmission(essaySession);
+  if (seededEssaySubmissionId !== null) {
+    const grading = runtimeEssayGradingStates.get(seededEssaySubmissionId);
+    if (grading) {
+      grading.status = 'graded';
+      grading.report = {
+        totalScore: 82,
+        dimensions: [
+          { name: '结构', score: 22, fullScore: 25, comment: '结构完整。' },
+          { name: '表达', score: 20, fullScore: 25, comment: '表达清晰。' },
+        ],
+        highlights: ['材料概括到位'],
+        issues: ['结尾还可再收束'],
+        overallComment: '整体完成度较高。',
+        improvementSuggestions: ['补一段执行落地'],
+        gradedAt: new Date().toISOString(),
+        llmCallId: 88002,
+      };
+      runtimeEssayGradingStates.set(seededEssaySubmissionId, grading);
+    }
+  }
+  nextSessionId = DEFAULT_RUNTIME_SESSION_ID + 2;
   practicePreferencesState = {
     isDefault: false,
     schemaVersion: 1,
@@ -117,6 +203,40 @@ function seedRuntimeSession(
   }
   runtimeSessions.set(session.id, session);
   runtimeLifecycleStates.set(session.id, buildLifecycleState(session, lifecycleOverrides));
+}
+
+function ensureEssaySubmission(session: ReturnType<typeof makeSessionEnvelope>): number | null {
+  if (session.track !== 'essay') {
+    return null;
+  }
+  if (typeof session.essaySubmissionId === 'number' && session.essaySubmissionId > 0) {
+    return session.essaySubmissionId;
+  }
+  const submissionId = nextEssaySubmissionId++;
+  session.essaySubmissionId = submissionId;
+  runtimeEssaySubmissionSession.set(submissionId, session.id);
+  runtimeEssayGradingStates.set(submissionId, {
+    status: 'submitted',
+    pollsRemaining: 0,
+    report: null,
+    referenceAnswers: [
+      {
+        id: submissionId + 1000,
+        questionId: 1005,
+        content: '参考答案示例：先概括问题，再提出三条对策，最后收束到执行闭环。',
+        source: 'ai_generated',
+        likesCount: 3,
+        favoritesCount: 1,
+        reportCount: 0,
+        qualityScore: 0.92,
+        status: 'public',
+        publishedAt: new Date().toISOString(),
+      },
+    ],
+    errorMessage: null,
+  });
+  runtimeSessions.set(session.id, session);
+  return submissionId;
 }
 
 function appendTransition(
@@ -415,6 +535,7 @@ export const practiceHandlers = [
       );
     }
     session.status = 'submitted';
+    ensureEssaySubmission(session);
     runtimeSessions.set(sessionId, session);
     appendTransition(
       sessionId,
@@ -435,11 +556,14 @@ export const practiceHandlers = [
   }),
   http.get('/api/v2/practice/sessions/:sessionId/result', ({ params }) => {
     const sessionId = Number(params.sessionId);
+    const session = runtimeSessions.get(sessionId);
+    const lifecycle = runtimeLifecycleStates.get(sessionId);
+    const isEssay = session?.track === 'essay';
     return HttpResponse.json({
       summary: [
-        { key: 'track', label: 'Track', value: 'xingce', tone: 'neutral' },
-        { key: 'status', label: 'Status', value: 'submitted', tone: 'neutral' },
-        { key: 'answered', label: 'Answered', value: '2', tone: 'ok' },
+        { key: 'track', label: 'Track', value: session?.track ?? 'xingce', tone: 'neutral' },
+        { key: 'status', label: 'Status', value: lifecycle?.status ?? session?.status ?? 'submitted', tone: 'neutral' },
+        { key: 'answered', label: 'Answered', value: String(session?.items.filter((item) => item.status === 'answered').length ?? 2), tone: 'ok' },
       ],
       sections: [
         {
@@ -451,8 +575,86 @@ export const practiceHandlers = [
         },
       ],
       actions: [
-        { key: 'review', label: 'Open review', href: '/wrong-book', enabled: true },
+        isEssay
+          ? { key: 'grading', label: 'Open grading', href: `/practice/sessions/${sessionId}/grading`, enabled: true }
+          : { key: 'review', label: 'Open review', href: '/wrong-book', enabled: true },
       ],
+    });
+  }),
+  http.post('/api/v2/practice/essay/submissions/:submissionId/grade', ({ params }) => {
+    const submissionId = Number(params.submissionId);
+    const grading = runtimeEssayGradingStates.get(submissionId);
+    if (!grading) {
+      return HttpResponse.json(
+        { code: 'essay_submission_not_found', detail: 'essay submission not found' },
+        { status: 404 },
+      );
+    }
+    grading.status = 'pending_grading';
+    grading.pollsRemaining = 1;
+    grading.errorMessage = null;
+    runtimeEssayGradingStates.set(submissionId, grading);
+    return HttpResponse.json({
+      submissionId,
+      status: 'pending_grading',
+      report: null,
+      referenceAnswers: grading.referenceAnswers,
+      errorMessage: null,
+    });
+  }),
+  http.get('/api/v2/practice/essay/submissions/:submissionId/grading-status', ({ params }) => {
+    const submissionId = Number(params.submissionId);
+    const grading = runtimeEssayGradingStates.get(submissionId);
+    if (!grading) {
+      return HttpResponse.json(
+        { code: 'essay_submission_not_found', detail: 'essay submission not found' },
+        { status: 404 },
+      );
+    }
+    if (grading.status === 'pending_grading' && grading.pollsRemaining > 0) {
+      grading.pollsRemaining -= 1;
+      if (grading.pollsRemaining === 0) {
+        grading.status = 'graded';
+        grading.report = {
+          totalScore: 76,
+          dimensions: [
+            { name: '论点', score: 18, fullScore: 25, comment: '论点明确，但层次还能更紧。' },
+            { name: '结构', score: 22, fullScore: 25, comment: '结构完整，首尾呼应较好。' },
+            { name: '表达', score: 18, fullScore: 20, comment: '表达通顺，个别句式略重复。' },
+          ],
+          highlights: ['中心论点明确', '材料使用较充分'],
+          issues: ['对策层缺少优先级拆分'],
+          overallComment: '整体达到稳定成文水平，重点补足对策排序与论证抓手。',
+          improvementSuggestions: ['补一段措施优先级判断', '结尾增加执行闭环'],
+          gradedAt: new Date().toISOString(),
+          llmCallId: 88001,
+        };
+      }
+      runtimeEssayGradingStates.set(submissionId, grading);
+    }
+    return HttpResponse.json({
+      submissionId,
+      status: grading.status,
+      report: grading.report,
+      referenceAnswers: grading.referenceAnswers,
+      errorMessage: grading.errorMessage,
+    });
+  }),
+  http.get('/api/v2/practice/essay/submissions/:submissionId/result', ({ params }) => {
+    const submissionId = Number(params.submissionId);
+    const grading = runtimeEssayGradingStates.get(submissionId);
+    if (!grading) {
+      return HttpResponse.json(
+        { code: 'essay_submission_not_found', detail: 'essay submission not found' },
+        { status: 404 },
+      );
+    }
+    return HttpResponse.json({
+      submissionId,
+      status: grading.status,
+      report: grading.report,
+      referenceAnswers: grading.referenceAnswers,
+      errorMessage: grading.errorMessage,
     });
   }),
   http.get('/api/v2/practice/sessions/:sessionId/countdown', () =>
