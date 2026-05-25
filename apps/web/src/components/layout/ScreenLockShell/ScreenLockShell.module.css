@@ -1,0 +1,29 @@
+/*
+ * ScreenLockShell — entry-view single-screen lock grid primitive.
+ * Why: Web-Layout.md §1 — entry views land in a 100dvh grid with
+ *      overflow: hidden so internal scroll containers (ScrollRegion) own
+ *      the page's only scroll affordance. Mirrors prototype `.ws` model.
+ */
+
+.root {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  min-width: 0;
+  gap: var(--screen-lock-gap, var(--space-4));
+  grid-template-rows: var(--screen-lock-rows);
+  grid-template-columns: var(--screen-lock-columns, 1fr);
+  overflow: hidden;
+}
+
+/*
+ * ScrollRegion — internal scroll cell. The min-height: 0 + min-width: 0
+ * pair lets the cell shrink below its content size in a grid/flex parent
+ * (otherwise overflow: auto degenerates to natural growth).
+ */
+.scrollRegion {
+  min-height: 0;
+  min-width: 0;
+  overflow: auto;
+}

@@ -27,6 +27,11 @@ venv/
 .idea/
 .vscode/
 
+# IDE local state (committed by accident in earlier history; now gitignored)
+docs/vault/.obsidian/workspace.json
+docs/vault/.obsidian/workspace-mobile.json
+.kiro/specs/**/.config.kiro
+
 # Local data (本轮迁移不带数据)
 /data/
 *.db

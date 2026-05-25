@@ -33,3 +33,9 @@ export type { MobileTopBarProps } from './MobileTopBar';
 
 export { BottomTabBar } from './BottomTabBar';
 export type { BottomTabBarProps, BottomTabBarItem } from './BottomTabBar';
+
+export { ScreenLockShell, ScrollRegion } from './ScreenLockShell';
+export type {
+  ScreenLockShellProps,
+  ScrollRegionProps,
+} from './ScreenLockShell';

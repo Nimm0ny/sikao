@@ -17,6 +17,7 @@
     "lint:icon-style": "node scripts/lint-icon-style.mjs",
     "lint:touch-target": "node scripts/lint-touch-target.mjs",
     "lint:v4-residual": "node scripts/lint-v4-token-residual.mjs",
+    "lint:screen-lock": "node scripts/lint-screen-lock.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",

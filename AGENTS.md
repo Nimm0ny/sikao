@@ -74,6 +74,17 @@
     Must: 前端端口只用 `18080`；全场景禁 docker；永远本地 commit/push/pull，不在 VPS 上改源码或 commit。
     If conflict: 停止执行，并明确报约束冲突。
 
+11. `AGENT-H11 Visual Contract Define-First`
+    Trigger: 任何视觉/前端 phase 任务（含新建 view、改 view 布局、改导航/Rail/底栏、改卡片密度、改 Calendar/列表骨架），且对应原型 HTML 已存在于 `.tmp_review/out/**`。
+    Must: 实现前必须落 `docs/plan/<sik>-<feature>-visual-contract.md`，并被对应 issue 的 `## Acceptance` 显式引用为验收依据。契约最少含：
+      1. **Layout Topology**：root grid 行/列分配 + 一屏行为（lock / 自然滚 / 局部滚）+ 子区域 owner
+      2. **Required Interactive Elements**：必须存在的按钮/控件清单（不能少）
+      3. **Information Density**：每卡 N 个元素 + 视觉编码（颜色/icon/数值排版）
+      4. **Token Map**：原型 var → V5 token 一一映射（引用 `Prototype-Token-Map.md`）
+      5. **Visual Drift from Prototype**：本次实施和原型不一致的点 + 偏离原因 + lhr 拍板日期；如无偏离写 `no drift`
+      6. **Acceptance Hooks**：实现 vs 原型对照表（项 / 原型 / 实现 / PASS|偏离）+ Chrome MCP 双开 diff 截图归档路径
+    If conflict: 没有 visual-contract.md，不得开 Runner；不得标 `done`；issue acceptance 没显式引用 contract，issue 视为未完成。
+
 ### 0.3 Fast Path
 
 1. 声明模式。
@@ -88,7 +99,9 @@
 - [ ] 已完成能力边界检查
 - [ ] 已完成需求 intake，明确 requirement / acceptance / blockers
 - [ ] 需要时已 Define-First，plan doc / 契约已落档
-- [ ] 需要时已完成独立 subagent review
+- [ ] 视觉/前端任务已落 `visual-contract.md` 并被 issue acceptance 引用（H11）
+- [ ] 视觉/前端任务已附 实现 vs 原型 对照表（PASS / 偏离）+ Chrome MCP 双开 diff 截图（H11）
+- [ ] 需要时已完成独立 subagent review，且 review 报告落档到 `docs/reviews/<sik>-<wave>.md`
 - [ ] `typecheck / lint / tests / browser smoke`（适用项）都有 PASS 证据
 - [ ] Multica 任务已回写 Evidence Block
 - [ ] 若修改 `AGENTS.md` / `CLAUDE.md`，两份文件已同步
@@ -105,8 +118,9 @@
 
 2. Review Gate
    - 文档新增 `>50` 行、代码改动 `>100` 行、鉴权 / DB / API schema / 状态机 / 安全敏感 / 跨服务改动，必须独立 subagent review。
-   - 前端视觉改动必须另有规范审查官和 browser smoke。
-   - Review 通过只说明“审查通过”，不等于 validation 通过。
+   - 前端视觉改动必须另有规范审查官 + browser smoke + visual-contract 对照（H11）。
+   - 所有独立 review 输出必须落档到 `docs/reviews/<sik>-<wave>.md`，含 检查范围 / 发现项（编号·严重度·证据行号）/ 建议处理 / 风险等级；commit message 单写 "review pass" 不算。
+   - Review 通过只说明"审查通过"，不等于 validation 通过。
 
 3. Validation Gate
    - 默认必须跑 `typecheck + lint + tests`。
@@ -134,9 +148,12 @@
 - `docs/engineering/gate-automation.md` — Multica / review / validation / git 自动化门禁
 - `docs/engineering/master-role.md` — Master 角色细则
 - `docs/engineering/multica-workflow.md` — Multica intake / Evidence Block / Completion Gate
+- `docs/engineering/visual-contract-workflow.md` — 视觉契约 Define-First 流程（H11）
 - `docs/engineering/git-workflow.md` — 本地 git / push / VPS 约束
 - `docs/engineering/fail-fast-exceptions.md` — Fail-Fast 例外登记
 - `docs/vault/04-design/Design-System.md` — 设计硬约束
+- `docs/vault/04-design/Web-Layout.md` — Web 布局约束（一屏锁死规则）
+- `docs/vault/04-design/Prototype-Token-Map.md` — 原型 var → V5 token 映射表（H11 强制查表）
 
 ---
 
@@ -269,9 +286,10 @@
 
 ### 4.3 前端 / 设计 SSOT
 
-前端硬约束以这两处为准：
+前端硬约束以这三处为准：
 
 - `docs/vault/04-design/Design-System.md`
+- `docs/vault/04-design/Web-Layout.md`（一屏锁死规则）
 - `packages/design-system/src/tokens.css`
 
 必须遵守的摘要：
@@ -279,6 +297,8 @@
 - Token 单源：只改 `packages/design-system/src/tokens.css`
 - CJK 禁 italic
 - 圆角 / type scale / ui-copy / SVG-only / view 纵向预算 都按 Design System
+- **入口 view 强制使用 `ScreenLockShell`（`height: 100dvh + overflow: hidden + 内部局部滚`）**；钻取/长列表页才允许整页滚（详见 `Web-Layout.md`）
+- 抄原型时必须查 `docs/vault/04-design/Prototype-Token-Map.md`，禁止把 `--paper-1 / --ink-1 / --r-card / --t-meta / --shadow-1` 等原型 var 直接写进生产代码，也禁止 color-mix 百分比硬编码
 - 前端端口只用 `18080`
 - 全场景禁 docker
 
@@ -333,6 +353,7 @@
 - 跨模块 DTO / 领域模型
 - MCP tool schema / agent 工具签名
 - 状态机枚举和迁移路径
+- **视觉契约**（H11）：任何对应原型已存在的 view / nav / 卡片骨架改动；契约文件 `docs/plan/<sik>-<feature>-visual-contract.md` 不在，不得 Runner
 
 ### 5.4 TDD
 
@@ -379,6 +400,9 @@ multica issue runs <issue-id> --output json
 - 代码新增或修改 `>100` 行
 - 鉴权 / 数据边界 / 跨服务契约 / DB migration / 安全敏感代码
 - 任何跨服务调用改动
+- **任何视觉/前端 phase 改动**（含 H11 视觉契约对照）
+
+review 报告必须落档到 `docs/reviews/<sik>-<wave>.md`，含：检查范围 / 发现项（编号·严重度·证据行号）/ 建议处理 / 风险等级。commit message 单写 "review pass" 不算。
 
 ### 6.4 Completion Gate（Multica）
 
@@ -392,7 +416,8 @@ Multica 任务完成前必须回写 Evidence Block，最少包含：
 - Implementation summary
 - Tests / lint / typecheck / build
 - Browser smoke（适用项）
-- Subagent review
+- **Visual Contract**（适用项，H11）：contract 文件路径 + 实现 vs 原型 对照表 PASS 行数 + Chrome MCP 双开 diff 截图归档路径
+- Subagent review（含 `docs/reviews/<sik>-<wave>.md` 路径）
 - Known gaps
 - Rollback notes
 - Next owner
@@ -430,9 +455,12 @@ Multica 任务完成前必须回写 Evidence Block，最少包含：
 - `docs/vault/00-index/Home.md`
 - `docs/vault/03-tech/Architecture.md`
 - `docs/vault/04-design/Design-System.md`
+- `docs/vault/04-design/Web-Layout.md` — 一屏锁死规则
+- `docs/vault/04-design/Prototype-Token-Map.md` — 原型 var → V5 token 映射（H11）
 - `docs/vault/05-migration/Migration-Status.md`
 - `docs/engineering/agent-hard-rules.md`
 - `docs/engineering/master-role.md`
 - `docs/engineering/multica-workflow.md`
+- `docs/engineering/visual-contract-workflow.md` — 视觉契约 Define-First 流程（H11）
 - `docs/engineering/git-workflow.md`
 - `docs/engineering/fail-fast-exceptions.md`

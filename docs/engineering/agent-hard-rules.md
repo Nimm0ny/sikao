@@ -2,7 +2,7 @@
 type: engineering
 status: active
 owner: xiaodeng
-last-reviewed: 2026-05-21
+last-reviewed: 2026-05-25
 ---
 
 # Agent Hard Rules
@@ -61,12 +61,20 @@ last-reviewed: 2026-05-21
     Must: 前端端口只用 `18080`；全场景禁 docker；永远本地 commit/push/pull，不在 VPS 上改源码或 commit。
     If conflict: 停止执行，并明确报约束冲突。
 
+11. `AGENT-H11 Visual Contract Define-First`
+    Trigger: 任何视觉/前端 phase 任务（含新建 view、改 view 布局、改导航/Rail/底栏、改卡片密度、改 Calendar/列表骨架），且对应原型 HTML 已存在于 `.tmp_review/out/**`。
+    Must: 实现前必须落 `docs/plan/<sik>-<feature>-visual-contract.md`，并被对应 issue 的 `## Acceptance` 显式引用为验收依据。契约最少含 Layout Topology / Required Interactive Elements / Information Density / Token Map / Visual Drift from Prototype / Acceptance Hooks 六块。
+    If conflict: 没有 visual-contract.md，不得开 Runner；不得标 `done`。
+
 ## Supporting Docs
 
 - `AGENTS.md` / `CLAUDE.md` — 根级执行入口
 - `docs/engineering/master-role.md` — Master 角色细则
 - `docs/engineering/gate-automation.md` — Multica / review / validation / git 自动化门禁
 - `docs/engineering/multica-workflow.md` — Multica intake / Evidence Block / Completion Gate
+- `docs/engineering/visual-contract-workflow.md` — 视觉契约 Define-First 流程（H11）
 - `docs/engineering/git-workflow.md` — git / push / VPS 约束
 - `docs/engineering/fail-fast-exceptions.md` — Fail-Fast 例外登记
 - `docs/vault/04-design/Design-System.md` — 设计硬约束与前端审查清单
+- `docs/vault/04-design/Web-Layout.md` — Web 布局 / 一屏锁死规则
+- `docs/vault/04-design/Prototype-Token-Map.md` — 原型 var → V5 token 映射表（H11）
