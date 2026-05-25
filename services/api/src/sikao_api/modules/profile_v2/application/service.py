@@ -26,6 +26,14 @@ from sikao_api.db.schemas_v2 import (
     SectionCardV2,
     SummaryMetricV2,
 )
+from sikao_api.modules.review.application.debt_preferences import (
+    REVIEW_DAILY_LIMIT_KEY,
+    REVIEW_DEBT_REDISTRIBUTE_ENABLED_KEY,
+    REVIEW_HARD_QUESTION_AUTO_DEEP_ANALYSIS_KEY,
+    REVIEW_RAMPUP_ENABLED_KEY,
+    read_review_debt_preferences,
+    validate_review_dashboard_preferences,
+)
 from sikao_api.modules.identity.application.security_v2 import hash_password, verify_password
 from sikao_api.modules.system.application.errors import ConflictError, UnauthorizedError, ValidationError
 
@@ -137,10 +145,15 @@ class ProfileServiceV2:
 
     def get_info(self, *, user: UserV2) -> ProfileInfoResponseV2:
         info = self.session.scalar(select(ProfileInfoV2).where(ProfileInfoV2.user_id == user.id))
+        preferences = read_review_debt_preferences(info)
         if info is None:
             return ProfileInfoResponseV2(
                 display_name=user.display_name,
                 ai_adjust_enabled=True,
+                review_daily_limit=preferences.daily_limit,
+                review_debt_redistribute_enabled=preferences.redistribute_enabled,
+                review_rampup_enabled=preferences.rampup_enabled,
+                review_hard_question_auto_deep_analysis=preferences.hard_question_auto_deep_analysis,
                 dashboard_preferences={},
                 recommender_preferences={},
             )
@@ -150,6 +163,10 @@ class ProfileServiceV2:
             region=info.region,
             bio=info.bio,
             ai_adjust_enabled=info.ai_adjust_enabled,
+            review_daily_limit=preferences.daily_limit,
+            review_debt_redistribute_enabled=preferences.redistribute_enabled,
+            review_rampup_enabled=preferences.rampup_enabled,
+            review_hard_question_auto_deep_analysis=preferences.hard_question_auto_deep_analysis,
             dashboard_preferences=info.dashboard_preferences,
             recommender_preferences=info.recommender_preferences,
         )
@@ -170,8 +187,20 @@ class ProfileServiceV2:
             info.bio = payload.bio
         if payload.ai_adjust_enabled is not None:
             info.ai_adjust_enabled = payload.ai_adjust_enabled
+        resolved_dashboard_preferences = dict(info.dashboard_preferences or {})
         if payload.dashboard_preferences is not None:
-            info.dashboard_preferences = payload.dashboard_preferences
+            validate_review_dashboard_preferences(payload.dashboard_preferences)
+            resolved_dashboard_preferences = dict(payload.dashboard_preferences)
+        if payload.review_daily_limit is not None:
+            resolved_dashboard_preferences[REVIEW_DAILY_LIMIT_KEY] = payload.review_daily_limit
+        if payload.review_debt_redistribute_enabled is not None:
+            resolved_dashboard_preferences[REVIEW_DEBT_REDISTRIBUTE_ENABLED_KEY] = payload.review_debt_redistribute_enabled
+        if payload.review_rampup_enabled is not None:
+            resolved_dashboard_preferences[REVIEW_RAMPUP_ENABLED_KEY] = payload.review_rampup_enabled
+        if payload.review_hard_question_auto_deep_analysis is not None:
+            resolved_dashboard_preferences[REVIEW_HARD_QUESTION_AUTO_DEEP_ANALYSIS_KEY] = payload.review_hard_question_auto_deep_analysis
+        validate_review_dashboard_preferences(resolved_dashboard_preferences)
+        info.dashboard_preferences = resolved_dashboard_preferences
         if payload.recommender_preferences is not None:
             info.recommender_preferences = payload.recommender_preferences
         self.session.add_all([user, info])
@@ -228,6 +257,7 @@ class ProfileServiceV2:
         self, *, user: UserV2, payload: ProfilePreferencesUpdateRequestV2
     ) -> ProfilePreferencesResponseV2:
         info = self._get_or_create_info(user)
+        validate_review_dashboard_preferences(payload.dashboard_preferences)
         info.dashboard_preferences = payload.dashboard_preferences
         self.session.add(info)
         return self.get_preferences(user=user)

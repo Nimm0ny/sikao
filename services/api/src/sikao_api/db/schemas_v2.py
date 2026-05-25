@@ -548,6 +548,31 @@ class ReviewInsightsRedoAccuracyResponseV2(CamelModel):
     weeks: list[ReviewWeekAccuracyPointV2] = Field(default_factory=list)
 
 
+class ReviewDebtPlanBucketV2(CamelModel):
+    date: date
+    count: int
+
+
+class ReviewDebtPlanResponseV2(CamelModel):
+    buckets: list[ReviewDebtPlanBucketV2] = Field(default_factory=list)
+    total_count: int = 0
+    spread_days: int = 0
+
+
+class ReviewDebtSnapshotResponseV2(CamelModel):
+    debt_severity: str
+    overdue_count: int
+    oldest_overdue_days: int
+    daily_limit: int
+    recommended_today_count: int
+    redistributed_count: int = 0
+    rampup_phase: str | None = None
+    rampup_started_at: UtcDatetime | None = None
+    rampup_unlock_at: UtcDatetime | None = None
+    rampup_active: bool = False
+    can_redistribute: bool = False
+
+
 class ReviewWeeklyProgressHighlightV2(CamelModel):
     question_id: int | None = None
     title: str
@@ -1184,6 +1209,10 @@ class ProfileInfoResponseV2(CamelModel):
     region: str | None = None
     bio: str | None = None
     ai_adjust_enabled: bool = True
+    review_daily_limit: int = 30
+    review_debt_redistribute_enabled: bool = True
+    review_rampup_enabled: bool = True
+    review_hard_question_auto_deep_analysis: bool = True
     dashboard_preferences: dict[str, Any] = Field(default_factory=dict)
     recommender_preferences: dict[str, Any] = Field(default_factory=dict)
 
@@ -1194,6 +1223,10 @@ class ProfileInfoUpdateRequestV2(CamelModel):
     region: str | None = Field(default=None, max_length=128)
     bio: str | None = Field(default=None, max_length=2000)
     ai_adjust_enabled: bool | None = None
+    review_daily_limit: int | None = Field(default=None, ge=10, le=100)
+    review_debt_redistribute_enabled: bool | None = None
+    review_rampup_enabled: bool | None = None
+    review_hard_question_auto_deep_analysis: bool | None = None
     dashboard_preferences: dict[str, Any] | None = None
     recommender_preferences: dict[str, Any] | None = None
 
