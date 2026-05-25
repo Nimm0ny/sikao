@@ -139,4 +139,27 @@ describe('RootLayout (V5 §D.4 SaaS shell)', () => {
     const meEntry = screen.getByTestId('rail-me-link');
     expect(meEntry).toHaveAttribute('data-tip', '我的');
   });
+
+  // SIK-121 W2 — visual contract Acceptance Hooks H05 (cmd-k slot wiring).
+  // See docs/plan/sik-rail-v5-visual-contract.md §6.
+
+  it('renders the cmd-k button inside the rail (H05 — clicking opens CommandPalette)', () => {
+    render(<RouterProvider router={makeRouter('/')} />);
+    // The cmd-k button is the only element with aria-label "命令搜索".
+    // Clicking it must open the CommandPalette dialog (role="dialog").
+    const cmdBtn = screen.getByRole('button', { name: '命令搜索' });
+    expect(cmdBtn).toBeInTheDocument();
+    expect(screen.queryByRole('dialog', { name: '命令面板' })).toBeNull();
+    cmdBtn.click();
+    expect(screen.getByRole('dialog', { name: '命令面板' })).toBeInTheDocument();
+  });
+
+  it('Ctrl+K shortcut opens the CommandPalette (H05 keyboard path)', () => {
+    render(<RouterProvider router={makeRouter('/')} />);
+    expect(screen.queryByRole('dialog', { name: '命令面板' })).toBeNull();
+    // KeyboardShortcuts registers Ctrl+K and Meta+K → palette open.
+    const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true });
+    window.dispatchEvent(event);
+    expect(screen.getByRole('dialog', { name: '命令面板' })).toBeInTheDocument();
+  });
 });

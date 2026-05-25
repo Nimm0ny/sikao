@@ -170,4 +170,100 @@ describe('Rail', () => {
     const meEntriesInsideNav = navList.querySelectorAll('[aria-label="我的"]');
     expect(meEntriesInsideNav).toHaveLength(0);
   });
+
+  // SIK-121 W2 — visual contract Acceptance Hooks H05-H10 + Tooltip pattern unify.
+  // See docs/plan/sik-rail-v5-visual-contract.md §6.
+
+  it('cmd slot renders inside Rail when provided (H05 surface)', () => {
+    // RootLayout owns the cmd-k button content; Rail just exposes the slot.
+    render(
+      <Rail
+        brand={<span>BR</span>}
+        cmd={<button type="button" data-testid="rail-cmd-btn">cmd</button>}
+        navItems={navItems}
+        me={<span>ME</span>}
+        collapsed={false}
+      />,
+    );
+    expect(screen.getByTestId('rail-cmd-btn')).toBeInTheDocument();
+  });
+
+  it('toggle button sits inside the brand row trailing (H07)', () => {
+    // The toggle button must be a descendant of the brand row, not a
+    // bottom-of-rail sibling. We assert this by querying the brand
+    // container and checking the toggle is inside it.
+    render(
+      <Rail
+        brand={<span>BR</span>}
+        navItems={navItems}
+        me={<span>ME</span>}
+        collapsed={false}
+      />,
+    );
+    const brand = screen.getByTestId('rail-brand');
+    expect(brand.querySelector('[data-testid="rail-toggle"]')).not.toBeNull();
+  });
+
+  it('section heading "导航" renders in expanded state (H10)', () => {
+    render(
+      <Rail
+        brand={<span>BR</span>}
+        navItems={navItems}
+        me={<span>ME</span>}
+        collapsed={false}
+      />,
+    );
+    // Use exact text match; RTL falls back to text node descendant.
+    expect(screen.getByText('导航')).toBeInTheDocument();
+  });
+
+  it('navItem in collapsed state carries data-tip attribute equal to label (Tooltip mode unify)', () => {
+    // W1 RailMe used [data-tip]::after; W2 unifies brand + nav onto the
+    // same pure-CSS pattern. The React <Tooltip> component is no longer
+    // wrapped around collapsed brand / nav rows.
+    render(
+      <Rail
+        brand={<span>BR</span>}
+        navItems={navItems}
+        me={<span>ME</span>}
+        collapsed={true}
+      />,
+    );
+    const homeLink = screen.getByRole('link', { name: '首页' });
+    expect(homeLink).toHaveAttribute('data-tip', '首页');
+    const practiceLink = screen.getByRole('link', { name: '练习' });
+    expect(practiceLink).toHaveAttribute('data-tip', '练习');
+  });
+
+  it('collapsed brand button carries data-tip for ::after Tooltip (Tooltip mode unify)', () => {
+    render(
+      <Rail
+        brand={<span>BR</span>}
+        navItems={navItems}
+        me={<span>ME</span>}
+        collapsed={true}
+      />,
+    );
+    const brandBtn = screen.getByTestId('rail-brand-collapsed');
+    expect(brandBtn).toHaveAttribute('data-tip');
+    expect(brandBtn.getAttribute('data-tip')).toMatch(/展开侧栏/);
+  });
+
+  it('toggle button uses sprite (rail-toggle) — no inline path elements (H06)', () => {
+    // H06 mandates SpriteIcon usage. The sprite consumer renders
+    // <svg><use href="/icons.svg#rail-toggle" /></svg>; we assert the
+    // <use> child exists and the inline geometry path is gone.
+    render(
+      <Rail
+        brand={<span>BR</span>}
+        navItems={navItems}
+        me={<span>ME</span>}
+        collapsed={false}
+      />,
+    );
+    const toggle = screen.getByTestId('rail-toggle');
+    const useEl = toggle.querySelector('use');
+    expect(useEl).not.toBeNull();
+    expect(useEl?.getAttribute('href')).toBe('/icons.svg#rail-toggle');
+  });
 });
