@@ -1,7 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import time
 from typing import Any, Protocol
+
+import httpx
+
+from sikao_api.core.config import Settings
 
 
 class NotesSearchUnavailable(RuntimeError):
@@ -78,3 +83,69 @@ class NotesSearchClientProtocol(Protocol):
     ) -> NoteSearchResult: ...
 
     def close(self) -> None: ...
+
+
+class DisabledNotesSearchClient:
+    is_enabled = False
+
+    def init_index(self) -> None:
+        return
+
+    def upsert_note(self, document: NoteSearchDocument) -> None:
+        return
+
+    def delete_note(self, note_id: int) -> None:
+        return
+
+    def search(
+        self,
+        *,
+        query: str,
+        filter_expression: str,
+        page: int,
+        size: int,
+    ) -> NoteSearchResult:
+        raise NotesSearchUnavailable("notes search is not configured")
+
+    def close(self) -> None:
+        return
+
+
+class MeilisearchNotesClient:
+    is_enabled = True
+
+    def __init__(self, settings: Settings) -> None:
+        if not settings.meili_url or not settings.meili_master_key:
+            raise RuntimeError("meilisearch client requires MEILI_URL and MEILI_MASTER_KEY")
+        self._index_name = settings.meili_index_name
+        self._timeout_seconds = settings.meili_timeout_seconds
+        self._client = httpx.Client(
+            base_url=settings.meili_url.rstrip("/"),
+            timeout=settings.meili_timeout_seconds,
+            headers={"X-Meili-API-Key": settings.meili_master_key},
+        )
+
+    def init_index(self) -> None:
+        if not self._index_exists():
+            task_uid = self._create_index()
+            self._wait_for_task(task_uid)
+        task_uid = self._update_settings()
+        self._wait_for_task(task_uid)
+
+    def upsert_note(self, document: NoteSearchDocument) -> None:
+        response = self._request(
+            "POST",
+            f"/indexes/{self._index_name}/documents",
+            json=[document.to_payload()],
+            params={"primaryKey": "id"},
+        )
+        task_uid = self._extract_task_uid(response)
+        self._wait_for_task(task_uid)
+
+    def delete_note(self, note_id: int) -> None:
+        response = self._request(
+            "DELETE",
+            f"/indexes/{self._index_name}/documents/{note_id}",
+        )
+        task_uid = self._extract_task_uid(response)
+        self._wait_for_task(task_uid)
