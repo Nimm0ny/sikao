@@ -796,6 +796,27 @@ class NoteSearchResponseV2(CamelModel):
     facet_distribution: dict[str, dict[str, int]] = Field(default_factory=dict)
 
 
+class NoteAiSummaryCardV2(CamelModel):
+    index: int = Field(ge=0)
+    text: str = Field(min_length=1, max_length=50)
+    editable: bool = True
+
+
+class NoteAiSummaryPreviewResponseV2(CamelModel):
+    cards: list[NoteAiSummaryCardV2] = Field(min_length=1, max_length=3)
+    cached: bool
+    note_content_hash: str
+
+
+class NoteAiSummaryConfirmRequestV2(CamelModel):
+    cards: list[NoteAiSummaryCardV2] = Field(min_length=1, max_length=3)
+
+
+class NoteAiSummaryConfirmResponseV2(CamelModel):
+    review_item_ids: list[int] = Field(default_factory=list)
+    message: str
+
+
 class TrendPointV2(CamelModel):
     date: date
     session_id: int
