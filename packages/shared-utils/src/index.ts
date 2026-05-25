@@ -23,3 +23,4 @@ export { usePullToRefresh } from './hooks/usePullToRefresh';
 export { useInputMode } from './hooks/useInputMode';
 export { useTweaks } from './hooks/useTweaks';
 export { useScrollSpyTab } from './hooks/useScrollSpyTab';
+export { useMediaQuery } from './hooks/useMediaQuery';

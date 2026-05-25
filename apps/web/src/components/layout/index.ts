@@ -39,3 +39,6 @@ export type {
   ScreenLockShellProps,
   ScrollRegionProps,
 } from './ScreenLockShell';
+
+export { BurgerDrawer } from './BurgerDrawer';
+export type { BurgerDrawerProps } from './BurgerDrawer';
