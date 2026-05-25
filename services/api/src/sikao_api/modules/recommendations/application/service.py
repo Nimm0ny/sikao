@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 from sikao_api.core.config import Settings
 from sikao_api.db.models_v2 import IdempotencyKeyV2, PlanEventV2, PlanV2, PracticeSessionV2, RecommendationFeedbackV2, RecommendationV2, UserV2
 from sikao_api.db.schemas_v2 import (
+    PracticeSessionCreateRequestV2,
     RecommendationAcceptRequestV2,
     RecommendationAcceptResponseV2,
     RecommendationListResponseV2,
@@ -23,6 +24,7 @@ from sikao_api.modules.llm.application.idempotency import claim_idempotency_key,
 from sikao_api.modules.llm.application.recommender import RecommendationContext
 from sikao_api.modules.llm.application.service import HomeLlmService
 from sikao_api.modules.plans.application.helpers import now_utc
+from sikao_api.modules.session.application.service import SessionServiceV2
 from sikao_api.modules.system.application.audit_v2 import add_audit_log
 from sikao_api.modules.system.application.errors import ConflictError, NotFoundError, ValidationError
 
@@ -102,10 +104,12 @@ class RecommendationServiceV2:
                     )
                 )
             )
-            for row in pending_rows:
+            preserved_rows = [row for row in pending_rows if row.action_type == "review_session"]
+            expired_rows = [row for row in pending_rows if row.action_type != "review_session"]
+            for row in expired_rows:
                 row.status = "expired"
                 self.session.add(row)
-            replaced_ids = {row.id for row in pending_rows}
+            replaced_ids = {row.id for row in expired_rows}
 
             latest_in_progress = self.session.scalar(
                 select(PracticeSessionV2)
@@ -159,13 +163,19 @@ class RecommendationServiceV2:
                 latest_submitted=latest_submitted,
                 llm_call_id=llm_call.id,
                 excluded_recent_ids=replaced_ids,
+                max_items=max(0, 3 - len(preserved_rows)),
             )
             for row in items:
                 self.session.add(row)
             self.session.flush()
+            active_items = sorted(
+                [*preserved_rows, *items],
+                key=lambda row: (row.generated_at, row.id),
+                reverse=True,
+            )[:3]
             response = RecommendationListResponseV2(
-                items=[RecommendationReadV2.model_validate(row) for row in items],
-                total=len(items),
+                items=[RecommendationReadV2.model_validate(row) for row in active_items],
+                total=len(active_items),
             )
             store_replay(
                 self.session,
@@ -211,8 +221,11 @@ class RecommendationServiceV2:
         latest_submitted: PracticeSessionV2 | None,
         llm_call_id: int,
         excluded_recent_ids: set[int],
+        max_items: int = 3,
     ) -> list[RecommendationV2]:
         items: list[RecommendationV2] = []
+        if max_items <= 0:
+            return items
         now = now_utc()
         for row in llm_rows:
             action_type = str(row["action_type"])
@@ -272,7 +285,7 @@ class RecommendationServiceV2:
                     llm_call_id=llm_call_id,
                 )
             )
-            if len(items) == 3:
+            if len(items) == max_items:
                 break
 
         if not items:
@@ -445,6 +458,23 @@ class RecommendationServiceV2:
             existing_session.linked_recommendation_id = recommendation.id
             self.session.add(existing_session)
             return existing_session
+        if recommendation.action_type == "review_session":
+            template = recommendation.payload.get("session_template", {})
+            config = recommendation.payload.get("config", {})
+            if not isinstance(template, dict) or not isinstance(config, dict):
+                raise ConflictError(
+                    "review_session recommendation payload is invalid",
+                    code="recommendation_payload_invalid",
+                )
+            track_value = str(template.get("track") or "xingce")
+            practice_payload = PracticeSessionCreateRequestV2(
+                track="essay" if track_value == "essay" else "xingce",
+                entry_kind=str(template.get("entry_kind") or "review"),
+                mode=str(template.get("mode") or "wrong_redo"),
+                config=config,
+                linked_recommendation_id=recommendation.id,
+            )
+            return SessionServiceV2(self.session).create_session(user=user, payload=practice_payload)
         template = recommendation.payload.get("session_template", {})
         track = template.get("track") or ("essay" if template.get("category") == "essay" else "xingce")
         entry_kind = template.get("entry_kind") or recommendation.action_type

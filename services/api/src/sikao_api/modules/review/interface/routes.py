@@ -16,6 +16,7 @@ from sikao_api.db.schemas_v2 import (
     ReviewInsightsCausesResponseV2,
     ReviewInsightsRedoAccuracyResponseV2,
     ReviewInsightsTrendsResponseV2,
+    RecommendationReadV2,
     ReviewAttemptSubmitV2,
     ReviewBatchActionResultV2,
     ReviewDetailResponseV2,
@@ -40,6 +41,7 @@ from sikao_api.modules.review.application.cause_analysis_queries import list_cau
 from sikao_api.modules.review.application.cause_analysis_result import serialize_analysis_row
 from sikao_api.modules.review.application.cause_analysis_service import ReviewCauseAnalysisService
 from sikao_api.modules.review.application.cause_override_service import CauseOverrideService
+from sikao_api.modules.review.application.recommendation_bridge import create_review_recommendation
 from sikao_api.modules.review.application.insights_service import (
     build_review_causes,
     build_review_redo_accuracy,
@@ -319,6 +321,28 @@ def redo_review_item(
     session: Annotated[Session, Depends(get_db_session)],
 ) -> OperationAckV2:
     return build_redo_ack(session, user=user, item_id=item_id)
+
+
+@router.post(
+    "/items/{item_id}/add-to-plan",
+    response_model=RecommendationReadV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def add_review_item_to_plan(
+    item_id: int,
+    request: Request,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> RecommendationReadV2:
+    recommendation = create_review_recommendation(
+        session,
+        user=user,
+        item_id=item_id,
+        request_id=getattr(request.state, "request_id", None),
+        ip=request.client.host if request.client else None,
+    )
+    session.commit()
+    return RecommendationReadV2.model_validate(recommendation, from_attributes=True)
 
 
 @admin_router.post(
