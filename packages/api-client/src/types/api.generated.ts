@@ -5281,6 +5281,78 @@ export interface components {
             /** Status */
             status: string;
         };
+        /** ReviewCauseFrequencyV2 */
+        ReviewCauseFrequencyV2: {
+            /** Count */
+            count: number;
+            /** Name */
+            name: string;
+            /** Severitydistribution */
+            severityDistribution?: {
+                [key: string]: number;
+            };
+            /** Slug */
+            slug: string;
+        };
+        /** ReviewDebtPlanBucketV2 */
+        ReviewDebtPlanBucketV2: {
+            /** Count */
+            count: number;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+        };
+        /** ReviewDebtPlanResponseV2 */
+        ReviewDebtPlanResponseV2: {
+            /** Buckets */
+            buckets?: components["schemas"]["ReviewDebtPlanBucketV2"][];
+            /**
+             * Spreaddays
+             * @default 0
+             */
+            spreadDays: number;
+            /**
+             * Totalcount
+             * @default 0
+             */
+            totalCount: number;
+        };
+        /** ReviewDebtSnapshotResponseV2 */
+        ReviewDebtSnapshotResponseV2: {
+            /**
+             * Canredistribute
+             * @default false
+             */
+            canRedistribute: boolean;
+            /** Dailylimit */
+            dailyLimit: number;
+            /** Debtseverity */
+            debtSeverity: string;
+            /** Oldestoverduedays */
+            oldestOverdueDays: number;
+            /** Overduecount */
+            overdueCount: number;
+            /**
+             * Rampupactive
+             * @default false
+             */
+            rampupActive: boolean;
+            /** Rampupphase */
+            rampupPhase?: string | null;
+            /** Rampupstartedat */
+            rampupStartedAt?: string | null;
+            /** Rampupunlockat */
+            rampupUnlockAt?: string | null;
+            /** Recommendedtodaycount */
+            recommendedTodayCount: number;
+            /**
+             * Redistributedcount
+             * @default 0
+             */
+            redistributedCount: number;
+        };
         /** ReviewDetailResponseV2 */
         ReviewDetailResponseV2: {
             /** Actions */
@@ -5293,6 +5365,35 @@ export interface components {
                 [key: string]: unknown;
             };
             srsState?: components["schemas"]["SrsStateV2"] | null;
+        };
+        /** ReviewInsightsCausesResponseV2 */
+        ReviewInsightsCausesResponseV2: {
+            /** Causes */
+            causes?: components["schemas"]["ReviewCauseFrequencyV2"][];
+        };
+        /** ReviewInsightsDayPointV2 */
+        ReviewInsightsDayPointV2: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Graduated */
+            graduated: number;
+            /** Netaccumulation */
+            netAccumulation: number;
+            /** Newincorrect */
+            newIncorrect: number;
+        };
+        /** ReviewInsightsRedoAccuracyResponseV2 */
+        ReviewInsightsRedoAccuracyResponseV2: {
+            /** Weeks */
+            weeks?: components["schemas"]["ReviewWeekAccuracyPointV2"][];
+        };
+        /** ReviewInsightsTrendsResponseV2 */
+        ReviewInsightsTrendsResponseV2: {
+            /** Days */
+            days?: components["schemas"]["ReviewInsightsDayPointV2"][];
         };
         /** ReviewItemBatchActionV2 */
         ReviewItemBatchActionV2: {
@@ -5357,6 +5458,58 @@ export interface components {
             pageSize: number;
             /** Total */
             total: number;
+        };
+        /** ReviewWeekAccuracyPointV2 */
+        ReviewWeekAccuracyPointV2: {
+            /** Accuracypct */
+            accuracyPct: number;
+            /** Correctcount */
+            correctCount: number;
+            /** Totalattempts */
+            totalAttempts: number;
+            /** Week */
+            week: string;
+        };
+        /** ReviewWeeklyConcernHighlightV2 */
+        ReviewWeeklyConcernHighlightV2: {
+            /** Label */
+            label: string;
+            /** Slug */
+            slug?: string | null;
+            /** Summary */
+            summary: string;
+        };
+        /** ReviewWeeklyProgressHighlightV2 */
+        ReviewWeeklyProgressHighlightV2: {
+            /** Fromconfidence */
+            fromConfidence?: string | null;
+            /** Questionid */
+            questionId?: number | null;
+            /** Summary */
+            summary: string;
+            /** Title */
+            title: string;
+            /** Toconfidence */
+            toConfidence?: string | null;
+        };
+        /** ReviewWeeklySummaryResponseV2 */
+        ReviewWeeklySummaryResponseV2: {
+            biggestConcern?: components["schemas"]["ReviewWeeklyConcernHighlightV2"] | null;
+            biggestProgress?: components["schemas"]["ReviewWeeklyProgressHighlightV2"] | null;
+            /** Generatednoteid */
+            generatedNoteId?: number | null;
+            /** Itemsreviewed */
+            itemsReviewed: number;
+            /** Newgraduatedcount */
+            newGraduatedCount: number;
+            /** Newnotescount */
+            newNotesCount: number;
+            /** Nextweekfocus */
+            nextWeekFocus?: string | null;
+            /** Redoaccuracypct */
+            redoAccuracyPct: number;
+            /** Week */
+            week: string;
         };
         /** SectionCardV2 */
         SectionCardV2: {
@@ -5434,78 +5587,6 @@ export interface components {
             /** Lastactivityat */
             lastActivityAt?: string | null;
             /** Lastheartbeatat */
-        /** ReviewCauseFrequencyV2 */
-        ReviewCauseFrequencyV2: {
-            /** Count */
-            count: number;
-            /** Name */
-            name: string;
-            /** Severitydistribution */
-            severityDistribution?: {
-                [key: string]: number;
-            };
-            /** Slug */
-            slug: string;
-        };
-        /** ReviewDebtPlanBucketV2 */
-        ReviewDebtPlanBucketV2: {
-            /** Count */
-            count: number;
-            /**
-             * Date
-             * Format: date
-             */
-            date: string;
-        };
-        /** ReviewDebtPlanResponseV2 */
-        ReviewDebtPlanResponseV2: {
-            /** Buckets */
-            buckets?: components["schemas"]["ReviewDebtPlanBucketV2"][];
-            /**
-             * Spreaddays
-             * @default 0
-             */
-            spreadDays: number;
-            /**
-             * Totalcount
-             * @default 0
-             */
-            totalCount: number;
-        };
-        /** ReviewDebtSnapshotResponseV2 */
-        ReviewDebtSnapshotResponseV2: {
-            /**
-             * Canredistribute
-             * @default false
-             */
-            canRedistribute: boolean;
-            /** Dailylimit */
-            dailyLimit: number;
-            /** Debtseverity */
-            debtSeverity: string;
-            /** Oldestoverduedays */
-            oldestOverdueDays: number;
-            /** Overduecount */
-            overdueCount: number;
-            /**
-             * Rampupactive
-             * @default false
-             */
-            rampupActive: boolean;
-            /** Rampupphase */
-            rampupPhase?: string | null;
-            /** Rampupstartedat */
-            rampupStartedAt?: string | null;
-            /** Rampupunlockat */
-            rampupUnlockAt?: string | null;
-            /** Recommendedtodaycount */
-            recommendedTodayCount: number;
-            /**
-             * Redistributedcount
-             * @default 0
-             */
-            redistributedCount: number;
-        };
             lastHeartbeatAt?: string | null;
             /** Pausedat */
             pausedAt?: string | null;
@@ -5519,35 +5600,6 @@ export interface components {
              * @default 0
              */
             pausedTotalSeconds: number;
-        /** ReviewInsightsCausesResponseV2 */
-        ReviewInsightsCausesResponseV2: {
-            /** Causes */
-            causes?: components["schemas"]["ReviewCauseFrequencyV2"][];
-        };
-        /** ReviewInsightsDayPointV2 */
-        ReviewInsightsDayPointV2: {
-            /**
-             * Date
-             * Format: date
-             */
-            date: string;
-            /** Graduated */
-            graduated: number;
-            /** Netaccumulation */
-            netAccumulation: number;
-            /** Newincorrect */
-            newIncorrect: number;
-        };
-        /** ReviewInsightsRedoAccuracyResponseV2 */
-        ReviewInsightsRedoAccuracyResponseV2: {
-            /** Weeks */
-            weeks?: components["schemas"]["ReviewWeekAccuracyPointV2"][];
-        };
-        /** ReviewInsightsTrendsResponseV2 */
-        ReviewInsightsTrendsResponseV2: {
-            /** Days */
-            days?: components["schemas"]["ReviewInsightsDayPointV2"][];
-        };
             /** Status */
             status: string;
             /** Transitions */
@@ -5612,58 +5664,6 @@ export interface components {
             /** Label */
             label: string;
             /**
-        /** ReviewWeekAccuracyPointV2 */
-        ReviewWeekAccuracyPointV2: {
-            /** Accuracypct */
-            accuracyPct: number;
-            /** Correctcount */
-            correctCount: number;
-            /** Totalattempts */
-            totalAttempts: number;
-            /** Week */
-            week: string;
-        };
-        /** ReviewWeeklyConcernHighlightV2 */
-        ReviewWeeklyConcernHighlightV2: {
-            /** Label */
-            label: string;
-            /** Slug */
-            slug?: string | null;
-            /** Summary */
-            summary: string;
-        };
-        /** ReviewWeeklyProgressHighlightV2 */
-        ReviewWeeklyProgressHighlightV2: {
-            /** Fromconfidence */
-            fromConfidence?: string | null;
-            /** Questionid */
-            questionId?: number | null;
-            /** Summary */
-            summary: string;
-            /** Title */
-            title: string;
-            /** Toconfidence */
-            toConfidence?: string | null;
-        };
-        /** ReviewWeeklySummaryResponseV2 */
-        ReviewWeeklySummaryResponseV2: {
-            biggestConcern?: components["schemas"]["ReviewWeeklyConcernHighlightV2"] | null;
-            biggestProgress?: components["schemas"]["ReviewWeeklyProgressHighlightV2"] | null;
-            /** Generatednoteid */
-            generatedNoteId?: number | null;
-            /** Itemsreviewed */
-            itemsReviewed: number;
-            /** Newgraduatedcount */
-            newGraduatedCount: number;
-            /** Newnotescount */
-            newNotesCount: number;
-            /** Nextweekfocus */
-            nextWeekFocus?: string | null;
-            /** Redoaccuracypct */
-            redoAccuracyPct: number;
-            /** Week */
-            week: string;
-        };
              * Tone
              * @default neutral
              */
@@ -10128,6 +10128,41 @@ export interface operations {
             };
         };
     };
+    post_cause_analysis_feedback_api_v2_review_cause_analysis__analysis_id__feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                analysis_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CauseAnalysisFeedbackRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_cause_tags_api_v2_review_cause_tags_get: {
         parameters: {
             query?: never;
@@ -10148,41 +10183,6 @@ export interface operations {
             };
         };
     };
-    list_review_items_api_v2_review_items_get: {
-        parameters: {
-            query?: {
-                status?: string | null;
-                source_kind?: string | null;
-                question_id?: number | null;
-                page?: number;
-                page_size?: number;
-                order_by?: string;
-                order_dir?: string;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReviewListResponseV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
     get_review_debt_plan_api_v2_review_debt_plan_get: {
         parameters: {
             query?: never;
@@ -10345,6 +10345,41 @@ export interface operations {
             };
         };
     };
+    list_review_items_api_v2_review_items_get: {
+        parameters: {
+            query?: {
+                status?: string | null;
+                source_kind?: string | null;
+                question_id?: number | null;
+                page?: number;
+                page_size?: number;
+                order_by?: string;
+                order_dir?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ReviewListResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
         };
     };
     create_review_item_api_v2_review_items_post: {
@@ -10444,6 +10479,37 @@ export interface operations {
             };
         };
     };
+    add_review_item_to_plan_api_v2_review_items__item_id__add_to_plan_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                item_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RecommendationReadV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     archive_item_api_v2_review_items__item_id__archive_patch: {
         parameters: {
             query?: never;
@@ -10479,37 +10545,6 @@ export interface operations {
         parameters: {
             query?: never;
             header?: never;
-    add_review_item_to_plan_api_v2_review_items__item_id__add_to_plan_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                item_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecommendationReadV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
             path: {
                 item_id: number;
             };
@@ -10641,41 +10676,6 @@ export interface operations {
         };
     };
     restore_item_api_v2_review_items__item_id__restore_patch: {
-    post_cause_analysis_feedback_api_v2_review_cause_analysis__analysis_id__feedback_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                analysis_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["CauseAnalysisFeedbackRequestV2"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["OperationAckV2"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
-    };
         parameters: {
             query?: never;
             header?: never;
