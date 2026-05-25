@@ -51,6 +51,7 @@ def test_postgres_notes_search_facets_and_user_isolation(tmp_path: Path) -> None
         )
         assert note_a2.status_code == 200, note_a2.text
 
+        register_user(client, email="notes-search-b@example.com", display_name="Notes Search B")
         note_b = client.post(
             "/api/v2/notes",
             json={"title": "Search Hidden", "bodyJson": _body_json("searchable hidden body"), "tags": ["essay"]},
