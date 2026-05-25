@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Nav Baseline Guard",
+  "description": "Before writing to RootLayout, Rail, or BottomTabBar files, verify that the nav 4-tab invariant (首页/练习/复盘/笔记) is not violated. No nav items may be added, removed, or reordered without explicit lhr approval.",
+  "version": "1",
+  "when": {
+    "type": "preToolUse",
+    "toolTypes": [
+      "write"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "CRITICAL CHECK: You are about to write to a file. If this file is RootLayout.tsx, Rail.tsx, or BottomTabBar.tsx, you MUST verify: (1) navItems array still has exactly 4 items [home, practice, review, note], (2) no 'me' or '题库' item is being added to navItems, (3) tabBarItems stays in sync with navItems. If the write violates any of these, STOP and ask lhr for approval. If the file is unrelated to nav, proceed normally."
+  }
+}

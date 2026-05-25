@@ -85,6 +85,12 @@
       6. **Acceptance Hooks**：实现 vs 原型对照表（项 / 原型 / 实现 / PASS|偏离）+ Chrome MCP 双开 diff 截图归档路径
     If conflict: 没有 visual-contract.md，不得开 Runner；不得标 `done`；issue acceptance 没显式引用 contract，issue 视为未完成。
 
+12. `AGENT-H12 Nav Baseline Lock`
+    Trigger: 任何前端 Tab Phase 任务、任何涉及 `RootLayout.tsx` / `Rail.tsx` / `BottomTabBar.tsx` 的改动。
+    Must: nav 基座不变量：`navItems` 精确 4 项 `[home, practice, review, note]`（首页/练习/复盘/笔记），顺序固定；Me 入口仅由 RailMe avatar slot 提供，不在 navItems 中；`tabBarItems` 与 `navItems` 同步；禁止「题库」/ `id:'me'` 回归 navItems。
+    If conflict: 停止执行，显式报 nav baseline 冲突，等 lhr 明确批准后才能变更。
+    Source: SIK-121 W1 `bbcfdf4f8`，lhr 2026-05-25 拍板。Steering `.kiro/steering/nav-baseline.md` + Hook `nav-baseline-guard` 双重防御。
+
 ### 0.3 Fast Path
 
 1. 声明模式。
