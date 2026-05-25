@@ -124,6 +124,30 @@ class HomeScheduler:
             coalesce=True,
         )
         self._scheduler.add_job(
+            self._job_review_rampup_phase_advancer,
+            trigger=CronTrigger(hour=0, minute=30, timezone=self._settings.home_scheduler_timezone),
+            id="review.rampup.phase_advancer",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+        self._scheduler.add_job(
+            self._job_review_debt_severity_evaluator,
+            trigger=CronTrigger(hour=3, minute=0, timezone=self._settings.home_scheduler_timezone),
+            id="review.debt.severity_evaluator",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+        self._scheduler.add_job(
+            self._job_review_hard_question_detector,
+            trigger=CronTrigger(hour=3, minute=30, timezone=self._settings.home_scheduler_timezone),
+            id="review.hard_question.detector",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+        self._scheduler.add_job(
             self._job_event_status_tick,
             trigger=CronTrigger(minute="*/15", timezone=self._settings.home_scheduler_timezone),
             id="home.event_status.tick",
@@ -287,6 +311,21 @@ class HomeScheduler:
         job_id = "review.weekly_summary.snapshot"
         self._mark_started(job_id)
         return await self._runtime.run_review_weekly_summary_snapshot()
+
+    async def _job_review_rampup_phase_advancer(self) -> int:
+        job_id = "review.rampup.phase_advancer"
+        self._mark_started(job_id)
+        return await self._runtime.run_review_rampup_phase_advancer()
+
+    async def _job_review_debt_severity_evaluator(self) -> int:
+        job_id = "review.debt.severity_evaluator"
+        self._mark_started(job_id)
+        return await self._runtime.run_review_debt_severity_evaluator()
+
+    async def _job_review_hard_question_detector(self) -> int:
+        job_id = "review.hard_question.detector"
+        self._mark_started(job_id)
+        return await self._runtime.run_review_hard_question_detector()
 
     async def _job_event_status_tick(self) -> int:
         job_id = "home.event_status.tick"
