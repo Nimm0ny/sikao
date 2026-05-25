@@ -35,3 +35,10 @@ export const COMMAND_PALETTE = {
   /** "无匹配结果" — empty-state body when no command / note / question matches. */
   emptyResult: '无匹配结果',
 } as const;
+
+// Rail cmd-k surface (D.3.32 §2.2 — SIK-121 W2 H05).
+export const RAIL_CMD = {
+  /** "命令搜索" — aria-label on the cmd-k trigger button + visible placeholder
+   * text in the rail row. Single source so future i18n owns one key. */
+  searchLabel: '命令搜索',
+} as const;

@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { act, render, screen, fireEvent } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { RootLayout } from './RootLayout';
 
@@ -150,7 +150,7 @@ describe('RootLayout (V5 §D.4 SaaS shell)', () => {
     const cmdBtn = screen.getByRole('button', { name: '命令搜索' });
     expect(cmdBtn).toBeInTheDocument();
     expect(screen.queryByRole('dialog', { name: '命令面板' })).toBeNull();
-    cmdBtn.click();
+    fireEvent.click(cmdBtn);
     expect(screen.getByRole('dialog', { name: '命令面板' })).toBeInTheDocument();
   });
 
@@ -158,8 +158,11 @@ describe('RootLayout (V5 §D.4 SaaS shell)', () => {
     render(<RouterProvider router={makeRouter('/')} />);
     expect(screen.queryByRole('dialog', { name: '命令面板' })).toBeNull();
     // KeyboardShortcuts registers Ctrl+K and Meta+K → palette open.
-    const event = new KeyboardEvent('keydown', { key: 'k', ctrlKey: true });
-    window.dispatchEvent(event);
+    // Wrap dispatchEvent in act() so React 18 flushes the resulting
+    // setState before assertion.
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true }));
+    });
     expect(screen.getByRole('dialog', { name: '命令面板' })).toBeInTheDocument();
   });
 });

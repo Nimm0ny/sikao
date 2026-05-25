@@ -1,6 +1,7 @@
 // lint-allow-ui-copy: V5-M3.5 Phase 4 page skeleton — Rail nav labels are
 // design tokens fixed by spec §D.4, not user-editable strings. ui-copy SSOT
 // migration tracked under future Phase 6+.
+import { useCallback, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -13,6 +14,11 @@ import {
 import type { RailNavItem } from '../../components/layout';
 import type { BottomTabBarItem } from '../../components/layout';
 import { Avatar, SpriteIcon } from '../../components/atom';
+import { CommandPalette } from '../../components/overlay';
+import type { CommandPaletteGroup } from '../../components/overlay';
+import { KeyboardShortcuts } from '../../components/system';
+import type { ShortcutEntry } from '../../components/system';
+import { RAIL_CMD } from '@/lib/ui-copy';
 import styles from './RootLayout.module.css';
 
 /*
@@ -25,6 +31,12 @@ import styles from './RootLayout.module.css';
  * H01/H02。原型 home-frame.html 的 .rail-bottom 也仅有 .rail-me 一段，
  * 与本实现一致。展开态 RailMe 渲染 Avatar + meStack(meName + meSub)；
  * 折叠态由 Rail.tsx 的 [data-tip="我的"] ::after Tooltip 提供文字提示。
+ *
+ * SIK-121 W2 (2026-05-25): cmd-k surface (H05). RootLayout owns the
+ * CommandPalette open state and injects the rail trigger via the
+ * `cmd` slot. Both click-on-trigger and Ctrl/Meta+K open the same
+ * <CommandPalette>. The palette groups list lives here so future
+ * commands can be wired without touching Rail.
  *
  * Mobile chrome (MobileTopBar + BottomTabBar) wires the same 4 tabs;
  * mobile 「我的」 入口 walks /me directly via top-bar trailing avatar
@@ -60,6 +72,10 @@ export function RootLayout({ user }: RootLayoutProps) {
     target === HOME_PATH ? pathname === HOME_PATH : pathname.startsWith(target);
   const navTo = (path: string) => () => navigate(path);
 
+  const [paletteOpen, setPaletteOpen] = useState(false);
+  const openPalette = useCallback(() => setPaletteOpen(true), []);
+  const closePalette = useCallback(() => setPaletteOpen(false), []);
+
   const navItems: RailNavItem[] = [
     { id: 'home', icon: <SpriteIcon id="nav-home" size={18} />, label: '首页', href: HOME_PATH, active: isActive(HOME_PATH), onClick: navTo(HOME_PATH) },
     { id: 'practice', icon: <SpriteIcon id="nav-practice" size={18} />, label: '练习', href: PRACTICE_PATH, active: isActive(PRACTICE_PATH), onClick: navTo(PRACTICE_PATH) },
@@ -74,11 +90,52 @@ export function RootLayout({ user }: RootLayoutProps) {
     { id: 'note', icon: <SpriteIcon id="nav-note" size={18} />, label: '笔记', href: NOTE_PATH, active: isActive(NOTE_PATH) },
   ];
 
+  // Cmd-k Ctrl/Meta+K shortcut — palette open is owned at layout scope so
+  // mounting <KeyboardShortcuts> inside RootLayout (not Rail) keeps the
+  // listener tied to the same lifecycle as the palette state.
+  const cmdShortcuts: readonly ShortcutEntry[] = useMemo(() => [
+    { keys: ['Control', 'k'], handler: openPalette, description: '打开命令面板' },
+    { keys: ['Meta', 'k'], handler: openPalette, description: '打开命令面板 (mac)' },
+  ], [openPalette]);
+
+  // Initial palette command set is intentionally minimal — the 4 nav
+  // jumps + open Me. Future commands (search note, jump to question)
+  // are appended here; CommandPalette filters by label substring.
+  const paletteGroups: readonly CommandPaletteGroup[] = useMemo(() => [
+    {
+      label: '导航',
+      items: [
+        { id: 'cmd-go-home', label: '首页', onSelect: () => navigate(HOME_PATH) },
+        { id: 'cmd-go-practice', label: '练习', onSelect: () => navigate(PRACTICE_PATH) },
+        { id: 'cmd-go-review', label: '复盘', onSelect: () => navigate(REVIEW_PATH) },
+        { id: 'cmd-go-note', label: '笔记', onSelect: () => navigate(NOTE_PATH) },
+        { id: 'cmd-go-me', label: '我的', onSelect: () => navigate(ME_PATH) },
+      ],
+    },
+  ], [navigate]);
+
   const brand: ReactNode = (
     <span className={styles.brand}>
       <span className={styles.brandDot} aria-hidden="true" />
       <span className={styles.brandWord}>SIKAO</span>
     </span>
+  );
+
+  // H05 cmd row: search icon + 命令搜索 placeholder text + ⌘K kbd hint;
+  // collapsed state hides label + kbd via CSS (.cmdLabel / .cmdKbd).
+  const cmd: ReactNode = (
+    <button
+      type="button"
+      className={styles.cmdButton}
+      aria-label={RAIL_CMD.searchLabel}
+      data-testid="rail-cmd-btn"
+      data-tip={RAIL_CMD.searchLabel}
+      onClick={openPalette}
+    >
+      <SpriteIcon id="search" size={14} className={styles.cmdIcon} />
+      <span className={styles.cmdLabel}>{RAIL_CMD.searchLabel}</span>
+      <kbd className={styles.cmdKbd} aria-hidden="true">⌘K</kbd>
+    </button>
   );
 
   const meName = user?.displayName ?? '我';
@@ -119,7 +176,7 @@ export function RootLayout({ user }: RootLayoutProps) {
   );
 
   const desktopRail = (
-    <Rail brand={brand} navItems={navItems} me={me} />
+    <Rail brand={brand} cmd={cmd} navItems={navItems} me={me} />
   );
 
   const mobileTopBar = (
@@ -136,9 +193,15 @@ export function RootLayout({ user }: RootLayoutProps) {
       topbar={mobileTopBar}
       bottomNav={mobileBottomNav}
     >
+      <KeyboardShortcuts shortcuts={cmdShortcuts} />
       <Workspace maxWidth="workspace">
         <Outlet />
       </Workspace>
+      <CommandPalette
+        open={paletteOpen}
+        onClose={closePalette}
+        groups={paletteGroups}
+      />
     </AppShell>
   );
 }
@@ -149,4 +212,3 @@ function getInitials(user: RootLayoutProps['user']): string {
 }
 
 export type { RootLayoutProps };
-

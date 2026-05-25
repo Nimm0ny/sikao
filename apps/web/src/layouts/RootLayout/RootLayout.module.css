@@ -27,6 +27,116 @@
   white-space: nowrap;
 }
 
+/*
+ * SIK-121 W2 H05 — cmd-k trigger row inside the rail.
+ * Matches prototype home-frame.html:80-101 .rail-cmd. Expanded shows
+ * search icon + "命令搜索" + ⌘K kbd; collapsed shrinks to a 32×32 icon
+ * button (label + kbd hidden), tooltip provided by Rail's
+ * .cmd [data-tip]::after pattern via the data-tip on .cmdButton.
+ */
+.cmdButton {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  width: 100%;
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-surface);
+  border-radius: var(--radius-10);
+  color: var(--color-text-meta);
+  font-size: var(--font-meta);
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+}
+
+.cmdIcon {
+  flex: 0 0 auto;
+  color: var(--color-text-meta);
+}
+
+.cmdLabel {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cmdKbd {
+  flex: 0 0 auto;
+  font-family: var(--font-family-mono);
+  font-size: 10px;
+  padding: 0 var(--space-1);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-2);
+  background: var(--color-bg-surface);
+  color: var(--color-text-meta);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover affordance gated to fine-pointer devices. */
+  .cmdButton:hover {
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+  }
+}
+
+.cmdButton:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Collapsed: hide label + kbd; recenter to icon-only 32×32. The Tooltip
+ * comes from Rail.module.css .cmdButton[data-tip]::after — wait, the
+ * cmd slot is rendered inside Rail's .cmd container, NOT .navItem, so
+ * the tooltip selector is owned here. Mirror the same [data-tip]::after
+ * pattern as RailMe.meLink. */
+:root[data-rail='collapsed'] .cmdButton {
+  width: 32px;
+  height: 32px;
+  min-height: 0;
+  padding: 0;
+  justify-content: center;
+}
+
+:root[data-rail='collapsed'] .cmdLabel,
+:root[data-rail='collapsed'] .cmdKbd {
+  display: none;
+}
+
+.cmdButton[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + var(--space-3));
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-text-primary);
+  color: var(--color-bg-surface);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-10);
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out) 0.4s;
+  z-index: var(--z-popover);
+  display: none;
+}
+
+:root[data-rail='collapsed'] .cmdButton[data-tip]::after {
+  display: block;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover-gated tooltip reveal. */
+  :root[data-rail='collapsed'] .cmdButton:hover[data-tip]::after {
+    opacity: 1;
+  }
+}
+
 .meLink {
   display: inline-flex;
   align-items: center;
