@@ -877,12 +877,22 @@ class NoteV2(Base):
     __tablename__ = "notes_v2"
     __table_args__ = (
         Index("ix_notes_v2_user_updated", "user_id", "updated_at"),
+        Index("ix_notes_v2_user_type", "user_id", "type"),
+        Index("ix_notes_v2_user_visibility", "user_id", "visibility"),
         # Phase-Practice WU-B11.3 (Tab 4 schema 提前升级): the question-level
         # note write path lives in Tab 2 (D-Q5 / D-Q17), so we add the link
         # column ahead of the full Tab 4 / Phase-Notes rewrite. Composite
         # (user_id, linked_question_id) is the hot lookup shape for "show
         # me my notes on this question" inside the answering view.
         Index("ix_notes_v2_user_question", "user_id", "linked_question_id"),
+        Index("ix_notes_v2_linked_question", "linked_question_id"),
+        Index(
+            "ix_notes_v2_community_feed",
+            "visibility",
+            "created_at",
+            postgresql_where=text("visibility = 'public' AND deleted_at IS NULL"),
+            sqlite_where=text("visibility = 'public' AND deleted_at IS NULL"),
+        ),
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
@@ -908,6 +918,163 @@ class NoteV2(Base):
     visibility: Mapped[str] = mapped_column(
         String(32), nullable=False, default="private", server_default="private"
     )
+    type: Mapped[str] = mapped_column(
+        String(32), nullable=False, default="free", server_default="free"
+    )
+    body_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB_COMPAT, nullable=True)
+    body_text: Mapped[str] = mapped_column(Text, nullable=False, default="", server_default="")
+    word_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
+    content_hash: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    reaction_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
+    comment_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
+    bookmark_count: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=0, server_default=text("0")
+    )
+    is_featured: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+    tags: Mapped[list[NoteTagV2]] = relationship(
+        back_populates="note",
+        cascade="all, delete-orphan",
+    )
+    images: Mapped[list[NoteImageV2]] = relationship(
+        back_populates="note",
+        cascade="all, delete-orphan",
+    )
+
+
+class NoteTagV2(Base):
+    __tablename__ = "note_tags_v2"
+    __table_args__ = (
+        UniqueConstraint("note_id", "tag_name", name="uq_note_tag_per_note"),
+        Index("ix_note_tags_v2_user_tag", "user_id", "tag_name"),
+        Index("ix_note_tags_v2_note", "note_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    note_id: Mapped[int] = mapped_column(
+        ForeignKey("notes_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    tag_name: Mapped[str] = mapped_column(String(64), nullable=False)
+    is_system: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=false()
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+    note: Mapped[NoteV2] = relationship(back_populates="tags")
+
+
+class NoteImageV2(Base):
+    __tablename__ = "note_images_v2"
+    __table_args__ = (
+        Index("ix_note_images_v2_note", "note_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    note_id: Mapped[int] = mapped_column(
+        ForeignKey("notes_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    file_path: Mapped[str] = mapped_column(String(512), nullable=False)
+    file_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    file_size: Mapped[int] = mapped_column(Integer, nullable=False)
+    mime_type: Mapped[str] = mapped_column(String(64), nullable=False)
+    width: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    height: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+    note: Mapped[NoteV2] = relationship(back_populates="images")
+
+
+class NoteReactionV2(Base):
+    __tablename__ = "note_reactions_v2"
+    __table_args__ = (
+        UniqueConstraint("user_id", "note_id", "type", name="uq_note_reaction"),
+        Index("ix_note_reactions_v2_note", "note_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    note_id: Mapped[int] = mapped_column(
+        ForeignKey("notes_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    type: Mapped[str] = mapped_column(
+        String(16), nullable=False, default="like", server_default="like"
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+
+
+class NoteCommentV2(Base):
+    __tablename__ = "note_comments_v2"
+    __table_args__ = (
+        Index("ix_note_comments_v2_note_created", "note_id", "created_at"),
+        Index("ix_note_comments_v2_path", "note_id", "path"),
+        CheckConstraint("depth BETWEEN 1 AND 3", name="ck_comment_depth"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    note_id: Mapped[int] = mapped_column(
+        ForeignKey("notes_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    parent_comment_id: Mapped[int | None] = mapped_column(
+        ForeignKey("note_comments_v2.id", ondelete="CASCADE"),
+        nullable=True,
+    )
+    path: Mapped[str] = mapped_column(String(128), nullable=False)
+    depth: Mapped[int] = mapped_column(
+        Integer, nullable=False, default=1, server_default=text("1")
+    )
+    body: Mapped[str] = mapped_column(Text, nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime, default=utc_now, onupdate=utc_now, nullable=False
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+
+
+class NoteBookmarkV2(Base):
+    __tablename__ = "note_bookmarks_v2"
+    __table_args__ = (
+        UniqueConstraint("user_id", "note_id", name="uq_note_bookmark"),
+        Index("ix_note_bookmarks_v2_user", "user_id", "created_at"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    note_id: Mapped[int] = mapped_column(
+        ForeignKey("notes_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
 
 
 class NoteLinkV2(Base):

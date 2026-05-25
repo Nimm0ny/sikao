@@ -644,11 +644,13 @@ class ReviewWeeklySummaryResponseV2(CamelModel):
 class NoteItemV2(CamelModel):
     id: int
     title: str
-    excerpt: str
-    status: str
+    type: str
+    body_preview: str
+    word_count: int
     linked_question_id: int | None = None
-    visibility: str = "private"
-    created_at: UtcDatetime
+    tags: list[str] = Field(default_factory=list)
+    reaction_count: int = 0
+    comment_count: int = 0
     updated_at: UtcDatetime
 
 
@@ -659,30 +661,50 @@ class NoteListResponseV2(CamelModel):
     page_size: int
 
 
+class QuestionBriefV2(CamelModel):
+    id: int
+    prompt: str
+    category_l1: str | None = None
+    category_l2: str | None = None
+
+
 class NoteDetailV2(CamelModel):
     id: int
     title: str
-    body: str
-    status: str
+    type: str
+    visibility: str
+    body_json: dict[str, Any] | None = None
+    body_text: str
+    word_count: int
     linked_question_id: int | None = None
-    visibility: str = "private"
+    linked_question_brief: QuestionBriefV2 | None = None
+    tags: list[str] = Field(default_factory=list)
+    reaction_count: int = 0
+    comment_count: int = 0
+    bookmark_count: int = 0
+    is_featured: bool = False
+    is_bookmarked: bool = False
+    is_reacted: bool = False
+    author_name: str | None = None
     created_at: UtcDatetime
     updated_at: UtcDatetime
 
 
 class NoteCreateRequestV2(CamelModel):
     title: str = Field(min_length=1, max_length=255)
-    body: str = Field(default="")
+    body_json: dict[str, Any]
+    type: str | None = None
     linked_question_id: int | None = None
     visibility: str = "private"
+    tags: list[str] = Field(default_factory=list, max_length=10)
 
 
 class NoteUpdateRequestV2(CamelModel):
-    title: str = Field(min_length=1, max_length=255)
-    body: str = Field(default="")
-    status: str = Field(default="active")
+    title: str | None = Field(default=None, min_length=1, max_length=255)
+    body_json: dict[str, Any] | None = None
     linked_question_id: int | None = None
     visibility: str | None = None
+    tags: list[str] | None = Field(default=None, max_length=10)
 
 
 class TrendPointV2(CamelModel):
