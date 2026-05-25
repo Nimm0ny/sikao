@@ -243,8 +243,13 @@ export function PracticeSession() {
         <Button
           variant="primary"
           onClick={async () => {
-            await submitSession.mutateAsync(session.id);
-            navigate(`/practice/sessions/${session.id}/result`);
+            setActionError(null);
+            try {
+              await submitSession.mutateAsync(session.id);
+              navigate(`/practice/sessions/${session.id}/result`);
+            } catch (error) {
+              setActionError(String(error));
+            }
           }}
         >
           Submit

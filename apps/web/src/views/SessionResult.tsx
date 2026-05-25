@@ -30,12 +30,27 @@ export function SessionResult() {
   }
 
   const result = resultQuery.data;
+  const actionLinks = result.actions ?? [];
   return (
     <div className={styles.root} data-testid="session-result-view">
       <PageHeader
         title="Practice result"
         subtitle={`Session #${sessionId}`}
-        actions={<Button variant="secondary" onClick={() => navigate('/practice')}>Back to Practice Center</Button>}
+        actions={(
+          <div className={styles.actionRow}>
+            <Button variant="secondary" onClick={() => navigate('/practice')}>Back to Practice Center</Button>
+            {actionLinks.map((action) => (
+              <Button
+                key={action.key}
+                variant="primary"
+                disabled={action.enabled === false}
+                onClick={() => navigate(action.href)}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        )}
       />
       <div className={styles.grid}>
         <Panel title="Summary">

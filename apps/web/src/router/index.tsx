@@ -12,6 +12,7 @@ import { PracticePreferences } from '../views/PracticePreferences';
 import { PracticeSession } from '../views/PracticeSession';
 import { AiQuestionsGenerating } from '../views/AiQuestionsGenerating';
 import { SessionResult } from '../views/SessionResult';
+import { EssayGradingResult } from '../views/EssayGradingResult';
 import { Note } from '../views/Note';
 import { Me } from '../views/Me';
 import { QuestionHub } from '../views/QuestionHub';
@@ -20,6 +21,7 @@ import { ProfileLearning } from '../views/ProfileLearning';
 import { ProfileRecords } from '../views/ProfileRecords';
 import { AuthGuard } from './AuthGuard';
 import { BootCard } from './BootCard';
+import { LegacyPracticeResultRedirect } from './LegacyPracticeResultRedirect';
 
 // SIK-93 Home M-Records — 6 legacy redirects map old V4 routes onto the
 // canonical V5 paths so deep links from external sources / bookmarks
@@ -69,6 +71,22 @@ export const router = createBrowserRouter([
       {
         path: 'practice/sessions/:sessionId/result',
         element: <SessionResult />,
+      },
+      {
+        path: 'practice/sessions/:sessionId/grading',
+        element: <EssayGradingResult />,
+      },
+      {
+        path: 'practice/essay/submissions/:submissionId/grading-status',
+        element: <EssayGradingResult />,
+      },
+      {
+        path: 'practice/essay/submissions/:submissionId/result',
+        element: <EssayGradingResult />,
+      },
+      {
+        path: 'practice/result/:sessionId',
+        element: <LegacyPracticeResultRedirect />,
       },
       {
         path: 'practice/sessions/:sessionId',

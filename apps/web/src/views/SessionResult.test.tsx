@@ -27,6 +27,27 @@ function renderSessionResult() {
 describe('SessionResult', () => {
   it('renders summary, timing success state, and lifecycle timeline', async () => {
     server.use(
+      http.get('/api/v2/practice/sessions/:sessionId/result', () =>
+        HttpResponse.json({
+          summary: [
+            { key: 'track', label: 'Track', value: 'essay', tone: 'neutral' },
+            { key: 'status', label: 'Status', value: 'submitted', tone: 'neutral' },
+            { key: 'answered', label: 'Answered', value: '1', tone: 'ok' },
+          ],
+          sections: [
+            {
+              key: 'result',
+              title: 'Runtime result',
+              description: 'Session summary',
+              status: 'ready',
+              href: '/practice/sessions/6001',
+            },
+          ],
+          actions: [
+            { key: 'grading', label: 'Open grading', href: '/practice/sessions/6001/grading', enabled: true },
+          ],
+        }),
+      ),
       http.get('/api/v2/practice/sessions/:sessionId/lifecycle', () =>
         HttpResponse.json({
           status: 'submitted',
@@ -61,6 +82,7 @@ describe('SessionResult', () => {
     expect(screen.getByText('Total active seconds: 180')).toBeInTheDocument();
     expect(screen.getByText('Lifecycle')).toBeInTheDocument();
     expect(screen.getByText('draft -> in_progress')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Open grading' })).toBeInTheDocument();
   });
 
   it('renders a timing error state instead of pretending the panel is empty', async () => {

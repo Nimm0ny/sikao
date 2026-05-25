@@ -24,6 +24,7 @@ function renderPracticeSession(initialEntry = '/practice/sessions/6001') {
       { path: '/practice', element: <div data-testid="practice-route-hit" /> },
       { path: '/practice/sessions/:sessionId', element: <PracticeSession /> },
       { path: '/practice/sessions/:sessionId/result', element: <div data-testid="result-route-hit" /> },
+      { path: '/practice/sessions/:sessionId/grading', element: <div data-testid="grading-route-hit" /> },
     ],
     { initialEntries: [initialEntry] },
   );
@@ -421,6 +422,60 @@ describe('PracticeSession', () => {
   });
 
   it('submits and navigates to result route', async () => {
+    renderPracticeSession();
+    await screen.findByTestId('practice-session-view');
+    await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
+    expect(await screen.findByTestId('result-route-hit')).toBeInTheDocument();
+  });
+
+  it('submits an essay session and navigates to the result route', async () => {
+    let submitted = false;
+    server.use(
+      http.get('/api/v2/practice/sessions/:sessionId', ({ params }) =>
+        HttpResponse.json({
+          actions: [{ key: 'continue', label: 'Continue session', href: `/practice/sessions/${params.sessionId}`, enabled: true }],
+          id: Number(params.sessionId),
+          entryKind: 'paper',
+          essaySubmissionId: submitted ? 9101 : null,
+          examMode: false,
+          forceSubmitted: false,
+          items: [
+            {
+              id: '1',
+              questionKey: '1005',
+              prompt: 'Essay question',
+              answerKind: 'essay',
+              status: 'answered',
+              selectedAnswerKeys: [],
+              answerText: 'Essay draft',
+              flagged: false,
+              viewedSolution: false,
+              hasPersistentFlag: false,
+              hasUserNotes: false,
+              isFavorited: false,
+              isOvertime: false,
+              answerChangeCount: 0,
+              timeSpentMs: 0,
+              visitCount: 0,
+            },
+          ],
+          pausedCount: 0,
+          pausedTotalSeconds: 0,
+          practiceMode: 'full_set',
+          sourceMode: 'paper',
+          startedAt: '2026-05-24T08:00:00Z',
+          status: 'in_progress',
+          totalActiveSeconds: 120,
+          track: 'essay',
+          configSnapshot: {},
+        }),
+      ),
+      http.post('/api/v2/practice/sessions/:sessionId/submit', () => {
+        submitted = true;
+        return HttpResponse.json({ ok: true, status: 'submitted' });
+      }),
+    );
+
     renderPracticeSession();
     await screen.findByTestId('practice-session-view');
     await userEvent.click(screen.getByRole('button', { name: 'Submit' }));
