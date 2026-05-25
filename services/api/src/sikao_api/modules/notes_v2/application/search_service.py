@@ -219,3 +219,49 @@ class NotesSearchServiceV2:
                 expressions.append(f"({' OR '.join(tag_terms)})")
                 continue
         return " AND ".join(expressions)
+
+    @staticmethod
+    def _split_filter_segments(raw_value: str, *, delimiter: str) -> list[str]:
+        segments: list[str] = []
+        current: list[str] = []
+        in_quotes = False
+        escaped = False
+        for char in raw_value:
+            if escaped:
+                current.append(char)
+                escaped = False
+                continue
+            if char == "\\":
+                current.append(char)
+                escaped = True
+                continue
+            if char == '"':
+                current.append(char)
+                in_quotes = not in_quotes
+                continue
+            if char == delimiter and not in_quotes:
+                segments.append("".join(current).strip())
+                current = []
+                continue
+            current.append(char)
+        if in_quotes:
+            raise ValidationError("invalid filters syntax", code="validation_error")
+        tail = "".join(current).strip()
+        if tail:
+            segments.append(tail)
+        return segments
+
+    @staticmethod
+    def _decode_filter_token(raw_value: str) -> str:
+        value = raw_value.strip()
+        if not value:
+            raise ValidationError("filter value cannot be blank", code="validation_error")
+        if value.startswith('"'):
+            try:
+                decoded = json.loads(value)
+            except json.JSONDecodeError as exc:
+                raise ValidationError("invalid quoted filter value", code="validation_error") from exc
+            if not isinstance(decoded, str):
+                raise ValidationError("filter value must decode to string", code="validation_error")
+            return decoded
+        return value
