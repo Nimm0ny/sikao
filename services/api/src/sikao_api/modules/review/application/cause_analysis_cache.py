@@ -102,9 +102,41 @@ def compute_single_input_hash(
     question_id: int,
     last_answer_hash: str,
     mode: str,
+    current_confidence: str | None,
+    error_count: int,
+    mismatch_count: int | None = None,
+    re_fail_count: int | None = None,
+    total_wrong_count: int | None = None,
+    historical_dimensions_freq: dict[str, int] | None = None,
 ) -> str:
-    raw = f"{user_id}:{question_id}:{last_answer_hash}:{mode}"
-    return sha256(raw.encode("utf-8")).hexdigest()
+    mode_specific: dict[str, object]
+    if mode == "forced":
+        mode_specific = {
+            "mismatchCount": mismatch_count,
+        }
+    elif mode == "deep":
+        mode_specific = {
+            "reFailCount": re_fail_count,
+            "totalWrongCount": total_wrong_count,
+            "historicalDimensionsFreq": historical_dimensions_freq or {},
+        }
+    else:
+        mode_specific = {}
+    encoded = json.dumps(
+        {
+            "userId": user_id,
+            "questionId": question_id,
+            "lastAnswerHash": last_answer_hash,
+            "mode": mode,
+            "currentConfidence": current_confidence,
+            "errorCount": error_count,
+            "modeSpecific": mode_specific,
+        },
+        ensure_ascii=False,
+        sort_keys=True,
+        separators=(",", ":"),
+    )
+    return sha256(encoded.encode("utf-8")).hexdigest()
 
 
 def compute_group_question_ids_signature(*, question_ids: list[int]) -> str:

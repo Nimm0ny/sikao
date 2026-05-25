@@ -32,6 +32,8 @@ def load_item_or_raise(session: Session, *, user: UserV2, item_id: int) -> Revie
 
 
 def load_group_items_or_raise(session: Session, *, user: UserV2, item_ids: list[int]) -> list[ReviewItemV2]:
+    if len(item_ids) != len(set(item_ids)):
+        raise ConflictError("group cause analysis requires distinct review items", code="review_item_duplicate")
     items = list(
         session.scalars(
             select(ReviewItemV2).where(
@@ -70,28 +72,6 @@ def load_previous_single_analysis(
     user_id: int,
     question_id: int,
 ) -> AiCauseAnalysisV2 | None:
-    return session.scalar(
-        select(AiCauseAnalysisV2)
-        .where(
-            AiCauseAnalysisV2.user_id == user_id,
-            AiCauseAnalysisV2.scope == CauseAnalysisScope.SINGLE.value,
-            AiCauseAnalysisV2.question_id == question_id,
-        )
-        .order_by(AiCauseAnalysisV2.created_at.desc(), AiCauseAnalysisV2.id.desc())
-    )
-
-
-def load_cached_single_row(
-    session: Session,
-    *,
-    user_id: int,
-    question_id: int,
-    last_answer_hash: str,
-    current_confidence: str | None,
-    error_count: int,
-    mode: str,
-) -> AiCauseAnalysisV2 | None:
-    now = datetime.now(UTC).replace(tzinfo=None)
     rows = list(
         session.scalars(
             select(AiCauseAnalysisV2)
@@ -99,25 +79,36 @@ def load_cached_single_row(
                 AiCauseAnalysisV2.user_id == user_id,
                 AiCauseAnalysisV2.scope == CauseAnalysisScope.SINGLE.value,
                 AiCauseAnalysisV2.question_id == question_id,
-                AiCauseAnalysisV2.expires_at > now,
             )
             .order_by(AiCauseAnalysisV2.created_at.desc(), AiCauseAnalysisV2.id.desc())
-            .limit(10)
         )
     )
     for row in rows:
         result_json = row.result_json if isinstance(row.result_json, dict) else {}
-        meta = result_json.get("_meta")
-        if not isinstance(meta, dict):
-            continue
-        if (
-            meta.get("last_answer_hash") == last_answer_hash
-            and meta.get("current_confidence") == current_confidence
-            and meta.get("error_count") == error_count
-            and result_json.get("mode") == mode
-        ):
+        if result_json.get("mode") == "single":
             return row
     return None
+
+
+def load_cached_single_row(
+    session: Session,
+    *,
+    user_id: int,
+    question_id: int,
+    input_hash: str,
+) -> AiCauseAnalysisV2 | None:
+    now = datetime.now(UTC).replace(tzinfo=None)
+    return session.scalar(
+        select(AiCauseAnalysisV2)
+        .where(
+            AiCauseAnalysisV2.user_id == user_id,
+            AiCauseAnalysisV2.scope == CauseAnalysisScope.SINGLE.value,
+            AiCauseAnalysisV2.question_id == question_id,
+            AiCauseAnalysisV2.input_hash == input_hash,
+            AiCauseAnalysisV2.expires_at > now,
+        )
+        .order_by(AiCauseAnalysisV2.created_at.desc(), AiCauseAnalysisV2.id.desc())
+    )
 
 
 def load_cached_group_row(

@@ -7,6 +7,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from sikao_api.modules.llm.application.llm.json_parser import parse_with_recovery
 from sikao_api.modules.review.application.cause_analysis_cache import CauseTagDefinition
+from sikao_api.modules.review.application.metrics import increment_cause_taxonomy_other_fallback
 from sikao_api.modules.review.data.cause_tag_seed_v1 import CAUSE_TAG_SEED_V1
 
 
@@ -129,6 +130,9 @@ def _normalize_payload(
         ]
     else:
         data["dimensions"] = []
+    evolution_context = data.get("evolution_context")
+    if isinstance(evolution_context, dict) and "comparison_judgment" not in evolution_context:
+        data["evolution_context"] = None
     return data
 
 
@@ -161,6 +165,7 @@ def _normalize_dimension(
     data["severity"] = "low"
     if not str(data.get("suggestion", "")).strip():
         data["suggestion"] = raw_name or "LLM returned an unsupported cause tag."
+    increment_cause_taxonomy_other_fallback()
     return data
 
 

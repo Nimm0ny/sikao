@@ -33,6 +33,7 @@ async def execute_and_persist_single_analysis(
     input_hash: str,
     previous_analysis: AiCauseAnalysisV2 | None,
     mode: str,
+    purpose: str,
     prompt_version: str,
     messages: list[Any],
     tag_map: dict[str, CauseTagDefinition],
@@ -49,7 +50,7 @@ async def execute_and_persist_single_analysis(
         raw_text, usage, provider = await call_json_completion(
             home_llm,
             user_id=user.id,
-            purpose=_CAUSE_ANALYSIS_PURPOSE,
+            purpose=purpose,
             prompt_version=prompt_version,
             model=settings.llm_model_qa,
             messages=messages,
@@ -73,7 +74,7 @@ async def execute_and_persist_single_analysis(
             session,
             settings=settings,
             user_id=user.id,
-            purpose=_CAUSE_ANALYSIS_PURPOSE,
+            purpose=purpose,
             prompt_version=prompt_version,
             provider=provider or "unknown",
             model=model,
@@ -88,7 +89,7 @@ async def execute_and_persist_single_analysis(
     llm_call = record_success_call(
         home_llm,
         user_id=user.id,
-        purpose=_CAUSE_ANALYSIS_PURPOSE,
+        purpose=purpose,
         prompt_version=prompt_version,
         provider=provider,
         model=model,
@@ -113,6 +114,11 @@ async def execute_and_persist_single_analysis(
     )
     if mode == "forced":
         clear_forced_pending(item)
+        session.add(item)
+    elif mode == "deep":
+        metadata = dict(item.metadata_json) if isinstance(item.metadata_json, dict) else {}
+        metadata["last_deep_analysis_at"] = now.isoformat()
+        item.metadata_json = metadata
         session.add(item)
     session.add(row)
     session.flush()

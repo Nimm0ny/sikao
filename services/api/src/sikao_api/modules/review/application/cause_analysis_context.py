@@ -9,6 +9,7 @@ from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import (
+    AiCauseAnalysisV2,
     PracticeSessionAnswerV2,
     PracticeSessionV2,
     QuestionOptionV2,
@@ -60,6 +61,13 @@ def build_single_analysis_context(
         "last_answer_hash": last_answer_hash or sha256(str(question.id).encode("utf-8")).hexdigest(),
         "current_confidence": current_confidence,
         "mismatch_count": int(item_metadata.get("confidence_mismatch_count", 0) or 0),
+        "re_fail_count": int(item_metadata.get("re_fail_count", 0) or 0),
+        "total_wrong_count": error_count,
+        "historical_dimensions_freq": build_historical_dimensions_freq(
+            session,
+            user_id=user.id,
+            question_id=question.id,
+        ),
     }
 
 
@@ -145,6 +153,39 @@ def supplement_related_questions(
         )
     )
     return [int(value) for value in rows]
+
+
+def build_historical_dimensions_freq(
+    session: Session,
+    *,
+    user_id: int,
+    question_id: int,
+) -> dict[str, int]:
+    rows = list(
+        session.scalars(
+            select(AiCauseAnalysisV2).where(
+                AiCauseAnalysisV2.user_id == user_id,
+                AiCauseAnalysisV2.question_id == question_id,
+                AiCauseAnalysisV2.scope == "single",
+            )
+        )
+    )
+    counts: dict[str, int] = {}
+    for row in rows:
+        dimensions = row.result_json.get("dimensions") if isinstance(row.result_json, dict) else None
+        result_json = row.result_json if isinstance(row.result_json, dict) else {}
+        if result_json.get("mode") != "single":
+            continue
+        if not isinstance(dimensions, list):
+            continue
+        for dimension in dimensions:
+            if not isinstance(dimension, dict):
+                continue
+            slug = dimension.get("slug")
+            if not isinstance(slug, str) or not slug:
+                continue
+            counts[slug] = counts.get(slug, 0) + 1
+    return counts
 
 
 def build_answer_history(
