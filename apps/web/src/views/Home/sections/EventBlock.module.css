@@ -38,13 +38,13 @@
 }
 
 /* category color tints (V5 categorical palette). Subject categories use
- * color-mix to keep the block readable; review / mock / break use
- * existing semantic soft tokens. */
-.root[data-category='yanyu']    { background: color-mix(in srgb, var(--color-cat-yanyu) 14%, var(--color-bg-surface)); --evt-color: var(--color-cat-yanyu); }
-.root[data-category='shuliang'] { background: color-mix(in srgb, var(--color-cat-shuliang) 14%, var(--color-bg-surface)); --evt-color: var(--color-cat-shuliang); }
-.root[data-category='panduan']  { background: color-mix(in srgb, var(--color-cat-panduan) 18%, var(--color-bg-surface)); --evt-color: var(--color-cat-panduan); }
-.root[data-category='ziliao']   { background: color-mix(in srgb, var(--color-cat-ziliao) 12%, var(--color-bg-surface)); --evt-color: var(--color-cat-ziliao); }
-.root[data-category='shenlun']  { background: color-mix(in srgb, var(--color-cat-shenlun) 12%, var(--color-bg-surface)); --evt-color: var(--color-cat-shenlun); }
+ * --color-cat-*-soft tokens (baked once in tokens.css); review / mock /
+ * break use existing semantic soft tokens. */
+.root[data-category='yanyu']    { background: var(--color-cat-yanyu-soft);    --evt-color: var(--color-cat-yanyu); }
+.root[data-category='shuliang'] { background: var(--color-cat-shuliang-soft); --evt-color: var(--color-cat-shuliang); }
+.root[data-category='panduan']  { background: var(--color-cat-panduan-soft);  --evt-color: var(--color-cat-panduan); }
+.root[data-category='ziliao']   { background: var(--color-cat-ziliao-soft);   --evt-color: var(--color-cat-ziliao); }
+.root[data-category='shenlun']  { background: var(--color-cat-shenlun-soft);  --evt-color: var(--color-cat-shenlun); }
 .root[data-category='review']   { background: var(--color-state-warn-soft); --evt-color: var(--color-state-warn); }
 .root[data-category='mock']     { background: var(--color-brand-soft); --evt-color: var(--color-brand-primary); }
 .root[data-category='break']    { background: var(--color-bg-sunken); --evt-color: var(--color-text-meta); }

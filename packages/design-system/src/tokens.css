@@ -291,6 +291,15 @@ em, i { font-style: normal; }
   --color-cat-panduan:  #FFDD55;
   --color-cat-ziliao:   #2F95FF;
   --color-cat-shenlun:  #15803D;
+
+  /* §2.5 categorical-soft — 14% tint for event-block / chip backgrounds.
+   * Replaces the per-call color-mix(... XX%, var(--color-bg-surface))
+   * pattern across views; baked here so callers consume a single token. */
+  --color-cat-yanyu-soft:    color-mix(in srgb, var(--color-cat-yanyu) 14%, var(--color-bg-surface));
+  --color-cat-shuliang-soft: color-mix(in srgb, var(--color-cat-shuliang) 14%, var(--color-bg-surface));
+  --color-cat-panduan-soft:  color-mix(in srgb, var(--color-cat-panduan) 18%, var(--color-bg-surface));
+  --color-cat-ziliao-soft:   color-mix(in srgb, var(--color-cat-ziliao) 12%, var(--color-bg-surface));
+  --color-cat-shenlun-soft:  color-mix(in srgb, var(--color-cat-shenlun) 12%, var(--color-bg-surface));
 }
 
 /* ── §3 V5 Semantic layer — dark override ───────────────────────────────────
@@ -350,6 +359,14 @@ em, i { font-style: normal; }
   --color-cat-panduan:  #FFE680;
   --color-cat-ziliao:   #5FB0FF;
   --color-cat-shenlun:  #4CC38A;
+
+  /* §2.5 categorical-soft — dark (slightly higher mix for visibility on
+   * dark surfaces). */
+  --color-cat-yanyu-soft:    color-mix(in srgb, var(--color-cat-yanyu) 18%, var(--color-bg-surface));
+  --color-cat-shuliang-soft: color-mix(in srgb, var(--color-cat-shuliang) 18%, var(--color-bg-surface));
+  --color-cat-panduan-soft:  color-mix(in srgb, var(--color-cat-panduan) 22%, var(--color-bg-surface));
+  --color-cat-ziliao-soft:   color-mix(in srgb, var(--color-cat-ziliao) 16%, var(--color-bg-surface));
+  --color-cat-shenlun-soft:  color-mix(in srgb, var(--color-cat-shenlun) 16%, var(--color-bg-surface));
 
   /* §1.6 shadow — dark override (deeper alpha for dark backgrounds)
    * Note: shadow is a primitive, but the visual semantic of "elevation depth"
