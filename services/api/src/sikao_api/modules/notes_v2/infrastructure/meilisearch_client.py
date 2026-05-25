@@ -149,3 +149,67 @@ class MeilisearchNotesClient:
         )
         task_uid = self._extract_task_uid(response)
         self._wait_for_task(task_uid)
+
+    def search(
+        self,
+        *,
+        query: str,
+        filter_expression: str,
+        page: int,
+        size: int,
+    ) -> NoteSearchResult:
+        response = self._request(
+            "POST",
+            f"/indexes/{self._index_name}/search",
+            json={
+                "q": query,
+                "filter": filter_expression,
+                "facets": ["type", "tags"],
+                "attributesToHighlight": ["title", "body_text"],
+                "limit": size,
+                "offset": (page - 1) * size,
+            },
+        )
+        payload = self._decode_json(response)
+        hits = [self._decode_hit(raw_hit) for raw_hit in payload.get("hits", [])]
+        total_value = payload.get("estimatedTotalHits")
+        if total_value is None:
+            total_value = payload.get("totalHits", 0)
+        total = self._coerce_int(total_value, field_name="estimatedTotalHits")
+        raw_facets = payload.get("facetDistribution") or {}
+        if not isinstance(raw_facets, dict):
+            raise NotesSearchUnavailable("notes search backend returned an invalid facetDistribution")
+        facet_distribution: dict[str, dict[str, int]] = {}
+        for name, values in raw_facets.items():
+            if not isinstance(values, dict):
+                raise NotesSearchUnavailable(
+                    f"notes search backend returned an invalid facetDistribution.{name}"
+                )
+            facet_distribution[str(name)] = {
+                str(value): self._coerce_int(count, field_name=f"facetDistribution.{name}.{value}")
+                for value, count in values.items()
+            }
+        return NoteSearchResult(
+            hits=hits,
+            total=total,
+            facet_distribution=facet_distribution,
+        )
+
+    def close(self) -> None:
+        self._client.close()
+
+    def _index_exists(self) -> bool:
+        response = self._request(
+            "GET",
+            f"/indexes/{self._index_name}",
+            allowed_statuses=(200, 404),
+        )
+        return response.status_code == 200
+
+    def _create_index(self) -> int:
+        response = self._request(
+            "POST",
+            "/indexes",
+            json={"uid": self._index_name, "primaryKey": "id"},
+        )
+        return self._extract_task_uid(response)
