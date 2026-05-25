@@ -1,0 +1,100 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import UTC, datetime
+import json
+from typing import Callable
+
+from sqlalchemy.orm import Session, sessionmaker
+
+from sikao_api.core.schemas import encode_datetime
+from sikao_api.db.models_v2 import NoteV2, UserV2
+from sikao_api.db.schemas_v2 import NoteSearchItemV2, NoteSearchResponseV2
+from sikao_api.modules.notes_v2.domain.errors import SEARCH_UNAVAILABLE
+from sikao_api.modules.notes_v2.infrastructure.meilisearch_client import (
+    NoteSearchDocument,
+    NoteSearchHit,
+    NotesSearchClientProtocol,
+    NotesSearchUnavailable,
+)
+from sikao_api.modules.notes_v2.infrastructure.repos import NotesRepoV2
+from sikao_api.modules.system.application.audit_v2 import add_audit_log
+from sikao_api.modules.system.application.errors import ServiceError, ValidationError
+
+
+_ALLOWED_NOTE_TYPES = {
+    "free",
+    "question_level",
+    "ai_cause_analysis",
+    "weekly_review",
+    "community_bookmark",
+}
+_ALLOWED_VISIBILITY = {"private", "public"}
+
+
+@dataclass(slots=True)
+class _SearchFilter:
+    key: str
+    values: list[str]
+
+
+class NotesSearchServiceV2:
+    def __init__(self, session: Session, search_client: NotesSearchClientProtocol) -> None:
+        self.session = session
+        self.repo = NotesRepoV2(session)
+        self.search_client = search_client
+
+    def index_note(self, *, note: NoteV2) -> None:
+        self.search_client.upsert_note(self._build_document(note))
+
+    def delete_note(self, *, note_id: int) -> None:
+        self.search_client.delete_note(note_id)
+
+    def search_notes(
+        self,
+        *,
+        user: UserV2,
+        query: str,
+        filters: str | None,
+        page: int,
+        size: int,
+    ) -> NoteSearchResponseV2:
+        normalized_query = query.strip()
+        if not normalized_query:
+            raise ValidationError("q cannot be blank", code="validation_error")
+        filter_expression = self._render_filter_expression(
+            user_id=user.id,
+            filters=self._parse_filters(filters),
+        )
+        try:
+            result = self.search_client.search(
+                query=normalized_query,
+                filter_expression=filter_expression,
+                page=page,
+                size=size,
+            )
+            items = [self._serialize_hit(hit) for hit in result.hits]
+        except NotesSearchUnavailable as exc:
+            raise ServiceError(
+                "notes search unavailable",
+                status_code=503,
+                code=SEARCH_UNAVAILABLE,
+            ) from exc
+        return NoteSearchResponseV2(
+            items=items,
+            total=result.total,
+            page=page,
+            page_size=size,
+            facet_distribution=result.facet_distribution,
+        )
+
+    @staticmethod
+    def persist_sync_failure_audit(
+        *,
+        session_factory: sessionmaker[Session] | Callable[[], Session],
+        user_id: int,
+        note_id: int,
+        sync_action: str,
+        error_message: str,
+        request_id: str | None,
+    ) -> None:
