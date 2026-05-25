@@ -213,3 +213,62 @@ class MeilisearchNotesClient:
             json={"uid": self._index_name, "primaryKey": "id"},
         )
         return self._extract_task_uid(response)
+
+    def _update_settings(self) -> int:
+        response = self._request(
+            "PATCH",
+            f"/indexes/{self._index_name}/settings",
+            json={
+                "searchableAttributes": ["title", "body_text", "tags"],
+                "filterableAttributes": [
+                    "user_id",
+                    "type",
+                    "has_linked_question",
+                    "visibility",
+                    "tags",
+                    "created_at",
+                ],
+                "sortableAttributes": ["created_at", "updated_at"],
+                "faceting": {"maxValuesPerFacet": 100},
+                "typoTolerance": {
+                    "enabled": True,
+                    "minWordSizeForTypos": {"oneTypo": 3, "twoTypos": 6},
+                },
+            },
+        )
+        return self._extract_task_uid(response)
+
+    def _wait_for_task(self, task_uid: int) -> None:
+        deadline = time.monotonic() + self._timeout_seconds
+        while True:
+            response = self._request("GET", f"/tasks/{task_uid}")
+            payload = self._decode_json(response)
+            status = str(payload.get("status") or "")
+            if status == "succeeded":
+                return
+            if status in {"failed", "canceled"}:
+                raise NotesSearchUnavailable(
+                    f"meilisearch task {task_uid} did not succeed: status={status}"
+                )
+            if time.monotonic() >= deadline:
+                raise NotesSearchUnavailable(f"meilisearch task {task_uid} timed out")
+            time.sleep(0.05)
+
+    def _request(
+        self,
+        method: str,
+        path: str,
+        *,
+        json: Any | None = None,
+        params: dict[str, Any] | None = None,
+        allowed_statuses: tuple[int, ...] = (200, 202),
+    ) -> httpx.Response:
+        try:
+            response = self._client.request(method, path, json=json, params=params)
+        except httpx.HTTPError as exc:
+            raise NotesSearchUnavailable("notes search backend unavailable") from exc
+        if response.status_code not in allowed_statuses:
+            raise NotesSearchUnavailable(
+                f"notes search backend returned unexpected status {response.status_code}"
+            )
+        return response
