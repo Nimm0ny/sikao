@@ -1,13 +1,14 @@
 from __future__ import annotations
 
+import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Query, Request, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
 from sikao_api.core.config import Settings
 from sikao_api.core.deps import get_app_settings
-from sikao_api.db.models_v2 import UserV2
+from sikao_api.db.models_v2 import NoteV2, UserV2
 from sikao_api.db.schemas_v2 import (
     NoteCreateRequestV2,
     NoteDetailV2,
