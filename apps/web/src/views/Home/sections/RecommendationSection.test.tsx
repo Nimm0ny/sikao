@@ -75,7 +75,7 @@ describe('RecommendationSection (Home M-C wave 1)', () => {
     await waitFor(() => expect(screen.queryByTestId('home-recommendation-loading')).not.toBeInTheDocument());
   });
 
-  it('accept(session): navigates to /practice/sessions/:id on success', async () => {
+  it('accept(session): opens AcceptOptionMenu and navigates on 立即开始', async () => {
     const navigate = vi.fn();
     vi.mocked(useNavigate).mockReturnValue(navigate);
     server.use(
@@ -91,7 +91,32 @@ describe('RecommendationSection (Home M-C wave 1)', () => {
     );
     renderWithEnv();
     await waitFor(() => expect(screen.getByRole('button', { name: '开始练习' })).toBeInTheDocument());
+    // Wave 2: clicking the card CTA opens the Modal first.
     await userEvent.click(screen.getByRole('button', { name: '开始练习' }));
+    await waitFor(() => expect(screen.getByTestId('accept-option-menu')).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: '立即开始' }));
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/practice/sessions/9001'));
+  });
+});
+
+describe('RecommendationCard wave 2 dialogs', () => {
+  it('reject: opens RejectFeedbackDialog and submits with reason', async () => {
+    let receivedBody: { reason?: string; note?: string | null } | null = null;
+    server.use(
+      http.get('/api/v2/recommendations/today', () =>
+        HttpResponse.json({ items: SAMPLE_RECS, total: 1 }),
+      ),
+      http.post('/api/v2/recommendations/:id/reject', async ({ request }) => {
+        receivedBody = (await request.json()) as { reason?: string; note?: string | null };
+        return HttpResponse.json({ ok: true, status: 'rejected' });
+      }),
+    );
+    renderWithEnv();
+    await waitFor(() => expect(screen.getByRole('button', { name: '不感兴趣' })).toBeInTheDocument());
+    await userEvent.click(screen.getByRole('button', { name: '不感兴趣' }));
+    await waitFor(() => expect(screen.getByTestId('reject-feedback')).toBeInTheDocument());
+    await userEvent.click(screen.getByTestId('reject-reason-too-easy'));
+    await userEvent.click(screen.getByRole('button', { name: '提交反馈' }));
+    await waitFor(() => expect(receivedBody?.reason).toBe('too-easy'));
   });
 });

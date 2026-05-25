@@ -1,26 +1,22 @@
 // lint-allow-ui-copy: V5 D.4.1 Section C copy.
-import { useNavigate } from 'react-router-dom';
-import {
-  useAcceptRecommendation,
-  useRejectRecommendation,
-} from '@sikao/api-client/recommendationsQueries';
+import { useState } from 'react';
 import type { RecommendationReadV2 } from '@sikao/api-client/types/home';
 import { Button } from '../../../components/form';
+import { AcceptOptionMenu } from './AcceptOptionMenu';
+import { RejectFeedbackDialog } from './RejectFeedbackDialog';
 import styles from './RecommendationSection.module.css';
 
 /*
- * RecommendationCard — single recommendation row.
+ * RecommendationCard — single recommendation row with full action UX.
  *
  * Why: minimal card with title + reason + meta + two CTAs.
- *      accept(session) → POST accept with action='session', then
- *        navigate to /practice/sessions/:id (Practice line owns the
- *        target route; missing-route fallback lands on BootCard).
- *      reject (wave 1) → POST reject with reason='not-interested';
- *        wave 2 swaps for RejectFeedbackDialog + draft store.
+ *      "开始" → opens AcceptOptionMenu (立即开始 / 排入计划 date picker).
+ *      "不感兴趣" → opens RejectFeedbackDialog (reason picker + note +
+ *        draft restore via useRecommendationDraftStore).
  *
- *      AGENT-H7: accept response is inspected in priority order
- *      redirectUrl → sessionId → BootCard fallback. Never silently
- *      no-ops.
+ *      Hosting both modals at the card level keeps the per-rec mutation
+ *      hooks scoped (one accept + one reject hook per card) and avoids
+ *      lifting state up to the section.
  */
 
 interface RecommendationCardProps {
@@ -28,35 +24,8 @@ interface RecommendationCardProps {
 }
 
 export function RecommendationCard({ recommendation }: RecommendationCardProps) {
-  const navigate = useNavigate();
-  const acceptMutation = useAcceptRecommendation(recommendation.id);
-  const rejectMutation = useRejectRecommendation(recommendation.id);
-
-  const handleAcceptSession = () => {
-    acceptMutation.mutate(
-      { action: 'session' },
-      {
-        onSuccess: (response) => {
-          if (response.redirectUrl) {
-            navigate(response.redirectUrl);
-            return;
-          }
-          if (response.sessionId !== null && response.sessionId !== undefined) {
-            navigate(`/practice/sessions/${response.sessionId}`);
-            return;
-          }
-          // Fail-fast surface: backend returned ok but no target → land on
-          // BootCard placeholder so the user sees a clear "coming soon"
-          // rather than a silent no-op.
-          navigate('/boot?reason=coming-soon-practice');
-        },
-      },
-    );
-  };
-
-  const handleReject = () => {
-    rejectMutation.mutate({ reason: 'not-interested' });
-  };
+  const [acceptOpen, setAcceptOpen] = useState(false);
+  const [rejectOpen, setRejectOpen] = useState(false);
 
   return (
     <li className={styles.card} data-testid={`home-recommendation-${recommendation.id}`}>
@@ -67,23 +36,23 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
         <span>{recommendation.actionType}</span>
       </span>
       <div className={styles.actions}>
-        <Button
-          variant="primary"
-          size="sm"
-          disabled={acceptMutation.isPending}
-          onClick={handleAcceptSession}
-        >
+        <Button variant="primary" size="sm" onClick={() => setAcceptOpen(true)}>
           {recommendation.cta || '开始'}
         </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          disabled={rejectMutation.isPending}
-          onClick={handleReject}
-        >
+        <Button variant="secondary" size="sm" onClick={() => setRejectOpen(true)}>
           不感兴趣
         </Button>
       </div>
+      <AcceptOptionMenu
+        recommendation={recommendation}
+        open={acceptOpen}
+        onClose={() => setAcceptOpen(false)}
+      />
+      <RejectFeedbackDialog
+        recommendation={recommendation}
+        open={rejectOpen}
+        onClose={() => setRejectOpen(false)}
+      />
     </li>
   );
 }
