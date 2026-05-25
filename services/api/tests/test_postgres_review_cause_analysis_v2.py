@@ -690,3 +690,148 @@ def test_postgres_deep_cache_miss_when_total_wrong_count_changes(
         assert len(calls) == 2
 
 
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_postgres_deep_cache_miss_when_historical_dimensions_freq_changes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, Any]] = []
+    _stub_completion(
+        monkeypatch,
+        payload_by_prompt={
+            "cause_analysis_single@v1": _single_payload("single history summary"),
+            "cause_analysis_deep@v1": _deep_payload("deep history summary"),
+        },
+        calls=calls,
+    )
+    with build_postgres_client(tmp_path) as client:
+        register_user(client)
+        question_id = seed_paper(
+            client,
+            paper_code="XC-REVIEW-CAUSE-DEEP-HIST",
+            title="Cause deep history",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "Deep history question",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "logic_fill",
+                }
+            ],
+        )[0]
+        item_id = client.post("/api/v2/review/items", json={"questionId": question_id}).json()["id"]
+        _set_item_metadata(
+            client,
+            item_id=item_id,
+            updates={
+                "is_hard": True,
+                "re_fail_count": 3,
+                "last_answer_hash": sha256(b"deep-history").hexdigest(),
+            },
+        )
+
+        first = client.post(
+            f"/api/v2/review/items/{item_id}/cause-analysis",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"mode": "deep"},
+        )
+        assert first.status_code == 200, first.text
+        assert len(calls) == 1
+
+        _set_item_metadata(
+            client,
+            item_id=item_id,
+            updates={"last_answer_hash": sha256(b"single-history").hexdigest()},
+        )
+        single = client.post(
+            f"/api/v2/review/items/{item_id}/cause-analysis",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"mode": "single"},
+        )
+        assert single.status_code == 200, single.text
+
+        _set_item_metadata(
+            client,
+            item_id=item_id,
+            updates={"last_answer_hash": sha256(b"deep-history").hexdigest()},
+        )
+        second = client.post(
+            f"/api/v2/review/items/{item_id}/cause-analysis",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"mode": "deep"},
+        )
+        assert second.status_code == 200, second.text
+        assert second.json()["cached"] is False
+        assert len(calls) == 3
+
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_postgres_single_analysis_evolution_ignores_deep_history(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, Any]] = []
+    _stub_completion(
+        monkeypatch,
+        payload_by_prompt={
+            "cause_analysis_single@v1": _single_payload("single evolution summary"),
+            "cause_analysis_deep@v1": _deep_payload("deep evolution summary"),
+        },
+        calls=calls,
+    )
+    with build_postgres_client(tmp_path) as client:
+        register_user(client)
+        question_id = seed_paper(
+            client,
+            paper_code="XC-REVIEW-CAUSE-DEEP-002",
+            title="Cause deep isolation",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "Deep isolation question",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "logic_fill",
+                }
+            ],
+        )[0]
+        item_id = client.post("/api/v2/review/items", json={"questionId": question_id}).json()["id"]
+        _set_item_metadata(
+            client,
+            item_id=item_id,
+            updates={
+                "is_hard": True,
+                "re_fail_count": 3,
+                "last_answer_hash": sha256(b"hard").hexdigest(),
+            },
+        )
+        deep = client.post(
+            f"/api/v2/review/items/{item_id}/cause-analysis",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"mode": "deep"},
+        )
+        assert deep.status_code == 200, deep.text
+
+        _set_item_metadata(
+            client,
+            item_id=item_id,
+            updates={"last_answer_hash": sha256(b"single").hexdigest()},
+        )
+        single = client.post(
+            f"/api/v2/review/items/{item_id}/cause-analysis",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"mode": "single"},
+        )
+        assert single.status_code == 200, single.text
+        assert single.json()["result"]["evolutionContext"] is None
