@@ -48,9 +48,14 @@
 }
 
 .grid {
+  display: flex;
+  flex-direction: column;
+}
+
+.weekRow {
   display: grid;
   grid-template-columns: repeat(7, 1fr);
-  grid-auto-rows: minmax(96px, 1fr);
+  min-height: 96px;
 }
 
 .cell {

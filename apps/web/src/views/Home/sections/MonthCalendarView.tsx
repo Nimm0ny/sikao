@@ -62,48 +62,59 @@ function bucketEventsByDay(events: ReadonlyArray<PlanEventReadV2>): Map<string, 
   return map;
 }
 
+function chunkRows<T>(items: ReadonlyArray<T>, perRow: number): ReadonlyArray<ReadonlyArray<T>> {
+  const out: T[][] = [];
+  for (let i = 0; i < items.length; i += perRow) {
+    out.push(items.slice(i, i + perRow));
+  }
+  return out;
+}
+
 function MonthGrid({ cells, eventsByDay }: {
   readonly cells: ReadonlyArray<MonthCell>;
   readonly eventsByDay: ReadonlyMap<string, ReadonlyArray<PlanEventReadV2>>;
 }) {
+  const rows = chunkRows(cells, 7);
   return (
-    <>
+    <div className={styles.grid} role="grid" aria-label="本月日历">
       <div className={styles.dowRow} role="row">
         {DOW_LABELS.map((label) => (
           <div key={label} className={styles.dowCell} role="columnheader">{label}</div>
         ))}
       </div>
-      <div className={styles.grid} role="grid" aria-label="本月日历">
-        {cells.map((cell) => {
-          const events = eventsByDay.get(cell.stamp) ?? [];
-          const visible = events.slice(0, MAX_CHIPS_PER_CELL);
-          const overflow = events.length - visible.length;
-          return (
-            <div
-              key={cell.stamp}
-              className={styles.cell}
-              data-out-of-month={!cell.inMonth || undefined}
-              data-today={cell.isToday || undefined}
-              data-weekend={cell.isWeekend || undefined}
-              data-testid={`home-month-cell-${cell.stamp}`}
-              role="gridcell"
-            >
-              <span className={styles.dom}>{cell.dom}</span>
-              <ul className={styles.eventList}>
-                {visible.map((event) => (
-                  <li key={event.id} className={styles.eventChip} data-testid="home-month-event" data-category={event.category} title={event.title}>
-                    {event.title}
-                  </li>
-                ))}
-                {overflow > 0 ? (
-                  <li className={styles.moreLabel} data-testid="home-month-overflow">+{overflow} 更多</li>
-                ) : null}
-              </ul>
-            </div>
-          );
-        })}
-      </div>
-    </>
+      {rows.map((rowCells, rowIndex) => (
+        <div key={`row-${rowIndex}`} className={styles.weekRow} role="row">
+          {rowCells.map((cell) => {
+            const events = eventsByDay.get(cell.stamp) ?? [];
+            const visible = events.slice(0, MAX_CHIPS_PER_CELL);
+            const overflow = events.length - visible.length;
+            return (
+              <div
+                key={cell.stamp}
+                className={styles.cell}
+                data-out-of-month={!cell.inMonth || undefined}
+                data-today={cell.isToday || undefined}
+                data-weekend={cell.isWeekend || undefined}
+                data-testid={`home-month-cell-${cell.stamp}`}
+                role="gridcell"
+              >
+                <span className={styles.dom}>{cell.dom}</span>
+                <ul className={styles.eventList}>
+                  {visible.map((event) => (
+                    <li key={event.id} className={styles.eventChip} data-testid="home-month-event" data-category={event.category} title={event.title}>
+                      {event.title}
+                    </li>
+                  ))}
+                  {overflow > 0 ? (
+                    <li className={styles.moreLabel} data-testid="home-month-overflow">+{overflow} 更多</li>
+                  ) : null}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -114,17 +125,9 @@ export function MonthCalendarView() {
   const cells = useMemo(() => buildMonthCells(anchorDate), [anchorDate]);
   const eventsByDay = useMemo(() => bucketEventsByDay(query.data?.data.events ?? []), [query.data]);
   const total = query.data?.data.events.length ?? 0;
-  const monthLabel = anchorDate.slice(0, 7);
 
   return (
     <div className={styles.root} data-testid="home-month-calendar">
-      <header className={styles.head}>
-        <h3 className={styles.headTitle}>本月</h3>
-        <span className={styles.headMeta}>
-          {monthLabel}
-          {query.isSuccess ? ` · ${total} 个事件` : null}
-        </span>
-      </header>
       {query.isLoading ? (
         <div className={styles.stateWrap} role="status" aria-label="本月日历加载中" data-testid="home-month-loading">
           <Skeleton variant="rect" height={32} />

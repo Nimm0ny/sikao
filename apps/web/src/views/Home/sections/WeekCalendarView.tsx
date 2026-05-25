@@ -62,34 +62,45 @@ function WeekGrid({ days, eventsByDay }: {
 }) {
   return (
     <div className={styles.grid} role="grid" aria-label="本周日历">
-      <div />
-      {days.map((d) => (
-        <div key={d.stamp} className={styles.dayHeader} data-today={d.isToday || undefined} role="columnheader">
-          <span className={styles.dow}>{DOW_LABELS[d.dowIndex]}</span>
-          <span className={styles.dom}>{d.dom}</span>
-        </div>
-      ))}
-      <div className={styles.hourCol} aria-hidden="true">
-        {Array.from({ length: 24 }, (_, h) => (
-          <span key={h} className={styles.hourLabel} style={{ top: `${h * HOUR_H}px` }}>{pad(h)}</span>
+      <div role="row" className={styles.headerRow}>
+        <div role="columnheader" aria-hidden="true" />
+        {days.map((d) => (
+          <div key={d.stamp} className={styles.dayHeader} data-today={d.isToday || undefined} role="columnheader">
+            <span className={styles.dow}>{DOW_LABELS[d.dowIndex]}</span>
+            <span className={styles.dom}>{d.dom}</span>
+          </div>
         ))}
       </div>
-      {days.map((d) => (
-        <div key={d.stamp} className={styles.dayCol} data-today={d.isToday || undefined} data-weekend={d.isWeekend || undefined} data-testid={`home-week-day-${d.stamp}`}>
-          {(eventsByDay.get(d.stamp) ?? []).map((event) => {
-            const { top, height } = geometryFor(event);
-            return (
-              <EventBlock
-                key={event.id}
-                event={event}
-                density="compact"
-                style={{ top: `${top}px`, height: `${height}px` }}
-                testId="home-week-event"
-              />
-            );
-          })}
+      <div role="row" className={styles.bodyRow}>
+        <div className={styles.hourCol} role="rowheader" aria-hidden="true">
+          {Array.from({ length: 24 }, (_, h) => (
+            <span key={h} className={styles.hourLabel} style={{ top: `${h * HOUR_H}px` }}>{pad(h)}</span>
+          ))}
         </div>
-      ))}
+        {days.map((d) => (
+          <div
+            key={d.stamp}
+            role="gridcell"
+            className={styles.dayCol}
+            data-today={d.isToday || undefined}
+            data-weekend={d.isWeekend || undefined}
+            data-testid={`home-week-day-${d.stamp}`}
+          >
+            {(eventsByDay.get(d.stamp) ?? []).map((event) => {
+              const { top, height } = geometryFor(event);
+              return (
+                <EventBlock
+                  key={event.id}
+                  event={event}
+                  density="compact"
+                  style={{ top: `${top}px`, height: `${height}px` }}
+                  testId="home-week-event"
+                />
+              );
+            })}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -113,13 +124,6 @@ export function WeekCalendarView() {
 
   return (
     <div className={styles.root} data-testid="home-week-calendar">
-      <header className={styles.head}>
-        <h3 className={styles.headTitle}>本周</h3>
-        <span className={styles.headMeta}>
-          {days[0]?.stamp} – {days[6]?.stamp}
-          {query.isSuccess ? ` · ${total} 个事件` : null}
-        </span>
-      </header>
       {query.isLoading ? (
         <div className={styles.stateWrap} role="status" aria-label="本周日历加载中" data-testid="home-week-loading">
           <Skeleton variant="rect" height={32} />

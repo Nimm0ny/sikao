@@ -37,6 +37,17 @@
 
 .grid {
   --hour-h: 36px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.headerRow {
+  display: grid;
+  grid-template-columns: 56px repeat(7, 1fr);
+}
+
+.bodyRow {
   display: grid;
   grid-template-columns: 56px repeat(7, 1fr);
   position: relative;

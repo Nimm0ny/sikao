@@ -40,17 +40,16 @@ describe('Home view (D.4.1)', () => {
     expect(screen.getByTestId('home-metric-rank')).toBeInTheDocument();
   });
 
-  it('renders a real calendar body inside the PlanSection', () => {
+  it('renders a real calendar body inside the CalendarPanel', () => {
     renderHome();
-    // Default view is 'week' (store default); WeekCalendarView lands. The
-    // legacy placeholder slot only fires for view==='month' until SIK-90
-    // wave 2 commit 2 ships MonthCalendarView.
+    // Default view is 'week' (store default); WeekCalendarView lands.
+    // SIK-90 Wave 2: CalendarPanel replaced PlanSection + double-head.
     expect(screen.getByTestId('home-week-calendar')).toBeInTheDocument();
   });
 
-  it('renders the PlanSection container in place of the calendar Panel', () => {
+  it('renders the CalendarPanel container in place of the calendar Panel', () => {
     renderHome();
-    expect(screen.getByTestId('home-plan-section')).toBeInTheDocument();
+    expect(screen.getByTestId('home-calendar-panel')).toBeInTheDocument();
   });
 
   it('renders the bottom row with 3 panels (今日任务 / 错题回顾 / 推荐套题)', () => {

@@ -8,11 +8,7 @@ import { Badge } from '../../components/atom';
 import { Panel, PageHeader, ScreenLockShell, ScrollRegion } from '../../components/layout';
 import { Button } from '../../components/form';
 import { useDashboardPreferenceStore, usePlanStore } from '@sikao/domain';
-import type { PlanCalendarView } from '@sikao/domain/plan/usePlanStore';
-import { PlanSection } from './sections/PlanSection';
-import { TodayCalendarView } from './sections/TodayCalendarView';
-import { WeekCalendarView } from './sections/WeekCalendarView';
-import { MonthCalendarView } from './sections/MonthCalendarView';
+import { CalendarPanel } from './sections/CalendarPanel';
 import { ProgressSection } from './sections/ProgressSection';
 import { RecommendationSection } from './sections/RecommendationSection';
 import styles from './Home.module.css';
@@ -59,18 +55,7 @@ const PLACEHOLDER_TASKS: ReadonlyArray<HomeTask> = [
   { id: 't3', title: '判断推理 · 类比专项', badge: { variant: 'cat-panduan', label: '判断' }, status: '已完成' },
 ];
 
-const VIEW_KEYS = ['today', 'week', 'month'] as const satisfies ReadonlyArray<PlanCalendarView>;
-
-function isPlanCalendarView(value: unknown): value is PlanCalendarView {
-  return typeof value === 'string' && (VIEW_KEYS as ReadonlyArray<string>).includes(value);
-}
-
-function CalendarBody() {
-  const view = usePlanStore((s) => s.currentView);
-  if (view === 'today') return <TodayCalendarView />;
-  if (view === 'week') return <WeekCalendarView />;
-  return <MonthCalendarView />;
-}
+const CALENDAR_VIEW_KEYS = ['today', 'week', 'month'] as const;
 
 function MetricCard({ metric }: { readonly metric: HomeMetric }) {
   if (!Number.isFinite(metric.value) || metric.value < 0) {
@@ -90,16 +75,15 @@ function MetricCard({ metric }: { readonly metric: HomeMetric }) {
 }
 
 export function Home() {
-  // SIK-90 Home M-A wave 1 (2026-05-24): hydrate the persisted calendar
-  // view (homeCalendarView preference) into usePlanStore once on mount so
-  // PlanSection / future calendar bodies render the right view without
-  // flashing the store default. patchPreferences happens elsewhere on
-  // user interaction; this is a one-way bootstrap.
+  // SIK-90 Wave 2 (2026-05-25): hydrate persisted calendar view from
+  // useDashboardPreferenceStore into usePlanStore once on mount so the
+  // CalendarPanel renders the right view without flashing the store
+  // default. CalendarPanel itself owns the user-driven view changes.
   useEffect(() => {
     const persisted =
       useDashboardPreferenceStore.getState().preferences?.['homeCalendarView'];
-    if (isPlanCalendarView(persisted)) {
-      usePlanStore.getState().setCurrentView(persisted);
+    if (typeof persisted === 'string' && (CALENDAR_VIEW_KEYS as ReadonlyArray<string>).includes(persisted)) {
+      usePlanStore.getState().setCurrentView(persisted as typeof CALENDAR_VIEW_KEYS[number]);
     }
   }, []);
 
@@ -116,9 +100,7 @@ export function Home() {
       </section>
 
       <ScrollRegion>
-        <PlanSection>
-          <CalendarBody />
-        </PlanSection>
+        <CalendarPanel />
       </ScrollRegion>
 
       <section className={styles.bottomRow} aria-label="底部模块">

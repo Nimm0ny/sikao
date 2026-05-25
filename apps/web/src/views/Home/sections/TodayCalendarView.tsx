@@ -88,13 +88,6 @@ export function TodayCalendarView() {
 
   return (
     <div className={styles.root} data-testid="home-today-calendar">
-      <header className={styles.head}>
-        <h3 className={styles.headTitle}>今日</h3>
-        <span className={styles.headMeta}>
-          {anchorDate}
-          {query.isSuccess ? ` · ${events.length} 个事件` : null}
-        </span>
-      </header>
       {query.isLoading ? (
         <div className={styles.stateWrap} role="status" aria-label="今日日历加载中" data-testid="home-today-loading">
           <Skeleton variant="rect" height={32} />
