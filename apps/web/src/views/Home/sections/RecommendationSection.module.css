@@ -1,0 +1,61 @@
+/*
+ * RecommendationSection — Home Section C · 今日推荐 mini panel.
+ * Why: bottom row #3 in Home v2.1.html. Lists today's recommendations
+ *      from useRecommendationsToday with accept / reject actions.
+ *      Layout: vertical card list, mini metadata, two action buttons.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--card-radius-sm);
+}
+
+.cardTitle {
+  font-size: var(--font-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.cardReason {
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+  line-height: 1.4;
+}
+
+.cardMeta {
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+  display: flex;
+  gap: var(--space-3);
+}
+
+.actions {
+  display: flex;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.refreshRow {
+  display: flex;
+  justify-content: flex-end;
+}

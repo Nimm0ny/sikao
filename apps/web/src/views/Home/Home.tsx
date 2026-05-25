@@ -14,6 +14,7 @@ import { TodayCalendarView } from './sections/TodayCalendarView';
 import { WeekCalendarView } from './sections/WeekCalendarView';
 import { MonthCalendarView } from './sections/MonthCalendarView';
 import { ProgressSection } from './sections/ProgressSection';
+import { RecommendationSection } from './sections/RecommendationSection';
 import styles from './Home.module.css';
 
 /*
@@ -45,12 +46,6 @@ interface HomeTask {
   readonly status: string;
 }
 
-interface HomeRecommendation {
-  readonly id: string;
-  readonly title: string;
-  readonly meta: string;
-}
-
 const PLACEHOLDER_METRICS: ReadonlyArray<HomeMetric> = [
   { key: 'practice', label: '本周练习', value: 128, unit: '题', delta: { direction: 'up', text: '+12 vs 上周' } },
   { key: 'accuracy', label: '正确率', value: 76.4, unit: '%', delta: { direction: 'up', text: '+2.1 pp' } },
@@ -62,12 +57,6 @@ const PLACEHOLDER_TASKS: ReadonlyArray<HomeTask> = [
   { id: 't1', title: '言语理解 · 主旨概括 10 题', badge: { variant: 'cat-yanyu', label: '言语' }, status: '未开始' },
   { id: 't2', title: '资料分析 · 增长率综合', badge: { variant: 'cat-ziliao', label: '资料' }, status: '进行中' },
   { id: 't3', title: '判断推理 · 类比专项', badge: { variant: 'cat-panduan', label: '判断' }, status: '已完成' },
-];
-
-const PLACEHOLDER_RECOMMENDATIONS: ReadonlyArray<HomeRecommendation> = [
-  { id: 'r1', title: '2024 国考 · 行测真题', meta: '120 题 · 120 分钟' },
-  { id: 'r2', title: '2024 省考联考 · 江苏卷', meta: '135 题 · 120 分钟' },
-  { id: 'r3', title: '事业单位 · 综合能力', meta: '100 题 · 90 分钟' },
 ];
 
 const VIEW_KEYS = ['today', 'week', 'month'] as const satisfies ReadonlyArray<PlanCalendarView>;
@@ -147,15 +136,8 @@ export function Home() {
           <ProgressSection />
         </Panel>
 
-        <Panel title="推荐套题">
-          <ul className={styles.recommendList} role="list">
-            {PLACEHOLDER_RECOMMENDATIONS.map((rec) => (
-              <li key={rec.id} className={styles.recommendItem}>
-                <span className={styles.recommendTitle}>{rec.title}</span>
-                <span className={styles.recommendMeta}>{rec.meta}</span>
-              </li>
-            ))}
-          </ul>
+        <Panel title="今日推荐">
+          <RecommendationSection />
         </Panel>
       </section>
     </div>
