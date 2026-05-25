@@ -3,6 +3,7 @@ import { lazy, Suspense } from 'react';
 import { useProgressOverview } from '@sikao/api-client/progressQueries';
 import { Skeleton } from '../../components/atom/Skeleton';
 import { EmptyState } from '../../components/atom/EmptyState';
+import { ScreenLockShell, ScrollRegion } from '../../components/layout';
 import { Header } from './Header';
 import { PlanSlice } from './PlanSlice';
 import { DiagnosisReport } from './DiagnosisReport';
@@ -33,19 +34,19 @@ export function ProfileLearning() {
 
   if (query.isLoading) {
     return (
-      <div className={styles.root} data-testid="profile-learning-loading">
+      <ScreenLockShell rows="auto minmax(0, 1fr)" testId="profile-learning-loading">
         <div className={styles.stateWrap} role="status" aria-label="学习详情加载中">
           <Skeleton variant="rect" height={64} />
           <Skeleton variant="rect" height={120} />
           <Skeleton variant="text" lines={3} />
         </div>
-      </div>
+      </ScreenLockShell>
     );
   }
 
   if (query.isError || !query.data) {
     return (
-      <div className={styles.root} data-testid="profile-learning-error">
+      <ScreenLockShell rows="auto minmax(0, 1fr)" testId="profile-learning-error">
         <Header overview={undefined} />
         <div className={styles.stateWrap}>
           <EmptyState
@@ -53,23 +54,25 @@ export function ProfileLearning() {
             description={String((query.error as Error | null)?.message ?? 'Network error')}
           />
         </div>
-      </div>
+      </ScreenLockShell>
     );
   }
 
   return (
-    <div className={styles.root} data-testid="profile-learning">
+    <ScreenLockShell rows="auto minmax(0, 1fr)" testId="profile-learning">
       <Header overview={query.data} />
-      <div className={styles.sectionGrid}>
-        <PlanSlice overview={query.data} />
-        <DiagnosisReport />
-        <Suspense fallback={<Skeleton variant="rect" height={240} />}>
-          <WeaknessRadar />
-        </Suspense>
-        <Suspense fallback={<Skeleton variant="rect" height={240} />}>
-          <TimeseriesChart />
-        </Suspense>
-      </div>
-    </div>
+      <ScrollRegion>
+        <div className={styles.sectionGrid}>
+          <PlanSlice overview={query.data} />
+          <DiagnosisReport />
+          <Suspense fallback={<Skeleton variant="rect" height={240} />}>
+            <WeaknessRadar />
+          </Suspense>
+          <Suspense fallback={<Skeleton variant="rect" height={240} />}>
+            <TimeseriesChart />
+          </Suspense>
+        </div>
+      </ScrollRegion>
+    </ScreenLockShell>
   );
 }

@@ -1,22 +1,7 @@
 /*
  * Note view — V5 D.4.3 desktop page skeleton.
- * Why: 3-row Workspace grid (header / FilterBar+SubBar / sticky cards).
- *      Sticky cards use the spec's bespoke shadow visual (design.md §D.4.3
- *      "0 1px 0 rgba(255,255,255,.6) inset, 0 12px 28px -10px ..."); for
- *      the V5-M3.5 skeleton phase we ship --card-shadow-rest as the
- *      placeholder and leave a TODO for the dedicated sticky shadow token
- *      to land in §C.4.6 token table (Phase 5+ design-system follow-up).
- *      Tilt is data-driven via [data-tilt='-2..2'] so callers don't write
- *      inline styles.
+ * Why: ScreenLockShell owns the grid. This module styles internals.
  */
-
-.root {
-  display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr);
-  gap: var(--space-4);
-  width: 100%;
-  min-height: 0;
-}
 
 .filterBar {
   display: flex;

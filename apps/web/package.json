@@ -9,7 +9,7 @@
     "preview": "vite preview --port 18080 --strictPort",
     "typecheck": "tsc -b --noEmit",
     "lint": "eslint . && npm run lint:scripts",
-    "lint:scripts": "node scripts/lint-shadow-token.mjs && node scripts/lint-zindex-token.mjs && node scripts/lint-spacing-token.mjs && node scripts/lint-icon-style.mjs && node scripts/lint-touch-target.mjs && node scripts/lint-v4-token-residual.mjs && node scripts/lint-radius-token.mjs && node scripts/lint-hardcode.mjs && node scripts/lint-italic.mjs && node scripts/lint-cn-simplified.mjs && node scripts/lint-icon-button.mjs && node scripts/lint-no-emoji-as-icon.mjs && node scripts/lint-practice-svg-only.mjs && node scripts/lint-ui-copy-ssot.mjs",
+    "lint:scripts": "node scripts/lint-shadow-token.mjs && node scripts/lint-zindex-token.mjs && node scripts/lint-spacing-token.mjs && node scripts/lint-icon-style.mjs && node scripts/lint-touch-target.mjs && node scripts/lint-v4-token-residual.mjs && node scripts/lint-radius-token.mjs && node scripts/lint-hardcode.mjs && node scripts/lint-italic.mjs && node scripts/lint-cn-simplified.mjs && node scripts/lint-icon-button.mjs && node scripts/lint-no-emoji-as-icon.mjs && node scripts/lint-practice-svg-only.mjs && node scripts/lint-ui-copy-ssot.mjs && node scripts/lint-screen-lock.mjs",
     "lint:eslint": "eslint .",
     "lint:shadow": "node scripts/lint-shadow-token.mjs",
     "lint:zindex": "node scripts/lint-zindex-token.mjs",

@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { Badge, Chip } from '../../components/atom';
 import { DatePicker } from '../../components/form';
 import { Pagination } from '../../components/nav';
-import { Panel, PageHeader } from '../../components/layout';
+import { Panel, PageHeader, ScreenLockShell } from '../../components/layout';
 import styles from './Review.module.css';
 
 /*
@@ -86,7 +86,7 @@ export function Review() {
   const visible = PLACEHOLDER_REVIEWS.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   return (
-    <div className={styles.root} data-testid="review-view">
+    <ScreenLockShell rows="auto auto auto minmax(0, 1fr)" testId="review-view">
       <PageHeader title="复盘" subtitle="错题与复习日历" />
 
       <div className={styles.filterBar} data-testid="review-filter-bar" aria-label="错题状态">
@@ -146,6 +146,6 @@ export function Review() {
           ))}
         </div>
       </Panel>
-    </div>
+    </ScreenLockShell>
   );
 }

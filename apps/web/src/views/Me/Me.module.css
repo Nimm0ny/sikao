@@ -1,18 +1,7 @@
 /*
  * Me view — V5 D.4.4 desktop page skeleton.
- * Why: 4-row Workspace grid (header / hero / 2-col MeGrid / danger Panel
- *      spanning both cols). Danger list bar surface (left 4px err bar +
- *      err text) is scoped to [data-testid="me-danger-list"] so neutral
- *      list-cards on the same page stay neutral.
+ * Why: ScreenLockShell owns the grid. This module styles internals.
  */
-
-.root {
-  display: grid;
-  grid-template-rows: auto auto auto 1fr;
-  gap: var(--space-4);
-  width: 100%;
-  min-height: 0;
-}
 
 .hero {
   display: grid;

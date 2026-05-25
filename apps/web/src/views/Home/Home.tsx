@@ -5,7 +5,7 @@
 import { useEffect } from 'react';
 import { Numeric } from '../../components/atom';
 import { Badge } from '../../components/atom';
-import { Panel, PageHeader } from '../../components/layout';
+import { Panel, PageHeader, ScreenLockShell, ScrollRegion } from '../../components/layout';
 import { Button } from '../../components/form';
 import { useDashboardPreferenceStore, usePlanStore } from '@sikao/domain';
 import type { PlanCalendarView } from '@sikao/domain/plan/usePlanStore';
@@ -104,7 +104,7 @@ export function Home() {
   }, []);
 
   return (
-    <div className={styles.root} data-testid="home-view">
+    <ScreenLockShell rows="auto auto minmax(0, 1.6fr) minmax(0, 1fr)" testId="home-view">
       <PageHeader
         title="早上好，lhr"
         subtitle="距离 2026 国考还有 168 天"
@@ -115,9 +115,11 @@ export function Home() {
         {PLACEHOLDER_METRICS.map((m) => <MetricCard key={m.key} metric={m} />)}
       </section>
 
-      <PlanSection>
-        <CalendarBody />
-      </PlanSection>
+      <ScrollRegion>
+        <PlanSection>
+          <CalendarBody />
+        </PlanSection>
+      </ScrollRegion>
 
       <section className={styles.bottomRow} aria-label="底部模块">
         <Panel title="今日任务">
@@ -140,6 +142,6 @@ export function Home() {
           <RecommendationSection />
         </Panel>
       </section>
-    </div>
+    </ScreenLockShell>
   );
 }

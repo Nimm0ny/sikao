@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useProfileRecords } from '@sikao/api-client/profileQueries';
 import type { ProfileRecordsFilters } from '@sikao/api-client/types/home';
-import { PageHeader, Panel } from '../../components/layout';
+import { PageHeader, Panel, ScreenLockShell, ScrollRegion } from '../../components/layout';
 import { Skeleton, Badge } from '../../components/atom';
 import { EmptyState } from '../../components/atom/EmptyState';
 import { Pagination } from '../../components/nav/Pagination';
@@ -96,7 +96,7 @@ export function ProfileRecords() {
   const query = useProfileRecords(filters);
 
   return (
-    <div className={styles.root} data-testid="profile-records">
+    <ScreenLockShell rows="auto auto minmax(0, 1fr)" testId="profile-records">
       <PageHeader
         title="学习记录"
         subtitle="按时间倒序查看历次练习、模考、周复盘"
@@ -109,6 +109,8 @@ export function ProfileRecords() {
         }
       />
       <FilterBar filters={filters} onChange={setFilters} />
+
+      <ScrollRegion>
 
       {query.isLoading ? (
         <Panel title="记录列表">
@@ -175,6 +177,7 @@ export function ProfileRecords() {
           </div>
         </Panel>
       ) : null}
-    </div>
+      </ScrollRegion>
+    </ScreenLockShell>
   );
 }

@@ -1,17 +1,7 @@
 /*
  * Review view — V5 D.4.5 desktop page skeleton (Hub style + 复习日历).
- * Why: 4-row Workspace grid (header / FilterBar / Calendar Section / Panel
- *      with compact-grid). Compact-grid uses --card-radius-sm 12px to
- *      mirror QuestionHub density per spec §D.4.5.
+ * Why: ScreenLockShell owns the 4-row grid. This module styles internals.
  */
-
-.root {
-  display: grid;
-  grid-template-rows: auto auto auto minmax(0, 1fr);
-  gap: var(--space-4);
-  width: 100%;
-  min-height: 0;
-}
 
 .filterBar {
   display: flex;

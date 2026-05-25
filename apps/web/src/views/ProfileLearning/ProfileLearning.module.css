@@ -1,19 +1,7 @@
 /*
  * ProfileLearning — /profile/learning drilldown root.
- * Why: container layout for Header + PlanSlice (wave 2) + DiagnosisReport
- *      / WeaknessRadar / TimeseriesChart (wave 3). Section-based grid;
- *      mobile collapses to single column. Charts will lazy-load via
- *      React.lazy + Suspense in wave 3 (recharts kept out of the Home
- *      route chunk per plan §3.3 acceptance).
+ * Why: ScreenLockShell owns the grid. This module styles internals.
  */
-
-.root {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  width: 100%;
-  min-width: 0;
-}
 
 .sectionGrid {
   display: grid;

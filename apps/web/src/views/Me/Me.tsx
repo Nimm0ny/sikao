@@ -7,7 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { Avatar, Badge, Numeric } from '../../components/atom';
 import { ListItem } from '../../components/list';
 import { ConfirmDialog } from '../../components/overlay';
-import { Panel, PageHeader } from '../../components/layout';
+import { Panel, PageHeader, ScreenLockShell } from '../../components/layout';
 import styles from './Me.module.css';
 
 interface MeStats {
@@ -52,7 +52,7 @@ export function Me() {
   const navigate = useNavigate();
 
   return (
-    <div className={styles.root} data-testid="me-view">
+    <ScreenLockShell rows="auto auto auto minmax(0, 1fr)" testId="me-view">
       <PageHeader title="我的" subtitle="账号 / 设置 / 学习数据" />
 
       <article className={styles.hero} data-testid="me-hero">
@@ -143,6 +143,6 @@ export function Me() {
           setConfirmOpen(false);
         }}
       />
-    </div>
+    </ScreenLockShell>
   );
 }

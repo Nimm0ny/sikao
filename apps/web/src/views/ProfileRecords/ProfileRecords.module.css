@@ -1,17 +1,7 @@
 /*
  * ProfileRecords — /profile/records page styles.
- * Why: Header + FilterBar + RecordList + Pagination layout. Record
- *      rows are dense list items keyed by kind (xingce / shenlun /
- *      mock-exam / weekly-review).
+ * Why: ScreenLockShell owns the grid. This module styles internals.
  */
-
-.root {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-4);
-  width: 100%;
-  min-width: 0;
-}
 
 .filterBar {
   display: flex;

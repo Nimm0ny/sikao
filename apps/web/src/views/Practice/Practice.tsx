@@ -6,7 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Button } from '../../components/form/Button';
 import { ScopeToggle } from '../../components/business';
 import { Skeleton } from '../../components/atom';
-import { PageHeader, Panel } from '../../components/layout';
+import { PageHeader, Panel, ScreenLockShell } from '../../components/layout';
 import { Banner } from '../../components/overlay';
 import { fetchPracticeHistory, historyKeys } from '@sikao/api-client/apiQueries';
 import { useDailyPractice, useDailyPracticeHistory } from '@sikao/api-client/queries/dailyPracticeQueries';
@@ -188,7 +188,7 @@ export function Practice() {
   const isPageLoading = !isPageError && (centerQuery.isLoading || statsQuery.isLoading);
 
   return (
-    <div className={styles.root} data-testid="practice-view">
+    <ScreenLockShell rows="auto auto auto minmax(0, 1fr)" testId="practice-view">
       <PageHeader
         title="练习中心"
         subtitle="历史记录、专项入口、套卷筛选与自定义刷题都在这里"
@@ -315,6 +315,6 @@ export function Practice() {
         onClose={() => { setDialogOpen(false); setPreset(null); }}
         onSubmit={(draft: CustomPracticeDraft) => void handleSubmitCustom(draft)}
       />
-    </div>
+    </ScreenLockShell>
   );
 }

@@ -1,17 +1,8 @@
 /*
  * Home view — V5 D.4.1 desktop page skeleton.
- * Why: 4-row Workspace grid (header / metric-row × 4 / Calendar / BottomRow × 3)
- *      per design.md §D.4.1. Calendar panel takes 1.6fr; bottom row stays 1fr;
- *      module spacing --space-4. Mobile collapses to single column.
+ * Why: ScreenLockShell owns the 4-row grid (header / metric-row / Calendar
+ *      / BottomRow). This module only styles internal sections.
  */
-
-.root {
-  display: grid;
-  grid-template-rows: auto auto minmax(0, 1.6fr) minmax(0, 1fr);
-  gap: var(--space-4);
-  width: 100%;
-  min-height: 0;
-}
 
 .metricRow {
   display: grid;
