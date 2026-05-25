@@ -14,6 +14,8 @@ from sikao_api.db.schemas_v2 import (
     OperationAckV2,
     OverviewResponseV2,
     ReviewInsightsCausesResponseV2,
+    ReviewDebtPlanResponseV2,
+    ReviewDebtSnapshotResponseV2,
     ReviewInsightsRedoAccuracyResponseV2,
     ReviewInsightsTrendsResponseV2,
     RecommendationReadV2,
@@ -41,6 +43,7 @@ from sikao_api.modules.review.application.cause_analysis_queries import list_cau
 from sikao_api.modules.review.application.cause_analysis_result import serialize_analysis_row
 from sikao_api.modules.review.application.cause_analysis_service import ReviewCauseAnalysisService
 from sikao_api.modules.review.application.cause_override_service import CauseOverrideService
+from sikao_api.modules.review.application.debt_service import ReviewDebtService
 from sikao_api.modules.review.application.recommendation_bridge import create_review_recommendation
 from sikao_api.modules.review.application.insights_service import (
     build_review_causes,
@@ -136,6 +139,64 @@ def get_review_insights_redo_accuracy(
     session: Annotated[Session, Depends(get_db_session)],
 ) -> ReviewInsightsRedoAccuracyResponseV2:
     return build_review_redo_accuracy(session, user_id=user.id)
+
+
+@router.get("/debt/snapshot", response_model=ReviewDebtSnapshotResponseV2)
+def get_review_debt_snapshot(
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> ReviewDebtSnapshotResponseV2:
+    return ReviewDebtService(session).get_snapshot(user=user)
+
+
+@router.get("/debt/plan", response_model=ReviewDebtPlanResponseV2)
+def get_review_debt_plan(
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> ReviewDebtPlanResponseV2:
+    return ReviewDebtService(session).get_plan(user=user)
+
+
+@router.post(
+    "/debt/redistribute",
+    response_model=ReviewDebtSnapshotResponseV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def post_review_debt_redistribute(
+    request: Request,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+) -> ReviewDebtSnapshotResponseV2:
+    payload = ReviewDebtService(session).trigger_redistribute(
+        user=user,
+        request_id=getattr(request.state, "request_id", None),
+        ip=request.client.host if request.client else None,
+        idempotency_key=idempotency_key or "",
+    )
+    session.commit()
+    return payload
+
+
+@router.post(
+    "/debt/skip-rampup",
+    response_model=ReviewDebtSnapshotResponseV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def post_review_debt_skip_rampup(
+    request: Request,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+    idempotency_key: Annotated[str | None, Header(alias="Idempotency-Key")] = None,
+) -> ReviewDebtSnapshotResponseV2:
+    payload = ReviewDebtService(session).skip_rampup(
+        user=user,
+        request_id=getattr(request.state, "request_id", None),
+        ip=request.client.host if request.client else None,
+        idempotency_key=idempotency_key or "",
+    )
+    session.commit()
+    return payload
 
 
 @router.get("/items/{item_id}", response_model=ReviewDetailResponseV2)
