@@ -136,7 +136,7 @@ export function useEssayGradingStatus(
     enabled: submissionId > 0,
     refetchInterval: (query) => {
       const status = query.state.data?.status;
-      if (status !== 'pending' && status !== 'processing') {
+      if (status !== 'submitted' && status !== 'pending' && status !== 'pending_grading' && status !== 'processing') {
         return false;
       }
       return getEssayGradingPollInterval(query.state.dataUpdateCount);
@@ -248,4 +248,3 @@ export function useReportEssayReference(): UseMutationResult<
     },
   });
 }
-

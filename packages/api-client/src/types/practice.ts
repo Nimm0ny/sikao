@@ -44,8 +44,16 @@ export type PracticePreferencesResetRequestV2 = components['schemas']['PracticeP
 export type PracticePreferencesResponseV2 = components['schemas']['PracticePreferencesResponseV2'];
 export type PracticePreferencesWriteResponseV2 = components['schemas']['PracticePreferencesWriteResponseV2'];
 export type PracticeSessionCreateRequestV2 = components['schemas']['PracticeSessionCreateRequestV2'];
-export type PracticeSessionEnvelopeV2 = components['schemas']['PracticeSessionEnvelopeV2'];
-export type PracticeSessionItemV2 = components['schemas']['PracticeSessionItemV2'];
+type PracticeSessionEnvelopeWireV2 = components['schemas']['PracticeSessionEnvelopeV2'];
+type PracticeSessionItemWireV2 = components['schemas']['PracticeSessionItemV2'];
+export interface PracticeSessionItemV2 extends PracticeSessionItemWireV2 {
+  selectedAnswerKeys: string[];
+  answerText: string | null;
+}
+export interface PracticeSessionEnvelopeV2 extends Omit<PracticeSessionEnvelopeWireV2, 'items'> {
+  essaySubmissionId?: number | null;
+  items: PracticeSessionItemV2[];
+}
 export type PracticeSessionResultResponseV2 = components['schemas']['PracticeSessionResultResponseV2'];
 export type PracticeStatsCrossItemV2 = components['schemas']['PracticeStatsCrossItemV2'];
 export type PracticeStatsCrossResponseV2 = components['schemas']['PracticeStatsCrossResponseV2'];

@@ -317,11 +317,15 @@ class SessionServiceV2:
             user_id=practice_session.user_id,
             answers=answers,
         )
+        essay_submission_id = self._resolve_essay_submission_id(
+            practice_session=practice_session
+        )
         return PracticeSessionEnvelopeV2(
             id=practice_session.id,
             track=practice_session.track,
             entry_kind=practice_session.entry_kind,
             status=practice_session.status,
+            essay_submission_id=essay_submission_id,
             items=[
                 self._build_session_item(
                     answer=answer,
@@ -384,14 +388,22 @@ class SessionServiceV2:
     def _build_result_action_href(self, *, practice_session: PracticeSessionV2) -> str:
         if practice_session.track != "essay":
             return "/wrong-book"
-        submission_id = self.session.scalar(
+        if self._resolve_essay_submission_id(practice_session=practice_session) is None:
+            return f"/practice/sessions/{practice_session.id}"
+        return f"/practice/sessions/{practice_session.id}/grading"
+
+    def _resolve_essay_submission_id(
+        self,
+        *,
+        practice_session: PracticeSessionV2,
+    ) -> int | None:
+        if practice_session.track != "essay":
+            return None
+        return self.session.scalar(
             select(EssaySubmissionV2.id).where(
                 EssaySubmissionV2.practice_session_id == practice_session.id
             )
         )
-        if submission_id is None:
-            return f"/practice/sessions/{practice_session.id}"
-        return f"/practice/essay/submissions/{submission_id}/result"
 
     def _resolve_paper_binding(self, paper_code: str | None) -> tuple[int | None, int | None]:
         if paper_code is None:

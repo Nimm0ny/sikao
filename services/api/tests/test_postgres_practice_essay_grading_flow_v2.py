@@ -53,6 +53,10 @@ def test_postgres_practice_essay_grading_roundtrip(
             assert submission.status == "submitted"
             submission_id = int(submission.id)
 
+        session_detail = client.get(f"/api/v2/practice/sessions/{session_id}")
+        assert session_detail.status_code == 200, session_detail.text
+        assert session_detail.json()["essaySubmissionId"] == submission_id
+
         pre_status = client.get(
             f"/api/v2/practice/essay/submissions/{submission_id}/grading-status"
         )

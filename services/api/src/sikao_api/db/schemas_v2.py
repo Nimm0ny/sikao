@@ -256,6 +256,7 @@ class PracticeSessionEnvelopeV2(CamelModel):
     track: str
     entry_kind: str
     status: str
+    essay_submission_id: int | None = None
     items: list[PracticeSessionItemV2]
     actions: list[ActionLinkV2]
     started_at: UtcDatetime
