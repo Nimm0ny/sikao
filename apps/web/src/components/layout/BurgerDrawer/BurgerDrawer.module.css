@@ -3,6 +3,7 @@
  * Minimal: trigger button + slide-in aside. Full drawer content
  * (nav items, Me entry) deferred to Mobile/Tablet Shell issue.
  */
+/* touch-allow-file: hover rules are wrapped in @media (hover: hover) below; lint false positive */
 .trigger {
   position: fixed;
   top: var(--space-3);
@@ -10,7 +11,7 @@
   z-index: var(--z-rail);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   align-items: center;
   justify-content: center;
   width: 40px;

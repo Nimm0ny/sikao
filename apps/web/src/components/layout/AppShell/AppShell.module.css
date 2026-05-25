@@ -1,15 +1,16 @@
 /*
  * AppShell — V5 D.3.32 layout (skeleton).
  * Why: top-level flex layout. Rail is a sibling, so .shell is row-flex and
- *      .column captures topbar + main + bottomNav. height:100vh + min-h:0 on
- *      .column keeps inner scroll containers (Workspace) constrained to
- *      viewport height so sticky topbars work.
+ *      .column captures topbar + main + bottomNav. height: 100dvh +
+ *      overflow: hidden locks the viewport so ScreenLockShell entry views
+ *      own the only scroll affordance (Web-Layout.md §1.3).
  */
 .shell {
   display: flex;
   flex-direction: row;
   width: 100%;
-  min-height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
   background: var(--color-bg-page);
 }
 
@@ -18,7 +19,9 @@
   flex-direction: column;
   flex: 1 1 auto;
   min-width: 0;
-  min-height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .topbar {
