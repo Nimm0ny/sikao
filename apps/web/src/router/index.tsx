@@ -16,6 +16,7 @@ import { Note } from '../views/Note';
 import { Me } from '../views/Me';
 import { QuestionHub } from '../views/QuestionHub';
 import { Review } from '../views/Review';
+import { ProfileLearning } from '../views/ProfileLearning';
 import { AuthGuard } from './AuthGuard';
 import { BootCard } from './BootCard';
 
@@ -34,6 +35,7 @@ export const router = createBrowserRouter([
           { path: 'practice/mock-exam/history', element: <MockExamHistoryView /> },
           { path: 'practice/mock-exam/:sessionId/comparison', element: <MockExamComparisonView /> },
           { path: 'profile/practice-preferences', element: <PracticePreferences /> },
+          { path: 'profile/learning', element: <ProfileLearning /> },
           { path: 'review', element: <Review /> },
           { path: 'note', element: <Note /> },
           { path: 'question-hub', element: <QuestionHub /> },

@@ -1,0 +1,33 @@
+/*
+ * ProfileLearning — /profile/learning drilldown root.
+ * Why: container layout for Header + PlanSlice (wave 2) + DiagnosisReport
+ *      / WeaknessRadar / TimeseriesChart (wave 3). Section-based grid;
+ *      mobile collapses to single column. Charts will lazy-load via
+ *      React.lazy + Suspense in wave 3 (recharts kept out of the Home
+ *      route chunk per plan §3.3 acceptance).
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+}
+
+.sectionGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+@media (max-width: 1023.98px) {
+  .sectionGrid { grid-template-columns: 1fr; }
+}
+
+.stateWrap {
+  padding: var(--space-5) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}

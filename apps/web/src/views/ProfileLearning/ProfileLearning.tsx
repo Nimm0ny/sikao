@@ -1,0 +1,62 @@
+// lint-allow-ui-copy: V5 ProfileLearning container copy.
+import { useProgressOverview } from '@sikao/api-client/progressQueries';
+import { Skeleton } from '../../components/atom/Skeleton';
+import { EmptyState } from '../../components/atom/EmptyState';
+import { Header } from './Header';
+import { PlanSlice } from './PlanSlice';
+import styles from './ProfileLearning.module.css';
+
+/*
+ * ProfileLearning — /profile/learning drilldown root.
+ *
+ * Why: plan §3.3 落地路径 — Header + PlanSlice (wave 2) + DiagnosisReport
+ *      / WeaknessRadar / TimeseriesChart (wave 3, recharts lazy import
+ *      keeps the chunk out of the Home route). Wave 2 lays the
+ *      container + the two non-chart sections so the drilldown is
+ *      reachable; wave 3 adds the chart sections.
+ *
+ *      Same 4-state contract as Home Section B (loading / error /
+ *      empty / ready) but applied at the container level — children
+ *      assume `overview` is defined.
+ */
+
+export function ProfileLearning() {
+  const query = useProgressOverview();
+
+  if (query.isLoading) {
+    return (
+      <div className={styles.root} data-testid="profile-learning-loading">
+        <div className={styles.stateWrap} role="status" aria-label="学习详情加载中">
+          <Skeleton variant="rect" height={64} />
+          <Skeleton variant="rect" height={120} />
+          <Skeleton variant="text" lines={3} />
+        </div>
+      </div>
+    );
+  }
+
+  if (query.isError || !query.data) {
+    return (
+      <div className={styles.root} data-testid="profile-learning-error">
+        <Header overview={undefined} />
+        <div className={styles.stateWrap}>
+          <EmptyState
+            title="无法加载学习详情"
+            description={String((query.error as Error | null)?.message ?? 'Network error')}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.root} data-testid="profile-learning">
+      <Header overview={query.data} />
+      <div className={styles.sectionGrid}>
+        <PlanSlice overview={query.data} />
+        {/* DiagnosisReport / WeaknessRadar / TimeseriesChart land in
+            SIK-91 wave 3 with recharts lazy-loaded. */}
+      </div>
+    </div>
+  );
+}

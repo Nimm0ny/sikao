@@ -1,0 +1,58 @@
+/*
+ * PlanSlice — current plan window snapshot.
+ * Why: progress bar + 3 metric cells (events done / minutes practiced /
+ *      target hit-rate). Reads useProgressOverview.summary.planSlice.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.progress {
+  height: 8px;
+  border-radius: var(--radius-999);
+  background: var(--color-bg-sunken);
+  overflow: hidden;
+  position: relative;
+}
+
+.progressFill {
+  height: 100%;
+  background: var(--color-brand-primary);
+  border-radius: var(--radius-999);
+  transition: width 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.metrics {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.cell {
+  background: var(--color-bg-elevated);
+  border-radius: var(--card-radius-sm);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.cellValue {
+  font-size: var(--font-h3);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  letter-spacing: -0.02em;
+}
+
+.cellLabel {
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+}
+
+.windowMeta {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+}
