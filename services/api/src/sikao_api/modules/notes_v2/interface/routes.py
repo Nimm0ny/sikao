@@ -22,6 +22,7 @@ from sikao_api.db.schemas_v2 import (
 )
 from sikao_api.db.session import get_db_session
 from sikao_api.modules.identity.application.security_v2 import get_current_user_v2, verify_csrf_v2
+from sikao_api.modules.notes_v2.application.export_service import NoteExportServiceV2
 from sikao_api.modules.notes_v2.application.image_service import NoteImageServiceV2
 from sikao_api.modules.notes_v2.application.note_service import NotesServiceV2
 from sikao_api.modules.notes_v2.application.tag_service import NoteTagServiceV2
@@ -156,6 +157,25 @@ def get_note(
     service = NotesServiceV2(session)
     note = service.get_note(user=user, note_id=note_id)
     return service.serialize_note(note)
+
+
+@router.get("/{note_id}/export")
+def export_note(
+    note_id: int,
+    format: str,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> Response:
+    content, media_type, content_disposition = NoteExportServiceV2(session).export_note(
+        user=user,
+        note_id=note_id,
+        export_format=format,
+    )
+    return Response(
+        content=content,
+        media_type=media_type,
+        headers={"Content-Disposition": content_disposition},
+    )
 
 
 @router.put("/{note_id}", response_model=NoteDetailV2, dependencies=[Depends(verify_csrf_v2)])
