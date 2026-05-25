@@ -238,7 +238,7 @@ def test_reset_password_invalidates_other_active_tokens(tmp_path: Path) -> None:
         user_id = _seed_user_with_email(app)
         # forgot 两次 → 第二次自动 invalidate 第一次 (P1-6).
         # 但要验 D6 是 "reset 成功后", 得手插一条 fresh active token.
-        raw_a = _request_reset_get_token(client, "alice@example.com")
+        _request_reset_get_token(client, "alice@example.com")
         # raw_a 现在是 user 唯一 active token, 重新 forgot 覆盖.
         raw_b = _request_reset_get_token(client, "alice@example.com")
         # raw_a 此时已 used (P1-6). raw_b 是当前 active.

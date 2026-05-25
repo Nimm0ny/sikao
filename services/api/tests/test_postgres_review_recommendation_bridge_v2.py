@@ -124,6 +124,7 @@ def test_postgres_review_recommendation_accept_creates_wrong_redo_session(tmp_pa
             assert recommendation_row.status == "accepted_session"
             assert practice_session is not None
             assert practice_session.source_mode == "wrong_redo"
+            assert practice_session.practice_mode == "per_question"
             assert practice_session.linked_recommendation_id == recommendation_id
             assert practice_session.config_snapshot["review_item_ids"] == [item_id]
             assert practice_session.config_snapshot["shuffle_options"] is True

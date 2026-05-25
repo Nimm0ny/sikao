@@ -40,7 +40,7 @@ def _seed_review_item(
             source_kind=source_kind,
             source_id=source_id,
             status=status,
-            metadata_json={},
+            metadata_json={"source_note_id": 901} if source_kind == "note_card" else {},
             created_at=created_at,
             updated_at=created_at,
             reason=source_kind if source_kind in {"wrong_answer", "manual_add", "flagged_persistent"} else None,
