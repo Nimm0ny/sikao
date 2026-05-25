@@ -1716,3 +1716,45 @@ class DashboardFullPlanResponseV2(CamelModel):
     events: list[PlanEventReadV2] = Field(default_factory=list)
     practice_blocks: list[PracticeBlockV2] = Field(default_factory=list)
     targets: list[ExamCountdownV2] = Field(default_factory=list)
+class CauseAnalysisFeedbackRequestV2(CamelModel):
+    rating: Literal["up", "down"]
+    comment: str | None = Field(default=None, max_length=500)
+    dimensions_disagreed: list[str] = Field(default_factory=list, max_length=5)
+    actions_unhelpful: list[int] = Field(default_factory=list, max_length=5)
+
+    @field_validator("comment")
+    @classmethod
+    def _normalize_feedback_comment(cls, value: str | None) -> str | None:
+        if value is None:
+            return None
+        stripped = value.strip()
+        return stripped or None
+
+    @field_validator("dimensions_disagreed")
+    @classmethod
+    def _normalize_disagreed_dimensions(cls, value: list[str]) -> list[str]:
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for raw in value:
+            slug = raw.strip().lower()
+            if not slug:
+                raise ValueError("dimensions_disagreed cannot contain blank slug")
+            if slug in seen:
+                raise ValueError("dimensions_disagreed must be distinct")
+            seen.add(slug)
+            normalized.append(slug)
+        return normalized
+
+    @field_validator("actions_unhelpful")
+    @classmethod
+    def _validate_actions_unhelpful(cls, value: list[int]) -> list[int]:
+        seen: set[int] = set()
+        for index in value:
+            if index < 0:
+                raise ValueError("actions_unhelpful must be >= 0")
+            if index in seen:
+                raise ValueError("actions_unhelpful must be distinct")
+            seen.add(index)
+        return value
+
+

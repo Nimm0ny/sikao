@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Header, Request
 from fastapi import Query
 
 from sikao_api.db.schemas_v2 import (
+    CauseAnalysisFeedbackRequestV2,
     CauseAnalysisGroupRequestV2,
     CauseAnalysisRequestV2,
     CauseAnalysisResponseV2,
@@ -42,6 +43,7 @@ from sikao_api.modules.review.application.cause_analysis_cache import invalidate
 from sikao_api.modules.review.application.cause_analysis_queries import list_cause_tags_response
 from sikao_api.modules.review.application.cause_analysis_result import serialize_analysis_row
 from sikao_api.modules.review.application.cause_analysis_service import ReviewCauseAnalysisService
+from sikao_api.modules.review.application.cause_feedback_service import CauseAnalysisFeedbackService
 from sikao_api.modules.review.application.cause_override_service import CauseOverrideService
 from sikao_api.modules.review.application.debt_service import ReviewDebtService
 from sikao_api.modules.review.application.recommendation_bridge import create_review_recommendation
@@ -278,6 +280,29 @@ def patch_cause_analysis_dimension(
     )
     session.commit()
     return serialize_analysis_row(analysis, cached=False)
+
+
+@router.post(
+    "/cause-analysis/{analysis_id}/feedback",
+    response_model=OperationAckV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def post_cause_analysis_feedback(
+    analysis_id: int,
+    payload: CauseAnalysisFeedbackRequestV2,
+    request: Request,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> OperationAckV2:
+    CauseAnalysisFeedbackService(session).submit_feedback(
+        user=user,
+        analysis_id=analysis_id,
+        payload=payload,
+        request_id=getattr(request.state, "request_id", None),
+        ip=request.client.host if request.client else None,
+    )
+    session.commit()
+    return OperationAckV2(ok=True, status="stored")
 
 
 @router.get("/cause-tags", response_model=CauseTagListResponseV2)
