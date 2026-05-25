@@ -984,9 +984,9 @@ class NoteImageV2(Base):
     )
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    note_id: Mapped[int] = mapped_column(
+    note_id: Mapped[int | None] = mapped_column(
         ForeignKey("notes_v2.id", ondelete="CASCADE"),
-        nullable=False,
+        nullable=True,
     )
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users_v2.id", ondelete="CASCADE"),

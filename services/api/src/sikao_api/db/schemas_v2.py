@@ -707,6 +707,75 @@ class NoteUpdateRequestV2(CamelModel):
     tags: list[str] | None = Field(default=None, max_length=10)
 
 
+class TagWithCountV2(CamelModel):
+    tag_name: str
+    is_system: bool
+    usage_count: int
+
+
+class NoteTagMutationRequestV2(CamelModel):
+    tag_name: str = Field(min_length=1, max_length=64)
+
+    @field_validator("tag_name")
+    @classmethod
+    def _normalize_tag_name(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if not normalized:
+            raise ValueError("tag_name cannot be blank")
+        return normalized
+
+
+class TagRenameV2(CamelModel):
+    old_name: str = Field(min_length=1, max_length=64)
+    new_name: str = Field(min_length=1, max_length=64)
+
+    @field_validator("old_name", "new_name")
+    @classmethod
+    def _normalize_tag_value(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if not normalized:
+            raise ValueError("tag name cannot be blank")
+        return normalized
+
+
+class TagMergeRequestV2(CamelModel):
+    source_tags: list[str] = Field(min_length=1, max_length=20)
+    target_tag: str = Field(min_length=1, max_length=64)
+
+    @field_validator("source_tags")
+    @classmethod
+    def _normalize_source_tags(cls, value: list[str]) -> list[str]:
+        normalized: list[str] = []
+        seen: set[str] = set()
+        for raw in value:
+            tag = raw.strip().lower()
+            if not tag:
+                raise ValueError("source_tags cannot contain blank values")
+            if tag in seen:
+                continue
+            seen.add(tag)
+            normalized.append(tag)
+        return normalized
+
+    @field_validator("target_tag")
+    @classmethod
+    def _normalize_target_tag(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if not normalized:
+            raise ValueError("target_tag cannot be blank")
+        return normalized
+
+
+class NoteImageUploadResponseV2(CamelModel):
+    id: int
+    url: str
+    file_name: str
+    file_size: int
+    mime_type: str
+    width: int | None = None
+    height: int | None = None
+
+
 class TrendPointV2(CamelModel):
     date: date
     session_id: int

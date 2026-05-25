@@ -19,6 +19,7 @@ dependencies = [
   "httpx>=0.28.1",
   "python-dateutil>=2.9.0",
   "python-multipart>=0.0.20",
+  "Pillow>=10.4",
   "cryptography>=44.0",
   "fastapi-limiter>=0.1.6,<0.2.0",
   "cachetools>=5.3",

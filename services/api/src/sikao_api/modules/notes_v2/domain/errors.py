@@ -1,0 +1,4 @@
+TAG_LIMIT_EXCEEDED = "tag_limit_exceeded"
+IMAGE_LIMIT_EXCEEDED = "image_limit_exceeded"
+IMAGE_TOO_LARGE = "image_too_large"
+IMAGE_INVALID_TYPE = "image_invalid_type"
