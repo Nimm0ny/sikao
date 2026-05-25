@@ -1,7 +1,7 @@
 /*
  * Sikao Web Router.
  */
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import { RootLayout } from '../layouts/RootLayout';
 import { Home } from '../views/Home';
 import { MockExamComparisonView } from '../views/MockExamComparisonView';
@@ -20,6 +20,20 @@ import { ProfileLearning } from '../views/ProfileLearning';
 import { AuthGuard } from './AuthGuard';
 import { BootCard } from './BootCard';
 
+// SIK-93 Home M-Records — 6 legacy redirects map old V4 routes onto the
+// canonical V5 paths so deep links from external sources / bookmarks
+// don't 404. Listed at the top of children so React Router resolves them
+// before the wildcard catch-all.
+const LEGACY_REDIRECTS: ReadonlyArray<{ readonly from: string; readonly to: string }> = [
+  { from: 'app', to: '/' },
+  { from: 'study/today', to: '/' },
+  { from: 'dashboard', to: '/' },
+  { from: 'practice/center', to: '/practice' },
+  { from: 'wrong-book', to: '/review' },
+  { from: 'plan', to: '/' },
+  { from: 'progress', to: '/profile/learning' },
+];
+
 export const router = createBrowserRouter([
   {
     path: '/',
@@ -36,6 +50,10 @@ export const router = createBrowserRouter([
           { path: 'practice/mock-exam/:sessionId/comparison', element: <MockExamComparisonView /> },
           { path: 'profile/practice-preferences', element: <PracticePreferences /> },
           { path: 'profile/learning', element: <ProfileLearning /> },
+          ...LEGACY_REDIRECTS.map(({ from, to }) => ({
+            path: from,
+            element: <Navigate to={to} replace />,
+          })),
           { path: 'review', element: <Review /> },
           { path: 'note', element: <Note /> },
           { path: 'question-hub', element: <QuestionHub /> },
