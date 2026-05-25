@@ -226,7 +226,7 @@ Rail 自身不接 query，没有 loading / error 状态。但本契约要求：
 | Me 入口呈现 | 原型 `home-frame.html` `.rail-bottom` 仅有 `.rail-me` 一段 | 同（保留 `.rail-me` 不再单独建 nav 项）| 与原型一致，但**当前生产实现**多了 `id:'me'` nav 项 + RailMe 两份重复，本契约一次性收口 | 2026-05-25 |
 | 768–1023 区间 | 原型未给出 | 占位 BurgerDrawer hook（仅切显隐 button），完整 drawer 内容 defer 到 Mobile/Tablet Shell | 完整移动 drawer 不在 Tab1 Home 范围 | 2026-05-25 |
 | `me-sub` 文案 | 原型字面 `Lv.4 学习达人` | 用 `user.subtitle ?? "Lv.4 学习达人"` | 用户等级未接线（auth.profile 不含 `subtitle` 字段），先用原型 fallback；接线归未来 Auth Tab | 2026-05-25 |
-| Tooltip 实现 | 原型 `::after content: attr(data-tip)` 纯 CSS | 目标态：纯 CSS `[data-tip]::after`；现状 `Rail.tsx` 用 React `<Tooltip>` 组件（`Rail.tsx:106-115, 161`），W1 收口将 React Tooltip 退化为 ::after 与原型一致 | 收口实现侧 tooltip 路径：CSS ::after 与 sprite icon 体系更协调，避免 overlay 复杂度；W1 同步落地 | 2026-05-25 |
+| Tooltip 实现 | 原型 `::after content: attr(data-tip)` 纯 CSS | 目标态：纯 CSS `[data-tip]::after`；W1 仅在 RailMe 折叠态落 ::after Tooltip（与原型一致）；RailBrand / RailNav 折叠态现用的 React `<Tooltip>` 组件（`Rail.tsx:106-115, 161`）由 W2「视觉对齐 H05–H10」一起退化为 ::after，避免 W1 文件鼓胀越过 H9 200 行净增 cap | W1 范围聚焦 4-tab + Me 收敛；Tooltip 模式统一在 W2 与 toggle sprite / active indicator / section heading 一起做更内聚 | 2026-05-25 |
 | transition 时长 | 原型 `width .25s cubic-bezier(.16,1,.3,1)` | 用 `var(--dur-base)` (200ms) + `var(--ease-emphasized)` | tokens 化 + 与 V5 motion 系统一致；240ms→200ms 视觉差异不可感知 | 2026-05-25 |
 | `.rail-cmd` 折叠态 | 原型行 121–123：`width: 32px; height: 32px; align-self: center` | 同 | - | no drift |
 | Ctrl/Cmd+\\ 快捷键 | 原型 demo 中由 iframe postMessage 模拟；生产用 `KeyboardShortcuts.register` | 生产实现 | 原型是 demo 不是生产 spec | no drift |
@@ -291,18 +291,19 @@ Rail 自身不接 query，没有 loading / error 状态。但本契约要求：
 - **Wave 1 · 4-tab + Me 头像收敛**（高优先，阻塞 SIK-93）：
   - `RootLayout.tsx`：`navItems` 删 `id:'me'`，长度 = 4；`me` 槽改 `Avatar + meStack(meName + meSub)`；保留 `data-testid="rail-me-link"` + `aria-label="我的"`。
   - `RootLayout.module.css`：新增 `.meStack / .meName / .meSub`（folded 态 `display: none`）。
-  - `Rail.tsx`：`RailMe` 槽折叠态加 `data-tip="我的"` 触发 ::after Tooltip；展开态正常渲染 children。
-  - `Rail.module.css`：`.railMe[data-tip]::after` 与 `.navItem[data-tip]::after` 同样式。
+  - `Rail.tsx`：`RailMe` 折叠态加 `data-tip="我的"` 触发 ::after Tooltip（**仅 RailMe**，RailBrand / RailNav 的 React `<Tooltip>` 在 W2 一起退化）。
+  - `Rail.module.css`：`.me[data-tip]::after` 与 `.navItem[data-tip]::after` 同样式。
   - `RootLayout.test.tsx`：断言 4-tab + Me 仅 1 节点（`getAllByLabelText('我的').length === 1`）；删旧 5-tab 断言。
   - `Rail.test.tsx`：补 RailMe 折叠态 Tooltip 渲染、nav 不含 `我的`。
-  - 文件估 ≤ 5；行估 ≤ 200 净增。
+  - 文件估 ≤ 6；行估 ≤ 200 净增。
   - 验收：typecheck + lint + vitest（4 状态）+ vitest-axe + Chrome MCP smoke + `docs/reviews/sik-rail-v5-w1.md`。
 - **Wave 2 · 视觉对齐 H05–H10**：
   - cmd-k 接线：`RootLayout.tsx` 注入 `cmd={...}` 接 `CommandPalette.open`；`KeyboardShortcuts.register` Ctrl/Cmd+K 全局快捷键。
   - toggle sprite：`Rail.tsx` 把 inline `<svg>` 换成 `<SpriteIcon id="rail-toggle" size={16} />`；位置移到 `.railBrand` trailing；折叠态 `display: none`。
   - active 视觉：`Rail.module.css` 改 `data-active` 背景到 `--color-bg-sunken`；新增 `::before` 3×24 indicator bar。
   - section heading：`Rail.tsx` 渲染 `<div className={styles.navSection}>导航</div>`；`Rail.module.css` `.navSection` 10px 600 uppercase + collapsed `display: none`。
-  - 文件估 ≤ 6；行估 ≤ 300 净增（含测试更新）。
+  - **Tooltip 模式收尾**：把 `RailBrand` / `RailNav` 折叠态的 React `<Tooltip>` 全部退化为 `[data-tip]::after`（与 W1 RailMe 同模式），删除 `<Tooltip>` import。
+  - 文件估 ≤ 8；行估 ≤ 350 净增（含 Tooltip 收尾 + 测试更新）。
   - 验收：同 W1 + `docs/reviews/sik-rail-v5-w2.md`。
 - **Wave 3 · 768–1023 BurgerDrawer hook**（占位）：
   - `packages/shared-utils/src/hooks/useMediaQuery.ts`（新建）：标准 `matchMedia` listener hook + SSR safe guard；如 `shared-utils` 已有同名 hook 则跳过新建（preflight 已确认仓库内 grep 无匹配，需新建）。
