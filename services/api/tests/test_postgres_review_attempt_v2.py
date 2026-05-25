@@ -381,3 +381,60 @@ def test_postgres_review_attempt_detects_version_conflict(tmp_path: Path) -> Non
             with pytest.raises(ConflictError) as excinfo:
                 submit_review_attempt(session_a, user=owner, item_id=item_id, payload=payload)
             assert excinfo.value.code == "review_item_optimistic_lock"
+
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_postgres_review_attempt_rejects_skip_after_repeated_confidence_skips(tmp_path: Path) -> None:
+    with build_postgres_client(tmp_path) as client:
+        user_id = register_user(client)
+        question_id = seed_paper(
+            client,
+            paper_code="XC-REVIEW-ATTEMPT-007",
+            title="Review Attempt Skip Threshold",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "Skip threshold question",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "logic_fill",
+                }
+            ],
+        )[0]
+
+        app = cast(Any, client.app)
+        factory = app.state.db.session_factory
+        with factory() as session:
+            session.add(
+                ReviewItemV2(
+                    user_id=user_id,
+                    source_kind="wrong_answer",
+                    source_id=903,
+                    title="Skip threshold question",
+                    status="in_progress",
+                    question_id=question_id,
+                    metadata_json={"algorithm_version": "simple_v1", "confidence_skipped_count": 5},
+                    correct_streak=1,
+                    next_review_at=datetime.now(UTC).replace(tzinfo=None),
+                    reason="wrong_answer",
+                )
+            )
+            session.commit()
+
+        item_id = _review_rows(client)[0].id
+        attempted = client.post(
+            f"/api/v2/review/items/{item_id}/attempt",
+            json={
+                "isCorrect": True,
+                "userAnswer": "A",
+                "confidence": None,
+                "recallText": None,
+            },
+        )
+        assert attempted.status_code == 409, attempted.text
+        assert attempted.json()["code"] == "review_attempt_confidence_required"
