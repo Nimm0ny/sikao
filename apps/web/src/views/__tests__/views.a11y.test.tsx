@@ -39,7 +39,9 @@ import { server } from '../../mocks/server';
  *      a real browser engine resolves CSS.
  *
  *      RootLayout is tested via the in-memory router so the live nav state
- *      is rendered with all 5 rail items + RailMe slot.
+ *      is rendered with the SIK-121 4-tab nav + RailMe slot. The 5-tab
+ *      variant was retired in W1 (see
+ *      docs/plan/sik-rail-v5-visual-contract.md §1–§2 + Acceptance H01).
  */
 
 const AXE_OPTIONS: axe.RunOptions = {
