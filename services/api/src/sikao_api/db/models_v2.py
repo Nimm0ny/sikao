@@ -1003,6 +1003,90 @@ class NoteImageV2(Base):
     note: Mapped[NoteV2] = relationship(back_populates="images")
 
 
+class AiSummaryCacheV2(Base):
+    __tablename__ = "ai_summary_cache_v2"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "note_id",
+            "content_hash",
+            "prompt_version",
+            name="uq_ai_summary_cache_v2_identity",
+        ),
+        Index("ix_ai_summary_cache_v2_user_note", "user_id", "note_id"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    note_id: Mapped[int] = mapped_column(
+        ForeignKey("notes_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    content_hash: Mapped[str] = mapped_column(String(64), nullable=False)
+    prompt_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    cards_json: Mapped[list[dict[str, Any]]] = mapped_column(
+        JSONB_COMPAT,
+        default=list,
+        nullable=False,
+    )
+    llm_call_id: Mapped[int | None] = mapped_column(
+        ForeignKey("llm_call_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    confirmed_review_item_ids: Mapped[list[int]] = mapped_column(
+        JSONB_COMPAT,
+        default=list,
+        nullable=False,
+    )
+    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=utc_now,
+        onupdate=utc_now,
+        nullable=False,
+    )
+
+
+class WeeklyReviewCacheV2(Base):
+    __tablename__ = "weekly_review_cache_v2"
+    __table_args__ = (
+        UniqueConstraint(
+            "user_id",
+            "week_start_date",
+            "prompt_version",
+            name="uq_weekly_review_cache_v2_identity",
+        ),
+        Index("ix_weekly_review_cache_v2_user_week", "user_id", "week_start_date"),
+    )
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    user_id: Mapped[int] = mapped_column(
+        ForeignKey("users_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    week_start_date: Mapped[date] = mapped_column(Date, nullable=False)
+    prompt_version: Mapped[str] = mapped_column(String(32), nullable=False)
+    note_id: Mapped[int] = mapped_column(
+        ForeignKey("notes_v2.id", ondelete="CASCADE"),
+        nullable=False,
+    )
+    llm_call_id: Mapped[int | None] = mapped_column(
+        ForeignKey("llm_call_v2.id", ondelete="SET NULL"),
+        nullable=True,
+    )
+    created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        default=utc_now,
+        onupdate=utc_now,
+        nullable=False,
+    )
+
+
 class NoteReactionV2(Base):
     __tablename__ = "note_reactions_v2"
     __table_args__ = (
