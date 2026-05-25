@@ -98,3 +98,62 @@ class NotesSearchServiceV2:
         error_message: str,
         request_id: str | None,
     ) -> None:
+        with session_factory() as isolated_session:
+            add_audit_log(
+                isolated_session,
+                user_id=user_id,
+                actor_type="system",
+                actor_id="notes.search",
+                action=f"notes.search.{sync_action}_failed",
+                target_type="note_v2",
+                target_id=note_id,
+                metadata={"error": error_message},
+                request_id=request_id,
+            )
+            isolated_session.commit()
+
+    def _build_document(self, note: NoteV2) -> NoteSearchDocument:
+        return NoteSearchDocument(
+            id=note.id,
+            user_id=note.user_id,
+            title=note.title,
+            body_text=note.body_text,
+            tags=self.repo.list_note_tags(note_id=note.id),
+            type=note.type,
+            visibility=note.visibility,
+            linked_question_id=note.linked_question_id,
+            has_linked_question=note.linked_question_id is not None,
+            created_at=encode_datetime(self._normalize_utc(note.created_at)),
+            updated_at=encode_datetime(self._normalize_utc(note.updated_at)),
+        )
+
+    @staticmethod
+    def _normalize_utc(value: datetime) -> datetime:
+        return value.replace(tzinfo=UTC) if value.tzinfo is None else value.astimezone(UTC)
+
+    @staticmethod
+    def _serialize_hit(hit: NoteSearchHit) -> NoteSearchItemV2:
+        highlights: list[str] = []
+        if hit.formatted_title and hit.formatted_title != hit.title:
+            highlights.append(hit.formatted_title)
+        if hit.formatted_body_text and hit.formatted_body_text != hit.body_text:
+            highlights.append(hit.formatted_body_text)
+        return NoteSearchItemV2(
+            id=hit.id,
+            title=hit.title,
+            type=hit.type,
+            visibility=hit.visibility,
+            body_preview=hit.body_text[:100],
+            linked_question_id=hit.linked_question_id,
+            tags=hit.tags,
+            highlights=highlights,
+            updated_at=NotesSearchServiceV2._parse_search_datetime(hit.updated_at),
+        )
+
+    @staticmethod
+    def _parse_search_datetime(value: str) -> datetime:
+        normalized = value[:-1] + "+00:00" if value.endswith("Z") else value
+        try:
+            return datetime.fromisoformat(normalized)
+        except ValueError as exc:
+            raise NotesSearchUnavailable("notes search backend returned an invalid updated_at") from exc
