@@ -2858,6 +2858,20 @@ export interface components {
             /** Previoussuggestedactions */
             previousSuggestedActions?: string[];
         };
+        /** CauseAnalysisFeedbackRequestV2 */
+        CauseAnalysisFeedbackRequestV2: {
+            /** Actionsunhelpful */
+            actionsUnhelpful?: number[];
+            /** Comment */
+            comment?: string | null;
+            /** Dimensionsdisagreed */
+            dimensionsDisagreed?: string[];
+            /**
+             * Rating
+             * @enum {string}
+             */
+            rating: "up" | "down";
+        };
         /** CauseAnalysisGroupRequestV2 */
         CauseAnalysisGroupRequestV2: {
             /** Itemids */
@@ -3011,20 +3025,6 @@ export interface components {
             /** Lastusedcount */
             lastUsedCount: number;
             /** Lastuseddifficultyrange */
-        /** CauseAnalysisFeedbackRequestV2 */
-        CauseAnalysisFeedbackRequestV2: {
-            /** Actionsunhelpful */
-            actionsUnhelpful?: number[];
-            /** Comment */
-            comment?: string | null;
-            /** Dimensionsdisagreed */
-            dimensionsDisagreed?: string[];
-            /**
-             * Rating
-             * @enum {string}
-             */
-            rating: "up" | "down";
-        };
             lastUsedDifficultyRange: [
                 number,
                 number
@@ -4259,6 +4259,8 @@ export interface components {
             delayedReviewUntil?: string | null;
             /** Entrykind */
             entryKind: string;
+            /** Essaysubmissionid */
+            essaySubmissionId?: number | null;
             /**
              * Exammode
              * @default false
@@ -4330,6 +4332,8 @@ export interface components {
             answerChangeCount: number;
             /** Answerkind */
             answerKind: string;
+            /** Answertext */
+            answerText?: string | null;
             /**
              * Flagged
              * @default false
@@ -4361,6 +4365,8 @@ export interface components {
             prompt: string;
             /** Questionkey */
             questionKey: string;
+            /** Selectedanswerkeys */
+            selectedAnswerKeys?: string[];
             /** Status */
             status: string;
             /**
@@ -4426,8 +4432,6 @@ export interface components {
             /**
              * Difficulty
              * @enum {string}
-            /** Essaysubmissionid */
-            essaySubmissionId?: number | null;
              */
             difficulty: "easy" | "medium" | "hard" | "unknown";
             /** Label */
@@ -4499,8 +4503,6 @@ export interface components {
             /** Averagescore */
             averageScore?: number | null;
             /** Count */
-            /** Answertext */
-            answerText?: string | null;
             count: number;
             /**
              * Date
@@ -4532,8 +4534,6 @@ export interface components {
             /** Examtargets */
             examTargets?: components["schemas"]["ExamTargetV2"][];
             /** Targetexam */
-            /** Selectedanswerkeys */
-            selectedAnswerKeys?: string[];
             targetExam?: string | null;
             /** Targetscore */
             targetScore?: string | null;
@@ -4574,6 +4574,26 @@ export interface components {
             };
             /** Region */
             region?: string | null;
+            /**
+             * Reviewdailylimit
+             * @default 30
+             */
+            reviewDailyLimit: number;
+            /**
+             * Reviewdebtredistributeenabled
+             * @default true
+             */
+            reviewDebtRedistributeEnabled: boolean;
+            /**
+             * Reviewhardquestionautodeepanalysis
+             * @default true
+             */
+            reviewHardQuestionAutoDeepAnalysis: boolean;
+            /**
+             * Reviewrampupenabled
+             * @default true
+             */
+            reviewRampupEnabled: boolean;
         };
         /** ProfileInfoUpdateRequestV2 */
         ProfileInfoUpdateRequestV2: {
@@ -4595,6 +4615,14 @@ export interface components {
             } | null;
             /** Region */
             region?: string | null;
+            /** Reviewdailylimit */
+            reviewDailyLimit?: number | null;
+            /** Reviewdebtredistributeenabled */
+            reviewDebtRedistributeEnabled?: boolean | null;
+            /** Reviewhardquestionautodeepanalysis */
+            reviewHardQuestionAutoDeepAnalysis?: boolean | null;
+            /** Reviewrampupenabled */
+            reviewRampupEnabled?: boolean | null;
         };
         /** ProfileOverviewResponseV2 */
         ProfileOverviewResponseV2: {
@@ -4741,26 +4769,6 @@ export interface components {
             /** Category */
             category: string;
             /**
-            /**
-             * Reviewdailylimit
-             * @default 30
-             */
-            reviewDailyLimit: number;
-            /**
-             * Reviewdebtredistributeenabled
-             * @default true
-             */
-            reviewDebtRedistributeEnabled: boolean;
-            /**
-             * Reviewhardquestionautodeepanalysis
-             * @default true
-             */
-            reviewHardQuestionAutoDeepAnalysis: boolean;
-            /**
-             * Reviewrampupenabled
-             * @default true
-             */
-            reviewRampupEnabled: boolean;
              * Endat
              * Format: date-time
              */
@@ -4782,14 +4790,6 @@ export interface components {
         };
         /** QuestionFavoriteCountV2 */
         QuestionFavoriteCountV2: {
-            /** Reviewdailylimit */
-            reviewDailyLimit?: number | null;
-            /** Reviewdebtredistributeenabled */
-            reviewDebtRedistributeEnabled?: boolean | null;
-            /** Reviewhardquestionautodeepanalysis */
-            reviewHardQuestionAutoDeepAnalysis?: boolean | null;
-            /** Reviewrampupenabled */
-            reviewRampupEnabled?: boolean | null;
             /** Count */
             count: number;
         };
