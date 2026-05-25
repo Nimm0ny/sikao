@@ -30,12 +30,95 @@
 .meLink {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  border-radius: var(--radius-999);
-  padding: var(--space-1);
+  gap: var(--space-2);
+  border-radius: var(--radius-10);
+  padding: var(--space-1) var(--space-2);
   text-decoration: none;
   color: inherit;
   transition: background var(--dur-fast) var(--ease-out);
+  /* anchors used inside the rail .me slot need width:100% so meStack can
+   * ellipsis. The collapsed-state override below collapses back to the
+   * avatar-only width. */
+  width: 100%;
+  min-width: 0;
+  position: relative;
+}
+
+.meStack {
+  display: inline-flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.meName {
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.meSub {
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Collapsed rail: hide the text stack and recenter to avatar-only. The
+ * Tooltip text is provided by the [data-tip="我的"] ::after on .meLink
+ * (W2 will fold RailBrand / RailNav React <Tooltip> into the same
+ * pattern; W1 only owns RailMe). */
+:root[data-rail='collapsed'] .meLink {
+  width: auto;
+  padding: var(--space-1);
+  justify-content: center;
+}
+
+:root[data-rail='collapsed'] .meStack {
+  display: none;
+}
+
+/* Tooltip — pure CSS [data-tip]::after pattern, mirrors prototype
+ * .rail-btn[data-tip]::after at home-frame.html:127-138.
+ * Only renders in the collapsed state; expanded keeps text inline. */
+.meLink[data-tip] {
+  position: relative;
+}
+
+.meLink[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + var(--space-3));
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-text-primary);
+  color: var(--color-bg-surface);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-10);
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out) 0.4s;
+  z-index: var(--z-popover);
+  display: none;
+}
+
+:root[data-rail='collapsed'] .meLink[data-tip]::after {
+  display: block;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover-gated tooltip reveal. */
+  :root[data-rail='collapsed'] .meLink:hover[data-tip]::after {
+    opacity: 1;
+  }
 }
 
 @media (hover: hover) and (pointer: fine) {

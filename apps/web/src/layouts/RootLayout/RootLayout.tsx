@@ -18,13 +18,18 @@ import styles from './RootLayout.module.css';
 /*
  * RootLayout — V5 §D.4 SaaS shell wrapper.
  *
- * SIK-93 Home M-Records (2026-05-24): 5-tab Rail nav now contains
- * [首页 / 练习 / 复盘 / 笔记 / 我的]; the legacy 题库 entry is removed
- * (题库 interactions land in Review M-Hub QuestionHub per plan §7.1
- * matrix). The RailMe avatar slot stays as a quick profile shortcut
- * (separate from the nav row); both /me links resolve to the same view.
+ * SIK-121 W1 (2026-05-25): nav收敛到 4-tab [首页 / 练习 / 复盘 / 笔记],
+ * 「我的」入口仅由 RailMe 头像（左下角）提供，不再单独占 nav 槽位 — 防止
+ * 任何 Tab1 子 issue 从原型 HTML 数 5-tab 再犯错。详见
+ * docs/plan/sik-rail-v5-visual-contract.md §1–§2 + Acceptance Hooks
+ * H01/H02。原型 home-frame.html 的 .rail-bottom 也仅有 .rail-me 一段，
+ * 与本实现一致。展开态 RailMe 渲染 Avatar + meStack(meName + meSub)；
+ * 折叠态由 Rail.tsx 的 [data-tip="我的"] ::after Tooltip 提供文字提示。
  *
- * Mobile chrome (MobileTopBar + BottomTabBar) wires identical 5 tabs.
+ * Mobile chrome (MobileTopBar + BottomTabBar) wires the same 4 tabs;
+ * mobile 「我的」 入口 walks /me directly via top-bar trailing avatar
+ * (separate spec) — BottomTabBar 也只有 4 项。
+ *
  * Active tab derives from URL pathname so deep links land correctly.
  * Plain-click navigation goes through useNavigate; modifier-clicks fall
  * through to native href for "open in new tab".
@@ -42,8 +47,11 @@ interface RootLayoutProps {
   readonly user?: {
     readonly displayName: string;
     readonly avatarSrc?: string;
+    readonly subtitle?: string;
   };
 }
+
+const ME_SUBTITLE_FALLBACK = 'Lv.4 学习达人';
 
 export function RootLayout({ user }: RootLayoutProps) {
   const { pathname } = useLocation();
@@ -57,7 +65,6 @@ export function RootLayout({ user }: RootLayoutProps) {
     { id: 'practice', icon: <SpriteIcon id="nav-practice" size={18} />, label: '练习', href: PRACTICE_PATH, active: isActive(PRACTICE_PATH), onClick: navTo(PRACTICE_PATH) },
     { id: 'review', icon: <SpriteIcon id="nav-review" size={18} />, label: '复盘', href: REVIEW_PATH, active: isActive(REVIEW_PATH), onClick: navTo(REVIEW_PATH) },
     { id: 'note', icon: <SpriteIcon id="nav-note" size={18} />, label: '笔记', href: NOTE_PATH, active: isActive(NOTE_PATH), onClick: navTo(NOTE_PATH) },
-    { id: 'me', icon: <Avatar fallback={getInitials(user)} size="xs" />, label: '我的', href: ME_PATH, active: isActive(ME_PATH), onClick: navTo(ME_PATH) },
   ];
 
   const tabBarItems: BottomTabBarItem[] = [
@@ -65,7 +72,6 @@ export function RootLayout({ user }: RootLayoutProps) {
     { id: 'practice', icon: <SpriteIcon id="nav-practice" size={18} />, label: '练习', href: PRACTICE_PATH, active: isActive(PRACTICE_PATH) },
     { id: 'review', icon: <SpriteIcon id="nav-review" size={18} />, label: '复盘', href: REVIEW_PATH, active: isActive(REVIEW_PATH) },
     { id: 'note', icon: <SpriteIcon id="nav-note" size={18} />, label: '笔记', href: NOTE_PATH, active: isActive(NOTE_PATH) },
-    { id: 'me', icon: <Avatar fallback={getInitials(user)} size="xs" />, label: '我的', href: ME_PATH, active: isActive(ME_PATH) },
   ];
 
   const brand: ReactNode = (
@@ -75,11 +81,14 @@ export function RootLayout({ user }: RootLayoutProps) {
     </span>
   );
 
+  const meName = user?.displayName ?? '我';
+  const meSub = user?.subtitle ?? ME_SUBTITLE_FALLBACK;
   const me: ReactNode = (
     <a
       href={ME_PATH}
       className={styles.meLink}
       data-testid="rail-me-link"
+      data-tip="我的"
       aria-current={isActive(ME_PATH) ? 'page' : undefined}
       aria-label="我的"
       onClick={(event) => {
@@ -102,6 +111,10 @@ export function RootLayout({ user }: RootLayoutProps) {
         alt={user?.displayName}
         size="sm"
       />
+      <span className={styles.meStack}>
+        <span className={styles.meName}>{meName}</span>
+        <span className={styles.meSub}>{meSub}</span>
+      </span>
     </a>
   );
 

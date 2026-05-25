@@ -149,4 +149,25 @@ describe('Rail', () => {
     fireEvent.click(link, { button: 0, ctrlKey: true });
     expect(onClick).not.toHaveBeenCalled();
   });
+
+  it('renders only the navItems given — Me must come via the me slot, not nav (SIK-121 H01/H02)', () => {
+    // Defensive: even if a future RootLayout refactor accidentally
+    // re-introduced a "我的" navItem, this test would not catch it
+    // (Rail forwards what it gets). But asserting Rail's separation of
+    // the `me` slot from `navItems` documents the contract surface.
+    render(
+      <Rail
+        brand={<span>BR</span>}
+        navItems={navItems}
+        me={<a data-testid="me-slot" aria-label="我的" href="/me">ME</a>}
+        collapsed={false}
+      />,
+    );
+    // The me slot is rendered (separate from nav)
+    expect(screen.getByTestId('me-slot')).toBeInTheDocument();
+    // No nav-list <li> contains the "我的" link — only the me slot does
+    const navList = screen.getAllByRole('list')[0];
+    const meEntriesInsideNav = navList.querySelectorAll('[aria-label="我的"]');
+    expect(meEntriesInsideNav).toHaveLength(0);
+  });
 });
