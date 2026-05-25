@@ -1,0 +1,162 @@
+/*
+ * MonthCalendarView — Home Section A · Month grid.
+ * Why: 7-column × 5-6 row month grid; each cell is a day with a small
+ *      list of event chips (truncated to 3 with "+N more" label). No
+ *      hour-level resolution at month scope.
+ */
+
+.root {
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow-rest);
+  overflow: hidden;
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.headTitle {
+  margin: 0;
+  font-size: var(--font-card);
+  font-weight: var(--font-weight-semibold);
+}
+
+.headMeta {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+}
+
+.dowRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.dowCell {
+  padding: var(--space-2);
+  font-size: var(--font-tiny);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-meta);
+  text-align: center;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  grid-auto-rows: minmax(96px, 1fr);
+}
+
+.cell {
+  border-right: 1px solid var(--color-border-subtle);
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  background: var(--color-bg-surface);
+}
+
+.cell[data-out-of-month='true'] {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-meta);
+}
+
+.cell[data-today='true'] {
+  background: color-mix(in srgb, var(--color-brand-primary) 6%, var(--color-bg-surface));
+}
+
+.cell[data-weekend='true'] {
+  background: color-mix(in srgb, var(--color-bg-elevated) 60%, var(--color-bg-surface));
+}
+
+.dom {
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.cell[data-out-of-month='true'] .dom {
+  color: var(--color-text-meta);
+}
+
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  min-width: 0;
+}
+
+.eventChip {
+  font-size: var(--font-tiny);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-10);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-left: 3px solid var(--color-text-meta);
+}
+
+.moreLabel {
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+  padding: 0 var(--space-2);
+}
+
+.stateWrap {
+  padding: var(--space-5) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.errorCard {
+  padding: var(--space-4);
+  border: 1px solid var(--color-state-err);
+  border-radius: var(--card-radius);
+  background: var(--color-state-err-soft);
+  color: var(--color-text-primary);
+  font-size: var(--font-body);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.errorCardTitle {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-state-err);
+}
+
+.retry {
+  align-self: flex-start;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-10);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: lint regex only matches single-feature @media queries; the compound `(hover: hover) and (pointer: fine)` query above is the canonical hover-capable form */
+  .retry:hover {
+    border-color: var(--color-text-primary);
+    color: var(--color-text-primary);
+  }
+}

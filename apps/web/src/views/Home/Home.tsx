@@ -12,6 +12,7 @@ import type { PlanCalendarView } from '@sikao/domain/plan/usePlanStore';
 import { PlanSection } from './sections/PlanSection';
 import { TodayCalendarView } from './sections/TodayCalendarView';
 import { WeekCalendarView } from './sections/WeekCalendarView';
+import { MonthCalendarView } from './sections/MonthCalendarView';
 import styles from './Home.module.css';
 
 /*
@@ -78,12 +79,7 @@ function CalendarBody() {
   const view = usePlanStore((s) => s.currentView);
   if (view === 'today') return <TodayCalendarView />;
   if (view === 'week') return <WeekCalendarView />;
-  // Month body lands in SIK-90 wave 2 commit 2 (per plan §3.2 Wave Plan).
-  return (
-    <div className={styles.calendarPlaceholder} data-testid="home-calendar-placeholder">
-      <p>月视图骨架将在 SIK-90 wave 2 落地，包含月格 + 跨日事件分片。</p>
-    </div>
-  );
+  return <MonthCalendarView />;
 }
 
 function MetricCard({ metric }: { readonly metric: HomeMetric }) {
