@@ -154,3 +154,52 @@ class InMemoryNotesSearchClient:
     def _highlight(value: str, query: str) -> str:
         pattern = re.compile(re.escape(query), re.IGNORECASE)
         return pattern.sub(lambda match: f"<em>{match.group(0)}</em>", value, count=1)
+
+    @staticmethod
+    def _decode_literal(raw_value: str) -> str:
+        decoded = json.loads(raw_value)
+        if not isinstance(decoded, str):
+            raise AssertionError(f"expected string literal, got: {raw_value}")
+        return decoded
+
+    @staticmethod
+    def _split_top_level(value: str, *, separator: str) -> list[str]:
+        segments: list[str] = []
+        current: list[str] = []
+        in_quotes = False
+        depth = 0
+        escaped = False
+        index = 0
+        while index < len(value):
+            char = value[index]
+            if escaped:
+                current.append(char)
+                escaped = False
+                index += 1
+                continue
+            if char == "\\":
+                current.append(char)
+                escaped = True
+                index += 1
+                continue
+            if char == '"':
+                in_quotes = not in_quotes
+                current.append(char)
+                index += 1
+                continue
+            if not in_quotes:
+                if char == "(":
+                    depth += 1
+                elif char == ")":
+                    depth -= 1
+                if depth == 0 and value.startswith(separator, index):
+                    segments.append("".join(current).strip())
+                    current = []
+                    index += len(separator)
+                    continue
+            current.append(char)
+            index += 1
+        tail = "".join(current).strip()
+        if tail:
+            segments.append(tail)
+        return segments
