@@ -94,6 +94,36 @@ def _sync_notes_search_upsert_after_commit(
         )
 
 
+def _sync_notes_search_delete_after_commit(
+    *,
+    request: Request,
+    note_id: int,
+    user_id: int,
+) -> None:
+    search_client = getattr(request.app.state, "notes_search_client", None)
+    if search_client is None or not getattr(search_client, "is_enabled", False):
+        return
+    try:
+        with request.app.state.db.session_factory() as isolated_session:
+            NotesSearchServiceV2(isolated_session, search_client).delete_note(note_id=note_id)
+    # FAIL-FAST EXCEPTION (lhr authorized 2026-05-26): notes delete must still succeed when Meilisearch sync fails.
+    # Registered: docs/engineering/fail-fast-exceptions.md#notes-search-write-sync-degrade
+    except NotesSearchUnavailable as exc:
+        logger.warning(
+            "notes.search.sync_failed action=delete note_id=%s user_id=%s error=%s",
+            note_id,
+            user_id,
+            str(exc),
+        )
+        _persist_notes_search_sync_failure_audit(
+            request=request,
+            user_id=user_id,
+            note_id=note_id,
+            sync_action="delete",
+            error_message=str(exc),
+        )
+
+
 @router.get("", response_model=NoteListResponseV2)
 def list_notes(
     user: Annotated[UserV2, Depends(get_current_user_v2)],
@@ -125,6 +155,7 @@ def list_notes(
 
 @router.post("", response_model=NoteDetailV2, dependencies=[Depends(verify_csrf_v2)])
 def create_note(
+    request: Request,
     payload: NoteCreateRequestV2,
     user: Annotated[UserV2, Depends(get_current_user_v2)],
     session: Annotated[Session, Depends(get_db_session)],
@@ -132,6 +163,7 @@ def create_note(
     note = NotesServiceV2(session).create_note(user=user, payload=payload)
     session.commit()
     session.refresh(note)
+    _sync_notes_search_upsert_after_commit(request=request, session=session, note=note, sync_action="create")
     return NotesServiceV2(session).serialize_note(note)
 
 
@@ -212,6 +244,25 @@ async def upload_image(
     return response
 
 
+@router.get("/search", response_model=NoteSearchResponseV2)
+def search_notes(
+    request: Request,
+    q: Annotated[str, Query(min_length=1)],
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+    filters: str | None = None,
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=50)] = 20,
+) -> NoteSearchResponseV2:
+    return NotesSearchServiceV2(session, request.app.state.notes_search_client).search_notes(
+        user=user,
+        query=q,
+        filters=filters,
+        page=page,
+        size=size,
+    )
+
+
 @router.get("/{note_id}", response_model=NoteDetailV2)
 def get_note(
     note_id: int,
@@ -244,6 +295,7 @@ def export_note(
 
 @router.put("/{note_id}", response_model=NoteDetailV2, dependencies=[Depends(verify_csrf_v2)])
 def update_note(
+    request: Request,
     note_id: int,
     payload: NoteUpdateRequestV2,
     user: Annotated[UserV2, Depends(get_current_user_v2)],
@@ -254,6 +306,7 @@ def update_note(
     note = service.update_note(note=note, payload=payload)
     session.commit()
     session.refresh(note)
+    _sync_notes_search_upsert_after_commit(request=request, session=session, note=note, sync_action="update")
     return service.serialize_note(note)
 
 
@@ -263,6 +316,7 @@ def update_note(
     dependencies=[Depends(verify_csrf_v2)],
 )
 def delete_note(
+    request: Request,
     note_id: int,
     user: Annotated[UserV2, Depends(get_current_user_v2)],
     session: Annotated[Session, Depends(get_db_session)],
@@ -271,4 +325,5 @@ def delete_note(
     note = service.get_note(user=user, note_id=note_id)
     service.soft_delete_note(note=note)
     session.commit()
+    _sync_notes_search_delete_after_commit(request=request, note_id=note.id, user_id=note.user_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
