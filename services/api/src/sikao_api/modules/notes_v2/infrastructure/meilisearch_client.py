@@ -272,3 +272,103 @@ class MeilisearchNotesClient:
                 f"notes search backend returned unexpected status {response.status_code}"
             )
         return response
+
+    @staticmethod
+    def _decode_json(response: httpx.Response) -> dict[str, Any]:
+        try:
+            payload = response.json()
+        except ValueError as exc:
+            raise NotesSearchUnavailable("notes search backend returned invalid JSON") from exc
+        if not isinstance(payload, dict):
+            raise NotesSearchUnavailable("notes search backend returned a non-object payload")
+        return payload
+
+    @classmethod
+    def _extract_task_uid(cls, response: httpx.Response) -> int:
+        payload = cls._decode_json(response)
+        task_uid = payload.get("taskUid")
+        if not isinstance(task_uid, int):
+            raise NotesSearchUnavailable("notes search backend omitted taskUid")
+        return task_uid
+
+    @staticmethod
+    def _decode_hit(raw_hit: Any) -> NoteSearchHit:
+        if not isinstance(raw_hit, dict):
+            raise NotesSearchUnavailable("notes search backend returned an invalid hit")
+        try:
+            formatted = raw_hit.get("_formatted")
+            formatted_dict = formatted if isinstance(formatted, dict) else {}
+            raw_tags = raw_hit.get("tags", [])
+            tags = MeilisearchNotesClient._require_str_list(raw_tags, field_name="tags")
+            linked_question_id = MeilisearchNotesClient._optional_int(
+                raw_hit.get("linked_question_id"),
+                field_name="linked_question_id",
+            )
+            return NoteSearchHit(
+                id=MeilisearchNotesClient._require_int(raw_hit["id"], field_name="id"),
+                title=MeilisearchNotesClient._require_str(raw_hit["title"], field_name="title"),
+                body_text=MeilisearchNotesClient._require_str(raw_hit["body_text"], field_name="body_text"),
+                tags=tags,
+                type=MeilisearchNotesClient._require_str(raw_hit["type"], field_name="type"),
+                visibility=MeilisearchNotesClient._require_str(raw_hit["visibility"], field_name="visibility"),
+                linked_question_id=linked_question_id,
+                updated_at=MeilisearchNotesClient._require_str(raw_hit["updated_at"], field_name="updated_at"),
+                formatted_title=MeilisearchNotesClient._optional_str(
+                    formatted_dict.get("title"),
+                    field_name="_formatted.title",
+                ),
+                formatted_body_text=MeilisearchNotesClient._optional_str(
+                    formatted_dict.get("body_text"),
+                    field_name="_formatted.body_text",
+                ),
+            )
+        except (KeyError, TypeError, ValueError) as exc:
+            raise NotesSearchUnavailable("notes search backend returned an invalid hit") from exc
+
+    @staticmethod
+    def _require_str(value: Any, *, field_name: str) -> str:
+        if not isinstance(value, str):
+            raise TypeError(f"{field_name} must be a string")
+        return value
+
+    @staticmethod
+    def _optional_str(value: Any, *, field_name: str) -> str | None:
+        if value is None:
+            return None
+        if not isinstance(value, str):
+            raise TypeError(f"{field_name} must be a string")
+        return value
+
+    @staticmethod
+    def _optional_int(value: Any, *, field_name: str) -> int | None:
+        if value is None:
+            return None
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise TypeError(f"{field_name} must be an integer")
+        return value
+
+    @staticmethod
+    def _require_int(value: Any, *, field_name: str) -> int:
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise TypeError(f"{field_name} must be an integer")
+        return value
+
+    @staticmethod
+    def _require_str_list(value: Any, *, field_name: str) -> list[str]:
+        if not isinstance(value, list):
+            raise TypeError(f"{field_name} must be a list")
+        if not all(isinstance(item, str) for item in value):
+            raise TypeError(f"{field_name} entries must be strings")
+        return list(value)
+
+    @staticmethod
+    def _coerce_int(value: Any, *, field_name: str) -> int:
+        if not isinstance(value, int) or isinstance(value, bool):
+            raise NotesSearchUnavailable(f"notes search backend returned an invalid {field_name}")
+        return value
+
+
+def build_notes_search_client(settings: Settings) -> NotesSearchClientProtocol:
+    if not settings.meili_url:
+        return DisabledNotesSearchClient()
+    return MeilisearchNotesClient(settings)
