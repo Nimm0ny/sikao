@@ -88,6 +88,17 @@ def _group_payload(summary: str = "group summary") -> str:
     )
 
 
+def _deep_payload(summary: str = "deep summary") -> str:
+    return (
+        "{"
+        f"\"summary\":\"{summary}\","
+        "\"dimensions\":[{\"slug\":\"concept_confusion\",\"name_display\":\"概念混淆\",\"severity\":\"high\",\"suggestion\":\"先回到概念边界，再做变式题验证。\"}],"
+        "\"suggested_actions\":[\"整理高频误判对照表\",\"再做 3 道同类题\"],"
+        "\"related_questions\":[]"
+        "}"
+    )
+
+
 def _stub_completion(monkeypatch: pytest.MonkeyPatch, *, payload_by_prompt: dict[str, str], calls: list[dict[str, Any]]) -> None:
     async def _fake_call_json_completion(service, *, user_id: int, purpose: str, prompt_version: str, model: str, messages):  # type: ignore[no-untyped-def]
         calls.append(
@@ -391,4 +402,291 @@ def test_postgres_single_cause_override_writes_attempt_and_audit(
         assert any(row.outcome == "cause_tag_overridden" for row in attempts)
         audits = _audit_rows(client)
         assert any(row.action == "review.cause_analysis.dimension_overridden" for row in audits)
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_postgres_deep_cause_analysis_for_hard_item_persists_timestamp(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, Any]] = []
+    _stub_completion(
+        monkeypatch,
+        payload_by_prompt={"cause_analysis_deep@v1": _deep_payload("deep hard summary")},
+        calls=calls,
+    )
+    with build_postgres_client(tmp_path) as client:
+        register_user(client)
+        question_id = seed_paper(
+            client,
+            paper_code="XC-REVIEW-CAUSE-DEEP-001",
+            title="Cause deep",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "Deep question",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "logic_fill",
+                }
+            ],
+        )[0]
+        item_id = client.post("/api/v2/review/items", json={"questionId": question_id}).json()["id"]
+        _set_item_metadata(
+            client,
+            item_id=item_id,
+            updates={
+                "is_hard": True,
+                "re_fail_count": 3,
+                "last_answer_hash": sha256(b"D").hexdigest(),
+                "last_confidence": "certain",
+            },
+        )
+
+        response = client.post(
+            f"/api/v2/review/items/{item_id}/cause-analysis",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"mode": "deep"},
+        )
+        assert response.status_code == 200, response.text
+        body = response.json()
+        assert body["mode"] == "deep"
+        assert body["result"]["mode"] == "deep"
+        assert calls[0]["prompt_version"] == "cause_analysis_deep@v1"
+
+        factory = _app_factory(client)
+        with factory() as session:
+            item = session.get(ReviewItemV2, item_id)
+            assert item is not None
+            first_timestamp = item.metadata_json["last_deep_analysis_at"]
+            assert first_timestamp
+
+        cached = client.post(
+            f"/api/v2/review/items/{item_id}/cause-analysis",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"mode": "deep"},
+        )
+        assert cached.status_code == 200, cached.text
+        assert cached.json()["cached"] is True
+
+        with factory() as session:
+            item = session.get(ReviewItemV2, item_id)
+            assert item is not None
+            assert item.metadata_json["last_deep_analysis_at"] >= first_timestamp
+
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_postgres_forced_cache_miss_when_mismatch_count_changes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, Any]] = []
+    _stub_completion(
+        monkeypatch,
+        payload_by_prompt={"cause_analysis_forced@v1": _single_payload("forced cache miss summary")},
+        calls=calls,
+    )
+    with build_postgres_client(tmp_path) as client:
+        register_user(client)
+        question_id = seed_paper(
+            client,
+            paper_code="XC-REVIEW-CAUSE-FORCED-MISS",
+            title="Cause forced cache miss",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "Forced cache miss question",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "logic_fill",
+                }
+            ],
+        )[0]
+        item_id = client.post("/api/v2/review/items", json={"questionId": question_id}).json()["id"]
+        _set_item_metadata(
+            client,
+            item_id=item_id,
+            updates={
+                "forced_cause_analysis_pending": True,
+                "forced_reason": "confidence_mismatch",
+                "last_answer_hash": sha256(b"A").hexdigest(),
+                "last_confidence": "certain",
+                "confidence_mismatch_count": 1,
+            },
+        )
+
+        first = client.post(
+            f"/api/v2/review/items/{item_id}/cause-analysis",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"mode": "forced"},
+        )
+        assert first.status_code == 200, first.text
+        assert len(calls) == 1
+
+        _set_item_metadata(
+            client,
+            item_id=item_id,
+            updates={
+                "forced_cause_analysis_pending": True,
+                "forced_reason": "confidence_mismatch",
+                "confidence_mismatch_count": 2,
+            },
+        )
+        second = client.post(
+            f"/api/v2/review/items/{item_id}/cause-analysis",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"mode": "forced"},
+        )
+        assert second.status_code == 200, second.text
+        assert second.json()["cached"] is False
+        assert len(calls) == 2
+
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_postgres_deep_cache_miss_when_hard_context_changes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, Any]] = []
+    _stub_completion(
+        monkeypatch,
+        payload_by_prompt={"cause_analysis_deep@v1": _deep_payload("deep cache miss summary")},
+        calls=calls,
+    )
+    with build_postgres_client(tmp_path) as client:
+        register_user(client)
+        question_id = seed_paper(
+            client,
+            paper_code="XC-REVIEW-CAUSE-DEEP-MISS",
+            title="Cause deep cache miss",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "Deep cache miss question",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "logic_fill",
+                }
+            ],
+        )[0]
+        item_id = client.post("/api/v2/review/items", json={"questionId": question_id}).json()["id"]
+        _set_item_metadata(
+            client,
+            item_id=item_id,
+            updates={
+                "is_hard": True,
+                "re_fail_count": 3,
+                "last_answer_hash": sha256(b"deep-1").hexdigest(),
+            },
+        )
+
+        first = client.post(
+            f"/api/v2/review/items/{item_id}/cause-analysis",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"mode": "deep"},
+        )
+        assert first.status_code == 200, first.text
+        assert len(calls) == 1
+
+        _set_item_metadata(
+            client,
+            item_id=item_id,
+            updates={"re_fail_count": 4},
+        )
+        second = client.post(
+            f"/api/v2/review/items/{item_id}/cause-analysis",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"mode": "deep"},
+        )
+        assert second.status_code == 200, second.text
+        assert second.json()["cached"] is False
+        assert len(calls) == 2
+
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_postgres_deep_cache_miss_when_total_wrong_count_changes(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[dict[str, Any]] = []
+    _stub_completion(
+        monkeypatch,
+        payload_by_prompt={"cause_analysis_deep@v1": _deep_payload("deep wrong count summary")},
+        calls=calls,
+    )
+    with build_postgres_client(tmp_path) as client:
+        register_user(client)
+        question_id = seed_paper(
+            client,
+            paper_code="XC-REVIEW-CAUSE-DEEP-WRONG",
+            title="Cause deep wrong count",
+            subject_kind="xingce",
+            questions=[
+                {
+                    "prompt": "Deep wrong count question",
+                    "year": 2024,
+                    "region": "beijing",
+                    "exam_type": "provincial",
+                    "category_l1": "verbal",
+                    "category_l2": "logic_fill",
+                }
+            ],
+        )[0]
+        item_id = client.post("/api/v2/review/items", json={"questionId": question_id}).json()["id"]
+        _set_item_metadata(
+            client,
+            item_id=item_id,
+            updates={
+                "is_hard": True,
+                "re_fail_count": 3,
+                "last_answer_hash": sha256(b"wrong-count").hexdigest(),
+            },
+        )
+
+        first = client.post(
+            f"/api/v2/review/items/{item_id}/cause-analysis",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"mode": "deep"},
+        )
+        assert first.status_code == 200, first.text
+        assert len(calls) == 1
+
+        app = cast(Any, client.app)
+        factory = app.state.db.session_factory
+        with factory() as session:
+            session.add(
+                ReviewAttemptV2(
+                    review_item_id=item_id,
+                    outcome="incorrect",
+                    notes_json={},
+                )
+            )
+            session.commit()
+
+        second = client.post(
+            f"/api/v2/review/items/{item_id}/cause-analysis",
+            headers={"Idempotency-Key": str(uuid4())},
+            json={"mode": "deep"},
+        )
+        assert second.status_code == 200, second.text
+        assert second.json()["cached"] is False
+        assert len(calls) == 2
+
 
