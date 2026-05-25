@@ -39,6 +39,8 @@ export type RecommendationAcceptResponseV2 = components['schemas']['Recommendati
 export type RecommendationListResponseV2 = components['schemas']['RecommendationListResponseV2'];
 export type RecommendationReadV2 = components['schemas']['RecommendationReadV2'];
 export type RecommendationRejectRequestV2 = components['schemas']['RecommendationRejectRequestV2'];
+export type SubjectAccuracyV2 = components['schemas']['SubjectAccuracyV2'];
+export type WeaknessItemV2 = components['schemas']['WeaknessItemV2'];
 
 export interface EventWindowFilters {
   readonly from: string;

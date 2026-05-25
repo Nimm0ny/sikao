@@ -1,0 +1,75 @@
+/*
+ * ProgressSection — Home Section B · 学习进度 mini card.
+ * Why: 底栏第 2 格. Renders key metric + sparkline placeholder + top3
+ *      weakness chips. Charts (recharts) lazy-loaded only on the
+ *      /profile/learning drilldown (SIK-91 wave 2/3) — this surface stays
+ *      lightweight per V5 bundle budget.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  align-items: stretch;
+}
+
+.metricRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.metricKey {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+}
+
+.deltaUp { color: var(--color-state-ok); }
+.deltaDown { color: var(--color-state-err); }
+.deltaFlat { color: var(--color-text-meta); }
+
+.weaknessHeader {
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-medium);
+  margin: var(--space-2) 0 0 0;
+}
+
+.weaknessList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.weaknessItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+  align-items: center;
+}
+
+.weaknessItem:last-child { border-bottom: 0; }
+
+.weaknessLabel {
+  font-size: var(--font-body);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.weaknessAccuracy {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+  font-weight: var(--font-weight-medium);
+}
+
+.cta {
+  align-self: flex-start;
+}

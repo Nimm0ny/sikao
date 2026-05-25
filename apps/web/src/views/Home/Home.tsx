@@ -13,6 +13,7 @@ import { PlanSection } from './sections/PlanSection';
 import { TodayCalendarView } from './sections/TodayCalendarView';
 import { WeekCalendarView } from './sections/WeekCalendarView';
 import { MonthCalendarView } from './sections/MonthCalendarView';
+import { ProgressSection } from './sections/ProgressSection';
 import styles from './Home.module.css';
 
 /*
@@ -142,16 +143,8 @@ export function Home() {
           </ul>
         </Panel>
 
-        <Panel title="错题回顾">
-          <div className={styles.reviewSummary}>
-            <Numeric value={42} unit="题" size="h1" emphasis="value" />
-            <div className={styles.reviewBadges} aria-label="错题难度分布">
-              <Badge variant="ok" size="sm">简单 12</Badge>
-              <Badge variant="warn" size="sm">中等 18</Badge>
-              <Badge variant="err" size="sm">困难 12</Badge>
-            </div>
-            <Button variant="secondary">开始回顾</Button>
-          </div>
+        <Panel title="学习进度">
+          <ProgressSection />
         </Panel>
 
         <Panel title="推荐套题">

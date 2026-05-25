@@ -14,5 +14,6 @@
 import type { RequestHandler } from 'msw';
 import { homeHandlers } from './handlers/home';
 import { practiceHandlers } from './handlers/practice';
+import { progressHandlers } from './handlers/progress';
 
-export const handlers: RequestHandler[] = [...homeHandlers, ...practiceHandlers];
+export const handlers: RequestHandler[] = [...homeHandlers, ...practiceHandlers, ...progressHandlers];
