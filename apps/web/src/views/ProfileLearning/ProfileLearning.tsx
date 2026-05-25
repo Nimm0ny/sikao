@@ -1,10 +1,18 @@
 // lint-allow-ui-copy: V5 ProfileLearning container copy.
+import { lazy, Suspense } from 'react';
 import { useProgressOverview } from '@sikao/api-client/progressQueries';
 import { Skeleton } from '../../components/atom/Skeleton';
 import { EmptyState } from '../../components/atom/EmptyState';
 import { Header } from './Header';
 import { PlanSlice } from './PlanSlice';
+import { DiagnosisReport } from './DiagnosisReport';
 import styles from './ProfileLearning.module.css';
+
+// recharts is lazy-loaded so the Home route doesn't pay the bundle cost
+// (per plan §3.3 acceptance: "recharts 仅在 /profile/learning 路由触发
+// 时下载").
+const WeaknessRadar = lazy(() => import('./Charts').then((m) => ({ default: m.WeaknessRadar })));
+const TimeseriesChart = lazy(() => import('./Charts').then((m) => ({ default: m.TimeseriesChart })));
 
 /*
  * ProfileLearning — /profile/learning drilldown root.
@@ -54,8 +62,13 @@ export function ProfileLearning() {
       <Header overview={query.data} />
       <div className={styles.sectionGrid}>
         <PlanSlice overview={query.data} />
-        {/* DiagnosisReport / WeaknessRadar / TimeseriesChart land in
-            SIK-91 wave 3 with recharts lazy-loaded. */}
+        <DiagnosisReport />
+        <Suspense fallback={<Skeleton variant="rect" height={240} />}>
+          <WeaknessRadar />
+        </Suspense>
+        <Suspense fallback={<Skeleton variant="rect" height={240} />}>
+          <TimeseriesChart />
+        </Suspense>
       </div>
     </div>
   );
