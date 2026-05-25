@@ -4,6 +4,7 @@
 import { useMemo } from 'react';
 import { useEvents } from '@sikao/api-client/plansQueries';
 import { buildViewRange } from '@sikao/calendar-engine';
+import { usePlanStore } from '@sikao/domain';
 import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
@@ -38,11 +39,6 @@ function pad(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-function todayLocalStamp(): string {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-}
-
 function geometryFor(event: PlanEventReadV2): { top: number; height: number } {
   const start = new Date(event.startAt);
   const end = new Date(event.endAt);
@@ -73,7 +69,7 @@ function HourGutter() {
 }
 
 export function TodayCalendarView() {
-  const anchorDate = todayLocalStamp();
+  const anchorDate = usePlanStore((s) => s.currentDate);
   const window = useMemo(
     () => buildViewRange('today', { anchorDate, timeZone: TZ }),
     [anchorDate],

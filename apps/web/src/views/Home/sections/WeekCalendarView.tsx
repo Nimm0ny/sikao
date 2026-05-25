@@ -3,6 +3,7 @@
 import { useMemo } from 'react';
 import { useEvents } from '@sikao/api-client/plansQueries';
 import { buildViewRange } from '@sikao/calendar-engine';
+import { usePlanStore } from '@sikao/domain';
 import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
@@ -106,7 +107,7 @@ function WeekGrid({ days, eventsByDay }: {
 }
 
 export function WeekCalendarView() {
-  const anchorDate = todayStamp();
+  const anchorDate = usePlanStore((s) => s.currentDate);
   const window = useMemo(() => buildViewRange('week', { anchorDate, timeZone: TZ }), [anchorDate]);
   const query = useEvents({ from: window.from, to: window.to, tz: TZ, includePracticeBlocks: false });
   const days = useMemo(() => buildWeekDays(anchorDate), [anchorDate]);
