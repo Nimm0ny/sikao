@@ -14,6 +14,7 @@ from sikao_api.db.schemas_v2 import (
     NoteDetailV2,
     NoteImageUploadResponseV2,
     NoteListResponseV2,
+    NoteSearchResponseV2,
     NoteTagMutationRequestV2,
     NoteUpdateRequestV2,
     OperationAckV2,
@@ -26,9 +27,71 @@ from sikao_api.modules.identity.application.security_v2 import get_current_user_
 from sikao_api.modules.notes_v2.application.export_service import NoteExportServiceV2
 from sikao_api.modules.notes_v2.application.image_service import NoteImageServiceV2
 from sikao_api.modules.notes_v2.application.note_service import NotesServiceV2
+from sikao_api.modules.notes_v2.application.search_service import NotesSearchServiceV2
 from sikao_api.modules.notes_v2.application.tag_service import NoteTagServiceV2
+from sikao_api.modules.notes_v2.infrastructure.meilisearch_client import NotesSearchUnavailable
 
 router = APIRouter(prefix="/api/v2/notes", tags=["notes-v2"])
+logger = logging.getLogger(__name__)
+
+
+def _persist_notes_search_sync_failure_audit(
+    *,
+    request: Request,
+    user_id: int,
+    note_id: int,
+    sync_action: str,
+    error_message: str,
+) -> None:
+    try:
+        NotesSearchServiceV2.persist_sync_failure_audit(
+            session_factory=request.app.state.db.session_factory,
+            user_id=user_id,
+            note_id=note_id,
+            sync_action=sync_action,
+            error_message=error_message,
+            request_id=getattr(request.state, "request_id", None),
+        )
+    # FAIL-FAST EXCEPTION (lhr authorized 2026-05-26): audit persistence failure must not turn a committed note write into 500.
+    # Registered: docs/engineering/fail-fast-exceptions.md#notes-search-write-sync-degrade
+    except Exception:
+        logger.exception(
+            "notes.search.audit_failed action=%s note_id=%s user_id=%s",
+            sync_action,
+            note_id,
+            user_id,
+        )
+
+
+def _sync_notes_search_upsert_after_commit(
+    *,
+    request: Request,
+    session: Session,
+    note: NoteV2,
+    sync_action: str,
+) -> None:
+    search_client = getattr(request.app.state, "notes_search_client", None)
+    if search_client is None or not getattr(search_client, "is_enabled", False):
+        return
+    try:
+        NotesSearchServiceV2(session, search_client).index_note(note=note)
+    # FAIL-FAST EXCEPTION (lhr authorized 2026-05-26): notes write must still succeed when Meilisearch sync fails.
+    # Registered: docs/engineering/fail-fast-exceptions.md#notes-search-write-sync-degrade
+    except NotesSearchUnavailable as exc:
+        logger.warning(
+            "notes.search.sync_failed action=%s note_id=%s user_id=%s error=%s",
+            sync_action,
+            note.id,
+            note.user_id,
+            str(exc),
+        )
+        _persist_notes_search_sync_failure_audit(
+            request=request,
+            user_id=note.user_id,
+            note_id=note.id,
+            sync_action=sync_action,
+            error_message=str(exc),
+        )
 
 
 @router.get("", response_model=NoteListResponseV2)
