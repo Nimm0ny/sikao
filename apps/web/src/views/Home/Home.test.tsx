@@ -1,12 +1,32 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { http, HttpResponse } from 'msw';
+import { server } from '../../mocks/server';
 import { Home } from './Home';
 
 function renderHome() {
+  // Default segment view defers to the persisted preference store; both
+  // TodayCalendarView and WeekCalendarView consume useEvents on mount, so
+  // we provide a QueryClient + a stub /plans/events handler so the render
+  // doesn't throw during these structural assertions.
+  server.use(
+    http.get('/api/v2/plans/events', () =>
+      HttpResponse.json({
+        data: { events: [], practiceBlocks: [] },
+        meta: { from: '', to: '', tz: 'Asia/Shanghai', includePracticeBlocks: false },
+      }),
+    ),
+  );
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 } },
+  });
   return render(
     <MemoryRouter initialEntries={['/']}>
-      <Home />
+      <QueryClientProvider client={client}>
+        <Home />
+      </QueryClientProvider>
     </MemoryRouter>,
   );
 }
@@ -20,9 +40,12 @@ describe('Home view (D.4.1)', () => {
     expect(screen.getByTestId('home-metric-rank')).toBeInTheDocument();
   });
 
-  it('renders the calendar panel with a placeholder body', () => {
+  it('renders a real calendar body inside the PlanSection', () => {
     renderHome();
-    expect(screen.getByTestId('home-calendar-placeholder')).toBeInTheDocument();
+    // Default view is 'week' (store default); WeekCalendarView lands. The
+    // legacy placeholder slot only fires for view==='month' until SIK-90
+    // wave 2 commit 2 ships MonthCalendarView.
+    expect(screen.getByTestId('home-week-calendar')).toBeInTheDocument();
   });
 
   it('renders the PlanSection container in place of the calendar Panel', () => {
