@@ -5281,6 +5281,78 @@ export interface components {
             /** Lastactivityat */
             lastActivityAt?: string | null;
             /** Lastheartbeatat */
+        /** ReviewCauseFrequencyV2 */
+        ReviewCauseFrequencyV2: {
+            /** Count */
+            count: number;
+            /** Name */
+            name: string;
+            /** Severitydistribution */
+            severityDistribution?: {
+                [key: string]: number;
+            };
+            /** Slug */
+            slug: string;
+        };
+        /** ReviewDebtPlanBucketV2 */
+        ReviewDebtPlanBucketV2: {
+            /** Count */
+            count: number;
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+        };
+        /** ReviewDebtPlanResponseV2 */
+        ReviewDebtPlanResponseV2: {
+            /** Buckets */
+            buckets?: components["schemas"]["ReviewDebtPlanBucketV2"][];
+            /**
+             * Spreaddays
+             * @default 0
+             */
+            spreadDays: number;
+            /**
+             * Totalcount
+             * @default 0
+             */
+            totalCount: number;
+        };
+        /** ReviewDebtSnapshotResponseV2 */
+        ReviewDebtSnapshotResponseV2: {
+            /**
+             * Canredistribute
+             * @default false
+             */
+            canRedistribute: boolean;
+            /** Dailylimit */
+            dailyLimit: number;
+            /** Debtseverity */
+            debtSeverity: string;
+            /** Oldestoverduedays */
+            oldestOverdueDays: number;
+            /** Overduecount */
+            overdueCount: number;
+            /**
+             * Rampupactive
+             * @default false
+             */
+            rampupActive: boolean;
+            /** Rampupphase */
+            rampupPhase?: string | null;
+            /** Rampupstartedat */
+            rampupStartedAt?: string | null;
+            /** Rampupunlockat */
+            rampupUnlockAt?: string | null;
+            /** Recommendedtodaycount */
+            recommendedTodayCount: number;
+            /**
+             * Redistributedcount
+             * @default 0
+             */
+            redistributedCount: number;
+        };
             lastHeartbeatAt?: string | null;
             /** Pausedat */
             pausedAt?: string | null;
@@ -5294,6 +5366,35 @@ export interface components {
              * @default 0
              */
             pausedTotalSeconds: number;
+        /** ReviewInsightsCausesResponseV2 */
+        ReviewInsightsCausesResponseV2: {
+            /** Causes */
+            causes?: components["schemas"]["ReviewCauseFrequencyV2"][];
+        };
+        /** ReviewInsightsDayPointV2 */
+        ReviewInsightsDayPointV2: {
+            /**
+             * Date
+             * Format: date
+             */
+            date: string;
+            /** Graduated */
+            graduated: number;
+            /** Netaccumulation */
+            netAccumulation: number;
+            /** Newincorrect */
+            newIncorrect: number;
+        };
+        /** ReviewInsightsRedoAccuracyResponseV2 */
+        ReviewInsightsRedoAccuracyResponseV2: {
+            /** Weeks */
+            weeks?: components["schemas"]["ReviewWeekAccuracyPointV2"][];
+        };
+        /** ReviewInsightsTrendsResponseV2 */
+        ReviewInsightsTrendsResponseV2: {
+            /** Days */
+            days?: components["schemas"]["ReviewInsightsDayPointV2"][];
+        };
             /** Status */
             status: string;
             /** Transitions */
@@ -5358,6 +5459,58 @@ export interface components {
             /** Label */
             label: string;
             /**
+        /** ReviewWeekAccuracyPointV2 */
+        ReviewWeekAccuracyPointV2: {
+            /** Accuracypct */
+            accuracyPct: number;
+            /** Correctcount */
+            correctCount: number;
+            /** Totalattempts */
+            totalAttempts: number;
+            /** Week */
+            week: string;
+        };
+        /** ReviewWeeklyConcernHighlightV2 */
+        ReviewWeeklyConcernHighlightV2: {
+            /** Label */
+            label: string;
+            /** Slug */
+            slug?: string | null;
+            /** Summary */
+            summary: string;
+        };
+        /** ReviewWeeklyProgressHighlightV2 */
+        ReviewWeeklyProgressHighlightV2: {
+            /** Fromconfidence */
+            fromConfidence?: string | null;
+            /** Questionid */
+            questionId?: number | null;
+            /** Summary */
+            summary: string;
+            /** Title */
+            title: string;
+            /** Toconfidence */
+            toConfidence?: string | null;
+        };
+        /** ReviewWeeklySummaryResponseV2 */
+        ReviewWeeklySummaryResponseV2: {
+            biggestConcern?: components["schemas"]["ReviewWeeklyConcernHighlightV2"] | null;
+            biggestProgress?: components["schemas"]["ReviewWeeklyProgressHighlightV2"] | null;
+            /** Generatednoteid */
+            generatedNoteId?: number | null;
+            /** Itemsreviewed */
+            itemsReviewed: number;
+            /** Newgraduatedcount */
+            newGraduatedCount: number;
+            /** Newnotescount */
+            newNotesCount: number;
+            /** Nextweekfocus */
+            nextWeekFocus?: string | null;
+            /** Redoaccuracypct */
+            redoAccuracyPct: number;
+            /** Week */
+            week: string;
+        };
              * Tone
              * @default neutral
              */
