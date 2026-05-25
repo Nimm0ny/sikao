@@ -3,10 +3,10 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import Any
 
-from sqlalchemy import Select, func, select
+from sqlalchemy import Select, case, func, select
 from sqlalchemy.orm import Session
 
-from sikao_api.db.models_v2 import NoteTagV2, NoteV2, QuestionV2, UserV2
+from sikao_api.db.models_v2 import NoteImageV2, NoteTagV2, NoteV2, QuestionV2, UserV2
 
 
 class NotesRepoV2:
@@ -84,9 +84,22 @@ class NotesRepoV2:
         user_id: int,
         tags: Sequence[str],
     ) -> list[str]:
-        self.session.query(NoteTagV2).filter(NoteTagV2.note_id == note_id).delete()
+        existing_rows = list(
+            self.session.scalars(
+                select(NoteTagV2).where(NoteTagV2.note_id == note_id).order_by(NoteTagV2.id.asc())
+            )
+        )
+        system_tags = [row.tag_name for row in existing_rows if row.is_system]
+        for row in existing_rows:
+            if not row.is_system:
+                self.session.delete(row)
+        self.session.flush()
         persisted: list[str] = []
+        for tag_name in system_tags:
+            persisted.append(tag_name)
         for tag_name in tags:
+            if tag_name in system_tags:
+                continue
             row = NoteTagV2(
                 user_id=user_id,
                 note_id=note_id,
@@ -97,6 +110,108 @@ class NotesRepoV2:
             persisted.append(tag_name)
         self.session.flush()
         return persisted
+
+    def list_tag_counts(self, *, user_id: int) -> list[tuple[str, bool, int]]:
+        rows = self.session.execute(
+            select(
+                NoteTagV2.tag_name,
+                func.max(case((NoteTagV2.is_system.is_(True), 1), else_=0)),
+                func.count(NoteTagV2.id),
+            )
+            .where(NoteTagV2.user_id == user_id)
+            .group_by(NoteTagV2.tag_name)
+            .order_by(func.count(NoteTagV2.id).desc(), NoteTagV2.tag_name.asc())
+        ).all()
+        return [(str(tag_name), bool(is_system), int(count)) for tag_name, is_system, count in rows]
+
+    def get_note_tag(
+        self,
+        *,
+        note_id: int,
+        tag_name: str,
+    ) -> NoteTagV2 | None:
+        return self.session.scalar(
+            select(NoteTagV2).where(
+                NoteTagV2.note_id == note_id,
+                NoteTagV2.tag_name == tag_name,
+            )
+        )
+
+    def add_note_tag(
+        self,
+        *,
+        user_id: int,
+        note_id: int,
+        tag_name: str,
+        is_system: bool = False,
+    ) -> NoteTagV2:
+        row = NoteTagV2(
+            user_id=user_id,
+            note_id=note_id,
+            tag_name=tag_name,
+            is_system=is_system,
+        )
+        self.session.add(row)
+        self.session.flush()
+        return row
+
+    def user_has_tag_name(self, *, user_id: int, tag_name: str) -> bool:
+        return (
+            self.session.scalar(
+                select(NoteTagV2.id)
+                .where(
+                    NoteTagV2.user_id == user_id,
+                    NoteTagV2.tag_name == tag_name,
+                )
+                .limit(1)
+            )
+            is not None
+        )
+
+    def list_user_tags(
+        self,
+        *,
+        user_id: int,
+        tag_names: Sequence[str] | None = None,
+    ) -> list[NoteTagV2]:
+        stmt = select(NoteTagV2).where(NoteTagV2.user_id == user_id)
+        if tag_names:
+            stmt = stmt.where(NoteTagV2.tag_name.in_(list(tag_names)))
+        return list(self.session.scalars(stmt))
+
+    def count_note_images(self, *, note_id: int) -> int:
+        return int(
+            self.session.scalar(
+                select(func.count(NoteImageV2.id)).where(NoteImageV2.note_id == note_id)
+            )
+            or 0
+        )
+
+    def create_note_image(
+        self,
+        *,
+        note_id: int | None,
+        user_id: int,
+        file_path: str,
+        file_name: str,
+        file_size: int,
+        mime_type: str,
+        width: int | None,
+        height: int | None,
+    ) -> NoteImageV2:
+        row = NoteImageV2(
+            note_id=note_id,
+            user_id=user_id,
+            file_path=file_path,
+            file_name=file_name,
+            file_size=file_size,
+            mime_type=mime_type,
+            width=width,
+            height=height,
+        )
+        self.session.add(row)
+        self.session.flush()
+        return row
 
     @staticmethod
     def _resolve_order_by(*, sort: str, order: str) -> tuple[Any, Any]:

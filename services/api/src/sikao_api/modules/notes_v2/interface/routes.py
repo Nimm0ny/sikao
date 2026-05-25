@@ -2,14 +2,29 @@ from __future__ import annotations
 
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Query, Response, status
+from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile, status
 from sqlalchemy.orm import Session
 
+from sikao_api.core.config import Settings
+from sikao_api.core.deps import get_app_settings
 from sikao_api.db.models_v2 import UserV2
-from sikao_api.db.schemas_v2 import NoteCreateRequestV2, NoteDetailV2, NoteListResponseV2, NoteUpdateRequestV2
+from sikao_api.db.schemas_v2 import (
+    NoteCreateRequestV2,
+    NoteDetailV2,
+    NoteImageUploadResponseV2,
+    NoteListResponseV2,
+    NoteTagMutationRequestV2,
+    NoteUpdateRequestV2,
+    OperationAckV2,
+    TagMergeRequestV2,
+    TagRenameV2,
+    TagWithCountV2,
+)
 from sikao_api.db.session import get_db_session
 from sikao_api.modules.identity.application.security_v2 import get_current_user_v2, verify_csrf_v2
+from sikao_api.modules.notes_v2.application.image_service import NoteImageServiceV2
 from sikao_api.modules.notes_v2.application.note_service import NotesServiceV2
+from sikao_api.modules.notes_v2.application.tag_service import NoteTagServiceV2
 
 router = APIRouter(prefix="/api/v2/notes", tags=["notes-v2"])
 
@@ -53,6 +68,83 @@ def create_note(
     session.commit()
     session.refresh(note)
     return NotesServiceV2(session).serialize_note(note)
+
+
+@router.get("/tags", response_model=list[TagWithCountV2])
+def list_tags(
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> list[TagWithCountV2]:
+    return NoteTagServiceV2(session).list_tags(user=user)
+
+
+@router.patch("/tags/rename", response_model=OperationAckV2, dependencies=[Depends(verify_csrf_v2)])
+def rename_tag(
+    payload: TagRenameV2,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> OperationAckV2:
+    NoteTagServiceV2(session).rename_tag(user=user, payload=payload)
+    session.commit()
+    return OperationAckV2(ok=True, status="renamed")
+
+
+@router.post("/tags/merge", response_model=OperationAckV2, dependencies=[Depends(verify_csrf_v2)])
+def merge_tags(
+    payload: TagMergeRequestV2,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> OperationAckV2:
+    NoteTagServiceV2(session).merge_tags(user=user, payload=payload)
+    session.commit()
+    return OperationAckV2(ok=True, status="merged")
+
+
+@router.post("/{note_id}/tags", response_model=OperationAckV2, dependencies=[Depends(verify_csrf_v2)])
+def add_tag(
+    note_id: int,
+    payload: NoteTagMutationRequestV2,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> OperationAckV2:
+    NoteTagServiceV2(session).add_tag(user=user, note_id=note_id, tag_name=payload.tag_name)
+    session.commit()
+    return OperationAckV2(ok=True, status="added")
+
+
+@router.delete(
+    "/{note_id}/tags/{tag_name}",
+    response_model=OperationAckV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def remove_tag(
+    note_id: int,
+    tag_name: str,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> OperationAckV2:
+    NoteTagServiceV2(session).remove_tag(user=user, note_id=note_id, tag_name=tag_name.strip().lower())
+    session.commit()
+    return OperationAckV2(ok=True, status="removed")
+
+
+@router.post("/images", response_model=NoteImageUploadResponseV2, dependencies=[Depends(verify_csrf_v2)])
+async def upload_image(
+    image: Annotated[UploadFile, File()],
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+    settings: Annotated[Settings, Depends(get_app_settings)],
+    note_id: Annotated[int | None, Form()] = None,
+) -> NoteImageUploadResponseV2:
+    payload = await image.read()
+    response = NoteImageServiceV2(session, settings).upload_image(
+        user=user,
+        raw_bytes=payload,
+        original_filename=image.filename or "upload",
+        note_id=note_id,
+    )
+    session.commit()
+    return response
 
 
 @router.get("/{note_id}", response_model=NoteDetailV2)
