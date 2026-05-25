@@ -1,10 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
+import { http, HttpResponse } from 'msw';
 import { MemoryRouter } from 'react-router-dom';
 import axe from 'axe-core';
 import { Home } from '../Home';
 import { Practice } from '../Practice';
 import { AiQuestionsGenerating } from '../AiQuestionsGenerating';
+import { EssayGradingResult } from '../EssayGradingResult';
 import { Note } from '../Note';
 import { Me } from '../Me';
 import { PracticePreferences } from '../PracticePreferences';
@@ -17,6 +19,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import type { ReactElement } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { renderWithProviders } from '@sikao/test-utils/renderWithProviders';
+import { server } from '../../mocks/server';
 
 /*
  * Phase 4 task 18 checkpoint — axe a11y self-check.
@@ -86,13 +89,14 @@ function renderWithQueryRouter(routes: Parameters<typeof createMemoryRouter>[0],
 
 describe('Phase 4 a11y baseline (task 18 checkpoint)', () => {
   it('Home view passes axe wcag2aa', async () => {
-    const { container } = renderInRouter(<Home />, '/');
+    const { container } = renderWithProviders(<Home />, { initialEntries: ['/'] });
     const results = await runAxe(container);
     expect(results.violations, formatViolations(results.violations)).toEqual([]);
   });
 
   it('Practice view passes axe wcag2aa', async () => {
     const { container } = renderWithProviders(<Practice />, { initialEntries: ['/practice'] });
+    await screen.findByText('Section A · 历史记录 / stats / trend');
     const results = await runAxe(container);
     expect(results.violations, formatViolations(results.violations)).toEqual([]);
   });
@@ -125,6 +129,7 @@ describe('Phase 4 a11y baseline (task 18 checkpoint)', () => {
     const { container } = renderWithProviders(<PracticePreferences />, {
       initialEntries: ['/profile/practice-preferences'],
     });
+    await screen.findByRole('button', { name: '保存设置' });
     const results = await runAxe(container);
     expect(results.violations, formatViolations(results.violations)).toEqual([]);
   });
@@ -145,6 +150,56 @@ describe('Phase 4 a11y baseline (task 18 checkpoint)', () => {
     );
     await screen.findByTestId('session-result-view');
     await screen.findByText('Summary');
+    const results = await runAxe(container);
+    expect(results.violations, formatViolations(results.violations)).toEqual([]);
+  });
+
+  it('EssayGradingResult view passes axe wcag2aa', async () => {
+    server.use(
+      http.get('/api/v2/practice/sessions/:sessionId', ({ params }) =>
+        HttpResponse.json({
+          actions: [{ key: 'continue', label: 'Continue session', href: `/practice/sessions/${params.sessionId}`, enabled: true }],
+          id: Number(params.sessionId),
+          track: 'essay',
+          entryKind: 'paper',
+          status: 'submitted',
+          essaySubmissionId: 9101,
+          items: [],
+          startedAt: '2026-05-24T08:00:00Z',
+          practiceMode: 'full_set',
+          sourceMode: 'paper',
+          configSnapshot: {},
+          pausedCount: 0,
+          totalActiveSeconds: 0,
+          pausedTotalSeconds: 0,
+          examMode: false,
+        }),
+      ),
+      http.get('/api/v2/practice/essay/submissions/:submissionId/grading-status', () =>
+        HttpResponse.json({
+          submissionId: 9101,
+          status: 'graded',
+          report: {
+            totalScore: 76,
+            dimensions: [{ name: '结构', score: 20, fullScore: 25, comment: '结构稳定。' }],
+            highlights: ['中心明确'],
+            issues: ['论据略少'],
+            overallComment: '总体可用。',
+            improvementSuggestions: ['补一段论据'],
+            gradedAt: '2026-05-25T08:00:00Z',
+            llmCallId: 9001,
+          },
+          referenceAnswers: [],
+          errorMessage: null,
+        }),
+      ),
+    );
+    const { container } = renderWithQueryRouter(
+      [{ path: '/practice/sessions/:sessionId/grading', element: <EssayGradingResult /> }],
+      ['/practice/sessions/6001/grading'],
+    );
+    await screen.findByTestId('essay-grading-view');
+    await screen.findByText('Report');
     const results = await runAxe(container);
     expect(results.violations, formatViolations(results.violations)).toEqual([]);
   });
