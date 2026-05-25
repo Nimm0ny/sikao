@@ -19,10 +19,20 @@ _PER_PURPOSE_DAILY_LIMITS: dict[str, int] = {
     "recommend_today": 50,
     "review_cause_analysis": 20,
     "review_cause_analysis_deep": 5,
+    "notes_ai_summary": 20,
+    "notes_weekly_review": 20,
     "question_generation": 30,
     "essay_grading": 5,
     "reference_generation": 10,
 }
+_SHARED_NOTES_LLM_PURPOSES = {
+    "review_cause_analysis",
+    "review_cause_analysis_deep",
+    "question_generation",
+    "notes_ai_summary",
+    "notes_weekly_review",
+}
+_SHARED_NOTES_LLM_DAILY_LIMIT = 20
 
 
 class HomeLlmQuotaService:
@@ -49,6 +59,19 @@ class HomeLlmQuotaService:
                 LlmCallV2.created_at >= start,
             )
         )
+        if purpose in _SHARED_NOTES_LLM_PURPOSES:
+            shared_count = self.session.scalar(
+                select(func.count(LlmCallV2.id)).where(
+                    LlmCallV2.user_id == user_id,
+                    LlmCallV2.purpose.in_(tuple(_SHARED_NOTES_LLM_PURPOSES)),
+                    LlmCallV2.created_at >= start,
+                )
+            )
+            if int(shared_count or 0) + global_calls_needed > _SHARED_NOTES_LLM_DAILY_LIMIT:
+                raise QuotaExceededError(
+                    "daily llm shared notes quota exceeded",
+                    code="llm_daily_call_quota_exceeded",
+                )
         if int(total_count or 0) + global_calls_needed > self.settings.llm_quota_per_user_per_day:
             raise QuotaExceededError(
                 "daily llm call quota exceeded",

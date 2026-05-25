@@ -27,6 +27,7 @@ from sikao_api.modules.llm.application.idempotency import (
     store_replay,
     validate_idempotency_key,
 )
+from sikao_api.modules.llm.application.quotas import HomeLlmQuotaService
 from sikao_api.modules.system.application.audit_v2 import add_audit_log
 from sikao_api.modules.system.application.errors import ConflictError, LLMServiceError, NotFoundError, ValidationError
 
@@ -36,6 +37,7 @@ class AiQuestionsService:
         self.session = session
         self.settings = settings
         self.quota = AiQuestionsQuotaService(session)
+        self.shared_quota = HomeLlmQuotaService(session, settings)
 
     def generate(
         self,
@@ -60,6 +62,7 @@ class AiQuestionsService:
 
         runtime_config = self._to_runtime_config(user_id=user.id, config=config)
         self.quota.check_quota(user_id=user.id)
+        self.shared_quota.check_quota(user_id=user.id, purpose="question_generation")
         claim_idempotency_key(
             self.session,
             user_id=user.id,

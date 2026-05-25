@@ -18,6 +18,7 @@ from sikao_api.modules.essay_grading.interface import routes as essay_grading_v2
 from sikao_api.modules.favorites.interface import routes as favorites_v2
 from sikao_api.modules.identity.interface import routes as identity_v2
 from sikao_api.modules.ai_questions.interface import routes as ai_questions_v2
+from sikao_api.modules.notes_v2.interface import ai_routes as notes_v2_ai
 from sikao_api.modules.notes_v2.interface import routes as notes_v2_skeleton
 from sikao_api.modules.planning.interface import routes as planning_v2
 from sikao_api.modules.plans.interface import routes as plans_v2
@@ -172,6 +173,7 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
     app.include_router(session_v2.router)
     app.include_router(review_v2.router)
     app.include_router(review_v2.admin_router)
+    app.include_router(notes_v2_ai.router)
     app.include_router(notes_v2_skeleton.router)
     app.include_router(profile_v2.router)
     app.include_router(profile_v2.me_router)
