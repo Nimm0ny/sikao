@@ -62,7 +62,6 @@ class AiQuestionsService:
 
         runtime_config = self._to_runtime_config(user_id=user.id, config=config)
         self.quota.check_quota(user_id=user.id)
-        self.shared_quota.check_quota(user_id=user.id, purpose="question_generation")
         claim_idempotency_key(
             self.session,
             user_id=user.id,
@@ -108,6 +107,7 @@ class AiQuestionsService:
                         request_id=request_id,
                     )
                 else:
+                    self.shared_quota.check_quota(user_id=user.id, purpose="question_generation")
                     llm_bundle = generate_with_audit(
                         self.session,
                         settings=self.settings,
