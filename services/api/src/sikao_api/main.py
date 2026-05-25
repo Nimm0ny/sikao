@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 from collections.abc import AsyncIterator, Awaitable, Callable
 from contextlib import asynccontextmanager
@@ -29,6 +30,10 @@ from sikao_api.modules.question_reports.interface import routes as question_repo
 from sikao_api.modules.recommendations.interface import routes as recommendations_v2
 from sikao_api.modules.review.interface import routes as review_v2
 from sikao_api.modules.mock_exam.interface import routes as mock_exam_v2
+from sikao_api.modules.notes_v2.infrastructure.meilisearch_client import (
+    NotesSearchUnavailable,
+    build_notes_search_client,
+)
 from sikao_api.modules.practice_preferences.interface import routes as practice_preferences_v2
 from sikao_api.modules.session.interface import routes as session_v2
 from sikao_api.modules.session_lifecycle.interface import routes as session_lifecycle_v2
@@ -42,6 +47,9 @@ _logger = logging.getLogger(__name__)
 
 def create_app(*, settings: Settings | None = None, initialize_schema: bool | None = None) -> FastAPI:
     app_settings = settings or get_settings()
+    if settings is not None:
+        app_settings.ensure_runtime_dirs()
+        app_settings.validate_runtime()
     db = DatabaseManager(app_settings)
 
     @asynccontextmanager
@@ -53,6 +61,8 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
         app.state.settings = app_settings
         app.state.db = db
         _logger.info("backend startup: database_url=%s", app_settings.database_url)
+        notes_search_client = build_notes_search_client(app_settings)
+        app.state.notes_search_client = notes_search_client
         # SQLite test/dev convenience only; all non-SQLite environments must use Alembic.
         if initialize_schema is True or (initialize_schema is None and app_settings.is_sqlite):
             db.create_all()
@@ -79,6 +89,13 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
         app.state.home_scheduler = home_scheduler
         if home_scheduler is not None:
             await home_scheduler.start()
+        if notes_search_client.is_enabled:
+            try:
+                await asyncio.to_thread(notes_search_client.init_index)
+            # FAIL-FAST EXCEPTION (lhr authorized 2026-05-26): Notes search init must not block API boot.
+            # Registered: docs/engineering/fail-fast-exceptions.md#notes-search-startup-init-degrade
+            except NotesSearchUnavailable:
+                _logger.exception("notes.search.init_failed")
         try:
             yield
         finally:
