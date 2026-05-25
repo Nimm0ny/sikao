@@ -20,6 +20,7 @@ export default defineConfig({
             return 'vendor-react';
           }
           if (id.includes('/@tanstack/react-query/')) return 'vendor-query';
+          if (id.includes('/recharts/') || id.includes('/d3-')) return 'vendor-recharts';
           if (id.includes('/framer-motion/') || id.includes('/motion-')) return 'vendor-motion';
           if (id.includes('/lodash-es/') || id.includes('/dompurify/')) return 'vendor-utils';
           return undefined;
@@ -35,6 +36,13 @@ export default defineConfig({
       '/version': 'http://127.0.0.1:8000',
       '/version.json': 'http://127.0.0.1:8000',
     },
+  },
+  // SIK-91 Home M-B: recharts is dynamically imported by ProfileLearning
+  // Charts.tsx so vite needs it in the dep optimizer cache; without
+  // explicit include the dev server emits 504 Outdated Optimize Dep on
+  // first /profile/learning navigation.
+  optimizeDeps: {
+    include: ['recharts'],
   },
   resolve: {
     alias: {
