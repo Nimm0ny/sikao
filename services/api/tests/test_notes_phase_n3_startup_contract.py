@@ -74,3 +74,43 @@ def test_notes_search_blank_string_config_is_treated_as_disabled(
         with TestClient(create_app(settings=settings, initialize_schema=False)) as client:
             app = cast(Any, client.app)
             assert app.state.notes_search_client.is_enabled is False
+
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_notes_search_startup_init_runs_when_meili_is_configured(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_client = InMemoryNotesSearchClient()
+    monkeypatch.setattr(main_module, "build_notes_search_client", lambda settings: fake_client)
+
+    with build_postgres_engine("sikao_notes_n3_startup") as engine:
+        settings = _build_settings(tmp_path, database_url=render_url(engine.url))
+        with TestClient(create_app(settings=settings, initialize_schema=False)) as client:
+            app = cast(Any, client.app)
+            assert app.state.notes_search_client is fake_client
+            assert fake_client.init_calls == 1
+
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_notes_search_startup_init_failure_does_not_block_boot(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    fake_client = InMemoryNotesSearchClient(fail_init=True)
+    monkeypatch.setattr(main_module, "build_notes_search_client", lambda settings: fake_client)
+
+    with build_postgres_engine("sikao_notes_n3_startup_fail") as engine:
+        settings = _build_settings(tmp_path, database_url=render_url(engine.url))
+        with TestClient(create_app(settings=settings, initialize_schema=False)) as client:
+            response = client.get("/openapi.json")
+            assert response.status_code == 200
+            app = cast(Any, client.app)
+            assert app.state.notes_search_client is fake_client
+            assert fake_client.init_calls == 1
