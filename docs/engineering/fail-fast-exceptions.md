@@ -41,6 +41,26 @@ last-reviewed: 2026-05-13
 
 ## 已登记例外
 
+### notes-search-startup-init-degrade
+
+- **文件**: `services/api/src/sikao_api/main.py`
+- **授权日期**: 2026-05-26
+- **Why**: `SIK-49` 要求 Notes search startup 做 index 初始化，但 Meilisearch 暂时不可达时不能把整个 API boot 一起拉死；搜索端点自身仍会在运行时返回 `503 SEARCH_UNAVAILABLE`。
+- **触发条件**: `notes_search_client.init_index()` 因网络错误 / task timeout / backend 5xx 抛出 `NotesSearchUnavailable`。
+- **降级行为**: `logger.exception("notes.search.init_failed")` 后继续启动 FastAPI，不阻塞 API boot。
+- **失效条件**: 若后续把 Notes search 升级为强依赖基础设施，或 lhr 明确要求“搜索初始化失败即拒绝启动”，则删除此例外并恢复 fail-fast。
+- **关联 commit / PR**: `SIK-49`
+
+### notes-search-write-sync-degrade
+
+- **文件**: `services/api/src/sikao_api/modules/notes_v2/interface/routes.py`
+- **授权日期**: 2026-05-26
+- **Why**: `SIK-49` acceptance 明确要求 “Meilisearch 不可达时：笔记保存仍成功 + audit_log 记录”；因此 create / update / delete 的 after-commit 搜索同步失败不能反向打断已完成的 DB 写入。
+- **触发条件**: Notes write after-commit sync 抛出 `NotesSearchUnavailable`，或失败后的 isolated audit write/commit 再次抛错。
+- **降级行为**: `logger.warning(...)` + isolated `audit_log_v2` 记录 `notes.search.{action}_failed`；若 audit 自己也失败，则 `logger.exception(...)` 吞掉二次错误，HTTP 仍返回原写入成功结果。
+- **失效条件**: 若后续引入可靠 outbox / queue，把搜索同步完全移出 request path，或产品改成“搜索同步失败即写入失败”，则删除此例外并恢复 fail-fast。
+- **关联 commit / PR**: `SIK-49`
+
 ### exam-tracking-self-heal
 
 - **文件**: `packages/domain/src/study-record/exam-tracking.ts:23-35`
