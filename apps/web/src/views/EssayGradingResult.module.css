@@ -1,0 +1,56 @@
+.root {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.grid {
+  display: grid;
+  gap: var(--space-4);
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+}
+
+.sectionList,
+.dimensionList,
+.referenceList,
+.bulletList {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+}
+
+.dimensionList,
+.referenceList,
+.bulletList {
+  list-style: none;
+}
+
+.reportSummary,
+.dimensionHeader,
+.referenceMeta {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  align-items: flex-start;
+}
+
+.dimensionItem,
+.referenceItem {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--color-line-2);
+  border-radius: var(--radius-16);
+  background: var(--color-paper-2);
+}
+
+.dualList {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.comment {
+  margin: 0;
+  color: var(--color-ink-3);
+  line-height: 1.6;
+}
