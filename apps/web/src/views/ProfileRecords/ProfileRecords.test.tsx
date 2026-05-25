@@ -25,9 +25,13 @@ function renderWithEnv() {
 }
 
 const SAMPLE_RECORD = {
-  id: 'r1', kind: 'xingce', title: '行测真题 · 2024 国考',
-  occurredAt: '2026-05-24T08:00:00Z', score: '76.5', status: 'done',
-  href: '/q/1?ctx=record',
+  id: 'r1',
+  kind: 'xingce_practice',
+  title: '行测真题 · 2024 国考',
+  occurredAt: '2026-05-24T08:00:00Z',
+  score: '76.5',
+  status: 'done',
+  href: '/practice/sessions/6001/result',
 };
 
 describe('ProfileRecords (Home M-Records wave 2)', () => {
@@ -38,7 +42,7 @@ describe('ProfileRecords (Home M-Records wave 2)', () => {
     renderWithEnv();
     await waitFor(() => expect(screen.getByTestId('profile-records-row-r1')).toBeInTheDocument());
     expect(screen.getByText('行测真题 · 2024 国考')).toBeInTheDocument();
-    expect(screen.getByTestId('profile-records-row-r1')).toHaveAttribute('href', '/q/1?ctx=record');
+    expect(screen.getByTestId('profile-records-row-r1')).toHaveAttribute('href', '/practice/sessions/6001/result');
   });
 
   it('empty: renders EmptyState when API returns 0 items', async () => {
@@ -75,57 +79,7 @@ describe('ProfileRecords (Home M-Records wave 2)', () => {
     }));
     renderWithEnv();
     await waitFor(() => expect(screen.getByTestId('profile-records')).toBeInTheDocument());
-    await userEvent.selectOptions(screen.getByLabelText('筛选记录类型'), 'xingce');
-    await waitFor(() => expect(lastUrl).toContain('kind=xingce'));
-  });
-});
-
-describe('ProfileRecords (Home M-Records wave 2)', () => {
-  it('ready: renders rows with title + score + Link to href', async () => {
-    server.use(http.get('/api/v2/profile/records', () =>
-      HttpResponse.json({ items: [SAMPLE_RECORD], page: 1, pageSize: 20, total: 1 }),
-    ));
-    renderWithEnv();
-    await waitFor(() => expect(screen.getByTestId('profile-records-row-r1')).toBeInTheDocument());
-    expect(screen.getByText('行测真题 · 2024 国考')).toBeInTheDocument();
-    expect(screen.getByTestId('profile-records-row-r1')).toHaveAttribute('href', '/q/1?ctx=record');
-  });
-
-  it('empty: renders EmptyState when API returns 0 items', async () => {
-    server.use(http.get('/api/v2/profile/records', () =>
-      HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0 }),
-    ));
-    renderWithEnv();
-    await waitFor(() => expect(screen.getByTestId('profile-records-empty')).toBeInTheDocument());
-  });
-
-  it('error: renders EmptyState on 500', async () => {
-    server.use(http.get('/api/v2/profile/records', () =>
-      HttpResponse.json({}, { status: 500 }),
-    ));
-    renderWithEnv();
-    await waitFor(() => expect(screen.getByTestId('profile-records-error')).toBeInTheDocument());
-  });
-
-  it('loading: renders Skeleton while in flight', async () => {
-    server.use(http.get('/api/v2/profile/records', async () => {
-      await delay(50);
-      return HttpResponse.json({ items: [], page: 1, pageSize: 20, total: 0 });
-    }));
-    renderWithEnv();
-    expect(screen.getByTestId('profile-records-loading')).toBeInTheDocument();
-    await waitFor(() => expect(screen.queryByTestId('profile-records-loading')).not.toBeInTheDocument());
-  });
-
-  it('filter: kind dropdown change resets page to 1 + sends kind to API', async () => {
-    let lastUrl = '';
-    server.use(http.get('/api/v2/profile/records', ({ request }) => {
-      lastUrl = request.url;
-      return HttpResponse.json({ items: [SAMPLE_RECORD], page: 1, pageSize: 20, total: 1 });
-    }));
-    renderWithEnv();
-    await waitFor(() => expect(screen.getByTestId('profile-records')).toBeInTheDocument());
-    await userEvent.selectOptions(screen.getByLabelText('筛选记录类型'), 'xingce');
-    await waitFor(() => expect(lastUrl).toContain('kind=xingce'));
+    await userEvent.selectOptions(screen.getByLabelText('筛选记录类型'), 'xingce_practice');
+    await waitFor(() => expect(lastUrl).toContain('kind=xingce_practice'));
   });
 });

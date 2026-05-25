@@ -326,7 +326,7 @@ def to_cn_date(value: datetime) -> date:
 
 def build_xingce_record_href(*, session_id: int, status: str) -> str:
     if status == RECORD_STATUS_COMPLETED:
-        return f"/practice/result/{session_id}"
+        return f"/practice/sessions/{session_id}/result"
     return f"/practice/sessions/{session_id}"
 
 
@@ -335,6 +335,8 @@ def build_essay_record_href(
     submission: EssaySubmissionV2,
     report: EssayReportV2 | None,
 ) -> str:
+    if submission.practice_session_id is not None:
+        return f"/practice/sessions/{submission.practice_session_id}/grading"
     if report is not None and report.status in {"completed", "failed"}:
         return f"/practice/essay/submissions/{submission.id}/result"
     return f"/practice/essay/submissions/{submission.id}/grading-status"

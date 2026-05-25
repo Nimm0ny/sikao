@@ -448,7 +448,7 @@ def test_dashboard_records_xingce_only_uses_single_aggregate_semantics(tmp_path:
         assert [item["kind"] for item in payload["items"]] == ["xingce_practice", "xingce_practice"]
         assert [item["status"] for item in payload["items"]] == ["completed", "pending"]
         assert [item["href"] for item in payload["items"]] == [
-            "/practice/result/2",
+            "/practice/sessions/2/result",
             "/practice/sessions/1",
         ]
 
@@ -536,7 +536,7 @@ def test_dashboard_records_mixed_data_keeps_summary_items_and_total_in_sync(tmp_
             "pending",
         ]
         assert [item["href"] for item in payload["items"]] == [
-            "/practice/result/2",
+            "/practice/sessions/2/result",
             "/practice/essay/submissions/1/result",
             "/practice/sessions/1",
         ]

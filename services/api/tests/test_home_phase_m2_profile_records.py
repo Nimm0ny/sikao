@@ -174,7 +174,7 @@ def test_profile_extensions_and_records_canonicalization(tmp_path: Path) -> None
         assert records.status_code == 200, records.text
         assert records.json()["total"] == 1
         assert records.json()["items"][0]["id"] == "practice-1"
-        assert records.json()["items"][0]["href"] == "/practice/result/1"
+        assert records.json()["items"][0]["href"] == "/practice/sessions/1/result"
 
         day_window = client.get(
             "/api/v2/profile/records",
@@ -194,7 +194,7 @@ def test_profile_extensions_and_records_canonicalization(tmp_path: Path) -> None
         assert {
             item["href"] for item in day_window.json()["items"]
         } == {
-            "/practice/result/1",
+            "/practice/sessions/1/result",
             f"/practice/essay/submissions/{submission.id}/result",
         }
 
