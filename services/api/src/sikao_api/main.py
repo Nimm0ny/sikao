@@ -104,6 +104,7 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
             # Stop scheduler before limiter — 让后台 sweep 优雅退出, 之后再断 redis.
             if deletion_scheduler is not None:
                 await deletion_scheduler.stop()
+            notes_search_client.close()
             await close_limiter()
 
     app = FastAPI(title=app_settings.app_name, version=app_settings.app_version, lifespan=lifespan)
