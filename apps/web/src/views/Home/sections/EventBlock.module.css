@@ -1,0 +1,89 @@
+/*
+ * EventBlock — Home Section A shared event surface.
+ * Why: Today / Week / Month bodies (and future drag overlay / detail
+ *      panel) all render the same V5 event surface — colored left border,
+ *      category-tinted background, status modifier (done desaturated,
+ *      in_progress outlined, skipped strikethrough). Lifted out of the
+ *      per-view CSS so the visual contract stays single-source and the
+ *      bodies just position the block (top/height) at their own scale.
+ *
+ *      Visual contract: `.tmp_review/out/Tab1-Home/Home Today Calendar
+ *      v1.html` event styles + V5 design.md §C.1.1 categorical colors.
+ */
+
+.root {
+  position: absolute;
+  left: var(--space-1);
+  right: var(--space-1);
+  border-radius: var(--radius-10);
+  padding: var(--space-1) var(--space-2);
+  font-size: var(--font-tiny);
+  line-height: 1.3;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border: 1px solid transparent;
+  overflow: hidden;
+  cursor: default;
+}
+
+.root::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 4px;
+  bottom: 4px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--evt-color, var(--color-text-meta));
+}
+
+/* category color tints (V5 categorical palette). Subject categories use
+ * color-mix to keep the block readable; review / mock / break use
+ * existing semantic soft tokens. */
+.root[data-category='yanyu']    { background: color-mix(in srgb, var(--color-cat-yanyu) 14%, var(--color-bg-surface)); --evt-color: var(--color-cat-yanyu); }
+.root[data-category='shuliang'] { background: color-mix(in srgb, var(--color-cat-shuliang) 14%, var(--color-bg-surface)); --evt-color: var(--color-cat-shuliang); }
+.root[data-category='panduan']  { background: color-mix(in srgb, var(--color-cat-panduan) 18%, var(--color-bg-surface)); --evt-color: var(--color-cat-panduan); }
+.root[data-category='ziliao']   { background: color-mix(in srgb, var(--color-cat-ziliao) 12%, var(--color-bg-surface)); --evt-color: var(--color-cat-ziliao); }
+.root[data-category='shenlun']  { background: color-mix(in srgb, var(--color-cat-shenlun) 12%, var(--color-bg-surface)); --evt-color: var(--color-cat-shenlun); }
+.root[data-category='review']   { background: var(--color-state-warn-soft); --evt-color: var(--color-state-warn); }
+.root[data-category='mock']     { background: var(--color-brand-soft); --evt-color: var(--color-brand-primary); }
+.root[data-category='break']    { background: var(--color-bg-sunken); --evt-color: var(--color-text-meta); }
+
+.root[data-status='done'] {
+  filter: saturate(0.6);
+  opacity: 0.82;
+}
+
+.root[data-status='in_progress'] {
+  outline: 2px solid var(--color-brand-primary);
+  outline-offset: -1px;
+}
+
+.root[data-status='skipped'] {
+  background: var(--color-bg-sunken);
+  color: var(--color-text-meta);
+}
+
+.title {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.root[data-status='done'] .title,
+.root[data-status='skipped'] .title {
+  text-decoration: line-through;
+  text-decoration-color: var(--color-text-meta);
+  color: var(--color-text-secondary);
+}
+
+.time {
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+}
+
+.root[data-density='compact'] .time {
+  display: none;
+}

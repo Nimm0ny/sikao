@@ -6,6 +6,7 @@ import { buildViewRange } from '@sikao/calendar-engine';
 import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
+import { EventBlock } from './EventBlock';
 import styles from './WeekCalendarView.module.css';
 
 /*
@@ -78,9 +79,13 @@ function WeekGrid({ days, eventsByDay }: {
           {(eventsByDay.get(d.stamp) ?? []).map((event) => {
             const { top, height } = geometryFor(event);
             return (
-              <article key={event.id} className={styles.event} data-testid="home-week-event" data-category={event.category} data-status={event.status} style={{ top: `${top}px`, height: `${height}px` }} title={event.title}>
-                {event.title}
-              </article>
+              <EventBlock
+                key={event.id}
+                event={event}
+                density="compact"
+                style={{ top: `${top}px`, height: `${height}px` }}
+                testId="home-week-event"
+              />
             );
           })}
         </div>

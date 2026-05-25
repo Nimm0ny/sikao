@@ -7,6 +7,7 @@ import { buildViewRange } from '@sikao/calendar-engine';
 import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
+import { EventBlock } from './EventBlock';
 import styles from './TodayCalendarView.module.css';
 
 /*
@@ -42,12 +43,6 @@ function todayLocalStamp(): string {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 }
 
-function formatTimeRange(startAt: string, endAt: string): string {
-  const s = new Date(startAt);
-  const e = new Date(endAt);
-  return `${pad(s.getHours())}:${pad(s.getMinutes())} – ${pad(e.getHours())}:${pad(e.getMinutes())}`;
-}
-
 function geometryFor(event: PlanEventReadV2): { top: number; height: number } {
   const start = new Date(event.startAt);
   const end = new Date(event.endAt);
@@ -74,22 +69,6 @@ function HourGutter() {
         </span>
       ))}
     </div>
-  );
-}
-
-function EventBlock({ event }: { readonly event: PlanEventReadV2 }) {
-  const { top, height } = geometryFor(event);
-  return (
-    <article
-      className={styles.event}
-      data-testid="home-today-event"
-      data-category={event.category}
-      data-status={event.status}
-      style={{ top: `${top}px`, height: `${height}px` }}
-    >
-      <div className={styles.eventTitle}>{event.title}</div>
-      <div className={styles.eventTime}>{formatTimeRange(event.startAt, event.endAt)}</div>
-    </article>
   );
 }
 
@@ -141,7 +120,17 @@ export function TodayCalendarView() {
         <div className={styles.canvas}>
           <HourGutter />
           <div className={styles.grid}>
-            {events.map((event) => <EventBlock key={event.id} event={event} />)}
+            {events.map((event) => {
+              const { top, height } = geometryFor(event);
+              return (
+                <EventBlock
+                  key={event.id}
+                  event={event}
+                  style={{ top: `${top}px`, height: `${height}px` }}
+                  testId="home-today-event"
+                />
+              );
+            })}
           </div>
         </div>
       ) : null}

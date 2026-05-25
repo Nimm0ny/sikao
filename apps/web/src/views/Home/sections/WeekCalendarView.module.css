@@ -100,23 +100,6 @@
   background-color: color-mix(in srgb, var(--color-brand-primary) 6%, var(--color-bg-surface));
 }
 
-.event {
-  position: absolute;
-  left: var(--space-1);
-  right: var(--space-1);
-  border-radius: var(--radius-10);
-  padding: var(--space-1) var(--space-2);
-  font-size: var(--font-tiny);
-  line-height: 1.2;
-  background: var(--color-bg-elevated);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border-subtle);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-weight: var(--font-weight-semibold);
-}
-
 .stateWrap {
   padding: var(--space-5) var(--space-4);
   display: flex;
