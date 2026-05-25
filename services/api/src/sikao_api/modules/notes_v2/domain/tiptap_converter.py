@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from html import escape
+import re
 from typing import Any
 
 def _render_inline_markdown(node: dict[str, Any]) -> str:
@@ -164,3 +165,124 @@ def json_to_html(body_json: dict[str, Any] | None) -> str:
         for child in content
         if isinstance(child, dict)
     )
+
+
+def md_to_json(markdown: str) -> dict[str, Any]:
+    stripped = _strip_markdown_fence(markdown)
+    lines = stripped.splitlines()
+    nodes: list[dict[str, Any]] = []
+    index = 0
+    while index < len(lines):
+        raw_line = lines[index].rstrip()
+        line = raw_line.strip()
+        if not line:
+            index += 1
+            continue
+        heading_match = re.match(r"^(#{1,6})\s+(.*)$", line)
+        if heading_match:
+            level = len(heading_match.group(1))
+            nodes.append(_heading_node(level=level, text=heading_match.group(2).strip()))
+            index += 1
+            continue
+        if line == "---":
+            nodes.append({"type": "horizontalRule"})
+            index += 1
+            continue
+        if line.startswith(">"):
+            quote_lines: list[str] = []
+            while index < len(lines):
+                candidate = lines[index].strip()
+                if not candidate.startswith(">"):
+                    break
+                quote_lines.append(candidate[1:].lstrip())
+                index += 1
+            nodes.append(
+                {
+                    "type": "blockquote",
+                    "content": [_paragraph_node(" ".join(part for part in quote_lines if part))],
+                }
+            )
+            continue
+        if re.match(r"^[-*]\s+", line):
+            items: list[dict[str, Any]] = []
+            while index < len(lines):
+                candidate = lines[index].strip()
+                match = re.match(r"^[-*]\s+(.*)$", candidate)
+                if match is None:
+                    break
+                items.append(
+                    {
+                        "type": "listItem",
+                        "content": [_paragraph_node(match.group(1).strip())],
+                    }
+                )
+                index += 1
+            nodes.append({"type": "bulletList", "content": items})
+            continue
+        if re.match(r"^\d+\.\s+", line):
+            items = []
+            start = int(line.split(".", 1)[0])
+            while index < len(lines):
+                candidate = lines[index].strip()
+                match = re.match(r"^(\d+)\.\s+(.*)$", candidate)
+                if match is None:
+                    break
+                items.append(
+                    {
+                        "type": "listItem",
+                        "content": [_paragraph_node(match.group(2).strip())],
+                    }
+                )
+                index += 1
+            nodes.append({"type": "orderedList", "attrs": {"start": start}, "content": items})
+            continue
+
+        paragraph_lines = [raw_line]
+        index += 1
+        while index < len(lines):
+            lookahead = lines[index].strip()
+            if not lookahead:
+                break
+            if re.match(r"^(#{1,6})\s+", lookahead) or lookahead == "---" or lookahead.startswith(">"):
+                break
+            if re.match(r"^[-*]\s+", lookahead) or re.match(r"^\d+\.\s+", lookahead):
+                break
+            paragraph_lines.append(lines[index].rstrip())
+            index += 1
+        nodes.append(_paragraph_node("\n".join(paragraph_lines)))
+    return {"type": "doc", "content": nodes}
+
+
+def _strip_markdown_fence(markdown: str) -> str:
+    stripped = markdown.strip()
+    if stripped.startswith("```"):
+        lines = stripped.splitlines()
+        if len(lines) >= 2 and lines[-1].strip() == "```":
+            return "\n".join(lines[1:-1]).strip()
+    return stripped
+
+
+def _heading_node(*, level: int, text: str) -> dict[str, Any]:
+    return {
+        "type": "heading",
+        "attrs": {"level": level},
+        "content": _inline_content(text),
+    }
+
+
+def _paragraph_node(text: str) -> dict[str, Any]:
+    return {"type": "paragraph", "content": _inline_content(text)}
+
+
+def _inline_content(text: str) -> list[dict[str, Any]]:
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    if not normalized:
+        return []
+    segments = normalized.split("\n")
+    content: list[dict[str, Any]] = []
+    for idx, segment in enumerate(segments):
+        if segment:
+            content.append({"type": "text", "text": segment})
+        if idx < len(segments) - 1:
+            content.append({"type": "hardBreak"})
+    return content
