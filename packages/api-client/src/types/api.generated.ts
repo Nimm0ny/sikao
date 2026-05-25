@@ -2014,6 +2014,23 @@ export interface paths {
         patch: operations["patch_cause_analysis_dimension_api_v2_review_cause_analysis__analysis_id__dimensions__dimension_index__patch"];
         trace?: never;
     };
+    "/api/v2/review/cause-analysis/{analysis_id}/feedback": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Post Cause Analysis Feedback */
+        post: operations["post_cause_analysis_feedback_api_v2_review_cause_analysis__analysis_id__feedback_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/review/cause-tags": {
         parameters: {
             query?: never;
@@ -2841,6 +2858,20 @@ export interface components {
             /** Lastusedcount */
             lastUsedCount: number;
             /** Lastuseddifficultyrange */
+        /** CauseAnalysisFeedbackRequestV2 */
+        CauseAnalysisFeedbackRequestV2: {
+            /** Actionsunhelpful */
+            actionsUnhelpful?: number[];
+            /** Comment */
+            comment?: string | null;
+            /** Dimensionsdisagreed */
+            dimensionsDisagreed?: string[];
+            /**
+             * Rating
+             * @enum {string}
+             */
+            rating: "up" | "down";
+        };
             lastUsedDifficultyRange: [
                 number,
                 number
@@ -4242,6 +4273,8 @@ export interface components {
             /**
              * Difficulty
              * @enum {string}
+            /** Essaysubmissionid */
+            essaySubmissionId?: number | null;
              */
             difficulty: "easy" | "medium" | "hard" | "unknown";
             /** Label */
@@ -4313,6 +4346,8 @@ export interface components {
             /** Averagescore */
             averageScore?: number | null;
             /** Count */
+            /** Answertext */
+            answerText?: string | null;
             count: number;
             /**
              * Date
@@ -4344,6 +4379,8 @@ export interface components {
             /** Examtargets */
             examTargets?: components["schemas"]["ExamTargetV2"][];
             /** Targetexam */
+            /** Selectedanswerkeys */
+            selectedAnswerKeys?: string[];
             targetExam?: string | null;
             /** Targetscore */
             targetScore?: string | null;
@@ -4551,6 +4588,26 @@ export interface components {
             /** Category */
             category: string;
             /**
+            /**
+             * Reviewdailylimit
+             * @default 30
+             */
+            reviewDailyLimit: number;
+            /**
+             * Reviewdebtredistributeenabled
+             * @default true
+             */
+            reviewDebtRedistributeEnabled: boolean;
+            /**
+             * Reviewhardquestionautodeepanalysis
+             * @default true
+             */
+            reviewHardQuestionAutoDeepAnalysis: boolean;
+            /**
+             * Reviewrampupenabled
+             * @default true
+             */
+            reviewRampupEnabled: boolean;
              * Endat
              * Format: date-time
              */
@@ -4572,6 +4629,14 @@ export interface components {
         };
         /** QuestionFavoriteCountV2 */
         QuestionFavoriteCountV2: {
+            /** Reviewdailylimit */
+            reviewDailyLimit?: number | null;
+            /** Reviewdebtredistributeenabled */
+            reviewDebtRedistributeEnabled?: boolean | null;
+            /** Reviewhardquestionautodeepanalysis */
+            reviewHardQuestionAutoDeepAnalysis?: boolean | null;
+            /** Reviewrampupenabled */
+            reviewRampupEnabled?: boolean | null;
             /** Count */
             count: number;
         };
@@ -10077,6 +10142,41 @@ export interface operations {
         };
     };
     restore_item_api_v2_review_items__item_id__restore_patch: {
+    post_cause_analysis_feedback_api_v2_review_cause_analysis__analysis_id__feedback_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                analysis_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CauseAnalysisFeedbackRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
         parameters: {
             query?: never;
             header?: never;
