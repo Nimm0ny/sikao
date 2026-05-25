@@ -107,3 +107,29 @@ def test_postgres_note_export_markdown_and_html_and_legacy_fallback(
         fallback = client.get(f"/api/v2/notes/{note_id}/export", params={"format": "markdown"})
         assert fallback.status_code == 200, fallback.text
         assert "legacy body only" in fallback.text
+
+
+@pytest.mark.skipif(
+    not os.environ.get("TEST_POSTGRESQL_URL"),
+    reason="TEST_POSTGRESQL_URL is not set",
+)
+def test_postgres_note_export_quotes_yaml_sensitive_title_and_tags(
+    tmp_path: Path,
+) -> None:
+    with build_postgres_client(tmp_path) as client:
+        register_user(client, email="export-yaml@example.com", display_name="Export YAML User")
+        note = client.post(
+            "/api/v2/notes",
+            json={
+                "title": "\u5bfc\u51fa: \u7b14\u8bb0 [A]",
+                "bodyJson": _body_json(),
+                "tags": ["tag:one", "list,item", "bracket]"],
+            },
+        )
+        assert note.status_code == 200, note.text
+        note_id = note.json()["id"]
+
+        markdown = client.get(f"/api/v2/notes/{note_id}/export", params={"format": "markdown"})
+        assert markdown.status_code == 200, markdown.text
+        assert 'title: "\u5bfc\u51fa: \u7b14\u8bb0 [A]"' in markdown.text
+        assert 'tags: ["tag:one", "list,item", "bracket]"]' in markdown.text
