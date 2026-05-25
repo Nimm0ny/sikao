@@ -1,0 +1,95 @@
+/*
+ * WeeklyReviewSection — Home Section A · bottomRow #1 styles.
+ * Why: sik-fu-a-home-visual-contract.md §2.4 — 64×64 ring + streak pill +
+ *      7 dots row.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  min-width: 0;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.ring {
+  flex: 0 0 auto;
+}
+
+.ringTrack {
+  stroke: var(--color-border-subtle);
+}
+
+.ringFill {
+  stroke: var(--color-brand-primary);
+  transition: stroke-dashoffset var(--dur-base) var(--ease-out);
+}
+
+.ringText {
+  font-size: var(--font-card);
+  font-weight: var(--font-weight-bold);
+  fill: var(--color-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.streakPill {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+  background: var(--color-brand-soft);
+  border-radius: var(--radius-999);
+  padding: var(--space-1) var(--space-3);
+  white-space: nowrap;
+}
+
+.streakNum {
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}
+
+.dotsRow {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.dot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.dotCore {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-999);
+  background: var(--color-bg-sunken);
+  border: 1px solid var(--color-border-default);
+}
+
+.dot[data-state='full'] .dotCore {
+  background: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+}
+
+.dot[data-state='half'] .dotCore {
+  background: var(--color-brand-soft);
+  border-color: var(--color-brand-primary);
+}
+
+.dotLabel {
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+}

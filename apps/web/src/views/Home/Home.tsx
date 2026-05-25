@@ -4,11 +4,11 @@
 // integrations replace the placeholders.
 import { useEffect } from 'react';
 import { Numeric } from '../../components/atom';
-import { Badge } from '../../components/atom';
 import { Panel, PageHeader, ScreenLockShell, ScrollRegion } from '../../components/layout';
 import { Button } from '../../components/form';
 import { useDashboardPreferenceStore, usePlanStore } from '@sikao/domain';
 import { CalendarPanel } from './sections/CalendarPanel';
+import { WeeklyReviewSection } from './sections/WeeklyReviewSection';
 import { ProgressSection } from './sections/ProgressSection';
 import { RecommendationSection } from './sections/RecommendationSection';
 import styles from './Home.module.css';
@@ -35,24 +35,11 @@ interface HomeMetric {
   readonly delta?: { readonly direction: 'up' | 'down' | 'flat'; readonly text: string };
 }
 
-interface HomeTask {
-  readonly id: string;
-  readonly title: string;
-  readonly badge: { readonly variant: 'cat-yanyu' | 'cat-shuliang' | 'cat-panduan' | 'cat-ziliao' | 'cat-shenlun'; readonly label: string };
-  readonly status: string;
-}
-
 const PLACEHOLDER_METRICS: ReadonlyArray<HomeMetric> = [
   { key: 'practice', label: '本周练习', value: 128, unit: '题', delta: { direction: 'up', text: '+12 vs 上周' } },
   { key: 'accuracy', label: '正确率', value: 76.4, unit: '%', delta: { direction: 'up', text: '+2.1 pp' } },
   { key: 'duration', label: '学习时长', value: 4.5, unit: '小时', delta: { direction: 'flat', text: '与上周持平' } },
   { key: 'rank', label: '同省排名', value: 132, delta: { direction: 'down', text: '下滑 8 位' } },
-];
-
-const PLACEHOLDER_TASKS: ReadonlyArray<HomeTask> = [
-  { id: 't1', title: '言语理解 · 主旨概括 10 题', badge: { variant: 'cat-yanyu', label: '言语' }, status: '未开始' },
-  { id: 't2', title: '资料分析 · 增长率综合', badge: { variant: 'cat-ziliao', label: '资料' }, status: '进行中' },
-  { id: 't3', title: '判断推理 · 类比专项', badge: { variant: 'cat-panduan', label: '判断' }, status: '已完成' },
 ];
 
 const CALENDAR_VIEW_KEYS = ['today', 'week', 'month'] as const;
@@ -104,16 +91,8 @@ export function Home() {
       </ScrollRegion>
 
       <section className={styles.bottomRow} aria-label="底部模块">
-        <Panel title="今日任务">
-          <ul className={styles.taskList} role="list">
-            {PLACEHOLDER_TASKS.map((task) => (
-              <li key={task.id} className={styles.taskItem}>
-                <Badge variant={task.badge.variant} size="sm">{task.badge.label}</Badge>
-                <span className={styles.taskTitle}>{task.title}</span>
-                <span className={styles.taskStatus}>{task.status}</span>
-              </li>
-            ))}
-          </ul>
+        <Panel title="本周备考回顾">
+          <WeeklyReviewSection />
         </Panel>
 
         <Panel title="学习进度">
