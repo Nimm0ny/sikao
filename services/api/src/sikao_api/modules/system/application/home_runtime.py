@@ -45,6 +45,7 @@ from sikao_api.modules.progress.application.snapshot_writer import (
 )
 from sikao_api.modules.review.application.weekly_service import write_weekly_snapshot
 from sikao_api.modules.review.application.time_windows import iso_week_code_from_date, previous_week_start
+from sikao_api.modules.review.application.debt_service import ReviewDebtService
 from sikao_api.modules.review.application.audit import (
     log_review_weekly_snapshot_generated,
     log_review_weekly_snapshot_refreshed,
@@ -83,6 +84,15 @@ class HomeRuntimeOrchestrator:
 
     async def run_review_weekly_summary_snapshot(self) -> int:
         return await asyncio.to_thread(self._run_review_weekly_summary_snapshot_sync)
+
+    async def run_review_debt_severity_evaluator(self) -> int:
+        return await asyncio.to_thread(self._run_review_debt_severity_evaluator_sync)
+
+    async def run_review_hard_question_detector(self) -> int:
+        return await asyncio.to_thread(self._run_review_hard_question_detector_sync)
+
+    async def run_review_rampup_phase_advancer(self) -> int:
+        return await asyncio.to_thread(self._run_review_rampup_phase_advancer_sync)
 
     async def run_event_status_tick(self) -> list[SkippedEventHookPayload]:
         return await asyncio.to_thread(self._run_event_status_tick_sync)
@@ -404,6 +414,51 @@ class HomeRuntimeOrchestrator:
                         week=week_code,
                     )
                 processed += 1
+            session.commit()
+            return processed
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_review_debt_severity_evaluator_sync(self) -> int:
+        session = self._db.session_factory()
+        try:
+            processed = 0
+            service = ReviewDebtService(session)
+            for user_id in self._list_active_user_ids(session):
+                processed += service.run_debt_severity_evaluator(user_id=user_id)
+            session.commit()
+            return processed
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_review_hard_question_detector_sync(self) -> int:
+        session = self._db.session_factory()
+        try:
+            processed = 0
+            service = ReviewDebtService(session)
+            for user_id in self._list_active_user_ids(session):
+                processed += service.run_hard_question_detector(user_id=user_id)
+            session.commit()
+            return processed
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_review_rampup_phase_advancer_sync(self) -> int:
+        session = self._db.session_factory()
+        try:
+            processed = 0
+            service = ReviewDebtService(session)
+            for user_id in self._list_active_user_ids(session):
+                processed += service.run_rampup_phase_advancer(user_id=user_id)
             session.commit()
             return processed
         except Exception:
