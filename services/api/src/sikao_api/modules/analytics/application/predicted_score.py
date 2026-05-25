@@ -25,12 +25,12 @@ from sikao_api.db.models import (
     PracticeSession,
     PracticeSessionAnswer,
 )
-
-_logger = logging.getLogger(__name__)
 from sikao_api.db.schemas import (
     PredictedScorePaperEntryV2,
     PredictedScoreV2,
 )
+
+_logger = logging.getLogger(__name__)
 
 # Paper-bound mode constant — 跟 exam_papers.py 保持一致 (避免循环引用先复用值).
 # TODO(2026-06-01 lhr): 抽到 app/domain/constants.py 让 exam_papers / 此处 / route 共享.

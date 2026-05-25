@@ -28,6 +28,7 @@ API ref: https://cloud.tencent.com/document/api/382/55981
 from __future__ import annotations
 
 from dataclasses import dataclass
+import importlib
 from typing import Any
 
 from sikao_api.modules.system.infrastructure.sms.provider import SmsPurpose
@@ -72,9 +73,8 @@ def _import_sdk_or_raise() -> tuple[Any, Any]:
         (models, sms_client) module objects from tencentcloud.sms.v20210111.
     """
     try:
-        # `tencentcloud.*` mypy override (pyproject.toml) 已 ignore_missing_imports;
-        # 不需 inline `# type: ignore[import-not-found]` (warn_unused_ignores 会报).
-        from tencentcloud.sms.v20210111 import models, sms_client
+        models = importlib.import_module("tencentcloud.sms.v20210111.models")
+        sms_client = importlib.import_module("tencentcloud.sms.v20210111.sms_client")
     except ImportError as exc:
         raise RuntimeError(
             "sms_provider=tencent requires .[sms] optional extra: "
@@ -87,10 +87,14 @@ def _import_sdk_or_raise() -> tuple[Any, Any]:
 def _build_default_client(config: TencentSMSConfig) -> Any:
     """Build a real tencentcloud SmsClient. 走 lazy import 防止 dev 误触."""
     try:
-        from tencentcloud.common import credential
-        from tencentcloud.common.profile.client_profile import ClientProfile
-        from tencentcloud.common.profile.http_profile import HttpProfile
-        from tencentcloud.sms.v20210111 import sms_client
+        credential = importlib.import_module("tencentcloud.common.credential")
+        client_profile_module = importlib.import_module(
+            "tencentcloud.common.profile.client_profile"
+        )
+        http_profile_module = importlib.import_module(
+            "tencentcloud.common.profile.http_profile"
+        )
+        sms_client = importlib.import_module("tencentcloud.sms.v20210111.sms_client")
     except ImportError as exc:
         raise RuntimeError(
             "sms_provider=tencent requires .[sms] optional extra: "
@@ -98,9 +102,9 @@ def _build_default_client(config: TencentSMSConfig) -> Any:
             "tencentcloud-sdk-python is not installed."
         ) from exc
     cred = credential.Credential(config.secret_id, config.secret_key)
-    http_profile = HttpProfile()
+    http_profile = http_profile_module.HttpProfile()
     http_profile.endpoint = TENCENT_SMS_ENDPOINT
-    client_profile = ClientProfile()
+    client_profile = client_profile_module.ClientProfile()
     client_profile.httpProfile = http_profile
     return sms_client.SmsClient(cred, TENCENT_SMS_REGION, client_profile)
 

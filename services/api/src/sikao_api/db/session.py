@@ -32,7 +32,7 @@ def _enable_sqlite_foreign_keys(dbapi_connection: Any, _connection_record: Any) 
     cursor.close()
 
 
-_SQLITE_RUNTIME_SERVER_DEFAULTS: dict[tuple[str, str], object] = {
+_SQLITE_RUNTIME_SERVER_DEFAULTS: dict[tuple[str, str], Callable[[], Any]] = {
     ("users_v2", "is_active"): true,
     ("email_contacts_v2", "is_primary"): true,
     ("email_contacts_v2", "is_verified"): false,
