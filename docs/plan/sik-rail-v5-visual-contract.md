@@ -242,7 +242,7 @@ Rail 自身不接 query，没有 loading / error 状态。但本契约要求：
 |---|---|---|---|---|
 | H01 | nav 项数 = 4（首页/练习/复盘/笔记，**无题库无我的**）| 297–319（5 项原型） | `RootLayout.tsx` `navItems` 数组长度 = 4 | ☐ |
 | H02 | Me 入口唯一 = RailMe Avatar（`aria-label="我的"` 在 DOM 仅 1 节点）| 322–328 | `RootLayout.tsx` `me` 槽 + `Rail.tsx` 渲染逻辑；`RootLayout.test.tsx` 断言 `getAllByLabelText('我的').length === 1` | ☐ |
-| H03 | 折叠态 RailMe Avatar 有 `Tooltip(content="我的", side=right)` ::after | 127–138（`.rail-btn[data-tip]::after` tooltip 模式本体）+ 142–155（`.rail-me` 容器）| `Rail.module.css` `.railMe[data-tip]::after` + `Rail.tsx` 折叠态渲染 `data-tip="我的"` | ☐ |
+| H03 | 折叠态 RailMe Avatar 有 `Tooltip(content="我的", side=right)` ::after | 127–138（`.rail-btn[data-tip]::after` tooltip 模式本体）+ 142–155（`.rail-me` 容器）| `RootLayout.module.css` `.meLink[data-tip]::after` + `.meLink` 自带 `data-tip="我的"`（meLink 是 RailMe 槽内容 owner，Rail.module.css 仅提供 `.me` flex 容器；W2 在 RailBrand / RailNav 同样以 `[data-tip]::after` 收口）| ☐ |
 | H04 | 展开态 RailMe = Avatar + me-name + me-sub | 322–328 | `RootLayout.module.css` `.meStack / .meName / .meSub` + `RootLayout.tsx` me 槽含 `<div class="meStack">...` | ☐ |
 | H05 | Ctrl/Cmd+K 触发 CommandPalette 打开；点击 `.rail-cmd` 触发同 callback | 89–101（cmd-k 槽存在但 demo 未注册快捷键） | `RootLayout.tsx` 注入 `cmd={...}` slot 接 `CommandPalette.open`；`KeyboardShortcuts` 注册 `Ctrl+K / Meta+K` | ☐ |
 | H06 | toggle 按钮用 sprite `rail-toggle`（不再 inline `<svg>`） | 286–290（inline svg）| `Rail.tsx` `<SpriteIcon id="rail-toggle" size={16} />` | ☐ |
@@ -292,7 +292,7 @@ Rail 自身不接 query，没有 loading / error 状态。但本契约要求：
   - `RootLayout.tsx`：`navItems` 删 `id:'me'`，长度 = 4；`me` 槽改 `Avatar + meStack(meName + meSub)`；保留 `data-testid="rail-me-link"` + `aria-label="我的"`。
   - `RootLayout.module.css`：新增 `.meStack / .meName / .meSub`（folded 态 `display: none`）。
   - `Rail.tsx`：`RailMe` 折叠态加 `data-tip="我的"` 触发 ::after Tooltip（**仅 RailMe**，RailBrand / RailNav 的 React `<Tooltip>` 在 W2 一起退化）。
-  - `Rail.module.css`：`.me[data-tip]::after` 与 `.navItem[data-tip]::after` 同样式。
+  - `Rail.module.css`：`.me` 折叠态保持 children 渲染（不强行加 `[data-tip]::after`，因为 data-tip + ::after owner 是 `.meLink`，归 `RootLayout.module.css`）。
   - `RootLayout.test.tsx`：断言 4-tab + Me 仅 1 节点（`getAllByLabelText('我的').length === 1`）；删旧 5-tab 断言。
   - `Rail.test.tsx`：补 RailMe 折叠态 Tooltip 渲染、nav 不含 `我的`。
   - 文件估 ≤ 6；行估 ≤ 200 净增。
