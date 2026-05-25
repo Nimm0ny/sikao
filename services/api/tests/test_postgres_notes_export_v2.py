@@ -88,3 +88,22 @@ def test_postgres_note_export_markdown_and_html_and_legacy_fallback(
         assert "<!DOCTYPE html>" in html.text
         assert "<h2>\u6807\u9898</h2>" in html.text
         assert 'src="/uploads/notes/demo.png"' in html.text
+
+        app = client.app
+        factory = app.state.db.session_factory
+        with factory() as session:
+            session.execute(
+                text(
+                    """
+                    UPDATE notes_v2
+                    SET body_json = NULL, body = 'legacy body only', body_text = 'legacy body only'
+                    WHERE id = :note_id
+                    """
+                ),
+                {"note_id": note_id},
+            )
+            session.commit()
+
+        fallback = client.get(f"/api/v2/notes/{note_id}/export", params={"format": "markdown"})
+        assert fallback.status_code == 200, fallback.text
+        assert "legacy body only" in fallback.text
