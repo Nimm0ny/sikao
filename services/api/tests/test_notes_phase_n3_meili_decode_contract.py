@@ -113,3 +113,32 @@ def test_notes_search_decode_hit_rejects_invalid_payload() -> None:
     for payload in invalid_payloads:
         with pytest.raises(NotesSearchUnavailable):
             MeilisearchNotesClient._decode_hit(payload)
+
+
+def test_notes_search_search_rejects_invalid_metadata_payload(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    client = MeilisearchNotesClient(
+        Settings(
+            app_env="test",
+            database_url="postgresql+psycopg://postgres@127.0.0.1:15433/postgres",
+            upload_dir=Path("var/uploads"),
+            import_tmp_dir=Path("var/imports"),
+            jwt_secret="decode-contract-secret",
+            meili_url="http://meili.test",
+            meili_master_key="decode-contract-key",
+        )
+    )
+    response = httpx.Response(
+        200,
+        request=httpx.Request("POST", "http://meili.test/indexes/notes/search"),
+        json={
+            "hits": [],
+            "estimatedTotalHits": "oops",
+            "facetDistribution": {"type": {"free": "bad-count"}},
+        },
+    )
+    monkeypatch.setattr(client, "_request", lambda *args, **kwargs: response)
+    with pytest.raises(NotesSearchUnavailable):
+        client.search(query="searchable", filter_expression="user_id = 1", page=1, size=20)
+    client.close()
