@@ -157,3 +157,65 @@ class NotesSearchServiceV2:
             return datetime.fromisoformat(normalized)
         except ValueError as exc:
             raise NotesSearchUnavailable("notes search backend returned an invalid updated_at") from exc
+
+    def _parse_filters(self, raw_filters: str | None) -> list[_SearchFilter]:
+        if raw_filters is None or not raw_filters.strip():
+            return []
+
+        parsed: list[_SearchFilter] = []
+        for chunk in self._split_filter_segments(raw_filters, delimiter=","):
+            segment = chunk.strip()
+            if not segment:
+                continue
+            key, separator, raw_value = segment.partition(":")
+            if not separator:
+                raise ValidationError("invalid filters syntax", code="validation_error")
+            normalized_key = key.strip().lower()
+            if normalized_key == "haslinkedquestion":
+                normalized_key = "has_linked_question"
+            value = raw_value.strip()
+            if not value:
+                raise ValidationError("filter value cannot be blank", code="validation_error")
+            parsed.append(_SearchFilter(key=normalized_key, values=self._normalize_filter_values(normalized_key, value)))
+        return parsed
+
+    def _normalize_filter_values(self, key: str, raw_value: str) -> list[str]:
+        decoded_value = self._decode_filter_token(raw_value)
+        if key == "type":
+            if decoded_value not in _ALLOWED_NOTE_TYPES:
+                raise ValidationError("unsupported search type filter", code="validation_error")
+            return [decoded_value]
+        if key == "visibility":
+            if decoded_value not in _ALLOWED_VISIBILITY:
+                raise ValidationError("unsupported search visibility filter", code="validation_error")
+            return [decoded_value]
+        if key == "has_linked_question":
+            normalized = decoded_value.lower()
+            if normalized not in {"true", "false"}:
+                raise ValidationError("has_linked_question must be true or false", code="validation_error")
+            return [normalized]
+        if key == "tags":
+            normalized_tag = decoded_value.strip().lower()
+            if not normalized_tag:
+                raise ValidationError("tags filter cannot be blank", code="validation_error")
+            return [normalized_tag]
+        raise ValidationError("unsupported search filter", code="validation_error")
+
+    @staticmethod
+    def _render_filter_expression(*, user_id: int, filters: list[_SearchFilter]) -> str:
+        expressions = [f"user_id = {user_id}"]
+        for item in filters:
+            if item.key == "type":
+                expressions.append(f"type = {json.dumps(item.values[0], ensure_ascii=False)}")
+                continue
+            if item.key == "visibility":
+                expressions.append(f"visibility = {json.dumps(item.values[0], ensure_ascii=False)}")
+                continue
+            if item.key == "has_linked_question":
+                expressions.append(f"has_linked_question = {item.values[0]}")
+                continue
+            if item.key == "tags":
+                tag_terms = [f"tags = {json.dumps(value, ensure_ascii=False)}" for value in item.values]
+                expressions.append(f"({' OR '.join(tag_terms)})")
+                continue
+        return " AND ".join(expressions)
