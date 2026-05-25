@@ -2,15 +2,18 @@ from __future__ import annotations
 
 from sqlalchemy import select
 from sqlalchemy.orm import Session
+from sqlalchemy.orm.attributes import flag_modified
 
 from sikao_api.db.enums_v2 import ReviewSourceKind
 from sikao_api.db.models_v2 import PracticeSessionAnswerV2, PracticeSessionV2, ReviewItemV2
+from sikao_api.modules.review.application.debt_hard_question import maybe_mark_hard_from_thresholds
 from sikao_api.modules.review.application.queue_items import (
     create_review_item,
     load_questions_by_id,
     upsert_wrong_answer_review_item,
     utc_now,
 )
+from sikao_api.modules.review.application.srs_types import coerce_int, ensure_metadata
 from sikao_api.modules.system.application.errors import NotFoundError
 
 
@@ -83,6 +86,18 @@ def run_review_submit_hooks(
         )
         if existing is not None:
             continue
+        anchor_metadata = dict(ensure_metadata(anchor))
+        re_fail_count = coerce_int(anchor_metadata.get("re_fail_count"), default=0) + 1
+        anchor_metadata["re_fail_count"] = re_fail_count
+        anchor.metadata_json = anchor_metadata
+        flag_modified(anchor, "metadata_json")
+        session.add(anchor)
+        if re_fail_count >= 3:
+            maybe_mark_hard_from_thresholds(
+                session,
+                item=anchor,
+                trigger_condition="re_fail_threshold",
+            )
         create_review_item(
             session,
             user_id=user_id,

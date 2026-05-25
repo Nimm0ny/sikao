@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from sikao_api.db.enums_v2 import ReviewAttemptOutcome, ReviewItemStatus, ReviewSourceKind
 from sikao_api.db.models_v2 import ReviewItemV2
+from sikao_api.modules.review.application.debt_hard_question import build_hard_cleared_attempt
 from sikao_api.modules.review.application.srs_constants import (
     GRADUATION_THRESHOLD,
     PROBATION_DURATION_DAYS,
@@ -56,19 +57,27 @@ def execute_probation_check(
         metadata["graduated_at"] = utc_now().isoformat()
         metadata["probation_passed"] = True
         bump_version(item)
+        attempts = [
+            AttemptEvent(
+                outcome=ReviewAttemptOutcome.GRADUATED.value,
+                notes_json={
+                    "viaProbation": True,
+                    "probationAttempts": metadata["probation_attempts"],
+                },
+            )
+        ]
+        hard_cleared = build_hard_cleared_attempt(
+            item,
+            cleared_by="auto_4_correct_streak",
+            user_tz="Asia/Shanghai",
+        )
+        if hard_cleared is not None:
+            attempts.append(hard_cleared)
         return ProbationCheckResult(
             passed=True,
             new_status=item.status,
             next_review_at=item.next_review_at,
-            attempts=[
-                AttemptEvent(
-                    outcome=ReviewAttemptOutcome.GRADUATED.value,
-                    notes_json={
-                        "viaProbation": True,
-                        "probationAttempts": metadata["probation_attempts"],
-                    },
-                )
-            ],
+            attempts=attempts,
         )
 
     item.next_review_at = None
