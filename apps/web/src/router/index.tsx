@@ -17,6 +17,7 @@ import { Me } from '../views/Me';
 import { QuestionHub } from '../views/QuestionHub';
 import { Review } from '../views/Review';
 import { ProfileLearning } from '../views/ProfileLearning';
+import { ProfileRecords } from '../views/ProfileRecords';
 import { AuthGuard } from './AuthGuard';
 import { BootCard } from './BootCard';
 
@@ -50,6 +51,7 @@ export const router = createBrowserRouter([
           { path: 'practice/mock-exam/:sessionId/comparison', element: <MockExamComparisonView /> },
           { path: 'profile/practice-preferences', element: <PracticePreferences /> },
           { path: 'profile/learning', element: <ProfileLearning /> },
+          { path: 'profile/records', element: <ProfileRecords /> },
           ...LEGACY_REDIRECTS.map(({ from, to }) => ({
             path: from,
             element: <Navigate to={to} replace />,

@@ -1,0 +1,90 @@
+/*
+ * ProfileRecords — /profile/records page styles.
+ * Why: Header + FilterBar + RecordList + Pagination layout. Record
+ *      rows are dense list items keyed by kind (xingce / shenlun /
+ *      mock-exam / weekly-review).
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  width: 100%;
+  min-width: 0;
+}
+
+.filterBar {
+  display: flex;
+  gap: var(--space-3);
+  align-items: flex-end;
+  flex-wrap: wrap;
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  padding: var(--space-3) var(--space-4);
+}
+
+.filterField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  overflow: hidden;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: auto 1fr auto auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  text-decoration: none;
+  color: inherit;
+}
+
+.row:last-child { border-bottom: 0; }
+
+.title {
+  font-size: var(--font-body);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.meta {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+  white-space: nowrap;
+}
+
+.score {
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-semibold);
+  min-width: 48px;
+  text-align: right;
+}
+
+.stateWrap { padding: var(--space-5) var(--space-4); }
+
+.paginationRow {
+  display: flex;
+  justify-content: center;
+  padding: var(--space-3) 0;
+}
