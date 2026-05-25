@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 from sqlalchemy.orm import Session
 
+from sikao_api.core.schemas import encode_datetime
 from sikao_api.db.models_v2 import UserV2
 from sikao_api.modules.notes_v2.domain.tiptap_converter import json_to_html, json_to_markdown
 from sikao_api.modules.notes_v2.infrastructure.repos import NotesRepoV2
@@ -41,7 +42,7 @@ class NoteExportServiceV2:
                     "---",
                     f"title: {json.dumps(note.title, ensure_ascii=False)}",
                     f"tags: {json.dumps(tags, ensure_ascii=False)}",
-                    f"created_at: {json.dumps(note.created_at.isoformat(), ensure_ascii=False)}",
+                    f"created_at: {json.dumps(encode_datetime(note.created_at), ensure_ascii=False)}",
                     "---",
                     "",
                 ]
