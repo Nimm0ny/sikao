@@ -86,3 +86,71 @@ class InMemoryNotesSearchClient:
         lowered = query.lower()
         haystacks = [document.title.lower(), document.body_text.lower(), " ".join(document.tags).lower()]
         return any(lowered in haystack for haystack in haystacks)
+
+    @staticmethod
+    def _matches_filters(document: NoteSearchDocument, filter_expression: str) -> bool:
+        for segment in InMemoryNotesSearchClient._split_top_level(filter_expression, separator=" AND "):
+            clause = segment.strip()
+            if clause.startswith("user_id = "):
+                if document.user_id != int(clause.removeprefix("user_id = ").strip()):
+                    return False
+                continue
+            if clause.startswith("type = "):
+                if document.type != InMemoryNotesSearchClient._decode_literal(clause.removeprefix("type = ").strip()):
+                    return False
+                continue
+            if clause.startswith("visibility = "):
+                if document.visibility != InMemoryNotesSearchClient._decode_literal(
+                    clause.removeprefix("visibility = ").strip()
+                ):
+                    return False
+                continue
+            if clause.startswith("has_linked_question = "):
+                expected = clause.removeprefix("has_linked_question = ").strip() == "true"
+                if document.has_linked_question != expected:
+                    return False
+                continue
+            if clause.startswith("(") and clause.endswith(")"):
+                inner = clause[1:-1].strip()
+                if inner.startswith("tags = "):
+                    tag = InMemoryNotesSearchClient._decode_literal(inner.removeprefix("tags = ").strip())
+                    if tag not in document.tags:
+                        return False
+                    continue
+            raise AssertionError(f"unsupported filter clause in test double: {clause}")
+        return True
+
+    @staticmethod
+    def _count_type_facets(documents: list[NoteSearchDocument]) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for document in documents:
+            counts[document.type] = counts.get(document.type, 0) + 1
+        return counts
+
+    @staticmethod
+    def _count_tag_facets(documents: list[NoteSearchDocument]) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        for document in documents:
+            for tag in document.tags:
+                counts[tag] = counts.get(tag, 0) + 1
+        return counts
+
+    @staticmethod
+    def _to_hit(document: NoteSearchDocument, query: str) -> NoteSearchHit:
+        return NoteSearchHit(
+            id=document.id,
+            title=document.title,
+            body_text=document.body_text,
+            tags=list(document.tags),
+            type=document.type,
+            visibility=document.visibility,
+            linked_question_id=document.linked_question_id,
+            updated_at=document.updated_at,
+            formatted_title=InMemoryNotesSearchClient._highlight(document.title, query),
+            formatted_body_text=InMemoryNotesSearchClient._highlight(document.body_text, query),
+        )
+
+    @staticmethod
+    def _highlight(value: str, query: str) -> str:
+        pattern = re.compile(re.escape(query), re.IGNORECASE)
+        return pattern.sub(lambda match: f"<em>{match.group(0)}</em>", value, count=1)
