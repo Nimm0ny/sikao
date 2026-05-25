@@ -4944,6 +4944,17 @@
             "title": "Entrykind",
             "type": "string"
           },
+          "essaySubmissionId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Essaysubmissionid"
+          },
           "examMode": {
             "default": false,
             "title": "Exammode",
@@ -5114,6 +5125,17 @@
             "title": "Answerkind",
             "type": "string"
           },
+          "answerText": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Answertext"
+          },
           "flagged": {
             "default": false,
             "title": "Flagged",
@@ -5150,6 +5172,13 @@
           "questionKey": {
             "title": "Questionkey",
             "type": "string"
+          },
+          "selectedAnswerKeys": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Selectedanswerkeys",
+            "type": "array"
           },
           "status": {
             "title": "Status",
@@ -7755,6 +7784,36 @@
         "title": "ReviewBatchActionResultV2",
         "type": "object"
       },
+      "ReviewCauseFrequencyV2": {
+        "properties": {
+          "count": {
+            "title": "Count",
+            "type": "integer"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "severityDistribution": {
+            "additionalProperties": {
+              "type": "integer"
+            },
+            "title": "Severitydistribution",
+            "type": "object"
+          },
+          "slug": {
+            "title": "Slug",
+            "type": "string"
+          }
+        },
+        "required": [
+          "slug",
+          "name",
+          "count"
+        ],
+        "title": "ReviewCauseFrequencyV2",
+        "type": "object"
+      },
       "ReviewDetailResponseV2": {
         "properties": {
           "actions": {
@@ -7796,6 +7855,74 @@
           "actions"
         ],
         "title": "ReviewDetailResponseV2",
+        "type": "object"
+      },
+      "ReviewInsightsCausesResponseV2": {
+        "properties": {
+          "causes": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewCauseFrequencyV2"
+            },
+            "title": "Causes",
+            "type": "array"
+          }
+        },
+        "title": "ReviewInsightsCausesResponseV2",
+        "type": "object"
+      },
+      "ReviewInsightsDayPointV2": {
+        "properties": {
+          "date": {
+            "format": "date",
+            "title": "Date",
+            "type": "string"
+          },
+          "graduated": {
+            "title": "Graduated",
+            "type": "integer"
+          },
+          "netAccumulation": {
+            "title": "Netaccumulation",
+            "type": "integer"
+          },
+          "newIncorrect": {
+            "title": "Newincorrect",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "date",
+          "newIncorrect",
+          "graduated",
+          "netAccumulation"
+        ],
+        "title": "ReviewInsightsDayPointV2",
+        "type": "object"
+      },
+      "ReviewInsightsRedoAccuracyResponseV2": {
+        "properties": {
+          "weeks": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewWeekAccuracyPointV2"
+            },
+            "title": "Weeks",
+            "type": "array"
+          }
+        },
+        "title": "ReviewInsightsRedoAccuracyResponseV2",
+        "type": "object"
+      },
+      "ReviewInsightsTrendsResponseV2": {
+        "properties": {
+          "days": {
+            "items": {
+              "$ref": "#/components/schemas/ReviewInsightsDayPointV2"
+            },
+            "title": "Days",
+            "type": "array"
+          }
+        },
+        "title": "ReviewInsightsTrendsResponseV2",
         "type": "object"
       },
       "ReviewItemBatchActionV2": {
@@ -7962,6 +8089,189 @@
           "pageSize"
         ],
         "title": "ReviewListResponseV2",
+        "type": "object"
+      },
+      "ReviewWeekAccuracyPointV2": {
+        "properties": {
+          "accuracyPct": {
+            "title": "Accuracypct",
+            "type": "number"
+          },
+          "correctCount": {
+            "title": "Correctcount",
+            "type": "integer"
+          },
+          "totalAttempts": {
+            "title": "Totalattempts",
+            "type": "integer"
+          },
+          "week": {
+            "title": "Week",
+            "type": "string"
+          }
+        },
+        "required": [
+          "week",
+          "totalAttempts",
+          "correctCount",
+          "accuracyPct"
+        ],
+        "title": "ReviewWeekAccuracyPointV2",
+        "type": "object"
+      },
+      "ReviewWeeklyConcernHighlightV2": {
+        "properties": {
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "slug": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Slug"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "summary"
+        ],
+        "title": "ReviewWeeklyConcernHighlightV2",
+        "type": "object"
+      },
+      "ReviewWeeklyProgressHighlightV2": {
+        "properties": {
+          "fromConfidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Fromconfidence"
+          },
+          "questionId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Questionid"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "toConfidence": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Toconfidence"
+          }
+        },
+        "required": [
+          "title",
+          "summary"
+        ],
+        "title": "ReviewWeeklyProgressHighlightV2",
+        "type": "object"
+      },
+      "ReviewWeeklySummaryResponseV2": {
+        "properties": {
+          "biggestConcern": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewWeeklyConcernHighlightV2"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "biggestProgress": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ReviewWeeklyProgressHighlightV2"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "generatedNoteId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Generatednoteid"
+          },
+          "itemsReviewed": {
+            "title": "Itemsreviewed",
+            "type": "integer"
+          },
+          "newGraduatedCount": {
+            "title": "Newgraduatedcount",
+            "type": "integer"
+          },
+          "newNotesCount": {
+            "title": "Newnotescount",
+            "type": "integer"
+          },
+          "nextWeekFocus": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Nextweekfocus"
+          },
+          "redoAccuracyPct": {
+            "title": "Redoaccuracypct",
+            "type": "number"
+          },
+          "week": {
+            "title": "Week",
+            "type": "string"
+          }
+        },
+        "required": [
+          "week",
+          "itemsReviewed",
+          "redoAccuracyPct",
+          "newNotesCount",
+          "newGraduatedCount"
+        ],
+        "title": "ReviewWeeklySummaryResponseV2",
         "type": "object"
       },
       "SectionCardV2": {
@@ -16069,6 +16379,84 @@
         ]
       }
     },
+    "/api/v2/review/insights/causes": {
+      "get": {
+        "operationId": "get_review_insights_causes_api_v2_review_insights_causes_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewInsightsCausesResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Review Insights Causes",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/insights/redo-accuracy": {
+      "get": {
+        "operationId": "get_review_insights_redo_accuracy_api_v2_review_insights_redo_accuracy_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewInsightsRedoAccuracyResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Review Insights Redo Accuracy",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/insights/trends": {
+      "get": {
+        "operationId": "get_review_insights_trends_api_v2_review_insights_trends_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewInsightsTrendsResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Review Insights Trends",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
     "/api/v2/review/items": {
       "get": {
         "operationId": "list_review_items_api_v2_review_items_get",
@@ -16671,6 +17059,60 @@
           }
         ],
         "summary": "Get Smart Review",
+        "tags": [
+          "review-v2"
+        ]
+      }
+    },
+    "/api/v2/review/weekly-summary": {
+      "get": {
+        "operationId": "get_weekly_summary_api_v2_review_weekly_summary_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "week",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Week"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReviewWeeklySummaryResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Get Weekly Summary",
         "tags": [
           "review-v2"
         ]

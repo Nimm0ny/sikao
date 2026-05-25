@@ -4144,8 +4144,6 @@ export interface components {
              * @default 0
              */
             answerChangeCount: number;
-            /** Answertext */
-            answerText?: string | null;
             /** Answerkind */
             answerKind: string;
             /**
@@ -4179,8 +4177,6 @@ export interface components {
             prompt: string;
             /** Questionkey */
             questionKey: string;
-            /** Selectedanswerkeys */
-            selectedAnswerKeys: string[];
             /** Status */
             status: string;
             /**
