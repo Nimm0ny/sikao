@@ -2,6 +2,15 @@
  * Rail — V5 D.3.32 layout (skeleton).
  * Why: width transitions between --rail-w-collapsed/expanded; data-collapsed
  *      is the test-stable contract. bg=--color-bg-app per §C.4.3.
+ *
+ * SIK-121 W2: visual alignment with prototype `.tmp_review/home-frame.html`.
+ *   - H06/H07: toggle moved to .brand row trailing (expanded only).
+ *   - H08:     active nav item carries a ::before 3×24px indicator bar.
+ *   - H09:     active background switches from --color-brand-soft (drift)
+ *              to --color-bg-sunken (matches prototype line 109).
+ *   - H10:     .navSection "导航" 10px uppercase visible expanded only.
+ *   - Tooltip: brand / nav / me share one [data-tip]::after pattern; the
+ *              React <Tooltip> overlay is gone from this layer.
  */
 .rail {
   position: sticky;
@@ -22,8 +31,7 @@
 .rail[data-collapsed] { width: var(--rail-w-collapsed); align-items: center; }
 @media (max-width: 767.98px) { .rail { display: none; } }
 
-.brand,
-.brandButton {
+.brand {
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -32,13 +40,45 @@
   font-size: var(--font-card);
   line-height: var(--line-height-card);
   color: var(--color-text-primary);
+  position: relative;
+}
+.brandContent {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 1 1 auto;
+  min-width: 0;
 }
 .brandButton {
-  border: none; background: transparent; cursor: pointer;
-  text-align: left; border-radius: var(--radius-10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-2);
+  font-size: var(--font-card);
+  line-height: var(--line-height-card);
+  color: var(--color-text-primary);
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  border-radius: var(--radius-10);
+  position: relative;
 }
 
 .cmd { display: flex; flex-direction: column; width: 100%; }
+
+.navSection {
+  /* H10: prototype home-frame.html:101-102 — section heading 10px uppercase
+   * letter-spacing .08em, color text-meta. Hidden in collapsed state. */
+  width: 100%;
+  padding: var(--space-3) var(--space-2) var(--space-1);
+  font-size: 10px;
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-meta);
+}
+.rail[data-collapsed] .navSection { display: none; }
 
 .navList {
   list-style: none; margin: 0; padding: 0;
@@ -63,23 +103,85 @@
   font-size: var(--font-body);
   line-height: var(--line-height-body);
   box-sizing: border-box;
+  position: relative;
 }
 .navItem[data-collapsed] { justify-content: center; padding: 0; width: var(--row-h-md); }
-.navItem[data-active] { background: var(--color-brand-soft); color: var(--color-text-primary); }
+.navItem[data-active] {
+  background: var(--color-bg-sunken);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+/* H08: 3×24px black indicator bar on the active nav item, 12px to the left
+ * of the row body (mirrors prototype home-frame.html:110-112). */
+.navItem[data-active]::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 8px;
+  width: 3px;
+  height: 24px;
+  border-radius: var(--radius-2);
+  background: var(--color-text-primary);
+}
 
 .navIcon { display: inline-flex; width: 18px; height: 18px; flex: 0 0 auto; }
 .navLabel { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.me { display: flex; width: 100%; padding-top: var(--space-2); border-top: 1px solid var(--color-border-subtle); }
+.me { display: flex; width: 100%; padding-top: var(--space-2); border-top: 1px solid var(--color-border-subtle); margin-top: auto; }
 
 .toggle {
-  align-self: flex-end;
+  margin-left: auto;
   border: none; background: transparent;
   color: var(--color-text-secondary);
   cursor: pointer;
   width: 32px; height: 32px;
   display: inline-flex; align-items: center; justify-content: center;
   border-radius: var(--radius-10);
+  flex: 0 0 auto;
+}
+
+/* Tooltip — pure CSS [data-tip]::after, mirrors prototype
+ * home-frame.html:127-138 .rail-btn[data-tip]::after pattern. Only renders
+ * in the collapsed state; expanded keeps text inline. brandButton +
+ * navItem share the same contract; .meLink owns its own ::after inside
+ * RootLayout.module.css (W1 owner). */
+.brandButton[data-tip],
+.navItem[data-tip] {
+  position: relative;
+}
+
+.brandButton[data-tip]::after,
+.navItem[data-tip]::after {
+  content: attr(data-tip);
+  position: absolute;
+  left: calc(100% + var(--space-3));
+  top: 50%;
+  transform: translateY(-50%);
+  background: var(--color-text-primary);
+  color: var(--color-bg-surface);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-10);
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity var(--dur-fast) var(--ease-out) 0.4s;
+  z-index: var(--z-popover);
+  display: none;
+}
+
+.rail[data-collapsed] .brandButton[data-tip]::after,
+.rail[data-collapsed] .navItem[data-tip]::after {
+  display: block;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover-gated tooltip reveal (matches prototype). */
+  .rail[data-collapsed] .brandButton:hover[data-tip]::after,
+  .rail[data-collapsed] .navItem:hover[data-tip]::after {
+    opacity: 1;
+  }
 }
 
 /* Hover affordances are guarded by (hover: hover) so coarse-pointer / touch

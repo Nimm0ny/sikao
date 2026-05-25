@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { MouseEvent, ReactElement, ReactNode } from 'react';
-import { Tooltip } from '../../overlay/Tooltip';
+import { SpriteIcon } from '../../atom/SpriteIcon';
 import { KeyboardShortcuts } from '../../system/KeyboardShortcuts';
 import type { ShortcutEntry } from '../../system/KeyboardShortcuts';
 import styles from './Rail.module.css';
@@ -15,11 +15,13 @@ import styles from './Rail.module.css';
  *      <KeyboardShortcuts> registered inside the rail (not a global window
  *      listener — keeps cleanup tied to mount lifecycle).
  *
- *      Visual: width transition between --rail-w-collapsed / --rail-w-expanded;
- *      icon-only nav rows in collapsed state pair a <Tooltip> for label
- *      access (§D.3.35 icon-only contract). Mobile (<768) hides the rail
- *      via @media — AppShell additionally drops the slot from the tree, so
- *      this @media is a defense-in-depth.
+ *      SIK-121 W2: visual alignment with prototype `.tmp_review/home-frame.html`.
+ *      H06 toggle button consumes sprite `rail-toggle`; H07 toggle sits inside
+ *      the brand row trailing (expanded only); H10 renders "导航" section
+ *      heading; Tooltip mode unified across brand / nav / me onto the pure
+ *      CSS [data-tip]::after pattern (no React <Tooltip> overlay), matching
+ *      W1 RailMe so all 3 collapsed-state tooltips share one CSS contract.
+ *      See docs/plan/sik-rail-v5-visual-contract.md §6 H05–H10.
  */
 
 const STORAGE_KEY = 'v5-rail-collapsed';
@@ -79,14 +81,6 @@ function persistCollapsed(next: boolean): void {
   }
 }
 
-function IconRailToggle() {
-  return (
-    <svg width="16" height="16" viewBox="0 0 16 16" focusable="false" aria-hidden="true">
-      <path d="M2 3h12M2 8h12M2 13h12" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 interface RailToggleButtonProps {
   readonly onClick: () => void;
   readonly label: string;
@@ -100,7 +94,7 @@ export function RailToggleButton({ onClick, label }: RailToggleButtonProps) {
       aria-label={label}
       onClick={onClick}
     >
-      <IconRailToggle />
+      <SpriteIcon id="rail-toggle" size={16} />
     </button>
   );
 }
@@ -108,30 +102,42 @@ export function RailToggleButton({ onClick, label }: RailToggleButtonProps) {
 interface RailBrandProps {
   readonly children: ReactNode;
   readonly collapsed: boolean;
+  readonly onToggle: () => void;
   readonly onExpand: () => void;
 }
-export function RailBrand({ children, collapsed, onExpand }: RailBrandProps) {
+export function RailBrand({ children, collapsed, onToggle, onExpand }: RailBrandProps) {
   if (collapsed) {
     return (
-      <Tooltip content="展开侧栏" shortcut={['Ctrl', '\\']} side="right">
-        <button
-          type="button"
-          className={styles.brandButton}
-          aria-label="展开侧栏"
-          data-testid="rail-brand-collapsed"
-          onClick={onExpand}
-        >
-          {children}
-        </button>
-      </Tooltip>
+      <button
+        type="button"
+        className={styles.brandButton}
+        aria-label="展开侧栏"
+        data-testid="rail-brand-collapsed"
+        data-tip="展开侧栏 (Ctrl+\\)"
+        onClick={onExpand}
+      >
+        {children}
+      </button>
     );
   }
-  return <div className={styles.brand} data-testid="rail-brand">{children}</div>;
+  return (
+    <div className={styles.brand} data-testid="rail-brand">
+      <span className={styles.brandContent}>{children}</span>
+      <RailToggleButton onClick={onToggle} label="折叠侧栏" />
+    </div>
+  );
 }
 
 interface RailCmdProps { readonly children: ReactNode }
 export function RailCmd({ children }: RailCmdProps) {
   return <div className={styles.cmd}>{children}</div>;
+}
+
+interface RailNavSectionProps { readonly label: string }
+export function RailNavSection({ label }: RailNavSectionProps) {
+  // H10: section heading "导航" visible only in expanded state. Collapsed
+  // state hides via :root[data-rail="collapsed"] override in the CSS module.
+  return <div className={styles.navSection}>{label}</div>;
 }
 
 interface RailNavProps {
@@ -160,25 +166,21 @@ export function RailNav({ items, collapsed }: RailNavProps) {
               item.onClick!(event);
             }
           : undefined;
-        const row = (
-          <a
-            href={item.href}
-            className={styles.navItem}
-            data-active={item.active || undefined}
-            data-collapsed={collapsed || undefined}
-            aria-label={collapsed ? item.label : undefined}
-            aria-current={item.active ? 'page' : undefined}
-            onClick={handleClick}
-          >
-            <span className={styles.navIcon} aria-hidden="true">{item.icon}</span>
-            {!collapsed ? <span className={styles.navLabel}>{item.label}</span> : null}
-          </a>
-        );
         return (
           <li key={item.id} className={styles.navRow}>
-            {collapsed ? (
-              <Tooltip content={item.label} side="right">{row}</Tooltip>
-            ) : row}
+            <a
+              href={item.href}
+              className={styles.navItem}
+              data-active={item.active || undefined}
+              data-collapsed={collapsed || undefined}
+              data-tip={item.label}
+              aria-label={collapsed ? item.label : undefined}
+              aria-current={item.active ? 'page' : undefined}
+              onClick={handleClick}
+            >
+              <span className={styles.navIcon} aria-hidden="true">{item.icon}</span>
+              {!collapsed ? <span className={styles.navLabel}>{item.label}</span> : null}
+            </a>
           </li>
         );
       })}
@@ -235,13 +237,17 @@ export function Rail({ brand, cmd, navItems, me, collapsed, onCollapseChange }: 
       data-testid="rail"
     >
       <KeyboardShortcuts shortcuts={shortcuts} />
-      <RailBrand collapsed={effectiveCollapsed} onExpand={() => setCollapsed(false)}>{brand}</RailBrand>
+      <RailBrand
+        collapsed={effectiveCollapsed}
+        onToggle={toggle}
+        onExpand={() => setCollapsed(false)}
+      >
+        {brand}
+      </RailBrand>
       {cmd !== undefined ? <RailCmd>{cmd}</RailCmd> : null}
+      <RailNavSection label="导航" />
       <RailNav items={navItems} collapsed={effectiveCollapsed} />
       <RailMe>{me}</RailMe>
-      {!effectiveCollapsed ? (
-        <RailToggleButton onClick={toggle} label="折叠侧栏" />
-      ) : null}
     </aside>
   );
 }
