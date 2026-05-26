@@ -57,6 +57,17 @@
   - invalid `week` now returns `422`
   - weekly route still emits true SSE chunks
 
+## Final Re-review
+
+- Result: `No blocking findings`
+- Final focus:
+  - weekly different-key concurrency is protected at the service layer
+  - weekly cache now tracks latest generation only
+  - ai_summary confirm keeps row-lock protection
+  - shared quota uses UTC+8 day boundaries
+  - invalid `week` stays `422`
+  - weekly SSE still yields real chunks
+
 ## Validation Evidence Reviewed
 
 - `ruff` on touched runtime / test files: PASS
