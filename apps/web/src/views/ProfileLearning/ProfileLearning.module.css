@@ -32,20 +32,6 @@
   grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
 }
 
-.placeholder {
-  background: var(--color-bg-elevated);
-  border: 1px dashed var(--color-border-default);
-  border-radius: var(--card-radius);
-  padding: var(--space-5);
-  text-align: center;
-  color: var(--color-text-meta);
-  font-size: var(--font-meta);
-  min-height: 240px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
 @media (max-width: 1023.98px) {
   .row2col[data-ratio='trend'],
   .row2col[data-ratio='tree'] {

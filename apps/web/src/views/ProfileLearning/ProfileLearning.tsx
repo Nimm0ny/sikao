@@ -11,6 +11,8 @@ import { EmptyState } from '../../components/atom/EmptyState';
 import { SubNav } from '../Me/SubNav';
 import { RangeBar, type RangeKey } from './RangeBar';
 import { KpiRow } from './KpiRow';
+import { KnowledgeTree } from './KnowledgeTree';
+import { Heatmap } from './Heatmap';
 import styles from './ProfileLearning.module.css';
 
 // recharts-backed sections lazy-loaded so the Home route doesn't pay the
@@ -118,10 +120,10 @@ function Body({ query, range }: BodyProps) {
           </Suspense>
         }
       />
-      {/* KnowledgeTree + Heatmap land in W3. Skeleton placeholder for now. */}
+      {/* KnowledgeTree + Heatmap (W3). */}
       <Row2Col ratio="tree"
-        left={<div className={styles.placeholder} data-testid="profile-learning-tree-placeholder">知识树（W3 落实）</div>}
-        right={<div className={styles.placeholder} data-testid="profile-learning-heatmap-placeholder">热力图（W3 落实）</div>}
+        left={<KnowledgeTree />}
+        right={<Heatmap />}
       />
     </section>
   );
