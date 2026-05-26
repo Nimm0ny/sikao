@@ -221,12 +221,12 @@ Community P1:   PATCH /notes/{id}/visibility, GET /notes/community
 
 | Identifier | Milestone | Focus | Depends on | Status | Gate |
 |---|---|---|---|---|---|
-| `SIK-46` | `M0` | Notes docs-only intake 与 SSOT 锁定 | none | `in_progress` | docs-only scoped validation + independent subagent review |
-| `SIK-47` | `M1` | `WU-N1` Notes CRUD + NoteV2 schema 扩展 | `SIK-46`, Phase-Home `WU-B1` | `backlog` | backend schema + CRUD gate |
-| `SIK-48` | `M2` | `WU-N2 + WU-N4 + WU-N7` Tags / Image Upload / Export | `SIK-47` | `backlog` | tags / upload / export gate |
-| `SIK-49` | `M3` | `WU-N3` Meilisearch 集成 | `SIK-47` | `backlog` | search index + user isolation gate |
-| `SIK-50` | `M4` | `WU-N5 + WU-N6` Weekly Review + AI Summary | `SIK-47`, Phase-Home `WU-B7 / WU-B8`, Phase-Review `WU-R2 / WU-R7` | `backlog` | LLM + quota + parser gate |
-| `SIK-51` | `M5` | `WU-N8` Community Notes P1 | `SIK-47`, `SIK-49` | `backlog` | visibility + community feed gate |
+| `SIK-46` | `M0` | Notes docs-only intake 与 SSOT 锁定 | none | `done` | docs-only scoped validation + independent subagent review |
+| `SIK-47` | `M1` | `WU-N1` Notes CRUD + NoteV2 schema 扩展 | `SIK-46`, Phase-Home `WU-B1` | `done` | backend schema + CRUD gate |
+| `SIK-48` | `M2` | `WU-N2 + WU-N4 + WU-N7` Tags / Image Upload / Export | `SIK-47` | `done` | tags / upload / export gate |
+| `SIK-49` | `M3` | `WU-N3` Meilisearch 集成 | `SIK-47` | `done` | search index + user isolation gate |
+| `SIK-50` | `M4` | `WU-N5 + WU-N6` Weekly Review + AI Summary | `SIK-47`, Phase-Home `WU-B7 / WU-B8`, Phase-Review `WU-R2 / WU-R7` | `done` | LLM + quota + parser gate |
+| `SIK-51` | `M5` | `WU-N8` Community Notes P1 | `SIK-47`, `SIK-49` | `done` | visibility + community feed gate |
 | `SIK-52` | `M6` | Backend e2e + OpenAPI 锁定 + audit + cron 注册 | `SIK-48`, `SIK-49`, `SIK-50`, `SIK-51` | `backlog` | final backend gate |
 | `SIK-53` | `M7` | `WU-FN1 + WU-FN4` Route + TipTap 全屏脱壳编辑器 | `SIK-52`, `FE-SSOT-v2` | `backlog` | frontend gate locked; must not enter `in_progress` |
 | `SIK-54` | `M8` | `WU-FN2 + WU-FN3` Notes 主视图 + 筛选系统 | `SIK-53` | `backlog` | frontend gate locked; must not enter `in_progress` |
