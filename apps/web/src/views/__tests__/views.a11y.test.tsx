@@ -14,6 +14,7 @@ import { QuestionHub } from '../QuestionHub';
 import { PracticeSession } from '../PracticeSession';
 import { Review } from '../Review';
 import { SessionResult } from '../SessionResult';
+import { ProfileRecords } from '../ProfileRecords';
 import { RootLayout } from '../../layouts/RootLayout';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import type { ReactElement } from 'react';
@@ -214,6 +215,44 @@ describe('Phase 4 a11y baseline (task 18 checkpoint)', () => {
 
   it('Review view passes axe wcag2aa', async () => {
     const { container } = renderInRouter(<Review />, '/review');
+    const results = await runAxe(container);
+    expect(results.violations, formatViolations(results.violations)).toEqual([]);
+  });
+
+  it('ProfileRecords view passes axe wcag2aa (SIK-93 timeline rewrite)', async () => {
+    server.use(
+      http.get('/api/v2/profile/records', () =>
+        HttpResponse.json({
+          items: [
+            {
+              id: 'practice-6001',
+              kind: 'xingce_practice',
+              title: 'Xingce practice',
+              occurredAt: '2026-05-23T10:42:00Z',
+              score: '76.5',
+              status: 'completed',
+              href: '/practice/sessions/6001/result',
+            },
+            {
+              id: 'essay-submission-9',
+              kind: 'essay_submission',
+              title: 'Essay submission',
+              occurredAt: '2026-05-22T21:08:00Z',
+              score: '38',
+              status: 'completed',
+              href: '/practice/essay/submissions/9/result',
+            },
+          ],
+          page: 1,
+          pageSize: 20,
+          total: 2,
+        }),
+      ),
+    );
+    const { container } = renderWithProviders(<ProfileRecords />, {
+      initialEntries: ['/profile/records'],
+    });
+    await screen.findByTestId('profile-records-row-practice-6001');
     const results = await runAxe(container);
     expect(results.violations, formatViolations(results.violations)).toEqual([]);
   });
