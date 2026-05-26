@@ -2,7 +2,7 @@
 type: visual-contract
 status: active
 owner: lhr
-last-reviewed: 2026-05-25
+last-reviewed: 2026-05-26
 issue: SIK-Rail-v5
 multica-issue: SIK-121
 parent-multica-issue: SIK-112
@@ -231,8 +231,11 @@ Rail 自身不接 query，没有 loading / error 状态。但本契约要求：
 | `.rail-cmd` 折叠态 | 原型行 121–123：`width: 32px; height: 32px; align-self: center` | 同 | - | no drift |
 | Ctrl/Cmd+\\ 快捷键 | 原型 demo 中由 iframe postMessage 模拟；生产用 `KeyboardShortcuts.register` | 生产实现 | 原型是 demo 不是生产 spec | no drift |
 | icon 实现 | 原型 inline `<svg>` 元素 | 用 `<SpriteIcon id="nav-home" />` 等 | sprite 系统已落地，直接复用；id 列表在 §2.3 表中 | no drift |
+| brand mark 形态（W2.5 修复）| 原型行 107–113：`.mark` 28×28 ink 底 + 白色 `S` 字符 grid place | W1/W2 误用 `.brandDot` 12×12 黄色品牌色圆点；W2.5 改为 inline JSX `<BrandMark>` 28×28 ink 底圆角 + 白「田」+ 白圆点（与 `apps/web/public/favicon.svg` 同源 element/preview/logo.html SSOT）| 原型 mark 用字符 `S`，favicon SSOT 用「田」+ 圆点（"思考"语义）；二者均为 ink 底 28×28 圆角，本仓选 favicon SSOT 与品牌字「思考」一致 | 2026-05-26 |
+| brand wordmark 折叠态（W2.5 修复）| 原型行 230：`:root[data-rail='collapsed'] .rail-brand .name { display: none }` | W1/W2 漏写折叠态 hide rule，`brandWord` 在 80px 折叠态仍渲染并被挤压 | bug, not drift; W2.5 补 `:root[data-rail='collapsed'] .brandWord { display: none }` | 2026-05-26 |
+| Rail 行高梯队（W2.5 修复）| 原型 brand 36 / cmd 32 / nav 38 / me 44 px | W1/W2 用 `--row-h-md` 52px 给 navItem 折叠/展开态，brand/me 自适应 → 行高参差 | 用 V5 token `--row-h-sm` (40px) 拉齐 brand + nav + me 三段，cmd 保持 32；与原型 38 差 2px 不可感知，比原型梯队更内聚 | 2026-05-26 |
 
-> 「nav 项数 5→4」+「Me 入口去重」+「768–1023 BurgerDrawer hook」是 lhr 2026-05-25 拍板的 3 条主漂移；其余 6 条为 token 化 / 实现技术细节，无视觉感知差异。
+> 「nav 项数 5→4」+「Me 入口去重」+「768–1023 BurgerDrawer hook」是 lhr 2026-05-25 拍板的 3 条主漂移；「brand mark / wordmark / row-height」3 条是 W2.5 lhr 2026-05-26 修复的 carry-over bug（W1/W2 漏写折叠态 hide rule + 用错行高 token）；其余 6 条为 token 化 / 实现技术细节，无视觉感知差异。
 
 ## 6. Acceptance Hooks
 
@@ -251,6 +254,8 @@ Rail 自身不接 query，没有 loading / error 状态。但本契约要求：
 | H09 | active nav-btn 背景 = `--color-bg-sunken` | 109 | `Rail.module.css` `.navItem[data-active] { background: var(--color-bg-sunken) }`（**修当前 brand-soft 漂移**）| ☐ |
 | H10 | section heading "导航" 在展开态可见（10px uppercase letter-spacing .08em）；折叠态 `display: none` | 101–102, 120 | `Rail.tsx` 渲染 `<div className={styles.navSection}>导航</div>`；`Rail.module.css` `.navSection`（10px 600 uppercase）+ collapsed override | ☐ |
 | H11 | 768–1023 区间不渲染 collapsed 80px Rail；渲染 BurgerDrawer 占位（button + 空 drawer）| n/a（原型未含）| `AppShell.tsx` `useMediaQuery` 切支；`BurgerDrawer.tsx` 占位实现 | ☐ |
+| H12 | 折叠态 brand 行**仅**渲染 ink 底 28×28 BrandMark；`brandWord` `display: none`；整 brand button 触发展开 | 88–100, 230 | `RootLayout.tsx` `<BrandMark>` inline svg + `<span class={brandWord}>SIKAO</span>`；`RootLayout.module.css` `:root[data-rail='collapsed'] .brandWord { display: none }`；W1 误用 `.brandDot` 12×12 在 W2.5 修复为 favicon SSOT 28×28「田」+ 圆点 | ☐ |
+| H13 | Rail 折叠态各行宽高对齐：brand 40 / cmd 32 / nav 40 / me 40（用 `--row-h-sm` 拉齐 brand+nav+me）| 实现选项见 §5 Drift "Rail 行高梯队" | `Rail.module.css` `.navItem { min-height: var(--row-h-sm) }` + 折叠态 `width: var(--row-h-sm)`；`.brandButton { width/height: var(--row-h-sm) }`；`RootLayout.module.css` `:root[data-rail='collapsed'] .meLink { width: 40px; height: 40px }` | ☐ |
 
 附加自动化门禁（不在表格内但等同必须）：
 
@@ -305,6 +310,14 @@ Rail 自身不接 query，没有 loading / error 状态。但本契约要求：
   - **Tooltip 模式收尾**：把 `RailBrand` / `RailNav` 折叠态的 React `<Tooltip>` 全部退化为 `[data-tip]::after`（与 W1 RailMe 同模式），删除 `<Tooltip>` import。
   - 文件估 ≤ 8；行估 ≤ 350 净增（含 Tooltip 收尾 + 测试更新）。
   - 验收：同 W1 + `docs/reviews/sik-rail-v5-w2.md`。
+- **Wave 2.5 · brand mark + 折叠态 row-height 修复**（lhr 2026-05-26 触发，carry-over bug 收口）：
+  - `RootLayout.tsx`：brand 元素从 `.brandDot + brandWord` 改为 inline JSX `<BrandMark>` (28×28 ink 圆角 + 白「田」 6 stroke + 白圆点) + `<span className={brandWord}>SIKAO</span>`；颜色走 `var(--color-text-primary)` / `var(--color-bg-surface)` token，inline svg 不进 sprite 系统但 lint-icon-style 只扫 .svg 文件，不触线。**navItems 与 tabBarItems 数组完全不动**，仅改 `brand` ReactNode 内部结构。
+  - `RootLayout.module.css`：删 `.brandDot`；新增 `.brandMark` (width/height 28px + ink bg + radius-10 + grid place-items center)；新增 `:root[data-rail='collapsed'] .brandWord { display: none }`；`.meLink` 折叠态从 padding-only 改为 `width: var(--row-h-sm); height: var(--row-h-sm); padding: 0`。
+  - `Rail.module.css`：`.navItem { min-height: var(--row-h-sm) }`（52→40），`.navItem[data-collapsed] { width: var(--row-h-sm) }`（同步），`.brandButton { width: var(--row-h-sm); height: var(--row-h-sm) }`（折叠态 40×40 居中），`.brand` 行 `min-height: var(--row-h-sm)`。
+  - `RootLayout.test.tsx`：补「折叠态 brandWord display: none」「brand mark 渲染断言（含「田」6 line + 圆点）」。
+  - 文件估 ≤ 4；行估 ≤ 80 净增。
+  - 验收：typecheck + lint + vitest（保持 W1/W2 全绿）+ Chrome MCP smoke (1280 expanded/collapsed) + 本契约 §6 H12/H13 PASS。
+
 - **Wave 3 · 768–1023 BurgerDrawer hook**（占位）：
   - `packages/shared-utils/src/hooks/useMediaQuery.ts`（新建）：标准 `matchMedia` listener hook + SSR safe guard；如 `shared-utils` 已有同名 hook 则跳过新建（preflight 已确认仓库内 grep 无匹配，需新建）。
   - `AppShell.tsx`：`useMediaQuery('(min-width: 768px) and (max-width: 1023.98px)')` → 不渲染 Rail，渲染 `<BurgerDrawer />`。
