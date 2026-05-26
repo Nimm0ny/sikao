@@ -89,3 +89,6 @@ def test_notes_ai_summary_service_confirm_creates_and_replays_review_items(tmp_p
                 )
             )
             assert len(rows) == 1
+            cache_row = session.query(AiSummaryCacheV2).filter_by(note_id=note.id).one()
+            assert cache_row.confirmed_at is not None
+            assert cache_row.confirmed_at >= note.updated_at

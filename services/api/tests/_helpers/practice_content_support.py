@@ -85,7 +85,7 @@ def build_postgres_client(tmp_path: Path) -> Iterator[TestClient]:
     test_database = f"sikao_practice_content_{uuid4().hex[:8]}"
     database_url_obj = base_url.set(database=test_database)
     database_url = _render_url(database_url_obj)
-    admin_url = base_url.set(database="template1")
+    admin_url = base_url.set(database="postgres")
     admin_engine = create_engine(admin_url, isolation_level="AUTOCOMMIT")
     with admin_engine.begin() as connection:
         connection.execute(text(f'DROP DATABASE IF EXISTS "{test_database}"'))
