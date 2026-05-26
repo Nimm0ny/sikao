@@ -1,0 +1,50 @@
+/*
+ * RecordsFoot — timeline footer styles.
+ * Why: sik-fu-c §2.4 — 44px tall row pinned to bottom of records-wrap;
+ *      status text on the left, "加载更早 ↓" btn on the right.
+ *      Nav baseline (4 tabs) untouched.
+ */
+
+.foot {
+  height: 44px;
+  padding: 0 var(--space-4);
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border-subtle);
+  background: var(--color-bg-sunken);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+}
+
+.status {
+  font-variant-numeric: tabular-nums;
+}
+
+.loadMoreBtn {
+  height: 28px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-10);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
+  color: var(--color-text-secondary);
+  font-size: var(--font-tiny);
+  font-weight: var(--font-weight-semibold);
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover wrapped in @media (hover: hover) */
+  .loadMoreBtn:not(:disabled):hover {
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+  }
+}
+
+.loadMoreBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
