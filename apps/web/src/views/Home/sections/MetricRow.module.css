@@ -3,8 +3,10 @@
  *
  * Why: 4-card row replacing the placeholder MetricCard in Home.tsx.
  *      Each card = icon-slot (32x32 square) + data column (v + label
- *      + delta or progress-track). Styles mirror Home v2.1.html .metric-card
- *      via tokens; warn / err tones use semantic state-* tokens.
+ *      + delta or progress-track). Sizes mirror Home v2.1.html exactly:
+ *      card padding 14px 18px (no fixed height), v 26px/700,
+ *      label 12px/#6B7280 with 8px top margin, delta 10.5px/600 with
+ *      4px top margin. Icon-slot is bg-sunken (#EEF0F3) with radius 10.
  */
 .row {
   display: grid;
@@ -20,7 +22,7 @@
   padding: 14px 18px; /* spacing-allow: prototype Home v2.1 .metric-card padding (no exact --space-N match for 14/18) */
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 14px; /* spacing-allow: prototype Home v2.1 gap between icon-slot and data column */
   min-width: 0;
   box-sizing: border-box;
 }
@@ -50,16 +52,15 @@
 .data {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
   min-width: 0;
   flex: 1 1 auto;
   overflow: hidden;
 }
 
 .value {
-  font-size: var(--font-h2);
-  line-height: 1.1;
-  font-weight: var(--font-weight-semibold);
+  font-size: 26px; /* spacing-allow: prototype v 26px (no token between font-h2=24 and font-display) */
+  line-height: 1;
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
@@ -67,24 +68,27 @@
 }
 
 .unit {
-  font-size: var(--font-meta);
+  font-size: var(--font-body);
   color: var(--color-text-meta);
-  font-weight: var(--font-weight-regular);
-  margin-left: var(--space-1);
+  font-weight: var(--font-weight-medium);
+  margin-left: 3px; /* spacing-allow: tight unit gap from prototype */
 }
 
 .label {
   font-size: var(--font-meta);
-  line-height: var(--line-height-meta);
-  color: var(--color-text-secondary);
+  line-height: 1.55;
+  color: var(--color-text-meta);
+  margin-top: var(--space-2);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .delta {
-  font-size: var(--font-tiny);
+  font-size: 10.5px; /* spacing-allow: prototype delta 10.5px (between font-tiny=11 and 10) */
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-meta);
+  margin-top: var(--space-1);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -97,9 +101,10 @@
 .track {
   position: relative;
   height: 6px;
-  border-radius: var(--radius-10);
+  border-radius: 9999px;
   background: var(--color-bg-sunken);
   overflow: hidden;
+  margin-top: var(--space-2);
 }
 
 .fill {

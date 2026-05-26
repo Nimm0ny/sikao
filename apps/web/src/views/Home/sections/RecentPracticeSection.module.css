@@ -3,6 +3,14 @@
  * Why: 2 feed-item list + "全部历史" link. Compact card for the right-stack.
  */
 
+/*
+ * RecentPracticeSection — V5 SIK-127 (Home v2.1 bottom-row right-bottom).
+ * Why: feed-item is a soft-bg card (bg-elevated, radius 10), padding 6/8/6/10,
+ *      gap 8, with feed-icon 24×24 white inset, feed-name fs 11.5/700,
+ *      feed-sub fs 10/#6B7280, feed-pill ok-soft fs 10/700.
+ *      bc-head h4 13/700, link fs 11/#6B7280.
+ */
+
 .root {
   display: flex;
   flex-direction: column;
@@ -21,20 +29,20 @@
 
 .title {
   margin: 0;
-  font-size: var(--font-card);
-  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-body);
+  font-weight: var(--font-weight-bold);
 }
 
 .headLink {
   font-size: var(--font-tiny);
-  color: var(--color-state-info);
+  color: var(--color-text-meta);
   text-decoration: none;
-  font-weight: var(--font-weight-medium);
 }
 
 .list {
   display: flex;
   flex-direction: column;
+  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -47,18 +55,18 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: var(--space-1) 0;
-  border-bottom: 1px solid var(--color-border-subtle);
+  padding: 6px 8px 6px 10px; /* spacing-allow: prototype feed-item padding 6/8/6/10 */
+  border-radius: var(--radius-10);
+  background: var(--color-bg-elevated);
   min-width: 0;
 }
-.feedItem:last-child { border-bottom: 0; }
 
 .feedIcon {
   width: 24px;
   height: 24px;
-  border-radius: var(--radius-10);
+  border-radius: 6px; /* spacing-allow: prototype feed-icon radius 6 (smaller than radius-10 token) */
   flex-shrink: 0;
-  background: var(--color-bg-sunken);
+  background: var(--color-bg-surface);
   display: grid;
   place-items: center;
   color: var(--color-text-secondary);
@@ -72,22 +80,23 @@
 }
 
 .feedName {
-  font-size: var(--font-tiny);
-  font-weight: var(--font-weight-medium);
+  font-size: 11.5px; /* spacing-allow: prototype feed-name 11.5px */
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .feedSub {
-  font-size: 10px;
+  font-size: 10px; /* spacing-allow: prototype feed-sub 10px */
   color: var(--color-text-meta);
 }
 
 .feedPill {
-  font-size: var(--font-tiny);
-  font-weight: var(--font-weight-semibold);
-  padding: var(--space-1) var(--space-2);
+  font-size: 10px; /* spacing-allow: prototype feed-pill 10px */
+  font-weight: var(--font-weight-bold);
+  padding: 2px 6px; /* spacing-allow: prototype pill padding 2/6 */
   border-radius: 9999px;
   flex-shrink: 0;
   background: var(--color-state-ok-soft);

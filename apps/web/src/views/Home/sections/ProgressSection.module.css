@@ -1,14 +1,14 @@
 /*
  * ProgressSection — Home Section B · 学习进度 mini card styles.
- * Why: sik-fu-d §2.1 — Top 3 弱项 with bar visual encoding (no Badge).
- *      Each weak-item is a 3-column row: name(90px) + bar(flex 1) + val(56px).
+ * Why: Home v2.1 prototype .weak-item — name(90px,fs11/600/#495057),
+ *      bar (5px h, radius 999, ok/warn/err fill), val(36px,fs10.5/700).
+ *      bc-head h4 13px/700, link 11px/#6B7280.
  */
 
 .root {
   display: flex;
   flex-direction: column;
-  gap: var(--space-3);
-  align-items: stretch;
+  gap: var(--space-2);
   min-width: 0;
 }
 
@@ -20,15 +20,15 @@
 }
 
 .title {
-  font-size: var(--font-card);
-  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-body);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
   margin: 0;
 }
 
 .headLink {
-  font-size: var(--font-meta);
-  color: var(--color-text-secondary);
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
   text-decoration: none;
   white-space: nowrap;
 }
@@ -36,7 +36,7 @@
 .weakList {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
+  gap: var(--space-1);
   margin: 0;
   padding: 0;
   list-style: none;
@@ -44,20 +44,16 @@
 
 .weakItem {
   display: grid;
-  grid-template-columns: 90px 1fr 56px;
-  gap: var(--space-3);
+  grid-template-columns: 90px 1fr 36px;
+  gap: var(--space-2);
   align-items: center;
-  padding: var(--space-2) 0;
-  border-bottom: 1px solid var(--color-border-subtle);
-}
-
-.weakItem:last-child {
-  border-bottom: 0;
+  padding: var(--space-1) 0;
 }
 
 .weakName {
-  font-size: var(--font-body);
-  color: var(--color-text-primary);
+  font-size: var(--font-tiny);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -68,7 +64,7 @@
   position: relative;
   display: block;
   height: 5px;
-  border-radius: var(--radius-999);
+  border-radius: 9999px;
   background: var(--color-bg-sunken);
   overflow: hidden;
 }
@@ -76,7 +72,7 @@
 .barFill {
   display: block;
   height: 100%;
-  border-radius: var(--radius-999);
+  border-radius: 9999px;
   background: var(--color-state-ok);
   transition: width var(--dur-base) var(--ease-out);
 }
@@ -86,9 +82,9 @@
 }
 
 .weakVal {
-  font-size: var(--font-meta);
+  font-size: 10.5px; /* spacing-allow: prototype weak-val 10.5px */
   color: var(--color-text-primary);
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
   font-variant-numeric: tabular-nums;
   text-align: right;
   white-space: nowrap;

@@ -3,13 +3,14 @@
  *
  * Why: Home v2.1 prototype topbar layout — greeting (left) + cmd search box
  *      (flex-1 center) + 2 icon-btn placeholders + primary CTA (right).
- *      PageHeader can't host the cmd box / icon row in its current shape, so
- *      Home owns its own topbar layout band. ScreenLockShell still gives
- *      the row `auto` height; this file only styles the row internals.
+ *      Exact prototype sizes:
+ *      h2=22px/700, p=12px/#6B7280, cmd=36px/white/border-10/padding-0-14,
+ *      icon-btn=36×36/white/border-10, CTA=36/yellow/600.
  */
 .root {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: var(--space-4);
   min-width: 0;
   height: 56px;
@@ -18,23 +19,22 @@
 .greet {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1); /* desktop: 4px, mobile: 2px — title/subtitle stack */
   min-width: 0;
   flex-shrink: 0;
 }
 
 .title {
   margin: 0;
-  font-size: var(--font-h2);
-  line-height: var(--line-height-h2);
-  font-weight: var(--font-weight-semibold);
+  font-size: 22px; /* spacing-allow: prototype h2 22px (no token between font-h2=24 and font-h3=18) */
+  line-height: 1.55;
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
 }
 
 .subtitle {
-  margin: 0;
+  margin: 2px 0 0; /* spacing-allow: prototype p mt=2px (sub-token tight) */
   font-size: var(--font-meta);
-  line-height: var(--line-height-meta);
+  line-height: 1.55;
   color: var(--color-text-meta);
 }
 
@@ -45,20 +45,21 @@
   align-items: center;
   gap: var(--space-2);
   height: 36px;
-  padding: 0 var(--space-3);
-  border-radius: var(--radius-12);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-subtle);
+  padding: 0 14px; /* spacing-allow: prototype topbar-cmd padding 0 14px */
+  border-radius: var(--radius-10);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-default);
   color: var(--color-text-meta);
-  font-size: var(--font-meta);
+  font-size: var(--font-body);
   cursor: pointer;
   transition: background 120ms ease, border-color 120ms ease;
+  max-width: 360px;
 }
 
 @media (hover: hover) and (pointer: fine) {
   /* touch-allow: lint regex only resolves single-feature @media queries; the compound `(hover: hover) and (pointer: fine)` query above is the canonical hover-capable form */
   .cmd:hover {
-    background: var(--color-bg-sunken);
+    background: var(--color-bg-elevated);
     border-color: var(--color-border-default);
   }
 }
@@ -84,7 +85,7 @@
 .cmdKbd {
   flex-shrink: 0;
   font-family: inherit;
-  font-size: var(--font-meta);
+  font-size: var(--font-tiny);
   padding: var(--space-1) var(--space-2);
   border-radius: var(--radius-10);
   background: var(--color-bg-surface);
@@ -104,7 +105,7 @@
   height: 36px;
   border-radius: var(--radius-10);
   background: var(--color-bg-surface);
-  border: 1px solid var(--color-border-subtle);
+  border: 1px solid var(--color-border-default);
   color: var(--color-text-secondary);
   display: inline-flex;
   align-items: center;

@@ -27,8 +27,8 @@ import styles from './WeeklyReviewSection.module.css';
 
 type DotState = 'full' | 'half' | 'empty';
 
-const RING_SIZE = 44;
-const RING_STROKE = 4;
+const RING_SIZE = 64;
+const RING_STROKE = 6;
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
 const RING_CIRC = 2 * Math.PI * RING_RADIUS;
 const DOW_LABELS = ['一', '二', '三', '四', '五', '六', '日'] as const;

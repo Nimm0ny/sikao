@@ -1,7 +1,7 @@
 /*
- * WeeklyReviewSection — Home Section A · bottomRow #1 styles.
- * Why: SIK-127 — compact card body for the right-stack 1fr slot (~127px).
- *      Header (h4 + streak pill) + body (small ring + 7 dots row).
+ * WeeklyReviewSection — Home v2.1 bottom-row right-top.
+ * Why: bc-head h4 13/700 + streak pill ok-soft. Body: ring 64×64 gap=14
+ *      + week-dots row (7 cols, gap 4, dot 8×8 fill=#1A1D20).
  */
 
 .root {
@@ -24,15 +24,15 @@
 
 .title {
   margin: 0;
-  font-size: var(--font-card);
-  font-weight: var(--font-weight-semibold);
+  font-size: var(--font-body);
+  font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
 }
 
 .body {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
+  gap: 14px; /* spacing-allow: prototype weekly gap 14 */
   min-width: 0;
 }
 
@@ -41,7 +41,7 @@
 }
 
 .ringTrack {
-  stroke: var(--color-border-subtle);
+  stroke: var(--color-bg-sunken);
 }
 
 .ringFill {
@@ -50,7 +50,7 @@
 }
 
 .ringText {
-  font-size: var(--font-meta);
+  font-size: var(--font-card);
   font-weight: var(--font-weight-bold);
   fill: var(--color-text-primary);
   font-variant-numeric: tabular-nums;
@@ -60,17 +60,18 @@
   display: inline-flex;
   align-items: center;
   gap: var(--space-1);
-  font-size: var(--font-tiny);
+  font-size: 10px; /* spacing-allow: prototype pill 10px */
+  font-weight: var(--font-weight-bold);
   color: var(--color-state-ok);
   background: var(--color-state-ok-soft);
   border-radius: 9999px;
-  padding: var(--space-1) var(--space-2);
+  padding: 2px 6px; /* spacing-allow: prototype pill padding 2/6 */
   white-space: nowrap;
   flex-shrink: 0;
 }
 
 .streakNum {
-  font-weight: var(--font-weight-semibold);
+  font-weight: var(--font-weight-bold);
   font-variant-numeric: tabular-nums;
 }
 
@@ -95,14 +96,14 @@
 .dotCore {
   width: 8px;
   height: 8px;
-  border-radius: 9999px;
+  border-radius: 50%;
   background: var(--color-bg-sunken);
   border: 1px solid var(--color-border-default);
 }
 
 .dot[data-state='full'] .dotCore {
-  background: var(--color-state-ok);
-  border-color: var(--color-state-ok);
+  background: var(--color-text-primary);
+  border-color: var(--color-text-primary);
 }
 
 .dot[data-state='half'] .dotCore {
@@ -111,6 +112,7 @@
 }
 
 .dotLabel {
-  font-size: 9px;
+  font-size: 9.5px; /* spacing-allow: prototype day-col 9.5px */
+  font-weight: var(--font-weight-semibold);
   color: var(--color-text-meta);
 }
