@@ -27,6 +27,13 @@ from sikao_api.db.schemas_v2 import (
 )
 from sikao_api.db.session import get_db_session
 from sikao_api.modules.identity.application.security_v2 import get_current_user_v2, verify_csrf_v2
+from sikao_api.modules.notes_v2.application.audit import (
+    log_note_created,
+    log_note_image_uploaded,
+    log_note_soft_deleted,
+    log_note_updated,
+    serialize_note_audit_state,
+)
 from sikao_api.modules.notes_v2.application.community_service import NoteCommunityServiceV2
 from sikao_api.modules.notes_v2.application.export_service import NoteExportServiceV2
 from sikao_api.modules.notes_v2.application.image_service import NoteImageServiceV2
@@ -166,12 +173,15 @@ def create_note(
     session: Annotated[Session, Depends(get_db_session)],
 ) -> NoteDetailV2:
     note = NotesServiceV2(session).create_note(user=user, payload=payload)
+    request_id = getattr(request.state, "request_id", None)
+    ip = request.client.host if request.client is not None else None
+    log_note_created(session, note=note, request_id=request_id, ip=ip)
     if note.visibility == "public":
         NoteCommunityServiceV2(session).record_visibility_audit(
             note=note,
             previous_visibility=None,
-            request_id=getattr(request.state, "request_id", None),
-            ip=request.client.host if request.client is not None else None,
+            request_id=request_id,
+            ip=ip,
         )
     session.commit()
     session.refresh(note)
@@ -181,6 +191,7 @@ def create_note(
 
 @router.post("/images", response_model=NoteImageUploadResponseV2, dependencies=[Depends(verify_csrf_v2)])
 async def upload_image(
+    request: Request,
     image: Annotated[UploadFile, File()],
     user: Annotated[UserV2, Depends(get_current_user_v2)],
     session: Annotated[Session, Depends(get_db_session)],
@@ -193,6 +204,15 @@ async def upload_image(
         raw_bytes=payload,
         original_filename=image.filename or "upload",
         note_id=note_id,
+    )
+    log_note_image_uploaded(
+        session,
+        user_id=user.id,
+        image_id=response.id,
+        note_id=note_id,
+        file_path=response.url,
+        request_id=getattr(request.state, "request_id", None),
+        ip=request.client.host if request.client is not None else None,
     )
     session.commit()
     return response
@@ -395,8 +415,16 @@ def update_note(
 ) -> NoteDetailV2:
     service = NotesServiceV2(session)
     note = service.get_note(user=user, note_id=note_id)
+    before = serialize_note_audit_state(session, note=note)
     previous_visibility = note.visibility
     note = service.update_note(note=note, payload=payload)
+    log_note_updated(
+        session,
+        note=note,
+        before=before,
+        request_id=getattr(request.state, "request_id", None),
+        ip=request.client.host if request.client is not None else None,
+    )
     if note.visibility != previous_visibility:
         NoteCommunityServiceV2(session).record_visibility_audit(
             note=note,
@@ -423,7 +451,15 @@ def delete_note(
 ) -> Response:
     service = NotesServiceV2(session)
     note = service.get_note(user=user, note_id=note_id)
+    before = serialize_note_audit_state(session, note=note)
     service.soft_delete_note(note=note)
+    log_note_soft_deleted(
+        session,
+        note=note,
+        before=before,
+        request_id=getattr(request.state, "request_id", None),
+        ip=request.client.host if request.client is not None else None,
+    )
     session.commit()
     _sync_notes_search_delete_after_commit(request=request, note_id=note.id, user_id=note.user_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from sqlalchemy.orm import Session
 
+from sikao_api.db.models_v2 import NoteV2
 from sikao_api.db.models_v2 import UserV2
 from sikao_api.db.schemas_v2 import TagMergeRequestV2, TagRenameV2, TagWithCountV2
 from sikao_api.modules.notes_v2.domain.errors import TAG_LIMIT_EXCEEDED
@@ -78,7 +79,7 @@ class NoteTagServiceV2:
             self.session.add(row)
         self.session.flush()
 
-    def _load_note(self, *, user: UserV2, note_id: int):
+    def _load_note(self, *, user: UserV2, note_id: int) -> NoteV2:
         note = self.repo.get_owned_note(user_id=user.id, note_id=note_id)
         if note is None:
             raise NotFoundError("note not found", code="note_not_found")

@@ -31,6 +31,10 @@ from sikao_api.modules.llm.application.idempotency import (
 from sikao_api.modules.llm.application.llm.prompts.note_summary_cards import (
     PROMPT_VERSION as NOTE_SUMMARY_PROMPT_VERSION,
 )
+from sikao_api.modules.notes_v2.application.audit import (
+    log_note_ai_summary_confirmed,
+    log_note_weekly_review_generated,
+)
 from sikao_api.modules.notes_v2.application.ai_summary_service import AiSummaryServiceV2
 from sikao_api.modules.notes_v2.application.weekly_review_service import (
     WeeklyReviewGenerationPrepV2,
@@ -64,6 +68,7 @@ async def generate_ai_summary(
     dependencies=[Depends(verify_csrf_v2)],
 )
 def confirm_ai_summary(
+    request: Request,
     note_id: int,
     payload: NoteAiSummaryConfirmRequestV2,
     user: Annotated[UserV2, Depends(get_current_user_v2)],
@@ -74,6 +79,15 @@ def confirm_ai_summary(
         note_id=note_id,
         cards=payload.cards,
         prompt_version=NOTE_SUMMARY_PROMPT_VERSION,
+    )
+    log_note_ai_summary_confirmed(
+        session,
+        user_id=user.id,
+        note_id=note_id,
+        review_item_ids=response.review_item_ids,
+        prompt_version=NOTE_SUMMARY_PROMPT_VERSION,
+        request_id=getattr(request.state, "request_id", None),
+        ip=request.client.host if request.client is not None else None,
     )
     session.commit()
     return response
@@ -170,17 +184,30 @@ async def _stream_weekly_review_frames(
                 )
                 return
             payload = {"type": frame.type, **frame.payload}
+            public_payload = dict(payload)
+            public_payload.pop("llm_call_id", None)
             if frame.type == "done":
+                note_id = payload.get("note_id")
+                llm_call_id = payload.get("llm_call_id")
+                if isinstance(note_id, int):
+                    log_note_weekly_review_generated(
+                        session,
+                        user_id=user_id,
+                        note_id=note_id,
+                        llm_call_id=llm_call_id if isinstance(llm_call_id, int) else None,
+                        request_id=getattr(request.state, "request_id", None),
+                        ip=request.client.host if request.client is not None else None,
+                    )
                 store_replay(
                     session,
                     user_id=user_id,
                     endpoint=_WEEKLY_REVIEW_ENDPOINT,
                     idempotency_key=idempotency_key,
                     request_hash=request_hash,
-                    response_body=payload,
+                    response_body=public_payload,
                 )
                 session.commit()
-            yield _sse_frame(payload)
+            yield _sse_frame(public_payload)
     except (httpx.HTTPStatusError, httpx.TimeoutException, httpx.RequestError, ServiceError) as exc:
         session.rollback()
         release_idempotency_claim(

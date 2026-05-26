@@ -365,6 +365,7 @@ class WeeklyReviewServiceV2:
                 "note_id": note.id,
                 "title": note.title,
                 "tags": prepared.tags,
+                "llm_call_id": llm_call_id,
             },
         )
 

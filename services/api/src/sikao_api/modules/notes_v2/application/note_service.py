@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+
 from sqlalchemy.orm import Session
 
 from sikao_api.db.models_v2 import NoteV2, UserV2
@@ -288,7 +290,5 @@ class NotesServiceV2:
             raise ValidationError("unsupported sort order", code="validation_error")
 
     @staticmethod
-    def _utc_now():
-        from datetime import UTC, datetime
-
+    def _utc_now() -> datetime:
         return datetime.now(UTC).replace(tzinfo=None)
