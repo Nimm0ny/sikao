@@ -119,7 +119,11 @@ def build_postgres_client(tmp_path: Path) -> Iterator[TestClient]:
             initialize_schema=False,
             schema_token="practice-content-v2-postgres",
         ) as client:
-            yield client
+            try:
+                yield client
+            finally:
+                app = cast(Any, client.app)
+                app.state.db.engine.dispose()
     finally:
         cleanup_engine = create_engine(admin_url, isolation_level="AUTOCOMMIT")
         try:

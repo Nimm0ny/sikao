@@ -74,6 +74,31 @@ def test_postgres_note_image_upload_supports_orphan_and_bound_images(
             assert rows[0].note_id is None
             assert rows[1].note_id == note_id
 
+        rebound = client.put(
+            f"/api/v2/notes/{note_id}",
+            json={
+                "bodyJson": {
+                    "type": "doc",
+                    "content": [
+                        {
+                            "type": "paragraph",
+                            "content": [{"type": "text", "text": "正文引用刚才的 orphan 图片。"}],
+                        },
+                        {
+                            "type": "image",
+                            "attrs": {"src": orphan.json()["url"], "alt": "orphan"},
+                        },
+                    ],
+                }
+            },
+        )
+        assert rebound.status_code == 200, rebound.text
+
+        with factory() as session:
+            rows = list(session.scalars(select(NoteImageV2).order_by(NoteImageV2.id.asc())))
+            assert rows[0].note_id == note_id
+            assert rows[1].note_id == note_id
+
 
 @pytest.mark.skipif(
     not os.environ.get("TEST_POSTGRESQL_URL"),
