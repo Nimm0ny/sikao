@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach, beforeEach } from 'vitest';
 import { act, render, screen, fireEvent } from '@testing-library/react';
 import { createMemoryRouter, RouterProvider } from 'react-router-dom';
 import { RootLayout } from './RootLayout';
+import { useCommandPaletteStore } from '@/lib/commandPalette';
 
 /*
  * RootLayout tests — V5 §D.4 SaaS shell.
@@ -17,6 +18,9 @@ beforeEach(() => {
   // Rail's collapse state machine reads localStorage on mount; keep tests
   // deterministic.
   window.localStorage.clear();
+  // SIK-122: command palette is now a zustand singleton — reset between
+  // tests so prior open() calls don't bleed.
+  useCommandPaletteStore.setState({ open: false });
 });
 
 afterEach(() => {

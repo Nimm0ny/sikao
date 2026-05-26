@@ -1,9 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { render, screen, within, fireEvent } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { server } from '../../mocks/server';
+import { useCommandPaletteStore } from '@/lib/commandPalette';
 import { Home } from './Home';
 
 function renderHome() {
@@ -18,10 +19,27 @@ function renderHome() {
         meta: { from: '', to: '', tz: 'Asia/Shanghai', includePracticeBlocks: false },
       }),
     ),
+    // SIK-122: subtitle pulls streakDays from /progress/weekly. Default
+    // mock returns 0 so the streak segment is hidden (AGENT-H7 — never
+    // fabricate). Specific tests can override.
+    http.get('/api/v2/progress/weekly', () =>
+      HttpResponse.json({
+        weekStart: '2026-05-25',
+        weekEnd: '2026-05-31',
+        xingceAnswered: 0,
+        xingceAccuracy: 0,
+        essaySubmitted: 0,
+        tasksCompleted: 0,
+        tasksTotal: 0,
+        streakDays: 0,
+      }),
+    ),
   );
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 } },
   });
+  // Reset palette store between tests so click assertions don't leak.
+  useCommandPaletteStore.setState({ open: false });
   return render(
     <MemoryRouter initialEntries={['/']}>
       <QueryClientProvider client={client}>
@@ -63,7 +81,7 @@ describe('Home view (D.4.1)', () => {
 
   it('exposes a primary CTA in the page header', () => {
     renderHome();
-    const cta = screen.getByRole('button', { name: '开始练习' });
+    const cta = screen.getByRole('button', { name: '开始今日练习' });
     expect(cta).toBeInTheDocument();
   });
 
@@ -74,5 +92,30 @@ describe('Home view (D.4.1)', () => {
     // internals; instead we keep the contract documented and rely on the
     // PLACEHOLDER_METRICS fixture being audited via lint + typecheck.
     expect(() => renderHome()).not.toThrow();
+  });
+
+  // SIK-122: Home topbar contract.
+  it('renders the home topbar with cmd search box + bell + settings + CTA', () => {
+    renderHome();
+    expect(screen.getByTestId('home-topbar')).toBeInTheDocument();
+    expect(screen.getByTestId('home-topbar-cmd')).toBeInTheDocument();
+    expect(screen.getByTestId('home-topbar-bell')).toBeDisabled();
+    expect(screen.getByTestId('home-topbar-settings')).toBeDisabled();
+  });
+
+  it('clicking the topbar cmd box opens the shared CommandPalette store', () => {
+    renderHome();
+    expect(useCommandPaletteStore.getState().open).toBe(false);
+    fireEvent.click(screen.getByTestId('home-topbar-cmd'));
+    expect(useCommandPaletteStore.getState().open).toBe(true);
+  });
+
+  it('topbar subtitle shows date only when streakDays is 0 (AGENT-H7 no fabrication)', async () => {
+    renderHome();
+    // Wait for the weekly summary query to resolve; streak === 0 means
+    // the subtitle is just the date.
+    const subtitle = await screen.findByTestId('home-topbar-subtitle');
+    // CN locale: "2026年5月26日" (no second segment).
+    expect(subtitle.textContent).not.toMatch(/已连续签到/);
   });
 });

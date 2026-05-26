@@ -1,0 +1,125 @@
+/*
+ * HomeTopbar — V5 SIK-122 (Home topbar Section).
+ *
+ * Why: Home v2.1 prototype topbar layout — greeting (left) + cmd search box
+ *      (flex-1 center) + 2 icon-btn placeholders + primary CTA (right).
+ *      PageHeader can't host the cmd box / icon row in its current shape, so
+ *      Home owns its own topbar layout band. ScreenLockShell still gives
+ *      the row `auto` height; this file only styles the row internals.
+ */
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.greet {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1); /* desktop: 4px, mobile: 2px — title/subtitle stack */
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-h2);
+  line-height: var(--line-height-h2);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.subtitle {
+  margin: 0;
+  font-size: var(--font-meta);
+  line-height: var(--line-height-meta);
+  color: var(--color-text-meta);
+}
+
+.cmd {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: var(--row-h-md);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-12);
+  background: var(--color-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-meta);
+  font-size: var(--font-meta);
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: lint regex only resolves single-feature @media queries; the compound `(hover: hover) and (pointer: fine)` query above is the canonical hover-capable form */
+  .cmd:hover {
+    background: var(--color-bg-sunken);
+    border-color: var(--color-border-default);
+  }
+}
+
+.cmd:focus-visible {
+  outline: 2px solid var(--color-state-info);
+  outline-offset: 2px;
+}
+
+.cmdIcon {
+  flex-shrink: 0;
+}
+
+.cmdPlaceholder {
+  flex: 1 1 auto;
+  min-width: 0;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cmdKbd {
+  flex-shrink: 0;
+  font-family: inherit;
+  font-size: var(--font-meta);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-10);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.iconBtn {
+  width: var(--row-h-md);
+  height: var(--row-h-md);
+  border-radius: var(--radius-12);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 120ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: lint regex only resolves single-feature @media queries; the compound `(hover: hover) and (pointer: fine)` query above is the canonical hover-capable form */
+  .iconBtn:hover:not(:disabled) {
+    background: var(--color-bg-elevated);
+  }
+}
+
+.iconBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}

@@ -42,6 +42,32 @@ export type RecommendationRejectRequestV2 = components['schemas']['Recommendatio
 export type SubjectAccuracyV2 = components['schemas']['SubjectAccuracyV2'];
 export type WeaknessItemV2 = components['schemas']['WeaknessItemV2'];
 
+/*
+ * WeeklyProgressSummaryV2 — narrow re-declaration.
+ *
+ * Why: GET /api/v2/progress/weekly returns the analytics-layer
+ *      WeeklyProgressSummaryV2 (services/api/src/sikao_api/db/schemas.py),
+ *      but that endpoint lives in the analytics module and is not yet wired
+ *      into the OpenAPI snapshot consumed by api.generated.ts. Until the
+ *      analytics router is included in main.py, we re-declare the camelCase
+ *      wire shape narrowly so SIK-122 can consume `streakDays` without
+ *      blocking on a generator regen.
+ *
+ *      Field semantics mirror the backend dataclass; if/when the schema
+ *      lands in api.generated.ts, this alias should switch to
+ *      components['schemas']['WeeklyProgressSummaryV2'].
+ */
+export interface WeeklyProgressSummaryV2 {
+  readonly weekStart: string;
+  readonly weekEnd: string;
+  readonly xingceAnswered: number;
+  readonly xingceAccuracy: number;
+  readonly essaySubmitted: number;
+  readonly tasksCompleted: number;
+  readonly tasksTotal: number;
+  readonly streakDays: number;
+}
+
 export interface EventWindowFilters {
   readonly from: string;
   readonly to: string;

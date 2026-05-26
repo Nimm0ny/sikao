@@ -4,10 +4,10 @@
 // integrations replace the placeholders.
 import { useEffect } from 'react';
 import { Numeric } from '../../components/atom';
-import { Panel, PageHeader, ScreenLockShell, ScrollRegion } from '../../components/layout';
-import { Button } from '../../components/form';
+import { Panel, ScreenLockShell, ScrollRegion } from '../../components/layout';
 import { useDashboardPreferenceStore, usePlanStore } from '@sikao/domain';
 import { CalendarPanel } from './sections/CalendarPanel';
+import { HomeTopbar } from './sections/HomeTopbar';
 import { WeeklyReviewSection } from './sections/WeeklyReviewSection';
 import { ProgressSection } from './sections/ProgressSection';
 import { RecommendationSection } from './sections/RecommendationSection';
@@ -76,11 +76,7 @@ export function Home() {
 
   return (
     <ScreenLockShell rows="auto auto minmax(0, 1.6fr) minmax(0, 1fr)" testId="home-view">
-      <PageHeader
-        title="早上好，lhr"
-        subtitle="距离 2026 国考还有 168 天"
-        actions={<Button variant="primary">开始练习</Button>}
-      />
+      <HomeTopbar />
 
       <section className={styles.metricRow} aria-label="本周学习概览">
         {PLACEHOLDER_METRICS.map((m) => <MetricCard key={m.key} metric={m} />)}
