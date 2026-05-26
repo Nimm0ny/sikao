@@ -817,6 +817,10 @@ class NoteAiSummaryConfirmResponseV2(CamelModel):
     message: str
 
 
+class NoteWeeklyReviewGenerateRequestV2(CamelModel):
+    week: str | None = Field(default=None, max_length=8)
+
+
 class TrendPointV2(CamelModel):
     date: date
     session_id: int

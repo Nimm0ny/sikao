@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import UTC, datetime, time
+from datetime import UTC, datetime, time, timedelta
 from decimal import Decimal
 
 from sqlalchemy import func, select
@@ -33,6 +33,7 @@ _SHARED_NOTES_LLM_PURPOSES = {
     "notes_weekly_review",
 }
 _SHARED_NOTES_LLM_DAILY_LIMIT = 20
+_CN_OFFSET = timedelta(hours=8)
 
 
 class HomeLlmQuotaService:
@@ -47,8 +48,10 @@ class HomeLlmQuotaService:
         purpose: str,
         global_calls_needed: int = 1,
     ) -> None:
-        today = datetime.now(UTC).date()
-        start = datetime.combine(today, time.min)
+        now_cn = datetime.now(UTC) + _CN_OFFSET
+        start = (
+            datetime.combine(now_cn.date(), time.min).replace(tzinfo=UTC) - _CN_OFFSET
+        ).replace(tzinfo=None)
         call_limit = _PER_PURPOSE_DAILY_LIMITS.get(
             purpose,
             self.settings.llm_quota_per_user_per_day,
