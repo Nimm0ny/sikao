@@ -212,6 +212,14 @@ class HomeScheduler:
             coalesce=True,
         )
         self._scheduler.add_job(
+            self._job_notes_orphan_image_cleanup,
+            trigger=CronTrigger(hour=4, minute=0, timezone=self._settings.home_scheduler_timezone),
+            id="notes.orphan_image_cleanup",
+            replace_existing=True,
+            max_instances=1,
+            coalesce=True,
+        )
+        self._scheduler.add_job(
             self._job_session_lifecycle_cleanup,
             trigger=CronTrigger(minute="*/5", timezone=self._settings.home_scheduler_timezone),
             id="home.session_lifecycle.cleanup",
@@ -402,6 +410,11 @@ class HomeScheduler:
         job_id = "home.timing.baseline_recompute"
         self._mark_started(job_id)
         return await self._runtime.run_timing_baseline_recompute()
+
+    async def _job_notes_orphan_image_cleanup(self) -> int:
+        job_id = "notes.orphan_image_cleanup"
+        self._mark_started(job_id)
+        return await self._runtime.run_notes_orphan_image_cleanup()
 
     async def _job_login_adjustment_check(
         self,

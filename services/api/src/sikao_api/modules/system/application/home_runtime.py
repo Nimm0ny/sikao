@@ -53,6 +53,9 @@ from sikao_api.modules.review.application.audit import (
 from sikao_api.modules.review.application.metrics import increment_weekly_snapshot_generated
 from sikao_api.modules.recommendations.application.service import RecommendationServiceV2
 from sikao_api.modules.mock_exam.application.auto_submitter import auto_submit_expired_mock_exams
+from sikao_api.modules.notes_v2.application.orphan_image_cleanup import (
+    cleanup_orphan_note_images,
+)
 from sikao_api.modules.session.application.hooks import run_progress_submit_hooks_isolated
 from sikao_api.modules.session.application.submit_hooks import run_progress_submit_hooks
 from sikao_api.modules.session_lifecycle.application.cleanup import (
@@ -245,6 +248,9 @@ class HomeRuntimeOrchestrator:
     async def run_timing_baseline_recompute(self) -> int:
         return await asyncio.to_thread(self._run_timing_baseline_recompute_sync)
 
+    async def run_notes_orphan_image_cleanup(self) -> int:
+        return await asyncio.to_thread(self._run_notes_orphan_image_cleanup_sync)
+
     def _run_submit_progress_hooks_sync(self, user_id: int, session_id: int | None) -> None:
         session = self._db.session_factory()
         try:
@@ -352,6 +358,39 @@ class HomeRuntimeOrchestrator:
             updated = recompute_question_timing_baseline(session)
             session.commit()
             return updated
+        except Exception:
+            session.rollback()
+            raise
+        finally:
+            session.close()
+
+    def _run_notes_orphan_image_cleanup_sync(self) -> int:
+        session = self._db.session_factory()
+        try:
+            result = cleanup_orphan_note_images(
+                session,
+                upload_dir=self._settings.upload_dir,
+            )
+            for entry in result.deleted:
+                add_audit_log(
+                    session,
+                    user_id=entry.user_id,
+                    actor_type="cron",
+                    actor_id="notes.orphan_image_cleanup",
+                    action="notes.image.orphan_cleanup",
+                    target_type="note_image_v2",
+                    target_id=entry.image_id,
+                    before={
+                        "noteId": entry.note_id,
+                        "filePath": entry.file_path,
+                        "createdAt": entry.created_at.isoformat(),
+                    },
+                    metadata={"fileExisted": entry.file_existed},
+                    request_id=None,
+                    ip=None,
+                )
+            session.commit()
+            return len(result.deleted)
         except Exception:
             session.rollback()
             raise
