@@ -1,8 +1,8 @@
 /*
  * RecommendationSection — Home Section C · 今日推荐 mini panel.
- * Why: bottom row #3 in Home v2.1.html. Lists today's recommendations
- *      from useRecommendationsToday with accept / reject actions.
- *      Layout: vertical card list, mini metadata, two action buttons.
+ * Why: sik-fu-d §2.2 — feed-item visual with kind 染色 + 整条点击.
+ *      Each feed-item: feed-icon (24x24 kind-colored) + feed-main (name + sub)
+ *      + feed-pill (right badge). Entire row is a button.
  */
 
 .root {
@@ -20,42 +20,91 @@
   list-style: none;
 }
 
-.card {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  padding: var(--space-3);
-  background: var(--color-bg-elevated);
-  border: 1px solid var(--color-border-subtle);
-  border-radius: var(--card-radius-sm);
+.feedItem {
+  border-radius: var(--radius-10);
+  overflow: hidden;
 }
 
-.cardTitle {
+.feedButton {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+  width: 100%;
+  padding: var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-10);
+  background: var(--color-bg-elevated);
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font: inherit;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+.feedIcon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-10);
+  background: var(--color-bg-elevated);
+  border: 2px solid var(--color-text-primary);
+  flex: 0 0 auto;
+}
+
+/* Kind 染色 per sik-fu-d §2.2 actionType -> visual encoding */
+.feedIcon[data-kind='k-practice'] { border-color: var(--color-text-primary); }
+.feedIcon[data-kind='k-mock']     { border-color: var(--color-brand-primary); }
+.feedIcon[data-kind='k-review']   { border-color: var(--color-state-info); }
+.feedIcon[data-kind='k-milestone'] { background: var(--color-state-err-soft); border-color: var(--color-state-err); }
+
+.feedMain {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.feedName {
   font-size: var(--font-body);
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.cardReason {
+.feedSub {
   font-size: var(--font-meta);
   color: var(--color-text-secondary);
-  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.cardMeta {
+.feedPill {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-999);
+  background: var(--color-bg-sunken);
   font-size: var(--font-tiny);
-  color: var(--color-text-meta);
-  display: flex;
-  gap: var(--space-3);
-}
-
-.actions {
-  display: flex;
-  gap: var(--space-2);
-  margin-top: var(--space-1);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
 }
 
 .refreshRow {
   display: flex;
   justify-content: flex-end;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover wrapped in @media (hover: hover) */
+  .feedButton:hover {
+    background: var(--color-bg-surface);
+    border-color: var(--color-border-default);
+  }
 }

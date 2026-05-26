@@ -38,9 +38,10 @@ interface AcceptOptionMenuProps {
   readonly recommendation: RecommendationReadV2;
   readonly open: boolean;
   readonly onClose: () => void;
+  readonly onReject?: () => void;
 }
 
-export function AcceptOptionMenu({ recommendation, open, onClose }: AcceptOptionMenuProps) {
+export function AcceptOptionMenu({ recommendation, open, onClose, onReject }: AcceptOptionMenuProps) {
   const navigate = useNavigate();
   const acceptMutation = useAcceptRecommendation(recommendation.id);
   const upsertOptimistic = usePlanStore((s) => s.upsertOptimisticEvent);
@@ -123,6 +124,16 @@ export function AcceptOptionMenu({ recommendation, open, onClose }: AcceptOption
         >
           排入 {targetDate}
         </button>
+        {onReject !== undefined ? (
+          <button
+            type="button"
+            onClick={onReject}
+            data-testid="accept-option-reject"
+            style={{ marginTop: 'var(--space-2)', color: 'var(--color-state-err)' }}
+          >
+            不感兴趣
+          </button>
+        ) : null}
       </div>
     </Modal>
   );

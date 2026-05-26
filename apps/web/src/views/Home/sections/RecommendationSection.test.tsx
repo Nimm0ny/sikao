@@ -1,6 +1,6 @@
-/*
- * RecommendationSection tests — SIK-92 Home M-C wave 1 (2026-05-24).
- * Covers ready / empty / error / loading + accept(session) navigation.
+﻿/*
+ * RecommendationSection tests — SIK-92 Home M-C (2026-05-26).
+ * Covers ready / empty / error / loading + accept(session) + reject flow.
  */
 import { describe, it, expect, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
@@ -40,19 +40,18 @@ const SAMPLE_RECS = [
   },
 ];
 
-describe('RecommendationSection (Home M-C wave 1)', () => {
-  it('ready: renders cards with accept + reject CTAs', async () => {
+describe('RecommendationSection (SIK-92)', () => {
+  it('ready: renders feed-item cards with title + pill', async () => {
     server.use(http.get('/api/v2/recommendations/today', () =>
       HttpResponse.json({ items: SAMPLE_RECS, total: SAMPLE_RECS.length }),
     ));
     renderWithEnv();
     await waitFor(() => expect(screen.getByTestId('home-recommendation')).toBeInTheDocument());
     expect(screen.getByText('言语理解 · 主旨题专项')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '开始练习' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '不感兴趣' })).toBeInTheDocument();
+    expect(screen.getByTestId('home-recommendation-1').querySelector('button')).not.toBeNull();
   });
 
-  it('empty: renders EmptyState + refresh CTA when API returns []', async () => {
+  it('empty: renders EmptyState + refresh CTA', async () => {
     server.use(http.get('/api/v2/recommendations/today', () => HttpResponse.json({ items: [], total: 0 })));
     renderWithEnv();
     await waitFor(() => expect(screen.getByTestId('home-recommendation-empty')).toBeInTheDocument());
@@ -65,7 +64,7 @@ describe('RecommendationSection (Home M-C wave 1)', () => {
     await waitFor(() => expect(screen.getByTestId('home-recommendation-error')).toBeInTheDocument());
   });
 
-  it('loading: renders Skeleton stack while in flight', async () => {
+  it('loading: renders Skeleton while in flight', async () => {
     server.use(http.get('/api/v2/recommendations/today', async () => {
       await delay(50);
       return HttpResponse.json({ items: [], total: 0 });
@@ -75,7 +74,7 @@ describe('RecommendationSection (Home M-C wave 1)', () => {
     await waitFor(() => expect(screen.queryByTestId('home-recommendation-loading')).not.toBeInTheDocument());
   });
 
-  it('accept(session): opens AcceptOptionMenu and navigates on 立即开始', async () => {
+  it('accept(session): feed-item click opens AcceptOptionMenu, 立即开始 navigates', async () => {
     const navigate = vi.fn();
     vi.mocked(useNavigate).mockReturnValue(navigate);
     server.use(
@@ -90,17 +89,15 @@ describe('RecommendationSection (Home M-C wave 1)', () => {
       ),
     );
     renderWithEnv();
-    await waitFor(() => expect(screen.getByRole('button', { name: '开始练习' })).toBeInTheDocument());
-    // Wave 2: clicking the card CTA opens the Modal first.
-    await userEvent.click(screen.getByRole('button', { name: '开始练习' }));
+    await waitFor(() => expect(screen.getByTestId('home-recommendation-1')).toBeInTheDocument());
+    const feedButton = screen.getByTestId('home-recommendation-1').querySelector('button');
+    await userEvent.click(feedButton!);
     await waitFor(() => expect(screen.getByTestId('accept-option-menu')).toBeInTheDocument());
     await userEvent.click(screen.getByRole('button', { name: '立即开始' }));
     await waitFor(() => expect(navigate).toHaveBeenCalledWith('/practice/sessions/9001'));
   });
-});
 
-describe('RecommendationCard wave 2 dialogs', () => {
-  it('reject: opens RejectFeedbackDialog and submits with reason', async () => {
+  it('reject: feed-item -> AcceptOptionMenu -> 不感兴趣 -> RejectFeedbackDialog -> submit', async () => {
     let receivedBody: { reason?: string; note?: string | null } | null = null;
     server.use(
       http.get('/api/v2/recommendations/today', () =>
@@ -112,8 +109,11 @@ describe('RecommendationCard wave 2 dialogs', () => {
       }),
     );
     renderWithEnv();
-    await waitFor(() => expect(screen.getByRole('button', { name: '不感兴趣' })).toBeInTheDocument());
-    await userEvent.click(screen.getByRole('button', { name: '不感兴趣' }));
+    await waitFor(() => expect(screen.getByTestId('home-recommendation-1')).toBeInTheDocument());
+    const feedButton = screen.getByTestId('home-recommendation-1').querySelector('button');
+    await userEvent.click(feedButton!);
+    await waitFor(() => expect(screen.getByTestId('accept-option-reject')).toBeInTheDocument());
+    await userEvent.click(screen.getByTestId('accept-option-reject'));
     await waitFor(() => expect(screen.getByTestId('reject-feedback')).toBeInTheDocument());
     await userEvent.click(screen.getByTestId('reject-reason-too-easy'));
     await userEvent.click(screen.getByRole('button', { name: '提交反馈' }));
