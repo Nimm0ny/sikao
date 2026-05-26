@@ -50,12 +50,13 @@ function renderHome() {
 }
 
 describe('Home view (D.4.1)', () => {
-  it('renders the 4 metric-row cards (本周练习 / 正确率 / 学习时长 / 同省排名)', () => {
+  it('renders the 4 metric-row cards (countdown / today / week / review)', () => {
     renderHome();
-    expect(screen.getByTestId('home-metric-practice')).toBeInTheDocument();
-    expect(screen.getByTestId('home-metric-accuracy')).toBeInTheDocument();
-    expect(screen.getByTestId('home-metric-duration')).toBeInTheDocument();
-    expect(screen.getByTestId('home-metric-rank')).toBeInTheDocument();
+    expect(screen.getByTestId('home-metric-row')).toBeInTheDocument();
+    expect(screen.getByTestId('home-metric-countdown')).toBeInTheDocument();
+    expect(screen.getByTestId('home-metric-today')).toBeInTheDocument();
+    expect(screen.getByTestId('home-metric-week')).toBeInTheDocument();
+    expect(screen.getByTestId('home-metric-review')).toBeInTheDocument();
   });
 
   it('renders a real calendar body inside the CalendarPanel', () => {
@@ -86,11 +87,9 @@ describe('Home view (D.4.1)', () => {
   });
 
   it('refuses to render with negative metric values (fail-fast)', () => {
-    // Static fixtures are always non-negative, so the guard is verified
-    // separately. We assert the runtime contract by direct invocation of
-    // the metric card guard via an inline component would couple test to
-    // internals; instead we keep the contract documented and rely on the
-    // PLACEHOLDER_METRICS fixture being audited via lint + typecheck.
+    // SIK-125 wired the metric cards to live API data; the previous static
+    // PLACEHOLDER_METRICS guard was removed. Empty-data fall-back is now
+    // the AGENT-H7 path: render '—' / omit the segment, never throw.
     expect(() => renderHome()).not.toThrow();
   });
 

@@ -17,6 +17,8 @@
  */
 import { http, HttpResponse } from 'msw';
 import type {
+  DashboardReviewResponseV2,
+  DashboardTodayCompletionResponseV2,
   DashboardTodayResponseV2,
   DashboardWeeklyPlanResponseV2,
   EventWindowResponseV2,
@@ -157,6 +159,25 @@ export const homeHandlers = [
       totalQuestions: 1248,
       weeklyAccuracy: 0.764,
     } as unknown as OverviewResponseV2;
+    return HttpResponse.json(response);
+  }),
+
+  // SIK-125 Metric Row endpoints. Each card consumes one of these.
+  http.get('/api/v2/dashboard/today/review', () => {
+    const response: DashboardReviewResponseV2 = {
+      total: 47,
+      items: [],
+    };
+    return HttpResponse.json(response);
+  }),
+
+  http.get('/api/v2/dashboard/weekly-plan/today-completion', () => {
+    const response: DashboardTodayCompletionResponseV2 = {
+      date: todayLocalStamp(),
+      doneEvents: 8,
+      totalEvents: 15,
+      completionRate: '0.53',
+    };
     return HttpResponse.json(response);
   }),
 ];

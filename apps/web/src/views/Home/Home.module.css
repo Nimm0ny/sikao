@@ -1,63 +1,10 @@
 /*
  * Home view — V5 D.4.1 desktop page skeleton.
  * Why: ScreenLockShell owns the 4-row grid (header / metric-row / Calendar
- *      / BottomRow). This module only styles internal sections.
+ *      / BottomRow). This module only styles the bottom row container that
+ *      hosts the 3 mini panels. MetricRow + HomeTopbar own their own
+ *      module CSS; metric-card styles live there now.
  */
-
-.metricRow {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: var(--space-4);
-}
-
-.metricCard {
-  background: var(--card-bg);
-  border: var(--card-border);
-  border-radius: var(--card-radius);
-  box-shadow: var(--card-shadow-rest);
-  padding: var(--card-padding);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-2);
-  box-sizing: border-box;
-}
-
-.metricLabel {
-  font-size: var(--font-meta);
-  color: var(--color-text-secondary);
-}
-
-.metricDelta {
-  font-size: var(--font-meta);
-  color: var(--color-text-meta);
-}
-.metricDelta[data-direction='up']   { color: var(--color-state-ok); }
-.metricDelta[data-direction='down'] { color: var(--color-state-err); }
-
-.calendarTabs {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--font-meta);
-  color: var(--color-text-secondary);
-}
-
-.calendarTabActive {
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-semibold);
-}
-
-.calendarTab {
-  cursor: default;
-}
-
-.calendarPlaceholder {
-  display: grid;
-  place-items: center;
-  min-height: 220px;
-  color: var(--color-text-meta);
-  font-size: var(--font-body);
-}
 
 .bottomRow {
   display: grid;
@@ -143,10 +90,5 @@
 }
 
 @media (max-width: 1023.98px) {
-  .metricRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .bottomRow { grid-template-columns: 1fr; }
-}
-
-@media (max-width: 767.98px) {
-  .metricRow { grid-template-columns: 1fr; }
 }
