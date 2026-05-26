@@ -1,10 +1,9 @@
 /*
- * TodayCalendarView — Home Section A · Today canvas (V5 visual contract:
- * `.tmp_review/out/Tab1-Home/Home Today Calendar v1.html`).
- * Why: 24h × 48px-per-hour vertical canvas with absolute-positioned event
- *      blocks. Inline EventBlock here is a placeholder skeleton; Wave 3
- *      lifts it into a dedicated EventBlock primitive (with category
- *      colors / status modifiers) once Week / Month bodies share shape.
+ * TodayCalendarView — Home Section A · Today canvas (V5 SIK-126).
+ * Why: Home v2.1 prototype today view: a single horizontal scroller with
+ *      12 hour columns (2h each, 120px wide). Head + body share the same
+ *      overflow-x container so they scroll together — no JS sync needed.
+ *      Events render absolute over the body strip, positioned by hour.
  */
 
 .root {
@@ -16,59 +15,95 @@
   min-width: 0;
 }
 
+.scroller {
+  --hour-col-w: 120px;
+  --total-w: calc(12 * var(--hour-col-w));
+  --strip-h: 132px;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.scrollerInner {
+  width: var(--total-w);
+}
+
 .head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+  display: grid;
+  grid-template-columns: repeat(12, var(--hour-col-w));
   border-bottom: 1px solid var(--color-border-subtle);
 }
 
-.headTitle {
-  margin: 0;
-  font-size: var(--font-card);
-  font-weight: var(--font-weight-semibold);
-  color: var(--color-text-primary);
-}
-
-.headMeta {
-  font-size: var(--font-meta);
+.cellHour {
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--font-tiny);
   color: var(--color-text-meta);
-}
-
-.canvas {
-  --hour-h: 48px;
-  position: relative;
-  display: grid;
-  grid-template-columns: 56px 1fr;
-  height: calc(24 * var(--hour-h));
-  overflow: auto;
-}
-
-.hours {
-  position: relative;
   border-right: 1px solid var(--color-border-subtle);
 }
+.cellHour:last-child { border-right: 0; }
 
-.hourLabel {
-  position: absolute;
-  left: 0;
-  right: var(--space-2);
-  height: var(--hour-h);
-  font-size: var(--font-tiny);
-  font-weight: var(--font-weight-medium);
-  color: var(--color-text-meta);
-  text-align: right;
+.body {
+  position: relative;
+  height: var(--strip-h);
+  background-image: linear-gradient(
+    to right,
+    var(--color-border-subtle) 0 1px,
+    transparent 1px var(--hour-col-w)
+  );
+  background-size: var(--hour-col-w) 100%;
 }
 
-.grid {
-  position: relative;
-  background-image: linear-gradient(
-    to bottom,
-    var(--color-border-subtle) 0 1px,
-    transparent 1px var(--hour-h)
-  );
-  background-size: 100% var(--hour-h);
+.event {
+  /*
+   * 1h = 60px horizontally (since 2h column is 120px). Positioning is
+   * inline (left/width) — driven by event geometry — so the rule below
+   * only owns the visual surface.
+   */
+  position: absolute;
+  top: var(--space-3);
+  bottom: var(--space-3);
+  border-radius: var(--radius-10);
+  padding: var(--space-2) var(--space-3);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-primary);
+  border-left: 4px solid var(--color-text-meta);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--font-tiny);
+  cursor: default;
+}
+
+.event[data-kind='plan']      { background: var(--color-bg-elevated); border-left-color: var(--color-text-primary); }
+.event[data-kind='practice']  { background: var(--color-brand-soft); border-left-color: var(--color-brand-primary); }
+.event[data-kind='mock']      { background: var(--color-brand-primary); border-left-color: var(--color-text-primary); color: var(--color-text-primary); }
+.event[data-kind='milestone'] { background: var(--color-state-err-soft); border-left-color: var(--color-state-err); color: var(--color-text-primary); }
+
+.eventTitle {
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eventTime {
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+}
+
+.eventDetail {
+  font-size: var(--font-tiny);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.event[data-status='done'] { filter: saturate(0.6); opacity: 0.82; }
+.event[data-status='done'] .eventTitle {
+  text-decoration: line-through;
+  color: var(--color-text-secondary);
 }
 
 .stateWrap {

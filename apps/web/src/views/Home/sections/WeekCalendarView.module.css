@@ -1,10 +1,10 @@
 /*
- * WeekCalendarView — Home Section A · Week canvas (V5 visual contract:
- * `.tmp_review/out/Tab1-Home/Home Week Calendar v1.html`).
- * Why: 7-column day grid, each column is a 24h × 36px-per-hour strip.
- *      Events bucketed by local date (Asia/Shanghai); slim block (title
- *      only — time implied by row position; full EventBlock primitive
- *      lifted in SIK-90 wave 3).
+ * WeekCalendarView — V5 SIK-126 (Home v2.1 week view).
+ *
+ * Why: 7-day x 3-slot grid (early / midday / evening). Each cell carries
+ *      a dc-label header + 0..N event chips. Empty cells leave whitespace.
+ *      Today column gets a subtle yellow tint. Chip color comes from the
+ *      event kind (border-left + soft fill).
  */
 
 .root {
@@ -14,102 +14,96 @@
   box-shadow: var(--card-shadow-rest);
   overflow: hidden;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
-.head {
-  display: flex;
-  align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-3) var(--space-4);
+.calHead {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
   border-bottom: 1px solid var(--color-border-subtle);
 }
 
-.headTitle {
-  margin: 0;
-  font-size: var(--font-card);
-  font-weight: var(--font-weight-semibold);
-}
-
-.headMeta {
-  font-size: var(--font-meta);
-  color: var(--color-text-meta);
-}
-
-.grid {
-  --hour-h: 36px;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-}
-
-.headerRow {
-  display: grid;
-  grid-template-columns: 56px repeat(7, 1fr);
-}
-
-.bodyRow {
-  display: grid;
-  grid-template-columns: 56px repeat(7, 1fr);
-  position: relative;
-}
-
-.dayHeader {
+.cellDay {
   padding: var(--space-2) var(--space-3);
-  border-left: 1px solid var(--color-border-subtle);
+  border-right: 1px solid var(--color-border-subtle);
   display: flex;
   flex-direction: column;
+  gap: var(--space-1);
+  background: var(--color-bg-surface);
+}
+.cellDay:last-child { border-right: 0; }
+
+.cellDay[data-today='true'] {
+  background: var(--color-brand-soft);
 }
 
-.dayHeader[data-today='true'] {
-  background: color-mix(in srgb, var(--color-brand-primary) 6%, var(--color-bg-surface));
-}
-
-.dow {
+.dLabel {
   font-size: var(--font-tiny);
   color: var(--color-text-meta);
   font-weight: var(--font-weight-medium);
 }
 
-.dom {
+.dNum {
   font-size: var(--font-card);
-  font-weight: var(--font-weight-bold);
   color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
 }
 
-.hourCol {
-  position: relative;
+.calBody {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.dayCell {
   border-right: 1px solid var(--color-border-subtle);
-  height: calc(24 * var(--hour-h));
+  border-bottom: 1px solid var(--color-border-subtle);
+  padding: var(--space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-height: 0;
+  overflow: hidden;
+}
+.dayCell:nth-child(7n) { border-right: 0; }
+.dayCell:nth-last-child(-n+7) { border-bottom: 0; }
+
+.dayCell[data-today='true'] {
+  background: var(--color-brand-soft);
 }
 
-.hourLabel {
-  position: absolute;
-  left: 0;
-  right: var(--space-2);
+.dcLabel {
   font-size: var(--font-tiny);
   color: var(--color-text-meta);
-  text-align: right;
+  font-weight: var(--font-weight-medium);
 }
 
-.dayCol {
-  position: relative;
-  border-left: 1px solid var(--color-border-subtle);
-  height: calc(24 * var(--hour-h));
-  background-image: linear-gradient(
-    to bottom,
-    var(--color-border-subtle) 0 1px,
-    transparent 1px var(--hour-h)
-  );
-  background-size: 100% var(--hour-h);
+.dcEmpty {
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+  opacity: 0.6;
 }
 
-.dayCol[data-weekend='true'] {
-  background-color: var(--color-bg-elevated);
+.dayEvent {
+  display: block;
+  font-size: var(--font-tiny);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-10);
+  background: var(--color-bg-elevated);
+  border-left: 2px solid var(--color-text-meta);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-.dayCol[data-today='true'] {
-  background-color: color-mix(in srgb, var(--color-brand-primary) 6%, var(--color-bg-surface));
-}
+.dayEvent[data-kind='plan']      { background: var(--color-bg-elevated); border-left-color: var(--color-text-primary); }
+.dayEvent[data-kind='practice']  { background: var(--color-brand-soft); border-left-color: var(--color-brand-primary); }
+.dayEvent[data-kind='mock']      { background: var(--color-brand-primary); border-left-color: var(--color-text-primary); }
+.dayEvent[data-kind='milestone'] { background: var(--color-state-err-soft); border-left-color: var(--color-state-err); color: var(--color-text-primary); }
 
 .stateWrap {
   padding: var(--space-5) var(--space-4);
