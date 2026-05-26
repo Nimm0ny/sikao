@@ -116,7 +116,38 @@ export function RootLayout({ user }: RootLayoutProps) {
 
   const brand: ReactNode = (
     <span className={styles.brand}>
-      <span className={styles.brandDot} aria-hidden="true" />
+      <span className={styles.brandMark} aria-hidden="true" data-testid="rail-brand-mark">
+        {/* BrandMark — inline JSX SVG, single SSOT mirror of
+         * apps/web/public/favicon.svg (黑底圆角 + 白「田」6 stroke + 白圆点).
+         * Why inline (not SpriteIcon): sprite system enforces 24×24 viewBox
+         * + stroke-only contract via lint-icon-style (CP.5); brand mark is
+         * a filled glyph on a 40×40 viewBox token-themed via currentColor /
+         * background. lint-icon-style scans .svg files only, so inline JSX
+         * <svg> is exempt by scope (verified 2026-05-26).
+         */}
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 40 40"
+          focusable="false"
+          aria-hidden="true"
+        >
+          <rect width="40" height="40" rx="10" fill="currentColor" />
+          <g
+            className={styles.brandMarkInk}
+            strokeWidth="1.8"
+            strokeLinecap="round"
+          >
+            <line x1="11" y1="13" x2="29" y2="13" />
+            <line x1="11" y1="22" x2="29" y2="22" />
+            <line x1="11" y1="13" x2="11" y2="27" />
+            <line x1="20" y1="13" x2="20" y2="27" />
+            <line x1="29" y1="13" x2="29" y2="27" />
+            <line x1="11" y1="27" x2="29" y2="27" />
+          </g>
+          <circle cx="20" cy="34" r="2.2" className={styles.brandMarkDot} />
+        </svg>
+      </span>
       <span className={styles.brandWord}>SIKAO</span>
     </span>
   );
