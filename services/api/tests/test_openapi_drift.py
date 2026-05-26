@@ -32,6 +32,36 @@ def test_checked_in_openapi_matches_live_app_for_review_backend_gate() -> None:
     assert "/api/v2/review/debt/redistribute" in paths
     assert "/api/v2/review/debt/skip-rampup" in paths
     assert "/api/v2/review/items/{item_id}/add-to-plan" in paths
+    assert "/api/v2/notes" in paths
+    assert "/api/v2/notes/{note_id}" in paths
+    assert "/api/v2/notes/tags" in paths
+    assert "/api/v2/notes/tags/rename" in paths
+    assert "/api/v2/notes/tags/merge" in paths
+    assert "/api/v2/notes/{note_id}/tags" in paths
+    assert "/api/v2/notes/{note_id}/tags/{tag_name}" in paths
+    assert "/api/v2/notes/images" in paths
+    assert "/api/v2/notes/search" in paths
+    assert "/api/v2/notes/{note_id}/visibility" in paths
+    assert "/api/v2/notes/community" in paths
+    assert "/api/v2/notes/{note_id}/export" in paths
+    assert "/api/v2/notes/{note_id}/ai-summary" in paths
+    assert "/api/v2/notes/{note_id}/ai-summary/confirm" in paths
+    assert "/api/v2/notes/weekly-review/generate" in paths
+    assert {"get", "post"} <= set(paths["/api/v2/notes"])
+    assert {"get", "put", "delete"} <= set(paths["/api/v2/notes/{note_id}"])
+    assert {"get"} <= set(paths["/api/v2/notes/tags"])
+    assert {"patch"} <= set(paths["/api/v2/notes/tags/rename"])
+    assert {"post"} <= set(paths["/api/v2/notes/tags/merge"])
+    assert {"post"} <= set(paths["/api/v2/notes/{note_id}/tags"])
+    assert {"delete"} <= set(paths["/api/v2/notes/{note_id}/tags/{tag_name}"])
+    assert {"post"} <= set(paths["/api/v2/notes/images"])
+    assert {"get"} <= set(paths["/api/v2/notes/search"])
+    assert {"patch"} <= set(paths["/api/v2/notes/{note_id}/visibility"])
+    assert {"get"} <= set(paths["/api/v2/notes/community"])
+    assert {"get"} <= set(paths["/api/v2/notes/{note_id}/export"])
+    assert {"post"} <= set(paths["/api/v2/notes/{note_id}/ai-summary"])
+    assert {"post"} <= set(paths["/api/v2/notes/{note_id}/ai-summary/confirm"])
+    assert {"post"} <= set(paths["/api/v2/notes/weekly-review/generate"])
 
 
 def test_openapi_includes_review_debt_and_profile_contract_shapes() -> None:
@@ -66,3 +96,23 @@ def test_openapi_includes_review_debt_and_profile_contract_shapes() -> None:
 
     cause_request_mode = schemas["CauseAnalysisRequestV2"]["properties"]["mode"]
     assert {"single", "forced", "deep"} <= set(cause_request_mode["enum"])
+
+    assert "CommunityNoteListResponseV2" in schemas
+    assert "CommunityNoteItemV2" in schemas
+    assert "NoteVisibilityUpdateRequestV2" in schemas
+    assert "NoteVisibilityUpdateResponseV2" in schemas
+
+    community_feed = schemas["CommunityNoteItemV2"]["properties"]
+    assert {
+        "id",
+        "title",
+        "bodyPreview",
+        "wordCount",
+        "authorName",
+        "tags",
+        "linkedQuestionId",
+        "reactionCount",
+        "commentCount",
+        "isFeatured",
+        "createdAt",
+    } <= set(community_feed)
