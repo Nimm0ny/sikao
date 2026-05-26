@@ -10,6 +10,8 @@
   display: grid;
   grid-template-columns: 1.4fr 1.2fr 1fr;
   gap: var(--space-4);
+  min-height: 0;
+  overflow: hidden;
 }
 
 .rightStack {
@@ -17,6 +19,7 @@
   grid-template-rows: 1fr 1fr;
   gap: var(--space-4);
   min-height: 0;
+  overflow: hidden;
 }
 
 .taskList {

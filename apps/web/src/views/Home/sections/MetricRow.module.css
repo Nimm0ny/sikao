@@ -17,12 +17,13 @@
   border: var(--card-border);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow-rest);
-  padding: var(--card-padding);
+  padding: var(--space-3) var(--space-4);
   display: flex;
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
   box-sizing: border-box;
+  height: 64px;
 }
 
 .iconSlot {
@@ -50,14 +51,14 @@
 .data {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
   min-width: 0;
   flex: 1 1 auto;
+  overflow: hidden;
 }
 
 .value {
-  font-size: var(--font-h2);
-  line-height: var(--line-height-h2);
+  font-size: var(--font-card);
+  line-height: 1.2;
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   white-space: nowrap;
