@@ -707,6 +707,16 @@ class NoteUpdateRequestV2(CamelModel):
     tags: list[str] | None = Field(default=None, max_length=10)
 
 
+class NoteVisibilityUpdateRequestV2(CamelModel):
+    visibility: Literal["private", "public"]
+
+
+class NoteVisibilityUpdateResponseV2(CamelModel):
+    id: int
+    visibility: str
+    updated_at: UtcDatetime
+
+
 class TagWithCountV2(CamelModel):
     tag_name: str
     is_system: bool
@@ -794,6 +804,27 @@ class NoteSearchResponseV2(CamelModel):
     page: int
     page_size: int
     facet_distribution: dict[str, dict[str, int]] = Field(default_factory=dict)
+
+
+class CommunityNoteItemV2(CamelModel):
+    id: int
+    title: str
+    body_preview: str
+    word_count: int
+    author_name: str | None = None
+    tags: list[str] = Field(default_factory=list)
+    linked_question_id: int | None = None
+    reaction_count: int = 0
+    comment_count: int = 0
+    is_featured: bool = False
+    created_at: UtcDatetime
+
+
+class CommunityNoteListResponseV2(CamelModel):
+    items: list[CommunityNoteItemV2] = Field(default_factory=list)
+    total: int
+    page: int
+    page_size: int
 
 
 class NoteAiSummaryCardV2(CamelModel):
