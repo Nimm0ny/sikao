@@ -11,6 +11,7 @@ import { MetricRow } from './sections/MetricRow';
 import { WeeklyReviewSection } from './sections/WeeklyReviewSection';
 import { ProgressSection } from './sections/ProgressSection';
 import { RecommendationSection } from './sections/RecommendationSection';
+import { RecentPracticeSection } from './sections/RecentPracticeSection';
 import styles from './Home.module.css';
 
 /*
@@ -50,17 +51,23 @@ export function Home() {
       </ScrollRegion>
 
       <section className={styles.bottomRow} aria-label="底部模块">
-        <Panel title="本周备考回顾">
-          <WeeklyReviewSection />
+        <Panel title="今日推荐">
+          <RecommendationSection />
         </Panel>
 
         <Panel title="学习进度">
           <ProgressSection />
         </Panel>
 
-        <Panel title="今日推荐">
-          <RecommendationSection />
-        </Panel>
+        <div className={styles.rightStack}>
+          <Panel title="本周备考回顾">
+            <WeeklyReviewSection />
+          </Panel>
+
+          <Panel title="最近练习">
+            <RecentPracticeSection />
+          </Panel>
+        </div>
       </section>
     </ScreenLockShell>
   );

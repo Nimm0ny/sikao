@@ -71,13 +71,12 @@ describe('Home view (D.4.1)', () => {
     expect(screen.getByTestId('home-calendar-panel')).toBeInTheDocument();
   });
 
-  it('renders the bottom row with 3 panels (今日任务 / 错题回顾 / 推荐套题)', () => {
+  it('renders the bottom row with 4 panels (今日推荐 / 学习进度 / 本周备考回顾 / 最近练习)', () => {
     renderHome();
     const root = screen.getByTestId('home-view');
     const panels = within(root).getAllByTestId('panel');
-    // PlanSection replaced the calendar Panel in SIK-90 wave 1; the
-    // remaining 3 panels are the bottom row (今日任务 / 错题回顾 / 推荐套题).
-    expect(panels.length).toBe(3);
+    // SIK-127: 3-col layout with right-stack = 4 panels total.
+    expect(panels.length).toBe(4);
   });
 
   it('exposes a primary CTA in the page header', () => {

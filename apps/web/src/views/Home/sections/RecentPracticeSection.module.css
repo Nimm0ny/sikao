@@ -1,0 +1,88 @@
+/*
+ * RecentPracticeSection — V5 SIK-127 (Home v2.1 bottom-row right-bottom).
+ * Why: 2 feed-item list + "全部历史" link. Compact card for the right-stack.
+ */
+
+.root {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-2);
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-card);
+  font-weight: var(--font-weight-semibold);
+}
+
+.headLink {
+  font-size: var(--font-tiny);
+  color: var(--color-state-info);
+  text-decoration: none;
+  font-weight: var(--font-weight-medium);
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.feedItem {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+.feedItem:last-child { border-bottom: 0; }
+
+.feedIcon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-10);
+  flex-shrink: 0;
+  background: var(--color-bg-sunken);
+  display: grid;
+  place-items: center;
+  color: var(--color-text-secondary);
+}
+
+.feedMain {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.feedName {
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-medium);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.feedSub {
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+  margin-top: var(--space-1);
+}
+
+.feedPill {
+  font-size: var(--font-tiny);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-1) var(--space-2);
+  border-radius: 9999px;
+  flex-shrink: 0;
+  background: var(--color-bg-sunken);
+  color: var(--color-text-secondary);
+}
