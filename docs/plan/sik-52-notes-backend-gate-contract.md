@@ -56,6 +56,10 @@ Behavior:
 - best-effort deletes physical files under `upload_dir`
 - idempotent on rerun
 
+Precondition:
+
+- Notes save flows must bind any user-owned orphan image whose `/uploads/...` path is referenced by the persisted `body_json`, so referenced images do not remain cleanup-eligible forever
+
 ### D3. Weekly snapshot ownership
 
 `SIK-52` does **not** introduce a second Notes-specific weekly snapshot cron.
