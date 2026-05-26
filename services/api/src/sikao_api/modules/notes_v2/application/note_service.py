@@ -13,6 +13,7 @@ from sikao_api.db.schemas_v2 import (
 )
 from sikao_api.modules.mock_exam.application.enforcer import assert_can_create_question_note
 from sikao_api.modules.notes_v2.domain.body_extractor import extract_text, extract_word_count
+from sikao_api.modules.notes_v2.domain.community_policy import assert_public_note_publishable
 from sikao_api.modules.notes_v2.domain.content_hash import compute_content_hash
 from sikao_api.modules.notes_v2.infrastructure.repos import NotesRepoV2
 from sikao_api.modules.system.application.errors import NotFoundError, ValidationError
@@ -103,6 +104,8 @@ class NotesServiceV2:
             linked_question_id=resolved_question_id,
         )
         visibility = self._validate_visibility(payload.visibility)
+        if visibility == "public":
+            assert_public_note_publishable(body_text=body_text)
         normalized_tags = self._normalize_tags(payload.tags)
 
         note = NoteV2(
@@ -160,6 +163,8 @@ class NotesServiceV2:
             )
         if payload.visibility is not None:
             note.visibility = self._validate_visibility(payload.visibility)
+        if note.visibility == "public":
+            assert_public_note_publishable(body_text=note.body_text)
         if payload.tags is not None:
             normalized_tags = self._normalize_tags(payload.tags)
             self.repo.replace_tags(note_id=note.id, user_id=note.user_id, tags=normalized_tags)

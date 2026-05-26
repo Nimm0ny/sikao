@@ -68,6 +68,38 @@ class NotesRepoV2:
     def get_user(self, *, user_id: int) -> UserV2 | None:
         return self.session.get(UserV2, user_id)
 
+    def list_public_notes(
+        self,
+        *,
+        page: int,
+        size: int,
+        sort: str,
+        linked_question_id: int | None,
+        tags: Sequence[str],
+    ) -> tuple[list[tuple[NoteV2, str | None]], int]:
+        stmt = (
+            select(NoteV2, UserV2.display_name)
+            .join(UserV2, UserV2.id == NoteV2.user_id)
+            .where(
+                NoteV2.visibility == "public",
+                NoteV2.deleted_at.is_(None),
+            )
+        )
+        if linked_question_id is not None:
+            stmt = stmt.where(NoteV2.linked_question_id == linked_question_id)
+        if sort == "featured":
+            stmt = stmt.where(NoteV2.is_featured.is_(True))
+        if tags:
+            stmt = self._apply_tag_filter(stmt, tags=tags)
+
+        count_stmt = select(func.count()).select_from(stmt.subquery())
+        total = int(self.session.scalar(count_stmt) or 0)
+
+        stmt = stmt.order_by(*self._resolve_community_order_by(sort=sort))
+        stmt = stmt.offset((page - 1) * size).limit(size)
+        rows = list(self.session.execute(stmt).all())
+        return [(note, display_name) for note, display_name in rows], total
+
     def list_note_tags(self, *, note_id: int) -> list[str]:
         return list(
             self.session.scalars(
@@ -76,6 +108,19 @@ class NotesRepoV2:
                 .order_by(NoteTagV2.id.asc())
             )
         )
+
+    def list_note_tags_map(self, *, note_ids: Sequence[int]) -> dict[int, list[str]]:
+        if not note_ids:
+            return {}
+        rows = self.session.execute(
+            select(NoteTagV2.note_id, NoteTagV2.tag_name)
+            .where(NoteTagV2.note_id.in_(list(note_ids)))
+            .order_by(NoteTagV2.note_id.asc(), NoteTagV2.id.asc())
+        ).all()
+        tags_map: dict[int, list[str]] = {}
+        for note_id, tag_name in rows:
+            tags_map.setdefault(int(note_id), []).append(str(tag_name))
+        return tags_map
 
     def replace_tags(
         self,
@@ -247,11 +292,37 @@ class NotesRepoV2:
         elif has_linked_question is False:
             stmt = stmt.where(NoteV2.linked_question_id.is_(None))
         if tags:
-            tag_subquery = (
-                select(NoteTagV2.note_id)
-                .where(NoteTagV2.tag_name.in_(list(tags)))
-                .group_by(NoteTagV2.note_id)
-                .having(func.count(func.distinct(NoteTagV2.tag_name)) == len(tags))
-            )
-            stmt = stmt.where(NoteV2.id.in_(tag_subquery))
+            stmt = self._apply_tag_filter(stmt, tags=tags)
         return stmt
+
+    @staticmethod
+    def _apply_tag_filter(
+        stmt: Select[Any],
+        *,
+        tags: Sequence[str],
+    ) -> Select[Any]:
+        tag_subquery = (
+            select(NoteTagV2.note_id)
+            .where(NoteTagV2.tag_name.in_(list(tags)))
+            .group_by(NoteTagV2.note_id)
+            .having(func.count(func.distinct(NoteTagV2.tag_name)) == len(tags))
+        )
+        return stmt.where(NoteV2.id.in_(tag_subquery))
+
+    @staticmethod
+    def _resolve_community_order_by(*, sort: str) -> tuple[Any, ...]:
+        if sort == "latest":
+            return (NoteV2.created_at.desc(), NoteV2.id.desc())
+        if sort == "hottest":
+            return (
+                NoteV2.reaction_count.desc(),
+                NoteV2.created_at.desc(),
+                NoteV2.id.desc(),
+            )
+        if sort == "featured":
+            return (
+                NoteV2.reaction_count.desc(),
+                NoteV2.created_at.desc(),
+                NoteV2.id.desc(),
+            )
+        raise ValueError(f"unsupported community sort: {sort}")

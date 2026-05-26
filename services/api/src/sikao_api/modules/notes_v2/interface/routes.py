@@ -10,6 +10,7 @@ from sikao_api.core.config import Settings
 from sikao_api.core.deps import get_app_settings
 from sikao_api.db.models_v2 import NoteV2, UserV2
 from sikao_api.db.schemas_v2 import (
+    CommunityNoteListResponseV2,
     NoteCreateRequestV2,
     NoteDetailV2,
     NoteImageUploadResponseV2,
@@ -17,6 +18,8 @@ from sikao_api.db.schemas_v2 import (
     NoteSearchResponseV2,
     NoteTagMutationRequestV2,
     NoteUpdateRequestV2,
+    NoteVisibilityUpdateRequestV2,
+    NoteVisibilityUpdateResponseV2,
     OperationAckV2,
     TagMergeRequestV2,
     TagRenameV2,
@@ -24,12 +27,14 @@ from sikao_api.db.schemas_v2 import (
 )
 from sikao_api.db.session import get_db_session
 from sikao_api.modules.identity.application.security_v2 import get_current_user_v2, verify_csrf_v2
+from sikao_api.modules.notes_v2.application.community_service import NoteCommunityServiceV2
 from sikao_api.modules.notes_v2.application.export_service import NoteExportServiceV2
 from sikao_api.modules.notes_v2.application.image_service import NoteImageServiceV2
 from sikao_api.modules.notes_v2.application.note_service import NotesServiceV2
 from sikao_api.modules.notes_v2.application.search_service import NotesSearchServiceV2
 from sikao_api.modules.notes_v2.application.tag_service import NoteTagServiceV2
 from sikao_api.modules.notes_v2.infrastructure.meilisearch_client import NotesSearchUnavailable
+from sikao_api.modules.system.application.errors import ValidationError
 
 router = APIRouter(prefix="/api/v2/notes", tags=["notes-v2"])
 logger = logging.getLogger(__name__)
@@ -161,68 +166,17 @@ def create_note(
     session: Annotated[Session, Depends(get_db_session)],
 ) -> NoteDetailV2:
     note = NotesServiceV2(session).create_note(user=user, payload=payload)
+    if note.visibility == "public":
+        NoteCommunityServiceV2(session).record_visibility_audit(
+            note=note,
+            previous_visibility=None,
+            request_id=getattr(request.state, "request_id", None),
+            ip=request.client.host if request.client is not None else None,
+        )
     session.commit()
     session.refresh(note)
     _sync_notes_search_upsert_after_commit(request=request, session=session, note=note, sync_action="create")
     return NotesServiceV2(session).serialize_note(note)
-
-
-@router.get("/tags", response_model=list[TagWithCountV2])
-def list_tags(
-    user: Annotated[UserV2, Depends(get_current_user_v2)],
-    session: Annotated[Session, Depends(get_db_session)],
-) -> list[TagWithCountV2]:
-    return NoteTagServiceV2(session).list_tags(user=user)
-
-
-@router.patch("/tags/rename", response_model=OperationAckV2, dependencies=[Depends(verify_csrf_v2)])
-def rename_tag(
-    payload: TagRenameV2,
-    user: Annotated[UserV2, Depends(get_current_user_v2)],
-    session: Annotated[Session, Depends(get_db_session)],
-) -> OperationAckV2:
-    NoteTagServiceV2(session).rename_tag(user=user, payload=payload)
-    session.commit()
-    return OperationAckV2(ok=True, status="renamed")
-
-
-@router.post("/tags/merge", response_model=OperationAckV2, dependencies=[Depends(verify_csrf_v2)])
-def merge_tags(
-    payload: TagMergeRequestV2,
-    user: Annotated[UserV2, Depends(get_current_user_v2)],
-    session: Annotated[Session, Depends(get_db_session)],
-) -> OperationAckV2:
-    NoteTagServiceV2(session).merge_tags(user=user, payload=payload)
-    session.commit()
-    return OperationAckV2(ok=True, status="merged")
-
-
-@router.post("/{note_id}/tags", response_model=OperationAckV2, dependencies=[Depends(verify_csrf_v2)])
-def add_tag(
-    note_id: int,
-    payload: NoteTagMutationRequestV2,
-    user: Annotated[UserV2, Depends(get_current_user_v2)],
-    session: Annotated[Session, Depends(get_db_session)],
-) -> OperationAckV2:
-    NoteTagServiceV2(session).add_tag(user=user, note_id=note_id, tag_name=payload.tag_name)
-    session.commit()
-    return OperationAckV2(ok=True, status="added")
-
-
-@router.delete(
-    "/{note_id}/tags/{tag_name}",
-    response_model=OperationAckV2,
-    dependencies=[Depends(verify_csrf_v2)],
-)
-def remove_tag(
-    note_id: int,
-    tag_name: str,
-    user: Annotated[UserV2, Depends(get_current_user_v2)],
-    session: Annotated[Session, Depends(get_db_session)],
-) -> OperationAckV2:
-    NoteTagServiceV2(session).remove_tag(user=user, note_id=note_id, tag_name=tag_name.strip().lower())
-    session.commit()
-    return OperationAckV2(ok=True, status="removed")
 
 
 @router.post("/images", response_model=NoteImageUploadResponseV2, dependencies=[Depends(verify_csrf_v2)])
@@ -261,6 +215,144 @@ def search_notes(
         page=page,
         size=size,
     )
+
+
+@router.get("/community", response_model=CommunityNoteListResponseV2)
+def list_community_notes(
+    _user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+    page: Annotated[int, Query(ge=1)] = 1,
+    size: Annotated[int, Query(ge=1, le=50)] = 20,
+    sort: str = "latest",
+    linked_question_id: int | None = Query(default=None, alias="linked_question_id"),
+    linked_question_id_camel: int | None = Query(default=None, alias="linkedQuestionId"),
+    tags: str | None = None,
+) -> CommunityNoteListResponseV2:
+    resolved_tags = [part for part in (tags or "").split(",") if part]
+    resolved_linked_question_id = _resolve_linked_question_filter(
+        snake_case_value=linked_question_id,
+        camel_case_value=linked_question_id_camel,
+    )
+    return NoteCommunityServiceV2(session).list_community_notes(
+        page=page,
+        size=size,
+        sort=sort,
+        linked_question_id=resolved_linked_question_id,
+        tags=resolved_tags,
+    )
+
+
+@router.get("/tags", response_model=list[TagWithCountV2])
+def list_tags(
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> list[TagWithCountV2]:
+    return NoteTagServiceV2(session).list_tags(user=user)
+
+
+@router.patch(
+    "/tags/rename",
+    response_model=OperationAckV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def rename_tag(
+    payload: TagRenameV2,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> OperationAckV2:
+    NoteTagServiceV2(session).rename_tag(user=user, payload=payload)
+    session.commit()
+    return OperationAckV2(ok=True, status="renamed")
+
+
+@router.post(
+    "/tags/merge",
+    response_model=OperationAckV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def merge_tags(
+    payload: TagMergeRequestV2,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> OperationAckV2:
+    NoteTagServiceV2(session).merge_tags(user=user, payload=payload)
+    session.commit()
+    return OperationAckV2(ok=True, status="merged")
+
+
+@router.post(
+    "/{note_id}/tags",
+    response_model=OperationAckV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def add_tag(
+    note_id: int,
+    payload: NoteTagMutationRequestV2,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> OperationAckV2:
+    NoteTagServiceV2(session).add_tag(
+        user=user,
+        note_id=note_id,
+        tag_name=payload.tag_name,
+    )
+    session.commit()
+    return OperationAckV2(ok=True, status="added")
+
+
+@router.delete(
+    "/{note_id}/tags/{tag_name}",
+    response_model=OperationAckV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def remove_tag(
+    note_id: int,
+    tag_name: str,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> OperationAckV2:
+    NoteTagServiceV2(session).remove_tag(
+        user=user,
+        note_id=note_id,
+        tag_name=tag_name.strip().lower(),
+    )
+    session.commit()
+    return OperationAckV2(ok=True, status="removed")
+
+
+@router.patch(
+    "/{note_id}/visibility",
+    response_model=NoteVisibilityUpdateResponseV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def update_note_visibility(
+    request: Request,
+    note_id: int,
+    payload: NoteVisibilityUpdateRequestV2,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> NoteVisibilityUpdateResponseV2:
+    community_service = NoteCommunityServiceV2(session)
+    note, previous_visibility = community_service.update_visibility(
+        user=user,
+        note_id=note_id,
+        visibility=payload.visibility,
+    )
+    community_service.record_visibility_audit(
+        note=note,
+        previous_visibility=previous_visibility,
+        request_id=getattr(request.state, "request_id", None),
+        ip=request.client.host if request.client is not None else None,
+    )
+    session.commit()
+    session.refresh(note)
+    _sync_notes_search_upsert_after_commit(
+        request=request,
+        session=session,
+        note=note,
+        sync_action="community_visibility",
+    )
+    return community_service.build_visibility_response(note=note)
 
 
 @router.get("/{note_id}", response_model=NoteDetailV2)
@@ -303,7 +395,15 @@ def update_note(
 ) -> NoteDetailV2:
     service = NotesServiceV2(session)
     note = service.get_note(user=user, note_id=note_id)
+    previous_visibility = note.visibility
     note = service.update_note(note=note, payload=payload)
+    if note.visibility != previous_visibility:
+        NoteCommunityServiceV2(session).record_visibility_audit(
+            note=note,
+            previous_visibility=previous_visibility,
+            request_id=getattr(request.state, "request_id", None),
+            ip=request.client.host if request.client is not None else None,
+        )
     session.commit()
     session.refresh(note)
     _sync_notes_search_upsert_after_commit(request=request, session=session, note=note, sync_action="update")
@@ -327,3 +427,20 @@ def delete_note(
     session.commit()
     _sync_notes_search_delete_after_commit(request=request, note_id=note.id, user_id=note.user_id)
     return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+def _resolve_linked_question_filter(
+    *,
+    snake_case_value: int | None,
+    camel_case_value: int | None,
+) -> int | None:
+    if (
+        snake_case_value is not None
+        and camel_case_value is not None
+        and snake_case_value != camel_case_value
+    ):
+        raise ValidationError(
+            "linked_question_id and linkedQuestionId must match",
+            code="validation_error",
+        )
+    return snake_case_value if snake_case_value is not None else camel_case_value
