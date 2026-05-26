@@ -1,0 +1,62 @@
+/*
+ * SubNav — Profile (Me) page shared sub-nav styles.
+ * Why: 8 horizontal pills with active state highlight. Disabled pills
+ *      render as muted spans (no link).
+ */
+
+.root {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow-x: auto;
+}
+
+.list {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--btn-h-sm);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-999);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-medium);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out),
+              border-color var(--dur-fast) var(--ease-out);
+}
+
+.pill[data-active='true'] {
+  background: var(--color-brand-primary);
+  border-color: var(--color-brand-primary);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+}
+
+.pill[data-disabled='true'] {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+  background: var(--color-bg-elevated);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover wrapped in @media (hover: hover) */
+  .pill:not([data-disabled='true']):not([data-active='true']):hover {
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+    border-color: var(--color-border-default);
+  }
+}

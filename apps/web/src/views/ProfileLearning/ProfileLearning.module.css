@@ -1,21 +1,54 @@
 /*
- * ProfileLearning — /profile/learning drilldown root.
- * Why: ScreenLockShell owns the grid. This module styles internals.
+ * ProfileLearning — /profile/learning drilldown styles.
+ * Why: sik-fu-b §1 — ScreenLockShell owns the 4-row grid (header /
+ *      sub-nav / range-bar / scroll region). This module styles the
+ *      inner learning-grid (KPI row + 2-col rows).
  */
 
-.sectionGrid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+.headerActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.learningGrid {
+  display: flex;
+  flex-direction: column;
   gap: var(--space-4);
+  min-width: 0;
+}
+
+.row2col {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.row2col[data-ratio='trend'] {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+}
+
+.row2col[data-ratio='tree'] {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+}
+
+.placeholder {
+  background: var(--color-bg-elevated);
+  border: 1px dashed var(--color-border-default);
+  border-radius: var(--card-radius);
+  padding: var(--space-5);
+  text-align: center;
+  color: var(--color-text-meta);
+  font-size: var(--font-meta);
+  min-height: 240px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 @media (max-width: 1023.98px) {
-  .sectionGrid { grid-template-columns: 1fr; }
-}
-
-.stateWrap {
-  padding: var(--space-5) var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  .row2col[data-ratio='trend'],
+  .row2col[data-ratio='tree'] {
+    grid-template-columns: 1fr;
+  }
 }
