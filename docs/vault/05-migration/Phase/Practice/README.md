@@ -3,7 +3,7 @@
 > **Status**: ACCEPTED
 > **Scope**: 一级导航 Tab 2 = 练习（Section A 历史记录 + B 专项练习 + C 套卷练习）+ 答题闭环 + 自定义刷题 + AI 出题 + 申论批改
 > **原则**：完整落地（不走最小化路线）/ 后端先行 / 前端 UI 最后做 / 每 PR 受 AGENTS H9 约束（≤15 文件 / ≤400 行）
-> **Last Updated**: 2026-05-21
+> **Last Updated**: 2026-05-26
 > **Phase 父目录**：[../README.md](../README.md)
 
 > ⚠️ **开工前必读**：[A0-Codebase-Reality-Check.md](./A0-Codebase-Reality-Check.md)
@@ -12,6 +12,8 @@
 >
 > **2026-05-21 口径重定基线**：Practice 当前只消费 Phase-Home 的后端关键输出（`B1 / B7 / B8 / B9 / M6`）与相应契约锁定；旧 Home 前端 `F1-F8` 不再视为本 Phase 的前置。
 
+>
+> **2026-05-26 issue-ledger closeout**：`SIK-19` 现在只承担 Practice backend epic 收口；`SIK-26~SIK-28` 保留为历史前端映射，不再作为新前端执行的 active parent。
 ---
 
 ## 0. 如何阅读本 Phase
@@ -226,21 +228,35 @@ WU 详细：
 
 ## 6.3 Multica Ledger Map
 
-当前仓内 SSOT 与 Multica 子 issue 映射如下，后续 Practice 执行按此顺序推进：
+> **2026-05-26 closeout note**
+> - `SIK-19` 的 active closeout scope 只看 backend child：`SIK-20~SIK-25`，当前均已 `done`。
+> - `SIK-26~SIK-28` 继续保留在表内，供历史追溯；它们不再阻塞 `SIK-19` 收口。
+> - `M11-M19` 仍是 Practice phase 的前端规格里程碑，但自 2026-05-25 起已不再挂在 `SIK-19` 这个 backend epic 下执行。
 
-| Multica | Tranche | Scope |
-|---|---|---|
-| `SIK-20` | `P0 / M0` | docs-only intake + gate / dependency / child map 锁定 |
-| `SIK-21` | `P1 / M1-M3` | `B10 / B11 / B12 / B13 / B21 / B29` |
-| `SIK-22` | `P2 / M4` | `B14 / B16 / B17` |
-| `SIK-23` | `P3 / M5` | `B15 / B25 / B26 / B27` |
-| `SIK-24` | `P4 / M6-M7` | `B22 / B18 / B19` |
-| `SIK-25` | `P5 / M8-M10` | `B20 / B23 / B24 / B28 / B30` |
-| `SIK-26` | `P6 / M11-M12` | `F9 / F10` |
-| `SIK-27` | `P7 / M13-M15` | `F11 / F12 / F13 / F14 / F22` |
-| `SIK-28` | `P8 / M16-M19` | `F15 / F16 / F17 / F18 / F19 / F20 / F21` |
+当前仓内 SSOT 与 Multica 子 issue 映射如下：先看 `SIK-19` 的 active closeout scope，再看仅供追溯的 historical frontend mapping。
+
+### 6.3.1 Active closeout scope (`SIK-19`)
+
+| Multica | Tranche | Scope | Status |
+|---|---|---|---|
+| `SIK-20` | `P0 / M0` | docs-only intake + gate / dependency / child map 锁定 | `done` |
+| `SIK-21` | `P1 / M1-M3` | `B10 / B11 / B12 / B13 / B21 / B29` | `done` |
+| `SIK-22` | `P2 / M4` | `B14 / B16 / B17` | `done` |
+| `SIK-23` | `P3 / M5` | `B15 / B25 / B26 / B27` | `done` |
+| `SIK-24` | `P4 / M6-M7` | `B22 / B18 / B19` | `done` |
+| `SIK-25` | `P5 / M8-M10` | `B20 / B23 / B24 / B28 / B30` | `done` |
+
+### 6.3.2 Historical frontend mapping
+
+| Multica | Tranche | Scope | Status |
+|---|---|---|---|
+| `SIK-26` | `P6 / M11-M12` | `F9 / F10` | `done` |
+| `SIK-27` | `P7 / M13-M15` | `F11 / F12 / F13 / F14 / F22` | `done` |
+| `SIK-28` | `P8 / M16-M19` | `F15 / F16 / F17 / F18 / F19 / F20 / F21` | `done` |
 
 `SIK-20` 的作用不是新增实现，而是把这份映射、Home 依赖门槛、以及 `B25-B30 / F19-F22` 的 latest-doc 口径固定到 repo SSOT，防止后续执行回退到旧的 `B10-B24 / F9-F18` 拆法。
+
+`SIK-19` 自身的 closeout hook：在 `SIK-20~SIK-25` 完整证据链齐备后，父 issue 仍需单独回写 final Evidence Block，显式引用 `SIK-118` 已接管前端 active ledger，然后才能从 `in_progress` 切到 `done`。
 
 ---
 
@@ -313,6 +329,8 @@ M19  week 14-15      WU-F18：e2e 验收
 - [ ] 真题 import 脚本 dry-run + 小批量正式导入测试通过
 
 ### 8.2 前端 M19
+
+> 这是 Practice phase 的前端总体验收门槛，继续作为规格保留；但在 2026-05-25 的前端解耦之后，它不再阻塞 `SIK-19` backend epic 的 closeout。
 - [ ] F19-F22 模块场景（timing / lifecycle / mock-exam / preferences）已进入最终前端验收，而不是只停留在新增 WU 草案
 - [ ] vitest 全绿（含 e2e + a11y）
 - [ ] tsc strict 0 errors

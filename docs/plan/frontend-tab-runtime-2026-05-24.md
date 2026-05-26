@@ -3,7 +3,7 @@ type: plan
 status: active
 owner: lhr
 created: 2026-05-24
-updated: 2026-05-24
+updated: 2026-05-26
 mode: Master
 issue: Frontend-Tab-Runtime-Rewire-2026-05-24
 ---
@@ -13,6 +13,8 @@ issue: Frontend-Tab-Runtime-Rewire-2026-05-24
 > **目标**：在 V5-M0.5 big-bang 之后，将各 Tab 的 V5 骨架视图与已存在的
 > `packages/api-client` queries + `packages/domain` stores 接通，落实
 > `.tmp_review/out/*.html` 47 个原型作为视觉事实输入对应的 React 实现。
+
+> **2026-05-26 sync note**：Practice 前端 active parent 已在 2026-05-25 从 `SIK-19` 解耦到 `SIK-118`。本计划保留原始 milestone 拆分，但凡涉及 Practice 前端的 active execution / review / Evidence Block，均以 `SIK-118` 为准；`SIK-19` 仅保留后端 epic / 历史账本语义。
 
 ## 0. 排序与并行性
 
@@ -43,7 +45,7 @@ issue: Frontend-Tab-Runtime-Rewire-2026-05-24
 | 线 | 父 issue | 起点条件 | 阶段数 | 视觉原型对应目录 |
 |---|---|---|---|---|
 | Home | SIK-29（in_progress） | 立即可启动 | 5 | `.tmp_review/out/Tab1-Home/` + `Tab5-Profile/Profile Learning v1.html` + `Profile Records v1.html` |
-| Practice | SIK-19（backlog） | 后端 SIK-22/23 done | 8 | `.tmp_review/out/Tab2-Practice/` |
+| Practice | SIK-118（in_progress） | 后端 SIK-22/23 done；2026-05-25 从 `SIK-19` 解耦 | 8 | `.tmp_review/out/Tab2-Practice/` |
 | Review | SIK-45（backlog） | 后端 SIK-60 done（已满足） | 5 | `.tmp_review/out/Tab3-Review/` + `_cross/Question Hub v1.html` + `v2.html` |
 | Note | SIK-44（backlog） | 后端 SIK-47-52 排期后启动 | 5 | `.tmp_review/out/Tab4-Notes/` |
 
@@ -231,8 +233,10 @@ Evidence Block，列出：
 
 ## 4. Practice 线（8 milestone）
 
-> 父 issue：SIK-19（Practice 分阶段执行计划，backlog）。本计划落 8 个新
+> 父 issue：SIK-118（Tab2 · Practice 前端父 issue，in_progress）。本计划落 8 个新
 > child，覆盖 Phase-Practice 04-Frontend-WU.md WU-F9 ~ WU-F22。
+>
+> `SIK-19` 自 2026-05-25 起只保留为 Practice backend epic / 历史 phase 总线。
 >
 > **启动条件**：后端 SIK-22（P2 后端基础能力）+ SIK-23（P3 session
 > runtime）done；当前 in_progress，启动前由 Master 确认。
@@ -444,9 +448,8 @@ session result 落地页。
 
 ### 4.9 Practice 线 Completion Gate
 
-8 个 milestone 全过 H8 后给 SIK-19 父加 Evidence Block；标 SIK-26 / SIK-27
-/ SIK-28 在新 child 完成时同步过 done（或 cancel 旧 backlog 重定向到新
-child，由 Master 在 wave 末决定）。
+8 个 milestone 全过 H8 后给 `SIK-118` 父加 Evidence Block。`SIK-26~SIK-28`
+已在旧账本中标 `done`，这里只保留历史映射，不再等待 cancel / 重定向动作。
 
 
 ## 5. Review 线（5 milestone）
@@ -813,7 +816,7 @@ npm run test:a11y -w @sikao/web              # axe vitest 套件
 ```
 SIK-29-Home-MAuth post-big-bang frontend rewire · Home M-Auth
 SIK-29-Home-MA    post-big-bang frontend rewire · Home M-A Section A
-SIK-19-Prac-MApi  post-big-bang frontend rewire · Practice M-Api
+SIK-118-Prac-MApi post-big-bang frontend rewire · Practice M-Api
 ```
 
 ### 8.1 父 issue 列表
@@ -821,7 +824,7 @@ SIK-19-Prac-MApi  post-big-bang frontend rewire · Practice M-Api
 | 线 | 父 issue | 状态 | 本计划新增 child 数 |
 |---|---|---|---|
 | Home | SIK-29 | in_progress | 5 |
-| Practice | SIK-19 | backlog | 8 |
+| Practice | SIK-118 | in_progress | 8 |
 | Review | SIK-45 | backlog | 5 |
 | Note | SIK-44 | backlog | 5 |
 
@@ -886,7 +889,7 @@ SIK-19-Prac-MApi  post-big-bang frontend rewire · Practice M-Api
 | SIK-43（Home M12） | todo | 同上 |
 | SIK-66~SIK-70（Review FE M8-M12） | backlog | Review 5 个新 child 完成时同步 cancel 或 done |
 | SIK-53~SIK-57（Notes FE M7-M11） | backlog | 同上 |
-| SIK-26~SIK-28（Practice FE P6-P8） | backlog | 同上 |
+| SIK-26~SIK-28（Practice FE P6-P8） | done | 历史已完成；Practice active frontend ledger 已迁到 `SIK-118` |
 
 不在本轮立即处置，避免并行批量改 Multica 账本。
 
@@ -911,7 +914,7 @@ SIK-19-Prac-MApi  post-big-bang frontend rewire · Practice M-Api
 整体计划完成判定：
 
 - 23 个新 child 全部 status = done 或 cancelled（重定向）
-- 4 个父 issue（SIK-29 / SIK-19 / SIK-45 / SIK-44）都有 final Evidence Block
+- 4 个父 issue（SIK-29 / SIK-118 / SIK-45 / SIK-44）都有 final Evidence Block
 - `apps/web/src/views/` 下 Home / Practice / Review / Note / Me /
   QuestionHub 6 个目录都有真实接线，无 PLACEHOLDER_*
 - 7 个跨 Tab 跳转占位全部替换为真实路由
