@@ -697,6 +697,31 @@
         "title": "BindPhoneRequestV2",
         "type": "object"
       },
+      "Body_upload_image_api_v2_notes_images_post": {
+        "properties": {
+          "image": {
+            "contentMediaType": "application/octet-stream",
+            "title": "Image",
+            "type": "string"
+          },
+          "note_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note Id"
+          }
+        },
+        "required": [
+          "image"
+        ],
+        "title": "Body_upload_image_api_v2_notes_images_post",
+        "type": "object"
+      },
       "BootstrapResponseV2": {
         "properties": {
           "appName": {
@@ -1477,6 +1502,113 @@
           "total"
         ],
         "title": "CauseTagListResponseV2",
+        "type": "object"
+      },
+      "CommunityNoteItemV2": {
+        "properties": {
+          "authorName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authorname"
+          },
+          "bodyPreview": {
+            "title": "Bodypreview",
+            "type": "string"
+          },
+          "commentCount": {
+            "default": 0,
+            "title": "Commentcount",
+            "type": "integer"
+          },
+          "createdAt": {
+            "title": "Createdat",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "isFeatured": {
+            "default": false,
+            "title": "Isfeatured",
+            "type": "boolean"
+          },
+          "linkedQuestionId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linkedquestionid"
+          },
+          "reactionCount": {
+            "default": 0,
+            "title": "Reactioncount",
+            "type": "integer"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "wordCount": {
+            "title": "Wordcount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "bodyPreview",
+          "wordCount",
+          "createdAt"
+        ],
+        "title": "CommunityNoteItemV2",
+        "type": "object"
+      },
+      "CommunityNoteListResponseV2": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/CommunityNoteItemV2"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pageSize": {
+            "title": "Pagesize",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "page",
+          "pageSize"
+        ],
+        "title": "CommunityNoteListResponseV2",
         "type": "object"
       },
       "CustomPracticeDefaults": {
@@ -3217,12 +3349,104 @@
         "title": "MockExamHistoryResponseV2",
         "type": "object"
       },
+      "NoteAiSummaryCardV2": {
+        "properties": {
+          "editable": {
+            "default": true,
+            "title": "Editable",
+            "type": "boolean"
+          },
+          "index": {
+            "minimum": 0.0,
+            "title": "Index",
+            "type": "integer"
+          },
+          "text": {
+            "maxLength": 50,
+            "minLength": 1,
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "index",
+          "text"
+        ],
+        "title": "NoteAiSummaryCardV2",
+        "type": "object"
+      },
+      "NoteAiSummaryConfirmRequestV2": {
+        "properties": {
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/NoteAiSummaryCardV2"
+            },
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Cards",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cards"
+        ],
+        "title": "NoteAiSummaryConfirmRequestV2",
+        "type": "object"
+      },
+      "NoteAiSummaryConfirmResponseV2": {
+        "properties": {
+          "message": {
+            "title": "Message",
+            "type": "string"
+          },
+          "reviewItemIds": {
+            "items": {
+              "type": "integer"
+            },
+            "title": "Reviewitemids",
+            "type": "array"
+          }
+        },
+        "required": [
+          "message"
+        ],
+        "title": "NoteAiSummaryConfirmResponseV2",
+        "type": "object"
+      },
+      "NoteAiSummaryPreviewResponseV2": {
+        "properties": {
+          "cached": {
+            "title": "Cached",
+            "type": "boolean"
+          },
+          "cards": {
+            "items": {
+              "$ref": "#/components/schemas/NoteAiSummaryCardV2"
+            },
+            "maxItems": 3,
+            "minItems": 1,
+            "title": "Cards",
+            "type": "array"
+          },
+          "noteContentHash": {
+            "title": "Notecontenthash",
+            "type": "string"
+          }
+        },
+        "required": [
+          "cards",
+          "cached",
+          "noteContentHash"
+        ],
+        "title": "NoteAiSummaryPreviewResponseV2",
+        "type": "object"
+      },
       "NoteCreateRequestV2": {
         "properties": {
-          "body": {
-            "default": "",
-            "title": "Body",
-            "type": "string"
+          "bodyJson": {
+            "additionalProperties": true,
+            "title": "Bodyjson",
+            "type": "object"
           },
           "linkedQuestionId": {
             "anyOf": [
@@ -3234,6 +3458,14 @@
               }
             ],
             "title": "Linkedquestionid"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 10,
+            "title": "Tags",
+            "type": "array"
           },
           "title": {
             "maxLength": 255,
@@ -3241,6 +3473,17 @@
             "title": "Title",
             "type": "string"
           },
+          "type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Type"
+          },
           "visibility": {
             "default": "private",
             "title": "Visibility",
@@ -3248,16 +3491,50 @@
           }
         },
         "required": [
-          "title"
+          "title",
+          "bodyJson"
         ],
         "title": "NoteCreateRequestV2",
         "type": "object"
       },
       "NoteDetailV2": {
         "properties": {
-          "body": {
-            "title": "Body",
+          "authorName": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Authorname"
+          },
+          "bodyJson": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bodyjson"
+          },
+          "bodyText": {
+            "title": "Bodytext",
             "type": "string"
+          },
+          "bookmarkCount": {
+            "default": 0,
+            "title": "Bookmarkcount",
+            "type": "integer"
+          },
+          "commentCount": {
+            "default": 0,
+            "title": "Commentcount",
+            "type": "integer"
           },
           "createdAt": {
             "title": "Createdat",
@@ -3266,6 +3543,31 @@
           "id": {
             "title": "Id",
             "type": "integer"
+          },
+          "isBookmarked": {
+            "default": false,
+            "title": "Isbookmarked",
+            "type": "boolean"
+          },
+          "isFeatured": {
+            "default": false,
+            "title": "Isfeatured",
+            "type": "boolean"
+          },
+          "isReacted": {
+            "default": false,
+            "title": "Isreacted",
+            "type": "boolean"
+          },
+          "linkedQuestionBrief": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/QuestionBriefV2"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "linkedQuestionId": {
             "anyOf": [
@@ -3278,12 +3580,24 @@
             ],
             "title": "Linkedquestionid"
           },
-          "status": {
-            "title": "Status",
-            "type": "string"
+          "reactionCount": {
+            "default": 0,
+            "title": "Reactioncount",
+            "type": "integer"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
           },
           "title": {
             "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
             "type": "string"
           },
           "updatedAt": {
@@ -3291,31 +3605,92 @@
             "type": "string"
           },
           "visibility": {
-            "default": "private",
             "title": "Visibility",
             "type": "string"
+          },
+          "wordCount": {
+            "title": "Wordcount",
+            "type": "integer"
           }
         },
         "required": [
           "id",
           "title",
-          "body",
-          "status",
+          "type",
+          "visibility",
+          "bodyText",
+          "wordCount",
           "createdAt",
           "updatedAt"
         ],
         "title": "NoteDetailV2",
         "type": "object"
       },
-      "NoteItemV2": {
+      "NoteImageUploadResponseV2": {
         "properties": {
-          "createdAt": {
-            "title": "Createdat",
+          "fileName": {
+            "title": "Filename",
             "type": "string"
           },
-          "excerpt": {
-            "title": "Excerpt",
+          "fileSize": {
+            "title": "Filesize",
+            "type": "integer"
+          },
+          "height": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Height"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "mimeType": {
+            "title": "Mimetype",
             "type": "string"
+          },
+          "url": {
+            "title": "Url",
+            "type": "string"
+          },
+          "width": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Width"
+          }
+        },
+        "required": [
+          "id",
+          "url",
+          "fileName",
+          "fileSize",
+          "mimeType"
+        ],
+        "title": "NoteImageUploadResponseV2",
+        "type": "object"
+      },
+      "NoteItemV2": {
+        "properties": {
+          "bodyPreview": {
+            "title": "Bodypreview",
+            "type": "string"
+          },
+          "commentCount": {
+            "default": 0,
+            "title": "Commentcount",
+            "type": "integer"
           },
           "id": {
             "title": "Id",
@@ -3332,30 +3707,41 @@
             ],
             "title": "Linkedquestionid"
           },
-          "status": {
-            "title": "Status",
-            "type": "string"
+          "reactionCount": {
+            "default": 0,
+            "title": "Reactioncount",
+            "type": "integer"
+          },
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
           },
           "title": {
             "title": "Title",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
             "type": "string"
           },
           "updatedAt": {
             "title": "Updatedat",
             "type": "string"
           },
-          "visibility": {
-            "default": "private",
-            "title": "Visibility",
-            "type": "string"
+          "wordCount": {
+            "title": "Wordcount",
+            "type": "integer"
           }
         },
         "required": [
           "id",
           "title",
-          "excerpt",
-          "status",
-          "createdAt",
+          "type",
+          "bodyPreview",
+          "wordCount",
           "updatedAt"
         ],
         "title": "NoteItemV2",
@@ -3392,12 +3778,22 @@
         "title": "NoteListResponseV2",
         "type": "object"
       },
-      "NoteUpdateRequestV2": {
+      "NoteSearchItemV2": {
         "properties": {
-          "body": {
-            "default": "",
-            "title": "Body",
+          "bodyPreview": {
+            "title": "Bodypreview",
             "type": "string"
+          },
+          "highlights": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Highlights",
+            "type": "array"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
           },
           "linkedQuestionId": {
             "anyOf": [
@@ -3410,16 +3806,148 @@
             ],
             "title": "Linkedquestionid"
           },
-          "status": {
-            "default": "active",
-            "title": "Status",
-            "type": "string"
+          "tags": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tags",
+            "type": "array"
           },
           "title": {
-            "maxLength": 255,
-            "minLength": 1,
             "title": "Title",
             "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          },
+          "updatedAt": {
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "visibility": {
+            "title": "Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "type",
+          "visibility",
+          "bodyPreview",
+          "updatedAt"
+        ],
+        "title": "NoteSearchItemV2",
+        "type": "object"
+      },
+      "NoteSearchResponseV2": {
+        "properties": {
+          "facetDistribution": {
+            "additionalProperties": {
+              "additionalProperties": {
+                "type": "integer"
+              },
+              "type": "object"
+            },
+            "title": "Facetdistribution",
+            "type": "object"
+          },
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/NoteSearchItemV2"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "pageSize": {
+            "title": "Pagesize",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "page",
+          "pageSize"
+        ],
+        "title": "NoteSearchResponseV2",
+        "type": "object"
+      },
+      "NoteTagMutationRequestV2": {
+        "properties": {
+          "tagName": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Tagname",
+            "type": "string"
+          }
+        },
+        "required": [
+          "tagName"
+        ],
+        "title": "NoteTagMutationRequestV2",
+        "type": "object"
+      },
+      "NoteUpdateRequestV2": {
+        "properties": {
+          "bodyJson": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Bodyjson"
+          },
+          "linkedQuestionId": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linkedquestionid"
+          },
+          "tags": {
+            "anyOf": [
+              {
+                "items": {
+                  "type": "string"
+                },
+                "maxItems": 10,
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Tags"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 255,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
           },
           "visibility": {
             "anyOf": [
@@ -3433,10 +3961,65 @@
             "title": "Visibility"
           }
         },
-        "required": [
-          "title"
-        ],
         "title": "NoteUpdateRequestV2",
+        "type": "object"
+      },
+      "NoteVisibilityUpdateRequestV2": {
+        "properties": {
+          "visibility": {
+            "enum": [
+              "private",
+              "public"
+            ],
+            "title": "Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "visibility"
+        ],
+        "title": "NoteVisibilityUpdateRequestV2",
+        "type": "object"
+      },
+      "NoteVisibilityUpdateResponseV2": {
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "updatedAt": {
+            "title": "Updatedat",
+            "type": "string"
+          },
+          "visibility": {
+            "title": "Visibility",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "visibility",
+          "updatedAt"
+        ],
+        "title": "NoteVisibilityUpdateResponseV2",
+        "type": "object"
+      },
+      "NoteWeeklyReviewGenerateRequestV2": {
+        "properties": {
+          "week": {
+            "anyOf": [
+              {
+                "maxLength": 8,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Week"
+          }
+        },
+        "title": "NoteWeeklyReviewGenerateRequestV2",
         "type": "object"
       },
       "OnboardingStatusV2": {
@@ -6437,6 +7020,46 @@
         "title": "ProposedPlanEventV2",
         "type": "object"
       },
+      "QuestionBriefV2": {
+        "properties": {
+          "categoryL1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoryl1"
+          },
+          "categoryL2": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Categoryl2"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "prompt"
+        ],
+        "title": "QuestionBriefV2",
+        "type": "object"
+      },
       "QuestionFavoriteCountV2": {
         "properties": {
           "count": {
@@ -8939,6 +9562,76 @@
         "title": "SummaryMetricV2",
         "type": "object"
       },
+      "TagMergeRequestV2": {
+        "properties": {
+          "sourceTags": {
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 20,
+            "minItems": 1,
+            "title": "Sourcetags",
+            "type": "array"
+          },
+          "targetTag": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Targettag",
+            "type": "string"
+          }
+        },
+        "required": [
+          "sourceTags",
+          "targetTag"
+        ],
+        "title": "TagMergeRequestV2",
+        "type": "object"
+      },
+      "TagRenameV2": {
+        "properties": {
+          "newName": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Newname",
+            "type": "string"
+          },
+          "oldName": {
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Oldname",
+            "type": "string"
+          }
+        },
+        "required": [
+          "oldName",
+          "newName"
+        ],
+        "title": "TagRenameV2",
+        "type": "object"
+      },
+      "TagWithCountV2": {
+        "properties": {
+          "isSystem": {
+            "title": "Issystem",
+            "type": "boolean"
+          },
+          "tagName": {
+            "title": "Tagname",
+            "type": "string"
+          },
+          "usageCount": {
+            "title": "Usagecount",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "tagName",
+          "isSystem",
+          "usageCount"
+        ],
+        "title": "TagWithCountV2",
+        "type": "object"
+      },
       "TimingBaselineResponseV2": {
         "properties": {
           "meanMs": {
@@ -10597,6 +11290,131 @@
     "/api/v2/notes": {
       "get": {
         "operationId": "list_notes_api_v2_notes_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "visibility",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Visibility"
+            }
+          },
+          {
+            "in": "query",
+            "name": "linkedQuestionId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Linkedquestionid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "hasLinkedQuestion",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Haslinkedquestion"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tags",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tags"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "updated_at",
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "order",
+            "required": false,
+            "schema": {
+              "default": "desc",
+              "title": "Order",
+              "type": "string"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -10607,6 +11425,16 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "security": [
@@ -10616,7 +11444,7 @@
         ],
         "summary": "List Notes",
         "tags": [
-          "notes-v2-skeleton"
+          "notes-v2"
         ]
       },
       "post": {
@@ -10660,11 +11488,485 @@
         ],
         "summary": "Create Note",
         "tags": [
-          "notes-v2-skeleton"
+          "notes-v2"
+        ]
+      }
+    },
+    "/api/v2/notes/community": {
+      "get": {
+        "operationId": "list_community_notes_api_v2_notes_community_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort",
+            "required": false,
+            "schema": {
+              "default": "latest",
+              "title": "Sort",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "linked_question_id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Linked Question Id"
+            }
+          },
+          {
+            "in": "query",
+            "name": "linkedQuestionId",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Linkedquestionid"
+            }
+          },
+          {
+            "in": "query",
+            "name": "tags",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Tags"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CommunityNoteListResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Community Notes",
+        "tags": [
+          "notes-v2"
+        ]
+      }
+    },
+    "/api/v2/notes/images": {
+      "post": {
+        "operationId": "upload_image_api_v2_notes_images_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_upload_image_api_v2_notes_images_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteImageUploadResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Upload Image",
+        "tags": [
+          "notes-v2"
+        ]
+      }
+    },
+    "/api/v2/notes/search": {
+      "get": {
+        "operationId": "search_notes_api_v2_notes_search_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "q",
+            "required": true,
+            "schema": {
+              "minLength": 1,
+              "title": "Q",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "filters",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Filters"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "required": false,
+            "schema": {
+              "default": 1,
+              "minimum": 1,
+              "title": "Page",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "size",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "maximum": 50,
+              "minimum": 1,
+              "title": "Size",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteSearchResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Search Notes",
+        "tags": [
+          "notes-v2"
+        ]
+      }
+    },
+    "/api/v2/notes/tags": {
+      "get": {
+        "operationId": "list_tags_api_v2_notes_tags_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/TagWithCountV2"
+                  },
+                  "title": "Response List Tags Api V2 Notes Tags Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Tags",
+        "tags": [
+          "notes-v2"
+        ]
+      }
+    },
+    "/api/v2/notes/tags/merge": {
+      "post": {
+        "operationId": "merge_tags_api_v2_notes_tags_merge_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagMergeRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationAckV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Merge Tags",
+        "tags": [
+          "notes-v2"
+        ]
+      }
+    },
+    "/api/v2/notes/tags/rename": {
+      "patch": {
+        "operationId": "rename_tag_api_v2_notes_tags_rename_patch",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TagRenameV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationAckV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Rename Tag",
+        "tags": [
+          "notes-v2"
+        ]
+      }
+    },
+    "/api/v2/notes/weekly-review/generate": {
+      "post": {
+        "operationId": "generate_weekly_review_api_v2_notes_weekly_review_generate_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "Idempotency-Key",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Idempotency-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteWeeklyReviewGenerateRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Generate Weekly Review",
+        "tags": [
+          "notes-ai-v2"
         ]
       }
     },
     "/api/v2/notes/{note_id}": {
+      "delete": {
+        "operationId": "delete_note_api_v2_notes__note_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "title": "Note Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Delete Note",
+        "tags": [
+          "notes-v2"
+        ]
+      },
       "get": {
         "operationId": "get_note_api_v2_notes__note_id__get",
         "parameters": [
@@ -10707,7 +12009,7 @@
         ],
         "summary": "Get Note",
         "tags": [
-          "notes-v2-skeleton"
+          "notes-v2"
         ]
       },
       "put": {
@@ -10762,7 +12064,335 @@
         ],
         "summary": "Update Note",
         "tags": [
-          "notes-v2-skeleton"
+          "notes-v2"
+        ]
+      }
+    },
+    "/api/v2/notes/{note_id}/ai-summary": {
+      "post": {
+        "operationId": "generate_ai_summary_api_v2_notes__note_id__ai_summary_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "title": "Note Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteAiSummaryPreviewResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Generate Ai Summary",
+        "tags": [
+          "notes-ai-v2"
+        ]
+      }
+    },
+    "/api/v2/notes/{note_id}/ai-summary/confirm": {
+      "post": {
+        "operationId": "confirm_ai_summary_api_v2_notes__note_id__ai_summary_confirm_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "title": "Note Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteAiSummaryConfirmRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteAiSummaryConfirmResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Confirm Ai Summary",
+        "tags": [
+          "notes-ai-v2"
+        ]
+      }
+    },
+    "/api/v2/notes/{note_id}/export": {
+      "get": {
+        "operationId": "export_note_api_v2_notes__note_id__export_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "title": "Note Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "format",
+            "required": true,
+            "schema": {
+              "title": "Format",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Export Note",
+        "tags": [
+          "notes-v2"
+        ]
+      }
+    },
+    "/api/v2/notes/{note_id}/tags": {
+      "post": {
+        "operationId": "add_tag_api_v2_notes__note_id__tags_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "title": "Note Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteTagMutationRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationAckV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Add Tag",
+        "tags": [
+          "notes-v2"
+        ]
+      }
+    },
+    "/api/v2/notes/{note_id}/tags/{tag_name}": {
+      "delete": {
+        "operationId": "remove_tag_api_v2_notes__note_id__tags__tag_name__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "title": "Note Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "tag_name",
+            "required": true,
+            "schema": {
+              "title": "Tag Name",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/OperationAckV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Remove Tag",
+        "tags": [
+          "notes-v2"
+        ]
+      }
+    },
+    "/api/v2/notes/{note_id}/visibility": {
+      "patch": {
+        "operationId": "update_note_visibility_api_v2_notes__note_id__visibility_patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "note_id",
+            "required": true,
+            "schema": {
+              "title": "Note Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NoteVisibilityUpdateRequestV2"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NoteVisibilityUpdateResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "Update Note Visibility",
+        "tags": [
+          "notes-v2"
         ]
       }
     },
