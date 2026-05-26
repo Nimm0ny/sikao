@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
+from typing import Any
 
 from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
@@ -80,7 +81,7 @@ def load_paper_completion_metrics(
     return metrics
 
 
-def build_submitted_session_exists_clause(*, user_id: int):
+def build_submitted_session_exists_clause(*, user_id: int) -> Any:
     return (
         select(PracticeSessionV2.id)
         .where(

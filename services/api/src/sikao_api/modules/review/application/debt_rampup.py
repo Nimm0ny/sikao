@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date
+from datetime import datetime
 from datetime import timedelta
 
 from sqlalchemy.orm import Session
@@ -160,8 +161,8 @@ def _apply_rampup_phase(
     *,
     user_id: int,
     phase: RampupPhase,
-    started_at,
-    unlock_at,
+    started_at: datetime,
+    unlock_at: datetime,
     user_tz: str,
     daily_limit: int,
     initial: bool,

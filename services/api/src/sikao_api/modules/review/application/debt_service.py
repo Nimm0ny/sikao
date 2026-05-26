@@ -16,6 +16,7 @@ from sikao_api.modules.review.application.debt_hard_question import (
     maybe_mark_hard_from_thresholds,
 )
 from sikao_api.modules.review.application.debt_preferences import (
+    ReviewDebtPreferences,
     ReviewRampupRuntime,
     read_review_debt_preferences,
     read_review_rampup_runtime,
@@ -365,7 +366,7 @@ class ReviewDebtService:
         *,
         snapshot: ReviewDebtSnapshot,
         runtime: ReviewRampupRuntime,
-        preferences,
+        preferences: ReviewDebtPreferences,
     ) -> ReviewDebtSnapshotResponseV2:
         return ReviewDebtSnapshotResponseV2(
             debt_severity=snapshot.debt_severity.value,

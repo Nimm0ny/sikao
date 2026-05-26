@@ -124,7 +124,7 @@ class PaperRevision(Base):
     visible_in_public: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False, index=True)
     question_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     source_hash: Mapped[str] = mapped_column(String(64), nullable=False, index=True)
-    source_snapshot_json: Mapped[dict] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    source_snapshot_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
     is_published: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False, index=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     published_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
@@ -214,7 +214,7 @@ class MaterialGroup(Base):
     title: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     material_text: Mapped[str] = mapped_column(Text, default="", nullable=False)
     instruction_text: Mapped[str] = mapped_column(Text, default="", nullable=False)
-    payload_json: Mapped[dict] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, nullable=False)
     updated_at: Mapped[datetime] = mapped_column(DateTime, default=utc_now, onupdate=utc_now, nullable=False)
@@ -238,7 +238,7 @@ class MaterialGroupAsset(Base):
     file_path: Mapped[str] = mapped_column(Text, nullable=False)
     mime_type: Mapped[str] = mapped_column(String(100), default="", nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-    metadata_json: Mapped[dict] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
 
     material_group: Mapped[MaterialGroup] = relationship(back_populates="assets")
 
@@ -281,9 +281,9 @@ class Question(Base):
     is_gradable: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     renderer_key: Mapped[str] = mapped_column(String(50), default="single_choice", nullable=False)
-    type_payload_json: Mapped[dict] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
-    special_payload_json: Mapped[dict] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
-    source_payload_json: Mapped[dict] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    type_payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    special_payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    source_payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
     canonical_top_type: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     canonical_subtype: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
     canonical_second_subtype: Mapped[str | None] = mapped_column(String(100), nullable=True, index=True)
@@ -339,7 +339,7 @@ class QuestionAsset(Base):
     file_path: Mapped[str] = mapped_column(Text, nullable=False)
     mime_type: Mapped[str] = mapped_column(String(100), default="", nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
-    metadata_json: Mapped[dict] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    metadata_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
 
     question: Mapped[Question] = relationship(back_populates="assets")
 
@@ -519,7 +519,7 @@ class WrongQuestionMastery(Base):
     )
     bluff_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     peek_count: Mapped[int] = mapped_column(Integer, default=3, nullable=False)
-    attempts_json: Mapped[list[dict] | None] = mapped_column(JSONB_COMPAT, nullable=True)
+    attempts_json: Mapped[list[dict[str, Any]] | None] = mapped_column(JSONB_COMPAT, nullable=True)
 
     # relationships —— 供 ExamPaperService.list_wrong_questions 的 joinedload 用。
     question: Mapped[Question] = relationship()
@@ -873,7 +873,7 @@ class EssayGradingRecord(Base):
     # feedback_json shape (R10 sanity check 后写入):
     #   {overallScore, dimensions[{name, weight, score, comment}], strengths[],
     #    weaknesses[], suggestions[], sampleAnswer, suspicious}
-    feedback_json: Mapped[dict | None] = mapped_column(JSONB_COMPAT, nullable=True)
+    feedback_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB_COMPAT, nullable=True)
     token_usage_id: Mapped[int | None] = mapped_column(
         ForeignKey("llm_token_usage.id", ondelete="SET NULL"), nullable=True
     )
@@ -1016,13 +1016,13 @@ class StudyPlanTask(Base):
         ForeignKey("study_plans.id", ondelete="CASCADE"), nullable=False
     )
     task_kind: Mapped[str] = mapped_column(String(32), nullable=False)
-    payload_json: Mapped[dict] = mapped_column(JSONB_COMPAT, nullable=False)
+    payload_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, nullable=False)
     display_order: Mapped[int] = mapped_column(Integer, nullable=False)
     status: Mapped[str] = mapped_column(
         String(16), nullable=False, default="pending"
     )
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
-    result_payload: Mapped[dict | None] = mapped_column(JSONB_COMPAT, nullable=True)
+    result_payload: Mapped[dict[str, Any] | None] = mapped_column(JSONB_COMPAT, nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime, default=utc_now, nullable=False
     )
@@ -1120,14 +1120,14 @@ class Note(Base):
         ForeignKey("users.id", ondelete="CASCADE"), nullable=False
     )
     type: Mapped[str] = mapped_column(String(16), nullable=False)
-    body_json: Mapped[dict] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
+    body_json: Mapped[dict[str, Any]] = mapped_column(JSONB_COMPAT, default=dict, nullable=False)
     source_kind: Mapped[str] = mapped_column(String(16), nullable=False)
     source_ref: Mapped[str] = mapped_column(String(255), nullable=False)
     source_quote: Mapped[str | None] = mapped_column(Text, nullable=True)
     source_domain: Mapped[str] = mapped_column(String(8), nullable=False)
     title: Mapped[str] = mapped_column(String(255), default="", nullable=False)
     tags: Mapped[list[str]] = mapped_column(JSONB_COMPAT, default=list, nullable=False)
-    attached_to: Mapped[dict | None] = mapped_column(JSONB_COMPAT, nullable=True)
+    attached_to: Mapped[dict[str, Any] | None] = mapped_column(JSONB_COMPAT, nullable=True)
     visibility: Mapped[str] = mapped_column(String(8), default="self", nullable=False)
     ease: Mapped[float] = mapped_column(Float, default=2.5, nullable=False)
     review_count: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

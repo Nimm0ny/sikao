@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import UTC, date, datetime, time, timedelta
+from typing import cast
 from zoneinfo import ZoneInfo
 
 from dateutil.parser import isoparse  # type: ignore[import-untyped]
@@ -130,7 +131,7 @@ def _parse_until(value: str) -> datetime:
             return datetime.strptime(value, "%Y%m%dT%H%M%SZ")
         if len(value) == 8 and value.isdigit():
             return datetime.strptime(value, "%Y%m%d")
-        return isoparse(value).replace(tzinfo=None)
+        return cast(datetime, isoparse(value).replace(tzinfo=None))
     except ValueError as exc:
         raise ValidationError("UNTIL must be a valid UTC datetime or date", code="bad_recurring_rule") from exc
 

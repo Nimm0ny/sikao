@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+from datetime import datetime
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, Request, Response
@@ -56,7 +57,11 @@ def _serialize_user(session: Session, user: UserV2) -> AuthUserV2:
     )
 
 
-def _serialize_session(issued_at, expires_at, session_id: int) -> AuthSessionOutV2:
+def _serialize_session(
+    issued_at: datetime,
+    expires_at: datetime,
+    session_id: int,
+) -> AuthSessionOutV2:
     return AuthSessionOutV2(
         id=session_id,
         issued_at=issued_at,

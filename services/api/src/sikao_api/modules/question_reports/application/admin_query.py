@@ -116,7 +116,7 @@ def load_admin_item_or_raise(
     return _to_admin_item(*row)
 
 
-def active_report_counts_subquery():
+def active_report_counts_subquery() -> Any:
     return (
         select(
             QuestionReportV2.question_id.label("question_id"),

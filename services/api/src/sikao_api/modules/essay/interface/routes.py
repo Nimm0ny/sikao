@@ -16,7 +16,7 @@ from __future__ import annotations
 
 import logging
 from decimal import Decimal
-from typing import Annotated
+from typing import Annotated, Any
 
 from fastapi import (
     APIRouter,
@@ -266,7 +266,7 @@ def _decimal_to_float(value: Decimal | None) -> float | None:
 
 
 def _serialize_feedback(
-    raw: dict | None,
+    raw: dict[str, Any] | None,
 ) -> schemas.EssayFeedbackV2 | None:
     """feedback_json (JSON 列) → EssayFeedbackV2.
 

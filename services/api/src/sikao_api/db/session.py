@@ -6,7 +6,7 @@ from functools import lru_cache
 from pathlib import Path
 import sys
 import types
-from typing import Any
+from typing import Any, cast
 
 from fastapi import Request
 from sqlalchemy import create_engine, event, false, text, true
@@ -207,7 +207,7 @@ def load_runtime_metadata() -> MetaData:
 
 
 def get_engine(request: Request) -> Engine:
-    return request.app.state.db.engine
+    return cast(Engine, request.app.state.db.engine)
 
 
 def get_db_session(request: Request) -> Generator[Session, None, None]:

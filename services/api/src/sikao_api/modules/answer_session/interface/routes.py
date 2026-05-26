@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, Header, Query, Response, status
 from fastapi.responses import Response as RawResponse
 from sqlalchemy.orm import Session
 
+from sikao_api.core.schemas import CamelModel
 from sikao_api.db.session import get_db_session
 from sikao_api.db import schemas
 from sikao_api.db.models import User
@@ -197,7 +198,7 @@ def list_wrong_questions(
     )
 
 
-class WrongRetryBatchPayload(schemas.CamelModel):
+class WrongRetryBatchPayload(CamelModel):
     question_ids: list[int]
 
 

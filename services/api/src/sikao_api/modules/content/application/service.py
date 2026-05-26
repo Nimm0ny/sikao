@@ -348,7 +348,7 @@ def _load_paper_rows(session: Session, *, query: PaperQuery) -> list[PaperRow]:
     return rows
 
 
-def _latest_published_revisions(subject_kind: Literal["xingce", "essay"]):
+def _latest_published_revisions(subject_kind: Literal["xingce", "essay"]) -> Any:
     latest_number = (
         select(
             PaperRevisionV2.paper_id.label("paper_id"),
@@ -377,7 +377,7 @@ def _latest_published_revisions(subject_kind: Literal["xingce", "essay"]):
     )
 
 
-def _question_scope(subject_kind: Literal["xingce", "essay"]):
+def _question_scope(subject_kind: Literal["xingce", "essay"]) -> Any:
     latest = _latest_published_revisions(subject_kind).subquery()
     return (
         select(

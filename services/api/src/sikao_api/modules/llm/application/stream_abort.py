@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Any
+
 from sqlalchemy import select
 from sqlalchemy.orm import Session as SqlAlchemySession
 
@@ -10,7 +12,7 @@ from sikao_api.modules.system.application.errors import ConflictError
 
 
 def cleanup_aborted_stream(
-    service,
+    service: Any,
     *,
     user_id: int,
     purpose: str,
