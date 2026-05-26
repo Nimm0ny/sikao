@@ -10,9 +10,11 @@ import sys
 from typing import Any, cast
 from urllib.parse import quote
 from uuid import uuid4
+import warnings
 
 from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import DBAPIError
 from sqlalchemy.engine import URL, make_url
 
 from sikao_api.core.config import Settings
@@ -87,11 +89,13 @@ def build_postgres_client(tmp_path: Path) -> Iterator[TestClient]:
     database_url = _render_url(database_url_obj)
     admin_url = base_url.set(database="postgres")
     admin_engine = create_engine(admin_url, isolation_level="AUTOCOMMIT")
-    with admin_engine.begin() as connection:
-        connection.execute(text(f'DROP DATABASE IF EXISTS "{test_database}"'))
-        connection.execute(text(f'CREATE DATABASE "{test_database}"'))
-
     try:
+        with admin_engine.begin() as connection:
+            connection.execute(text(f'DROP DATABASE IF EXISTS "{test_database}"'))
+            # Clone from template0 so local template1 sessions do not block temp DB creation.
+            connection.execute(
+                text(f'CREATE DATABASE "{test_database}" TEMPLATE template0')
+            )
         env = os.environ.copy()
         env["DATABASE_URL"] = database_url
         env["PYTHONPATH"] = str(REPO_ROOT / "services" / "api" / "src")
@@ -120,18 +124,35 @@ def build_postgres_client(tmp_path: Path) -> Iterator[TestClient]:
         cleanup_engine = create_engine(admin_url, isolation_level="AUTOCOMMIT")
         try:
             with cleanup_engine.begin() as connection:
-                connection.execute(
-                    text(
-                        """
-                        SELECT pg_terminate_backend(pid)
-                        FROM pg_stat_activity
-                        WHERE datname = :database_name
-                          AND pid <> pg_backend_pid()
-                        """
-                    ),
-                    {"database_name": test_database},
-                )
-                connection.execute(text(f'DROP DATABASE IF EXISTS "{test_database}"'))
+                try:
+                    connection.execute(text(f'DROP DATABASE IF EXISTS "{test_database}"'))
+                except DBAPIError:
+                    # Only terminate sessions owned by the current test role; local superuser
+                    # sessions (for example autovacuum / admin tools) are outside this helper's scope.
+                    connection.execute(
+                        text(
+                            """
+                            SELECT pg_terminate_backend(pid)
+                            FROM pg_stat_activity
+                            WHERE datname = :database_name
+                              AND pid <> pg_backend_pid()
+                              AND usename = current_user
+                            """
+                        ),
+                        {"database_name": test_database},
+                    )
+                    try:
+                        connection.execute(
+                            text(f'DROP DATABASE IF EXISTS "{test_database}"')
+                        )
+                    except DBAPIError as exc:
+                        warnings.warn(
+                            (
+                                "best-effort cleanup left temp database "
+                                f"{test_database!r} behind: {exc}"
+                            ),
+                            stacklevel=2,
+                        )
         finally:
             cleanup_engine.dispose()
             admin_engine.dispose()
