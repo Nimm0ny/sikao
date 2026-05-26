@@ -14,9 +14,14 @@ from sikao_api.db.schemas_v2 import (
     QuestionBriefV2,
 )
 from sikao_api.modules.mock_exam.application.enforcer import assert_can_create_question_note
-from sikao_api.modules.notes_v2.domain.body_extractor import extract_text, extract_word_count
+from sikao_api.modules.notes_v2.domain.body_extractor import (
+    extract_image_paths,
+    extract_text,
+    extract_word_count,
+)
 from sikao_api.modules.notes_v2.domain.community_policy import assert_public_note_publishable
 from sikao_api.modules.notes_v2.domain.content_hash import compute_content_hash
+from sikao_api.modules.notes_v2.domain.errors import IMAGE_LIMIT_EXCEEDED
 from sikao_api.modules.notes_v2.infrastructure.repos import NotesRepoV2
 from sikao_api.modules.system.application.errors import NotFoundError, ValidationError
 
@@ -130,6 +135,10 @@ class NotesServiceV2:
         self.session.add(note)
         self.session.flush()
         self.repo.replace_tags(note_id=note.id, user_id=user.id, tags=normalized_tags)
+        self._bind_referenced_orphan_images(
+            note=note,
+            image_paths=extract_image_paths(payload.body_json),
+        )
         return note
 
     def get_note(self, *, user: UserV2, note_id: int) -> NoteV2:
@@ -170,6 +179,10 @@ class NotesServiceV2:
         if payload.tags is not None:
             normalized_tags = self._normalize_tags(payload.tags)
             self.repo.replace_tags(note_id=note.id, user_id=note.user_id, tags=normalized_tags)
+        self._bind_referenced_orphan_images(
+            note=note,
+            image_paths=extract_image_paths(note.body_json),
+        )
         self.session.add(note)
         self.session.flush()
         return note
@@ -292,3 +305,25 @@ class NotesServiceV2:
     @staticmethod
     def _utc_now() -> datetime:
         return datetime.now(UTC).replace(tzinfo=None)
+
+    def _bind_referenced_orphan_images(
+        self,
+        *,
+        note: NoteV2,
+        image_paths: list[str],
+    ) -> None:
+        normalized_paths = list(dict.fromkeys(image_paths))
+        orphan_rows = self.repo.list_owned_orphan_note_images_by_paths(
+            user_id=note.user_id,
+            file_paths=normalized_paths,
+            for_update=True,
+        )
+        if not orphan_rows:
+            return
+        current_count = self.repo.count_note_images(note_id=note.id)
+        if current_count + len(orphan_rows) > 20:
+            raise ValidationError("note image limit exceeded", code=IMAGE_LIMIT_EXCEEDED)
+        for row in orphan_rows:
+            row.note_id = note.id
+            self.session.add(row)
+        self.session.flush()

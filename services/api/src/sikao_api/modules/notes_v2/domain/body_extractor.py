@@ -55,3 +55,31 @@ def extract_word_count(body_text: str) -> int:
     non_cjk = re.sub(r"[\u4e00-\u9fff]", " ", body_text)
     non_cjk_words = [part for part in non_cjk.split() if part]
     return cjk_count + len(non_cjk_words)
+
+
+def extract_image_paths(body_json: dict[str, Any] | None) -> list[str]:
+    if not isinstance(body_json, dict):
+        return []
+
+    paths: list[str] = []
+
+    def walk(node: dict[str, Any]) -> None:
+        if node.get("type") == "image":
+            attrs = node.get("attrs")
+            if isinstance(attrs, dict):
+                src = attrs.get("src")
+                if isinstance(src, str) and src.strip():
+                    paths.append(src.strip())
+            return
+        content = node.get("content")
+        if isinstance(content, list):
+            for child in content:
+                if isinstance(child, dict):
+                    walk(child)
+
+    content = body_json.get("content")
+    if isinstance(content, list):
+        for child in content:
+            if isinstance(child, dict):
+                walk(child)
+    return paths

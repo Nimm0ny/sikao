@@ -133,13 +133,9 @@ class WeeklyReviewServiceV2:
         now: datetime | None = None,
     ) -> WeeklyReviewGenerationPrepV2:
         summary = self.build_summary_input(user=user, week=week, now=now)
-        self.session.scalar(
-            select(UserV2.id)
-            .where(UserV2.id == user.id)
-            .with_for_update()
-        )
-        self._assert_weekly_limit(user_id=user.id, week_start_date=summary.week_start_date)
         if self._is_empty_week(summary):
+            self._lock_user_row(user_id=user.id)
+            self._assert_weekly_limit(user_id=user.id, week_start_date=summary.week_start_date)
             return WeeklyReviewGenerationPrepV2(
                 user_id=user.id,
                 week_start_date=summary.week_start_date,
@@ -151,10 +147,6 @@ class WeeklyReviewServiceV2:
                 messages=[],
                 local_markdown=_empty_weekly_markdown(summary.week_number),
             )
-        HomeLlmQuotaService(self.session, settings).check_quota(
-            user_id=user.id,
-            purpose="notes_weekly_review",
-        )
         messages = build_cause_analysis_weekly_messages(
             week_number=summary.week_number,
             date_range=summary.date_range,
@@ -191,6 +183,12 @@ class WeeklyReviewServiceV2:
                 parse_status="failed_before_trace",
             )
             raise
+        self._lock_user_row(user_id=user.id)
+        self._assert_weekly_limit(user_id=user.id, week_start_date=summary.week_start_date)
+        HomeLlmQuotaService(self.session, settings).check_quota(
+            user_id=user.id,
+            purpose="notes_weekly_review",
+        )
         return WeeklyReviewGenerationPrepV2(
             user_id=user.id,
             week_start_date=summary.week_start_date,
@@ -597,6 +595,13 @@ class WeeklyReviewServiceV2:
                 ),
             )
             isolated_session.commit()
+
+    def _lock_user_row(self, *, user_id: int) -> None:
+        self.session.scalar(
+            select(UserV2.id)
+            .where(UserV2.id == user_id)
+            .with_for_update()
+        )
 
 
 def _cn_week_number(week_start_date: date) -> int:

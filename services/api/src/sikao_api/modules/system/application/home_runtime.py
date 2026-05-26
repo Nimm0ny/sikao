@@ -385,7 +385,12 @@ class HomeRuntimeOrchestrator:
                         "filePath": entry.file_path,
                         "createdAt": entry.created_at.isoformat(),
                     },
-                    metadata={"fileExisted": entry.file_existed},
+                    metadata={
+                        "safePath": entry.safe_path,
+                        "fileExisted": entry.file_existed,
+                        "fileDeleted": entry.file_deleted,
+                        "deleteError": entry.delete_error,
+                    },
                     request_id=None,
                     ip=None,
                 )

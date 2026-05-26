@@ -16,7 +16,10 @@ class OrphanNoteImageCleanupEntry:
     user_id: int
     note_id: int | None
     file_path: str
+    safe_path: bool
     file_existed: bool
+    file_deleted: bool
+    delete_error: str | None
     created_at: datetime
 
 
@@ -32,9 +35,9 @@ def cleanup_orphan_note_images(
     now: datetime | None = None,
 ) -> OrphanNoteImageCleanupResult:
     cutoff = (now or datetime.now(UTC).replace(tzinfo=None)) - timedelta(hours=24)
-    rows = list(
+    row_ids = list(
         session.scalars(
-            select(NoteImageV2)
+            select(NoteImageV2.id)
             .where(
                 NoteImageV2.note_id.is_(None),
                 NoteImageV2.created_at <= cutoff,
@@ -43,21 +46,35 @@ def cleanup_orphan_note_images(
         )
     )
     deleted: list[OrphanNoteImageCleanupEntry] = []
-    for row in rows:
+    upload_root = upload_dir.resolve()
+    for image_id in row_ids:
+        row = _load_locked_orphan_row_for_cleanup(session, image_id=image_id)
+        if row is None:
+            continue
         absolute_path = _resolve_absolute_upload_path(
-            upload_dir=upload_dir,
+            upload_dir=upload_root,
             file_path=row.file_path,
         )
-        existed = absolute_path.exists()
-        if existed:
-            absolute_path.unlink()
+        safe_path = absolute_path is not None
+        existed = absolute_path is not None and absolute_path.exists()
+        deleted_file = False
+        delete_error: str | None = None
+        if existed and absolute_path is not None:
+            try:
+                absolute_path.unlink()
+                deleted_file = True
+            except OSError as exc:
+                delete_error = str(exc)
         deleted.append(
             OrphanNoteImageCleanupEntry(
                 image_id=row.id,
                 user_id=row.user_id,
                 note_id=row.note_id,
                 file_path=row.file_path,
-                file_existed=existed,
+                safe_path=safe_path,
+                file_existed=bool(existed),
+                file_deleted=deleted_file,
+                delete_error=delete_error,
                 created_at=row.created_at,
             )
         )
@@ -66,10 +83,40 @@ def cleanup_orphan_note_images(
     return OrphanNoteImageCleanupResult(deleted=deleted)
 
 
-def _resolve_absolute_upload_path(*, upload_dir: Path, file_path: str) -> Path:
+def _load_locked_orphan_row_for_cleanup(
+    session: Session,
+    *,
+    image_id: int,
+) -> NoteImageV2 | None:
+    return session.scalar(
+        select(NoteImageV2)
+        .where(
+            NoteImageV2.id == image_id,
+            NoteImageV2.note_id.is_(None),
+        )
+        .with_for_update(skip_locked=True)
+    )
+
+
+def _resolve_absolute_upload_path(
+    *,
+    upload_dir: Path,
+    file_path: str,
+) -> Path | None:
     normalized = file_path.strip()
     if normalized.startswith("/uploads/"):
         normalized = normalized.removeprefix("/uploads/")
     else:
         normalized = normalized.lstrip("/")
-    return upload_dir / Path(normalized)
+    candidate = (upload_dir / Path(normalized)).resolve()
+    if not _is_under_root(candidate, root=upload_dir):
+        return None
+    return candidate
+
+
+def _is_under_root(path: Path, *, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+    except ValueError:
+        return False
+    return True

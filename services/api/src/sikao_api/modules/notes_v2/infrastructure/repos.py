@@ -232,6 +232,24 @@ class NotesRepoV2:
             or 0
         )
 
+    def list_owned_orphan_note_images_by_paths(
+        self,
+        *,
+        user_id: int,
+        file_paths: Sequence[str],
+        for_update: bool = False,
+    ) -> list[NoteImageV2]:
+        if not file_paths:
+            return []
+        stmt = select(NoteImageV2).where(
+            NoteImageV2.user_id == user_id,
+            NoteImageV2.note_id.is_(None),
+            NoteImageV2.file_path.in_(list(file_paths)),
+        )
+        if for_update:
+            stmt = stmt.with_for_update()
+        return list(self.session.scalars(stmt))
+
     def create_note_image(
         self,
         *,
