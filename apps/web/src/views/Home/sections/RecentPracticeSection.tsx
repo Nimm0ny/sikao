@@ -1,5 +1,5 @@
 // lint-allow-ui-copy: V5 SIK-127 最近练习 copy. CJK strings are visual
-// contract from `.tmp_review/proto-cache/sik-93-home-bottom-row/option-final.html`.
+// contract from `Home v2.1.html` bottom-row 最近练习 区域.
 import { Link } from 'react-router-dom';
 import { useProfileRecords } from '@sikao/api-client/profileQueries';
 import { SpriteIcon } from '../../../components/atom';

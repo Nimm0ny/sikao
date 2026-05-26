@@ -25,7 +25,7 @@
  * Why: V5 Panel's 57px header eats 40% of the 127px slot. This rule renders
  *      the same card surface (bg / border / radius / shadow) but inlines a
  *      single-padding container so children (with their own head + body)
- *      can fill the slot. Mirrors prototype option-final.html .bottom-card.
+ *      can fill the slot. Mirrors prototype Home v2.1.html .bottom-card.
  */
 .bottomCard {
   background: var(--card-bg);

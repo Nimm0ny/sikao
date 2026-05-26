@@ -38,6 +38,34 @@
   gap: var(--space-2);
 }
 
+/*
+ * Tab segmented active override — V5 Tabs default (segmented variant) uses
+ * brand-primary yellow as the active background; Home v2.1 prototype's
+ * .panel-tabs uses a white "lift" pill on a soft track. We scope this to
+ * the CalendarPanel head only via the local class chain, so other views
+ * keep the V5 default. Selected tab = white background + soft shadow,
+ * unselected = meta color.
+ *
+ * !important is needed because the default V5 segmented selector
+ * `.root[data-variant='segmented'] .tab[data-active]` has (0,4,0)
+ * specificity vs our (0,3,0). Using !important here is the smallest
+ * surgical override; alternative would be a Tabs prop change.
+ */
+.head :global([role='tablist'][data-variant='segmented']) {
+  background: var(--color-bg-elevated) !important;
+}
+
+.head :global([role='tab'][data-active]) {
+  background: var(--color-bg-surface) !important;
+  color: var(--color-text-primary) !important;
+  box-shadow: var(--shadow-l1) !important;
+  font-weight: var(--font-weight-semibold);
+}
+
+.head :global([role='tab']:not([data-active])) {
+  color: var(--color-text-meta);
+}
+
 .countdown {
   display: inline-flex;
   align-items: center;
