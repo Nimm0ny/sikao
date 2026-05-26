@@ -1,0 +1,94 @@
+/*
+ * FilterBar — ProfileRecords activity-kind filter (NOT navigation).
+ * Why: sik-fu-c §2.2 visual contract: seg-pills bar + divider + date
+ *      picker + sub-text + 仅看里程碑 btn pushed right. Mirrors prototype
+ *      `.tmp_review/out/Tab5-Profile/Profile Records v1.html` .filter-bar.
+ *      4-tab global nav baseline (Rail / BottomTabBar) untouched.
+ */
+
+.root {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-l1);
+}
+
+.segPills {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  background: var(--color-bg-sunken);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-999);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  padding: 0 var(--space-3);
+  border: 0;
+  border-radius: var(--radius-999);
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: var(--font-tiny);
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out),
+              color var(--dur-fast) var(--ease-out);
+}
+
+.pill[data-active='true'] {
+  background: var(--color-bg-surface);
+  color: var(--color-text-primary);
+  box-shadow: var(--shadow-l1);
+}
+
+.pill:disabled {
+  color: var(--color-text-disabled);
+  cursor: not-allowed;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover wrapped in @media (hover: hover) */
+  .pill:not([data-active='true']):not(:disabled):hover {
+    color: var(--color-text-primary);
+  }
+}
+
+.dividerY {
+  align-self: stretch;
+  width: 1px;
+  background: var(--color-border-subtle);
+  margin: 0 var(--space-1);
+}
+
+.datePicker {
+  height: 30px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-10);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-bg-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-meta);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.subText {
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+  white-space: nowrap;
+}
+
+.milestoneBtn {
+  margin-left: auto;
+}
