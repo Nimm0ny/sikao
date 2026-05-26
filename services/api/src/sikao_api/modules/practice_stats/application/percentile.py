@@ -4,14 +4,21 @@ from datetime import UTC, datetime
 from typing import Literal, cast
 
 from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from sikao_api.db.models_v2 import PracticeStatsSnapshotV2
+from sikao_api.db.models_v2 import PracticeStatsSnapshotV2, UserV2
 from sikao_api.modules.practice_stats.application.snapshot_writer import refresh_percentile_buckets
 from sikao_api.modules.practice_stats.application.snapshot_writer import recompute_user_stats
 from sikao_api.modules.practice_stats.interface.schemas import PracticeStatsPercentileResponseV2
 
 
-def build_stats_percentile(session, *, user, type_name: str, category: str | None) -> PracticeStatsPercentileResponseV2:
+def build_stats_percentile(
+    session: Session,
+    *,
+    user: UserV2,
+    type_name: str,
+    category: str | None,
+) -> PracticeStatsPercentileResponseV2:
     scope = "overall" if category is None else "category_l2" if ":" in category else "category_l1"
     row = _load_snapshot_row(
         session,
@@ -87,18 +94,21 @@ def build_stats_percentile(session, *, user, type_name: str, category: str | Non
 
 
 def _load_snapshot_row(
-    session,
+    session: Session,
     *,
     user_id: int,
     type_name: str,
     scope: str,
     category: str | None,
 ) -> PracticeStatsSnapshotV2 | None:
-    return session.scalar(
+    return cast(
+        PracticeStatsSnapshotV2 | None,
+        session.scalar(
         select(PracticeStatsSnapshotV2).where(
             PracticeStatsSnapshotV2.user_id == user_id,
             PracticeStatsSnapshotV2.type == type_name,
             PracticeStatsSnapshotV2.scope == scope,
             PracticeStatsSnapshotV2.category_key == category,
         )
+    ),
     )

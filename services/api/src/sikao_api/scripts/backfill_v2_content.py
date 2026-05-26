@@ -223,30 +223,31 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                     seen_group_ids.add(group_v2.id)
                     group_map[group.id] = group_v2.id
 
-                    existing_assets = {
-                        (asset.file_path, asset.display_order): asset
-                        for asset in session.scalars(
-                            select(MaterialGroupAssetV2).where(
-                                MaterialGroupAssetV2.material_group_id == group_v2.id
-                            )
+                    existing_assets: dict[tuple[str, int], MaterialGroupAssetV2] = {}
+                    for existing_group_asset in session.scalars(
+                        select(MaterialGroupAssetV2).where(
+                            MaterialGroupAssetV2.material_group_id == group_v2.id
                         )
-                    }
+                    ):
+                        existing_assets[
+                            (existing_group_asset.file_path, existing_group_asset.display_order)
+                        ] = existing_group_asset
                     seen_asset_keys: set[tuple[str, int]] = set()
-                    for asset in group.assets:
-                        key = (asset.file_path, asset.display_order)
+                    for group_asset in group.assets:
+                        key = (group_asset.file_path, group_asset.display_order)
                         seen_asset_keys.add(key)
                         asset_v2 = existing_assets.get(key)
                         if asset_v2 is None:
                             session.add(
                                 MaterialGroupAssetV2(
                                     material_group_id=group_v2.id,
-                                    file_path=asset.file_path,
-                                    mime_type=asset.mime_type,
-                                    display_order=asset.display_order,
+                                    file_path=group_asset.file_path,
+                                    mime_type=group_asset.mime_type,
+                                    display_order=group_asset.display_order,
                                 )
                             )
                         else:
-                            asset_v2.mime_type = asset.mime_type
+                            asset_v2.mime_type = group_asset.mime_type
                             session.add(asset_v2)
                     stale_asset_ids = [
                         asset.id
@@ -269,12 +270,17 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                         )
                     )
                     subject_kind = question.subject or infer_subject(question) or "未知"
+                    material_group_v2_id = (
+                        group_map.get(question.material_group_id)
+                        if question.material_group_id is not None
+                        else None
+                    )
                     if question_v2 is None:
                         question_v2 = QuestionV2(
                             revision_id=revision_v2.id,
                             section_id=section_map[question.section_id],
                             block_id=block_map[question.block_id],
-                            material_group_id=group_map.get(question.material_group_id),
+                            material_group_id=material_group_v2_id,
                             item_no=item_no,
                             subject_kind=subject_kind,
                             prompt=question.stem_text,
@@ -289,7 +295,7 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                     else:
                         question_v2.section_id = section_map[question.section_id]
                         question_v2.block_id = block_map[question.block_id]
-                        question_v2.material_group_id = group_map.get(question.material_group_id)
+                        question_v2.material_group_id = material_group_v2_id
                         question_v2.subject_kind = subject_kind
                         question_v2.prompt = question.stem_text
                         question_v2.answer_kind = question.renderer_key
@@ -336,30 +342,34 @@ def run(*, database_url: str | None, dry_run: bool, limit: int | None) -> int:
                             )
                         )
 
-                    existing_question_assets = {
-                        (asset.file_path, asset.display_order): asset
-                        for asset in session.scalars(
-                            select(QuestionAssetV2).where(
-                                QuestionAssetV2.question_id == question_v2.id
-                            )
+                    existing_question_assets: dict[tuple[str, int], QuestionAssetV2] = {}
+                    for existing_question_asset in session.scalars(
+                        select(QuestionAssetV2).where(
+                            QuestionAssetV2.question_id == question_v2.id
                         )
-                    }
+                    ):
+                        existing_question_assets[
+                            (
+                                existing_question_asset.file_path,
+                                existing_question_asset.display_order,
+                            )
+                        ] = existing_question_asset
                     seen_question_asset_keys: set[tuple[str, int]] = set()
-                    for asset in question.assets:
-                        key = (asset.file_path, asset.display_order)
+                    for question_asset in question.assets:
+                        key = (question_asset.file_path, question_asset.display_order)
                         seen_question_asset_keys.add(key)
-                        question_asset_v2 = existing_question_assets.get(key)
+                        question_asset_v2: QuestionAssetV2 | None = existing_question_assets.get(key)
                         if question_asset_v2 is None:
                             session.add(
                                 QuestionAssetV2(
                                     question_id=question_v2.id,
-                                    file_path=asset.file_path,
-                                    mime_type=asset.mime_type,
-                                    display_order=asset.display_order,
+                                    file_path=question_asset.file_path,
+                                    mime_type=question_asset.mime_type,
+                                    display_order=question_asset.display_order,
                                 )
                             )
                         else:
-                            question_asset_v2.mime_type = asset.mime_type
+                            question_asset_v2.mime_type = question_asset.mime_type
                             session.add(question_asset_v2)
                     stale_question_asset_ids = [
                         asset.id

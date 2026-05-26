@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import argparse
+from typing import cast
 
 from sqlalchemy import delete, select
+from sqlalchemy.orm import Session
 from sqlalchemy.orm import selectinload
 
 from sikao_api.db.models import PaperRevision, PracticeSession, PracticeSessionAnswer, Question
@@ -32,7 +34,7 @@ def infer_track(session_row: PracticeSession) -> str:
 
 
 def _resolve_question_v2_id(
-    session,
+    session: Session,
     *,
     legacy_question: Question | None,
     session_revision_v2_id: int | None,
@@ -40,11 +42,14 @@ def _resolve_question_v2_id(
     if legacy_question is None:
         return None
     if session_revision_v2_id is not None:
-        return session.scalar(
+        return cast(
+            int | None,
+            session.scalar(
             select(QuestionV2.id).where(
                 QuestionV2.revision_id == session_revision_v2_id,
                 QuestionV2.item_no == legacy_question.position,
             )
+        ),
         )
     if legacy_question.paper_revision is None or legacy_question.paper_revision.paper is None:
         return None
@@ -63,11 +68,14 @@ def _resolve_question_v2_id(
     )
     if revision_v2_id is None:
         return None
-    return session.scalar(
+    return cast(
+        int | None,
+        session.scalar(
         select(QuestionV2.id).where(
             QuestionV2.revision_id == revision_v2_id,
             QuestionV2.item_no == legacy_question.position,
         )
+    ),
     )
 
 

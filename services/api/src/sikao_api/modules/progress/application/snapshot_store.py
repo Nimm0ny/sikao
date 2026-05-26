@@ -81,8 +81,8 @@ def load_or_compute_progress_snapshot(
     *,
     user_id: int,
     snapshot_date: date,
-    sessions,
-    answers,
+    sessions: list[Any],
+    answers: list[Any],
 ) -> ProgressMetricBucketV2:
     if snapshot_date == today_cn():
         range_start, range_end = day_bounds_cn(snapshot_date)

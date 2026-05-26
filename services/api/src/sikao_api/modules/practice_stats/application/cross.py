@@ -1,15 +1,25 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Literal, cast
+from typing import Any, Literal, cast
 
+from sqlalchemy.orm import Session
+
+from sikao_api.db.models_v2 import UserV2
 from sikao_api.modules.practice_stats.application.filters import apply_category_filter, infer_cross_row_key
 from sikao_api.modules.practice_stats.application.loaders import load_practice_facts
 from sikao_api.modules.practice_stats.interface.schemas import PracticeStatsCrossItemV2, PracticeStatsCrossResponseV2
 
 
-def build_stats_cross(session, *, user, type_name: str, category: str | None, difficulty: str | None) -> PracticeStatsCrossResponseV2:
-    buckets: dict[tuple[str, str, str], list] = defaultdict(list)
+def build_stats_cross(
+    session: Session,
+    *,
+    user: UserV2,
+    type_name: str,
+    category: str | None,
+    difficulty: str | None,
+) -> PracticeStatsCrossResponseV2:
+    buckets: dict[tuple[str, str, str], list[Any]] = defaultdict(list)
     for fact in apply_category_filter(load_practice_facts(session, user_id=user.id, type_name=type_name), category=category):
         if difficulty is not None and fact.difficulty != difficulty:
             continue

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -183,7 +184,7 @@ def build_diagnosis(
 
 def build_plan_window_summary(
     *,
-    events: list,
+    events: list[Any],
     practice_minutes_total: int,
 ) -> DashboardPlanWindowSummaryV2:
     total_events = len(events)

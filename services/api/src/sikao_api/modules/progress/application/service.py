@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, timedelta
+from typing import Any
 
 from sqlalchemy.orm import Session
 
@@ -150,8 +151,8 @@ def _build_day_point(
     session: Session,
     *,
     user_id: int,
-    sessions,
-    answers,
+    sessions: list[Any],
+    answers: list[Any],
     day: date,
 ) -> ProgressTimeseriesPointV2:
     bucket = load_or_compute_progress_snapshot(
@@ -175,8 +176,8 @@ def _build_week_points(
     session: Session,
     *,
     user_id: int,
-    sessions,
-    answers,
+    sessions: list[Any],
+    answers: list[Any],
     from_date: date,
     to_date: date,
 ) -> list[ProgressTimeseriesPointV2]:

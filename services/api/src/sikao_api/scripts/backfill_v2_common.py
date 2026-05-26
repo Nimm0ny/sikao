@@ -3,13 +3,16 @@ from __future__ import annotations
 import argparse
 import json
 from dataclasses import asdict, dataclass
-from typing import Iterable
+from typing import Iterable, Iterator, TypeVar
 from uuid import NAMESPACE_URL, uuid5
 
 from sqlalchemy.orm import Session
 
 from sikao_api.core.config import get_settings
 from sikao_api.db.session import DatabaseManager
+
+
+_T = TypeVar("_T")
 
 
 @dataclass
@@ -61,7 +64,7 @@ def commit_or_rollback(session: Session, *, dry_run: bool) -> None:
     session.commit()
 
 
-def iter_with_limit(items: Iterable, *, limit: int | None):
+def iter_with_limit(items: Iterable[_T], *, limit: int | None) -> Iterator[_T]:
     if limit is None:
         yield from items
         return

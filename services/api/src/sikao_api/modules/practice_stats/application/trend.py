@@ -3,6 +3,9 @@ from __future__ import annotations
 from datetime import timedelta
 from typing import Literal, cast
 
+from sqlalchemy.orm import Session
+
+from sikao_api.db.models_v2 import UserV2
 from sikao_api.modules.practice_stats.application.cells import build_trend_points
 from sikao_api.modules.practice_stats.application.filters import apply_category_filter
 from sikao_api.modules.practice_stats.application.facts import utc_now_naive
@@ -12,7 +15,14 @@ from sikao_api.modules.practice_stats.interface.schemas import PracticeStatsTren
 _PERIOD_DAYS = {"7d": 7, "30d": 30, "90d": 90}
 
 
-def build_stats_trend(session, *, user, type_name: str, category: str | None, period: str) -> PracticeStatsTrendResponseV2:
+def build_stats_trend(
+    session: Session,
+    *,
+    user: UserV2,
+    type_name: str,
+    category: str | None,
+    period: str,
+) -> PracticeStatsTrendResponseV2:
     cutoff = utc_now_naive() - timedelta(days=_PERIOD_DAYS[period])
     facts = [
         fact
