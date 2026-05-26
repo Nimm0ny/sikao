@@ -27,8 +27,8 @@ import styles from './WeeklyReviewSection.module.css';
 
 type DotState = 'full' | 'half' | 'empty';
 
-const RING_SIZE = 64;
-const RING_STROKE = 6;
+const RING_SIZE = 44;
+const RING_STROKE = 4;
 const RING_RADIUS = (RING_SIZE - RING_STROKE) / 2;
 const RING_CIRC = 2 * Math.PI * RING_RADIUS;
 const DOW_LABELS = ['一', '二', '三', '四', '五', '六', '日'] as const;
@@ -173,25 +173,28 @@ export function WeeklyReviewSection() {
 
   return (
     <div className={styles.root} data-testid="weekly-review">
-      <div className={styles.head}>
-        <CompletionRing rate={rate} />
+      <header className={styles.head}>
+        <h4 className={styles.title}>本周备考回顾</h4>
         <span className={styles.streakPill} data-testid="weekly-review-streak">
           坚持 <b className={styles.streakNum}>{streak}</b> 天
         </span>
+      </header>
+      <div className={styles.body}>
+        <CompletionRing rate={rate} />
+        <ol className={styles.dotsRow} aria-label="本周打卡" data-testid="weekly-review-dots">
+          {dots.map((dot, idx) => (
+            <li
+              key={weekStamps[idx]}
+              className={styles.dot}
+              data-state={dot}
+              aria-label={`周${DOW_LABELS[idx]} ${dot === 'full' ? '已完成' : dot === 'half' ? '进行中' : '未开始'}`}
+            >
+              <span className={styles.dotCore} aria-hidden="true" />
+              <span className={styles.dotLabel}>{DOW_LABELS[idx]}</span>
+            </li>
+          ))}
+        </ol>
       </div>
-      <ol className={styles.dotsRow} aria-label="本周打卡" data-testid="weekly-review-dots">
-        {dots.map((dot, idx) => (
-          <li
-            key={weekStamps[idx]}
-            className={styles.dot}
-            data-state={dot}
-            aria-label={`周${DOW_LABELS[idx]} ${dot === 'full' ? '已完成' : dot === 'half' ? '进行中' : '未开始'}`}
-          >
-            <span className={styles.dotCore} aria-hidden="true" />
-            <span className={styles.dotLabel}>{DOW_LABELS[idx]}</span>
-          </li>
-        ))}
-      </ol>
     </div>
   );
 }

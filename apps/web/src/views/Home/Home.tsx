@@ -60,13 +60,12 @@ export function Home() {
         </Panel>
 
         <div className={styles.rightStack}>
-          <Panel title="本周备考回顾">
+          <section className={styles.bottomCard} data-testid="panel">
             <WeeklyReviewSection />
-          </Panel>
-
-          <Panel title="最近练习">
+          </section>
+          <section className={styles.bottomCard} data-testid="panel">
             <RecentPracticeSection />
-          </Panel>
+          </section>
         </div>
       </section>
     </ScreenLockShell>

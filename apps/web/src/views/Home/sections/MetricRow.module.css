@@ -17,13 +17,12 @@
   border: var(--card-border);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow-rest);
-  padding: var(--space-3) var(--space-4);
+  padding: 14px 18px; /* spacing-allow: prototype Home v2.1 .metric-card padding (no exact --space-N match for 14/18) */
   display: flex;
   align-items: center;
   gap: var(--space-3);
   min-width: 0;
   box-sizing: border-box;
-  height: 64px;
 }
 
 .iconSlot {
@@ -31,7 +30,7 @@
   height: 32px;
   flex-shrink: 0;
   border-radius: var(--radius-10);
-  background: var(--color-bg-elevated);
+  background: var(--color-bg-sunken);
   color: var(--color-text-secondary);
   display: inline-flex;
   align-items: center;
@@ -51,14 +50,15 @@
 .data {
   display: flex;
   flex-direction: column;
+  gap: var(--space-1);
   min-width: 0;
   flex: 1 1 auto;
   overflow: hidden;
 }
 
 .value {
-  font-size: var(--font-card);
-  line-height: 1.2;
+  font-size: var(--font-h2);
+  line-height: 1.1;
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   white-space: nowrap;
@@ -83,7 +83,7 @@
 }
 
 .delta {
-  font-size: var(--font-meta);
+  font-size: var(--font-tiny);
   color: var(--color-text-meta);
   white-space: nowrap;
   overflow: hidden;

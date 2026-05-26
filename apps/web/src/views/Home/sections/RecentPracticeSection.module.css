@@ -7,13 +7,16 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .head {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: var(--space-2);
+  flex-shrink: 0;
 }
 
 .title {
@@ -32,24 +35,27 @@
 .list {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
   margin: 0;
   padding: 0;
   list-style: none;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .feedItem {
   display: flex;
   align-items: center;
-  gap: var(--space-3);
-  padding: var(--space-2) 0;
+  gap: var(--space-2);
+  padding: var(--space-1) 0;
   border-bottom: 1px solid var(--color-border-subtle);
+  min-width: 0;
 }
 .feedItem:last-child { border-bottom: 0; }
 
 .feedIcon {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   border-radius: var(--radius-10);
   flex-shrink: 0;
   background: var(--color-bg-sunken);
@@ -61,10 +67,12 @@
 .feedMain {
   flex: 1 1 auto;
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .feedName {
-  font-size: var(--font-meta);
+  font-size: var(--font-tiny);
   font-weight: var(--font-weight-medium);
   white-space: nowrap;
   overflow: hidden;
@@ -72,9 +80,8 @@
 }
 
 .feedSub {
-  font-size: var(--font-tiny);
+  font-size: 10px;
   color: var(--color-text-meta);
-  margin-top: var(--space-1);
 }
 
 .feedPill {
@@ -83,6 +90,6 @@
   padding: var(--space-1) var(--space-2);
   border-radius: 9999px;
   flex-shrink: 0;
-  background: var(--color-bg-sunken);
-  color: var(--color-text-secondary);
+  background: var(--color-state-ok-soft);
+  color: var(--color-state-ok);
 }

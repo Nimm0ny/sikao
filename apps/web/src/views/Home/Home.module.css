@@ -11,13 +11,30 @@
   grid-template-columns: 1.4fr 1.2fr 1fr;
   gap: var(--space-4);
   min-height: 0;
-  overflow: hidden;
 }
 
 .rightStack {
   display: grid;
   grid-template-rows: 1fr 1fr;
   gap: var(--space-4);
+  min-height: 0;
+}
+
+/*
+ * .bottomCard — compact card for the right-stack slots (本周回顾 / 最近练习).
+ * Why: V5 Panel's 57px header eats 40% of the 127px slot. This rule renders
+ *      the same card surface (bg / border / radius / shadow) but inlines a
+ *      single-padding container so children (with their own head + body)
+ *      can fill the slot. Mirrors prototype option-final.html .bottom-card.
+ */
+.bottomCard {
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow-rest);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
   min-height: 0;
   overflow: hidden;
 }
