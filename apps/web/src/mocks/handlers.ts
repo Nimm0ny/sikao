@@ -12,6 +12,7 @@ import { practiceHandlers } from './handlers/practice';
 import { progressHandlers } from './handlers/progress';
 import { recommendationsHandlers } from './handlers/recommendations';
 import { recordsHandlers } from './handlers/records';
+import { reviewHandlers } from './handlers/review';
 
 export const handlers: RequestHandler[] = [
   ...homeHandlers,
@@ -19,4 +20,5 @@ export const handlers: RequestHandler[] = [
   ...progressHandlers,
   ...recommendationsHandlers,
   ...recordsHandlers,
+  ...reviewHandlers,
 ];
