@@ -3,11 +3,14 @@ from __future__ import annotations
 import logging
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Query, Request
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from sikao_api.db.schemas_v2 import (
     OperationAckV2,
+    PracticeAnswerFeedItemV2,
+    PracticeAnswerFeedResponseV2,
     PracticeAnswerFlagRequestV2,
     PracticeAnswerUpsertRequestV2,
     PracticePersistentFlagRequestV2,
@@ -27,9 +30,10 @@ from sikao_api.modules.session.application.answer_flag_ops import (
 from sikao_api.modules.session.application.hooks import on_session_submit
 from sikao_api.modules.session.application.service import SessionServiceV2
 from sikao_api.modules.session.application.view_solution_ops import mark_view_solution
-from sikao_api.db.models_v2 import UserV2
+from sikao_api.db.models_v2 import PracticeSessionAnswerV2, PracticeSessionV2, UserV2
 
 router = APIRouter(prefix="/api/v2/practice/sessions", tags=["session-v2"])
+practice_router = APIRouter(prefix="/api/v2/practice", tags=["session-v2"])
 _logger = logging.getLogger(__name__)
 
 
@@ -189,3 +193,48 @@ def get_result(
     service = SessionServiceV2(session)
     practice_session = service.get_session(user=user, session_id=session_id)
     return service.build_result_response(practice_session=practice_session)
+
+
+@practice_router.get("/answers", response_model=PracticeAnswerFeedResponseV2)
+def list_practice_answers(
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+    limit: int = Query(default=200, ge=1, le=200),
+    include_confidence: bool = Query(default=False),
+    include_duration: bool = Query(default=False),
+) -> PracticeAnswerFeedResponseV2:
+    base_stmt = (
+        select(PracticeSessionAnswerV2)
+        .join(PracticeSessionV2, PracticeSessionV2.id == PracticeSessionAnswerV2.session_id)
+        .where(
+            PracticeSessionV2.user_id == user.id,
+            PracticeSessionAnswerV2.question_id.is_not(None),
+            PracticeSessionV2.status == "submitted",
+        )
+    )
+    rows = list(
+        session.scalars(
+            base_stmt.order_by(
+                PracticeSessionAnswerV2.answered_at.desc(),
+                PracticeSessionAnswerV2.id.desc(),
+            ).limit(limit)
+        )
+    )
+    total = int(session.scalar(select(func.count()).select_from(base_stmt.subquery())) or 0)
+    return PracticeAnswerFeedResponseV2(
+        items=[
+            PracticeAnswerFeedItemV2(
+                question_id=row.question_id,
+                session_id=row.session_id,
+                is_correct=row.is_correct,
+                answered_at=row.answered_at,
+                # PracticeSessionAnswerV2 does not persist confidence yet.
+                confidence=None if include_confidence else None,
+                duration_seconds=row.duration_seconds if include_duration else None,
+            )
+            for row in rows
+            if row.question_id is not None
+        ],
+        total=total,
+        limit=limit,
+    )

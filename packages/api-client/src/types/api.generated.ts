@@ -811,6 +811,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/practice/answers": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Practice Answers */
+        get: operations["list_practice_answers_api_v2_practice_answers_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/practice/center": {
         parameters: {
             query?: never;
@@ -4086,6 +4103,30 @@ export interface components {
             style?: string | null;
             /** Targetexamdate */
             targetExamDate?: string | null;
+        };
+        /** PracticeAnswerFeedItemV2 */
+        PracticeAnswerFeedItemV2: {
+            /** Answeredat */
+            answeredAt: string;
+            /** Confidence */
+            confidence?: ("guess" | "unsure" | "likely" | "certain") | null;
+            /** Durationseconds */
+            durationSeconds?: number | null;
+            /** Iscorrect */
+            isCorrect?: boolean | null;
+            /** Questionid */
+            questionId: number;
+            /** Sessionid */
+            sessionId: number;
+        };
+        /** PracticeAnswerFeedResponseV2 */
+        PracticeAnswerFeedResponseV2: {
+            /** Items */
+            items?: components["schemas"]["PracticeAnswerFeedItemV2"][];
+            /** Limit */
+            limit: number;
+            /** Total */
+            total: number;
         };
         /** PracticeAnswerFlagRequestV2 */
         PracticeAnswerFlagRequestV2: {
@@ -7521,6 +7562,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["AiQuestionFeedbackResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_practice_answers_api_v2_practice_answers_get: {
+        parameters: {
+            query?: {
+                limit?: number;
+                include_confidence?: boolean;
+                include_duration?: boolean;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["PracticeAnswerFeedResponseV2"];
                 };
             };
             /** @description Validation Error */

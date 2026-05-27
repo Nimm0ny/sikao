@@ -290,6 +290,21 @@ class PracticeAnswerUpsertRequestV2(CamelModel):
     answers: list[PracticeAnswerPayloadV2] = Field(default_factory=list)
 
 
+class PracticeAnswerFeedItemV2(CamelModel):
+    question_id: int
+    session_id: int
+    is_correct: bool | None = None
+    answered_at: UtcDatetime
+    confidence: Literal["guess", "unsure", "likely", "certain"] | None = None
+    duration_seconds: int | None = None
+
+
+class PracticeAnswerFeedResponseV2(CamelModel):
+    items: list[PracticeAnswerFeedItemV2] = Field(default_factory=list)
+    total: int
+    limit: int
+
+
 class PracticeAnswerFlagRequestV2(CamelModel):
     flagged: bool
 

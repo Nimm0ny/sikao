@@ -171,6 +171,7 @@ def create_app(*, settings: Settings | None = None, initialize_schema: bool | No
     app.include_router(session_lifecycle_v2.router)
     app.include_router(timing_v2.router)
     app.include_router(session_v2.router)
+    app.include_router(session_v2.practice_router)
     app.include_router(review_v2.router)
     app.include_router(review_v2.admin_router)
     app.include_router(notes_v2_ai.router)

@@ -5047,6 +5047,93 @@
         "title": "PlanUpdateRequestV2",
         "type": "object"
       },
+      "PracticeAnswerFeedItemV2": {
+        "properties": {
+          "answeredAt": {
+            "title": "Answeredat",
+            "type": "string"
+          },
+          "confidence": {
+            "anyOf": [
+              {
+                "enum": [
+                  "guess",
+                  "unsure",
+                  "likely",
+                  "certain"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Confidence"
+          },
+          "durationSeconds": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Durationseconds"
+          },
+          "isCorrect": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Iscorrect"
+          },
+          "questionId": {
+            "title": "Questionid",
+            "type": "integer"
+          },
+          "sessionId": {
+            "title": "Sessionid",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "questionId",
+          "sessionId",
+          "answeredAt"
+        ],
+        "title": "PracticeAnswerFeedItemV2",
+        "type": "object"
+      },
+      "PracticeAnswerFeedResponseV2": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/PracticeAnswerFeedItemV2"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "limit": {
+            "title": "Limit",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total",
+          "limit"
+        ],
+        "title": "PracticeAnswerFeedResponseV2",
+        "type": "object"
+      },
       "PracticeAnswerFlagRequestV2": {
         "properties": {
           "flagged": {
@@ -13688,6 +13775,76 @@
         "summary": "Post Ai Question Feedback",
         "tags": [
           "ai-questions-v2"
+        ]
+      }
+    },
+    "/api/v2/practice/answers": {
+      "get": {
+        "operationId": "list_practice_answers_api_v2_practice_answers_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 200,
+              "maximum": 200,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_confidence",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Confidence",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "include_duration",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Include Duration",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PracticeAnswerFeedResponseV2"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "summary": "List Practice Answers",
+        "tags": [
+          "session-v2"
         ]
       }
     },
