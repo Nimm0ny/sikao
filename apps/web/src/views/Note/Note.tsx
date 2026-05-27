@@ -5,7 +5,7 @@
 import { useState } from 'react';
 import { Badge, Chip, SpriteIcon } from '../../components/atom';
 import { Drawer } from '../../components/overlay';
-import { PageHeader } from '../../components/layout';
+import { PageHeader, ScreenLockShell } from '../../components/layout';
 import { Search } from '../../components/form';
 import { Button } from '../../components/form';
 import styles from './Note.module.css';
@@ -91,7 +91,7 @@ export function Note() {
   };
 
   return (
-    <div className={styles.root} data-testid="note-view">
+    <ScreenLockShell rows="auto auto auto minmax(0, 1fr)" testId="note-view">
       <PageHeader
         title="笔记"
         subtitle={`共 ${PLACEHOLDER_NOTES.length} 条 · 显示 ${visibleNotes.length} 条`}
@@ -172,7 +172,7 @@ export function Note() {
           <p>笔记详情视图占位 — 真实富文本编辑由 Notes 业务 Phase（SIK-44 家族）接入。</p>
         </div>
       </Drawer>
-    </div>
+    </ScreenLockShell>
   );
 }
 

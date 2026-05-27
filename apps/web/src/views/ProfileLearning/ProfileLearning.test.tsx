@@ -1,8 +1,12 @@
 /*
- * ProfileLearning tests — SIK-91 Home M-B wave 2 (2026-05-24).
- * Container 4-state coverage + plan slice rendering.
+ * ProfileLearning tests — SIK-91 W1 (2026-05-26).
+ * Container 4-state coverage + sub-nav / range-bar / KPI row presence.
+ *
+ * Note on nav baseline: SubNav is in-page Profile navigation (8 pills per
+ * sik-fu-b §2.2). It is NOT the global app nav (RootLayout/Rail/BottomTabBar
+ * which stays locked at 4 tabs [home, practice, review, note]).
  */
-import { describe, it, expect } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -39,20 +43,40 @@ const SAMPLE_OVERVIEW = {
   weaknessTop3: [],
 };
 
-describe('ProfileLearning (Home M-B wave 2)', () => {
-  it('ready: renders Header summary + PlanSlice progressbar', async () => {
-    server.use(http.get('/api/v2/dashboard/progress', () => HttpResponse.json(SAMPLE_OVERVIEW)));
-    renderWithEnv();
-    await waitFor(() => expect(screen.getByTestId('profile-learning')).toBeInTheDocument());
-    expect(screen.getByRole('heading', { name: '学习详情' })).toBeInTheDocument();
-    expect(screen.getByText(/累计练习 1248 题/)).toBeInTheDocument();
-    expect(screen.getByTestId('profile-learning-plan-slice')).toBeInTheDocument();
-    const progressbar = screen.getByRole('progressbar');
-    // 14 / 28 = 50%
-    expect(progressbar).toHaveAttribute('aria-valuenow', '50');
+describe('ProfileLearning (SIK-91 W1)', () => {
+  beforeEach(() => {
+    vi.useRealTimers();
   });
 
-  it('error: surfaces ErrorCard with error message', async () => {
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('ready: renders PageHeader + sub-nav + range-bar + KPI row', async () => {
+    server.use(http.get('/api/v2/dashboard/progress', () => HttpResponse.json(SAMPLE_OVERVIEW)));
+    renderWithEnv();
+    await waitFor(() => expect(screen.getByTestId('profile-learning-grid')).toBeInTheDocument());
+    expect(screen.getByRole('heading', { name: '详细学情' })).toBeInTheDocument();
+    expect(screen.getByTestId('profile-sub-nav')).toBeInTheDocument();
+    expect(screen.getByTestId('profile-learning-range-bar')).toBeInTheDocument();
+    expect(screen.getByTestId('profile-learning-kpi-row')).toBeInTheDocument();
+    // 5 KPI cells per sik-fu-b §2.4
+    expect(screen.getByTestId('kpi-cell-practice')).toBeInTheDocument();
+    expect(screen.getByTestId('kpi-cell-duration')).toBeInTheDocument();
+    expect(screen.getByTestId('kpi-cell-xingce')).toBeInTheDocument();
+    expect(screen.getByTestId('kpi-cell-shenlun')).toBeInTheDocument();
+    expect(screen.getByTestId('kpi-cell-streak')).toBeInTheDocument();
+  });
+
+  it('sub-nav: 学情 tab has aria-current="page"', async () => {
+    server.use(http.get('/api/v2/dashboard/progress', () => HttpResponse.json(SAMPLE_OVERVIEW)));
+    renderWithEnv();
+    await waitFor(() => expect(screen.getByTestId('profile-learning-grid')).toBeInTheDocument());
+    const learning = screen.getByRole('link', { name: '学情' });
+    expect(learning).toHaveAttribute('aria-current', 'page');
+  });
+
+  it('error: surfaces error EmptyState with error message', async () => {
     server.use(http.get('/api/v2/dashboard/progress', () => HttpResponse.json({}, { status: 500 })));
     renderWithEnv();
     await waitFor(() => expect(screen.getByTestId('profile-learning-error')).toBeInTheDocument());
@@ -65,25 +89,5 @@ describe('ProfileLearning (Home M-B wave 2)', () => {
     }));
     renderWithEnv();
     expect(screen.getByTestId('profile-learning-loading')).toBeInTheDocument();
-    await waitFor(() => expect(screen.queryByTestId('profile-learning-loading')).not.toBeInTheDocument());
-  });
-
-  it('AGENT-H7: zero-target plan slice renders 0% (no division-by-zero)', async () => {
-    const zeroTargetOverview = {
-      ...SAMPLE_OVERVIEW,
-      summary: {
-        ...SAMPLE_OVERVIEW.summary,
-        planSlice: {
-          ...SAMPLE_OVERVIEW.summary.planSlice,
-          eventsInWindowTotal: 0,
-          eventsDone: 0,
-        },
-      },
-    };
-    server.use(http.get('/api/v2/dashboard/progress', () => HttpResponse.json(zeroTargetOverview)));
-    renderWithEnv();
-    await waitFor(() => expect(screen.getByTestId('profile-learning')).toBeInTheDocument());
-    const progressbar = screen.getByRole('progressbar');
-    expect(progressbar).toHaveAttribute('aria-valuenow', '0');
   });
 });

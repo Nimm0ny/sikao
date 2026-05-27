@@ -25,6 +25,7 @@ export type ButtonSize = 'sm' | 'md' | 'lg' | 'xl';
 export interface ButtonProps {
   readonly variant: ButtonVariant;
   readonly size?: ButtonSize;
+  readonly className?: string;
   readonly iconLeading?: ReactElement;
   readonly iconTrailing?: ReactElement;
   readonly iconOnly?: ReactElement;
@@ -32,6 +33,7 @@ export interface ButtonProps {
   readonly disabled?: boolean;
   readonly fullWidth?: boolean;
   readonly onClick?: (e: MouseEvent<HTMLButtonElement>) => void;
+  readonly title?: string;
   readonly type?: 'button' | 'submit' | 'reset';
   readonly children?: ReactNode;
   readonly 'aria-label'?: string;
@@ -62,6 +64,7 @@ function sizedIcon(node: ReactElement, size: ButtonSize): ReactElement {
 export function Button({
   variant,
   size = 'md',
+  className,
   iconLeading,
   iconTrailing,
   iconOnly,
@@ -69,6 +72,7 @@ export function Button({
   disabled = false,
   fullWidth = false,
   onClick,
+  title,
   type = 'button',
   children,
   'aria-label': ariaLabel,
@@ -85,10 +89,11 @@ export function Button({
   // loading > disabled per §D.3.1 — loading already implies non-interactive,
   // so we set the native `disabled` even if the prop was false.
   const inert = loading || disabled;
+  const rootClassName = [styles.root, className].filter(Boolean).join(' ');
   return (
     <button
       type={type}
-      className={styles.root}
+      className={rootClassName}
       data-variant={variant}
       data-size={size}
       data-loading={loading || undefined}
@@ -97,6 +102,7 @@ export function Button({
       disabled={inert}
       aria-label={ariaLabel}
       aria-busy={loading ? true : undefined}
+      title={title}
       onClick={onClick}
     >
       {loading ? <Spinner size={size} /> : null}

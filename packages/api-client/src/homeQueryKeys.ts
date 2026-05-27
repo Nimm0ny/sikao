@@ -36,6 +36,7 @@ export const homeQueryKeys = {
       [...homeQueryKeys.progress.all(), 'timeseries', filters] as const,
     weakness: () => [...homeQueryKeys.progress.all(), 'weakness'] as const,
     diagnosis: () => [...homeQueryKeys.progress.all(), 'diagnosis'] as const,
+    weeklySummary: () => [...homeQueryKeys.progress.all(), 'weekly-summary'] as const,
   },
   dashboard: {
     all: () => [...homeQueryKeys.root, 'dashboard'] as const,

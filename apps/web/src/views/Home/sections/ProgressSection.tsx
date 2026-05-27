@@ -3,32 +3,30 @@
 import { Link } from 'react-router-dom';
 import { useProgressOverview } from '@sikao/api-client/progressQueries';
 import type { WeaknessItemV2 } from '@sikao/api-client/types/home';
-import { Numeric, Skeleton, Badge } from '../../../components/atom';
+import { Skeleton } from '../../../components/atom';
 import { EmptyState } from '../../../components/atom/EmptyState';
-import { Button } from '../../../components/form';
 import styles from './ProgressSection.module.css';
 
 /*
  * ProgressSection — Home Section B · 学习进度 mini card.
  *
- * Why: bottom row #2 (per V5 prototype `Home v2.1.html`). Surfaces the
- *      week-window key metric + top3 weakness list with a CTA jumping
- *      to the /profile/learning drilldown (SIK-91 wave 2/3 scope).
+ * Why: bottom row #2 (per V5 prototype `Home v2.1.html` line 1487-1518).
+ *      sik-fu-d-progress-recommendation-visual-contract.md §2.1: each
+ *      weak-item is a 3-column row: name (90px ellipsis) + bar(track +
+ *      fill, err class when accuracy <= 50%) + val (36px tabular-nums
+ *      right-align). No Badge — that was a SIK-91 v1 visual drift.
  *
- *      4-state contract:
- *        loading → Skeleton stack
- *        error   → EmptyState (description carries the error message;
- *                  the panel is mini so a full ErrorCard would dominate)
- *        empty   → EmptyState ("尚无学习进度数据")
- *        ready   → metric row + weakness list + CTA
+ *      bc-head: "Top 3 弱项" + Link "弱项分析 →" jumping to
+ *      /profile/learning (active range = 30 days).
  *
- *      Charts are deliberately not rendered here — recharts lazy-loaded
- *      on the drilldown route per plan §3.3 acceptance.
+ *      4-state contract (loading / error / empty / ready); error and
+ *      empty surface as compact EmptyState because the panel is mini.
  */
 
 const TOP_WEAKNESS_LIMIT = 3;
+const ERR_THRESHOLD_PCT = 50;
 
-function parseAccuracy(raw: string | null | undefined): number | null {
+function parseAccuracyPct(raw: string | null | undefined): number | null {
   if (raw === null || raw === undefined) return null;
   const num = Number(raw);
   if (!Number.isFinite(num)) return null;
@@ -36,38 +34,24 @@ function parseAccuracy(raw: string | null | undefined): number | null {
   return Math.round(num * 1000) / 10;
 }
 
-function formatPercent(value: number | null): string {
-  return value === null ? '—' : `${value.toFixed(1)}%`;
-}
-
-function severityVariant(severity: string): 'err' | 'warn' | 'ok' {
-  if (severity === 'high') return 'err';
-  if (severity === 'medium') return 'warn';
-  return 'ok';
-}
-
-function WeaknessList({ items }: { readonly items: ReadonlyArray<WeaknessItemV2> }) {
+function WeakItem({ item }: { readonly item: WeaknessItemV2 }) {
+  const pct = parseAccuracyPct(item.accuracy);
+  const widthPct = pct === null ? 0 : Math.max(0, Math.min(100, pct));
+  const isErr = pct !== null && pct <= ERR_THRESHOLD_PCT;
   return (
-    <>
-      <p className={styles.weaknessHeader}>薄弱模块（前 3）</p>
-      <ul className={styles.weaknessList} data-testid="home-progress-weakness">
-        {items.map((item) => {
-          const accuracyPct = parseAccuracy(item.accuracy);
-          return (
-            <li key={item.subjectKey} className={styles.weaknessItem}>
-              <div>
-                <Badge variant={severityVariant(item.severity)} size="sm">
-                  {item.subjectLabel}
-                </Badge>
-              </div>
-              <span className={styles.weaknessAccuracy}>
-                正确率 {formatPercent(accuracyPct)}
-              </span>
-            </li>
-          );
-        })}
-      </ul>
-    </>
+    <li className={styles.weakItem} data-testid={`home-progress-weak-${item.subjectKey}`}>
+      <span className={styles.weakName} title={item.subjectLabel}>{item.subjectLabel}</span>
+      <span className={styles.barTrack} aria-hidden="true">
+        <span
+          className={styles.barFill}
+          data-err={isErr || undefined}
+          style={{ width: `${widthPct}%` }}
+        />
+      </span>
+      <span className={styles.weakVal}>
+        {pct === null ? '—' : `${pct.toFixed(1)}%`}
+      </span>
+    </li>
   );
 }
 
@@ -103,20 +87,23 @@ export function ProgressSection() {
     );
   }
 
-  const weekItemsAnswered = data.summary.week.itemsAnswered;
-  const weekAccuracy = parseAccuracy(data.summary.week.accuracy);
   const weakness = (data.weaknessTop3 ?? []).slice(0, TOP_WEAKNESS_LIMIT);
 
   return (
     <div className={styles.root} data-testid="home-progress">
-      <div className={styles.metricRow}>
-        <Numeric value={weekItemsAnswered} unit="题" size="h2" emphasis="value" />
-        <span className={styles.metricKey}>本周练习量 · 正确率 {formatPercent(weekAccuracy)}</span>
-      </div>
-      {weakness.length > 0 ? <WeaknessList items={weakness} /> : null}
-      <Link to="/profile/learning" className={styles.cta}>
-        <Button variant="secondary" size="sm">查看学习详情</Button>
-      </Link>
+      <header className={styles.head}>
+        <h4 className={styles.title}>Top 3 弱项</h4>
+        <Link to="/profile/learning?range=30d" className={styles.headLink}>
+          弱项分析 →
+        </Link>
+      </header>
+      {weakness.length > 0 ? (
+        <ul className={styles.weakList} data-testid="home-progress-weakness">
+          {weakness.map((item) => <WeakItem key={item.subjectKey} item={item} />)}
+        </ul>
+      ) : (
+        <EmptyState title="近期无明显弱项" description="保持节奏，继续练习。" />
+      )}
     </div>
   );
 }

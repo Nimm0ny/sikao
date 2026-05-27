@@ -1,0 +1,197 @@
+/*
+ * RecordRow — timeline event row styles.
+ * Why: sik-fu-c §2.3 — 4-col grid (time 80px / ico 28px / body 1fr /
+ *      actions auto). Ico tint per kind variant via tokens (no
+ *      hard-coded paper-* / ok-50 / cat-shenlun-soft).
+ *      Vertical timeline rail rendered via ::before on each row;
+ *      last-child suppresses the rail tail.
+ *      Nav baseline (4 tabs) untouched — this row is per-event display.
+ */
+
+.event {
+  display: grid;
+  grid-template-columns: 80px 28px 1fr auto;
+  gap: var(--space-3);
+  align-items: flex-start;
+  padding: var(--space-3) var(--space-4);
+  text-decoration: none;
+  color: inherit;
+  position: relative;
+  cursor: pointer;
+  transition: background var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover wrapped in @media (hover: hover) */
+  .event:hover {
+    background: var(--color-bg-elevated);
+  }
+}
+
+.event:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: -2px;
+}
+
+/* timeline rail (centered behind the ico column) */
+.event::before {
+  content: '';
+  position: absolute;
+  left: calc(80px + var(--space-3) + 13px);
+  top: 0;
+  bottom: calc(-1 * var(--space-2));
+  width: 2px; /* spacing-allow: hairline rail, sub-token visual line */
+  background: var(--color-border-subtle);
+  z-index: 0;
+}
+.event:last-child::before {
+  display: none;
+}
+
+.time {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+  font-variant-numeric: tabular-nums;
+  padding-top: var(--space-1); /* align with ico vertical center */
+}
+
+.ico {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  margin-top: 2px; /* spacing-allow: 2px nudge to align ico center with body cap-height */
+  z-index: var(--z-rail);
+  position: relative;
+}
+
+.event[data-kind='practice'] .ico {
+  background: var(--color-brand-soft);
+  color: var(--color-text-primary);
+}
+.event[data-kind='mock'] .ico {
+  background: var(--color-brand-primary);
+  color: var(--color-text-primary);
+}
+.event[data-kind='review'] .ico {
+  background: var(--color-state-ok-soft);
+  color: var(--color-state-ok);
+}
+.event[data-kind='shenlun'] .ico {
+  background: var(--color-cat-shenlun-soft);
+  color: var(--color-cat-shenlun);
+}
+.event[data-kind='note'] .ico {
+  background: var(--color-state-info-soft);
+  color: var(--color-state-info);
+}
+.event[data-kind='error'] .ico {
+  background: var(--color-state-err-soft);
+  color: var(--color-state-err);
+}
+.event[data-kind='unknown'] .ico {
+  background: var(--color-bg-elevated);
+  color: var(--color-text-meta);
+}
+
+.body {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.titleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.title {
+  font-size: var(--font-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.tag {
+  font-size: var(--font-tiny);
+  font-weight: var(--font-weight-semibold);
+  padding: 1px var(--space-2); /* spacing-allow: 1px y-pad keeps tag visual height tight */
+  border-radius: var(--radius-10);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+}
+
+.tag[data-kind='practice'] { background: var(--color-brand-soft); color: var(--color-text-primary); }
+.tag[data-kind='mock']     { background: var(--color-brand-soft); color: var(--color-text-primary); }
+.tag[data-kind='review']   { background: var(--color-state-ok-soft); color: var(--color-state-ok); }
+.tag[data-kind='shenlun']  { background: var(--color-cat-shenlun-soft); color: var(--color-cat-shenlun); }
+.tag[data-kind='note']     { background: var(--color-state-info-soft); color: var(--color-state-info); }
+.tag[data-kind='error']    { background: var(--color-state-err-soft); color: var(--color-state-err); }
+
+.stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: var(--space-1);
+}
+
+.stat {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+}
+
+.stat b {
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+}
+
+.statOk { color: var(--color-state-ok); }
+.statOk b { color: var(--color-state-ok); }
+
+.stat[data-status='pending'] { color: var(--color-state-warn); }
+.stat[data-status='pending'] b { color: var(--color-state-warn); }
+.stat[data-status='failed']  { color: var(--color-state-err); }
+.stat[data-status='failed'] b { color: var(--color-state-err); }
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding-top: var(--space-1);
+  flex-shrink: 0;
+  /* Default visible on touch / no-hover devices */
+  opacity: 1;
+  transition: opacity var(--dur-fast) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: hover wrapped in @media (hover: hover) */
+  .actions { opacity: 0; }
+  .event:hover .actions,
+  .event:focus-within .actions { opacity: 1; }
+}
+
+.actionPill {
+  display: inline-flex;
+  width: 26px;
+  height: 26px;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-999);
+  background: var(--color-bg-elevated);
+  color: var(--color-text-secondary);
+}

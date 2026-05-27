@@ -39,11 +39,15 @@ const r = (events: ReadonlyArray<unknown>) => HttpResponse.json({
 });
 
 describe('WeekCalendarView (Home M-A wave 2)', () => {
-  it('ready: renders event in matching day column', async () => {
+  it('ready: renders event in matching day cell (early slot for 09:00 event)', async () => {
     server.use(http.get('/api/v2/plans/events', () => r([READY_EVENT])));
     renderWithClient();
     await waitFor(() => expect(screen.getAllByTestId('home-week-event')).toHaveLength(1));
-    expect(screen.getByTestId(`home-week-day-${today}`)).toContainElement(screen.getByTestId('home-week-event'));
+    // 09:00 falls in slot 0 (早上 06-12); the chip lives in the cell for
+    // today + slot 0.
+    expect(screen.getByTestId(`home-week-cell-${today}-0`)).toContainElement(
+      screen.getByTestId('home-week-event'),
+    );
   });
 
   it('empty: renders EmptyState when API returns []', async () => {

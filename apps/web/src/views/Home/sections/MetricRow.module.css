@@ -1,0 +1,123 @@
+/*
+ * MetricRow — V5 SIK-125 (Home v2.1 metric-row contract).
+ *
+ * Why: 4-card row replacing the placeholder MetricCard in Home.tsx.
+ *      Each card = icon-slot (32x32 square) + data column (v + label
+ *      + delta or progress-track). Sizes mirror Home v2.1.html exactly:
+ *      card padding 14px 18px (no fixed height), v 26px/700,
+ *      label 12px/#6B7280 with 8px top margin, delta 10.5px/600 with
+ *      4px top margin. Icon-slot is bg-sunken (#EEF0F3) with radius 10.
+ */
+.row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.card {
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow-rest);
+  padding: 14px 18px; /* spacing-allow: prototype Home v2.1 .metric-card padding (no exact --space-N match for 14/18) */
+  display: flex;
+  align-items: center;
+  gap: 14px; /* spacing-allow: prototype Home v2.1 gap between icon-slot and data column */
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.iconSlot {
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  border-radius: var(--radius-10);
+  background: var(--color-bg-sunken);
+  color: var(--color-text-secondary);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.iconSlot[data-tone='warn'] {
+  background: var(--color-state-warn-soft);
+  color: var(--color-state-warn);
+}
+
+.iconSlot[data-tone='err'] {
+  background: var(--color-state-err-soft);
+  color: var(--color-state-err);
+}
+
+.data {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.value {
+  font-size: 26px; /* spacing-allow: prototype v 26px (no token between font-h2=24 and font-display) */
+  line-height: 1;
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unit {
+  font-size: var(--font-body);
+  color: var(--color-text-meta);
+  font-weight: var(--font-weight-medium);
+  margin-left: 3px; /* spacing-allow: tight unit gap from prototype */
+}
+
+.label {
+  font-size: var(--font-meta);
+  line-height: 1.55;
+  color: var(--color-text-meta);
+  margin-top: var(--space-2);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delta {
+  font-size: 10.5px; /* spacing-allow: prototype delta 10.5px (between font-tiny=11 and 10) */
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-meta);
+  margin-top: var(--space-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.delta[data-tone='ok'] { color: var(--color-state-ok); }
+.delta[data-tone='warn'] { color: var(--color-state-warn); }
+.delta[data-tone='err'] { color: var(--color-state-err); }
+
+.track {
+  position: relative;
+  height: 6px;
+  border-radius: 9999px;
+  background: var(--color-bg-sunken);
+  overflow: hidden;
+  margin-top: var(--space-2);
+}
+
+.fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--color-brand-primary);
+  border-radius: inherit;
+}
+
+@media (max-width: 1023.98px) {
+  .row { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767.98px) {
+  .row { grid-template-columns: 1fr; }
+}

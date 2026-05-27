@@ -1,0 +1,85 @@
+/*
+ * CalendarPanel — Home Section A single-panel Calendar styles.
+ * Why: sik-fu-a-home-visual-contract.md §1.3 — panel card with unified
+ *      head (tabs + 4 nav buttons + countdown chip) and body.
+ */
+
+.panel {
+  background: var(--card-bg);
+  border: var(--card-border);
+  border-radius: var(--card-radius);
+  box-shadow: var(--card-shadow-rest);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex: 0 0 auto;
+}
+
+.body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--space-4);
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/*
+ * Tab segmented active override — V5 Tabs default (segmented variant) uses
+ * brand-primary yellow as the active background; Home v2.1 prototype's
+ * .panel-tabs uses a white "lift" pill on a soft track. We scope this to
+ * the CalendarPanel head only via the local class chain, so other views
+ * keep the V5 default. Selected tab = white background + soft shadow,
+ * unselected = meta color.
+ *
+ * !important is needed because the default V5 segmented selector
+ * `.root[data-variant='segmented'] .tab[data-active]` has (0,4,0)
+ * specificity vs our (0,3,0). Using !important here is the smallest
+ * surgical override; alternative would be a Tabs prop change.
+ */
+.head :global([role='tablist'][data-variant='segmented']) {
+  background: var(--color-bg-elevated) !important;
+}
+
+.head :global([role='tab'][data-active]) {
+  background: var(--color-bg-surface) !important;
+  color: var(--color-text-primary) !important;
+  box-shadow: var(--shadow-l1) !important;
+  font-weight: var(--font-weight-semibold);
+}
+
+.head :global([role='tab']:not([data-active])) {
+  color: var(--color-text-meta);
+}
+
+.countdown {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--font-meta);
+  color: var(--color-text-secondary);
+  background: var(--color-brand-soft);
+  border-radius: var(--radius-999);
+  padding: var(--space-1) var(--space-3);
+  white-space: nowrap;
+}
+
+.countdownNum {
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-primary);
+}

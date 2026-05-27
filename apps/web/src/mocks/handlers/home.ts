@@ -17,11 +17,14 @@
  */
 import { http, HttpResponse } from 'msw';
 import type {
+  DashboardReviewResponseV2,
+  DashboardTodayCompletionResponseV2,
   DashboardTodayResponseV2,
   DashboardWeeklyPlanResponseV2,
   EventWindowResponseV2,
   OverviewResponseV2,
   PlanEventReadV2,
+  WeeklyProgressSummaryV2,
 } from '@sikao/api-client/types/home';
 
 const TZ = 'Asia/Shanghai';
@@ -157,6 +160,40 @@ export const homeHandlers = [
       totalQuestions: 1248,
       weeklyAccuracy: 0.764,
     } as unknown as OverviewResponseV2;
+    return HttpResponse.json(response);
+  }),
+
+  http.get('/api/v2/progress/weekly', () => {
+    const day = todayLocalStamp();
+    const response: WeeklyProgressSummaryV2 = {
+      weekStart: day,
+      weekEnd: day,
+      xingceAnswered: 47,
+      xingceAccuracy: 0.764,
+      essaySubmitted: 1,
+      tasksCompleted: 2,
+      tasksTotal: 3,
+      streakDays: 5,
+    };
+    return HttpResponse.json(response);
+  }),
+
+  // SIK-125 Metric Row endpoints. Each card consumes one of these.
+  http.get('/api/v2/dashboard/today/review', () => {
+    const response: DashboardReviewResponseV2 = {
+      total: 47,
+      items: [],
+    };
+    return HttpResponse.json(response);
+  }),
+
+  http.get('/api/v2/dashboard/weekly-plan/today-completion', () => {
+    const response: DashboardTodayCompletionResponseV2 = {
+      date: todayLocalStamp(),
+      doneEvents: 8,
+      totalEvents: 15,
+      completionRate: '0.53',
+    };
     return HttpResponse.json(response);
   }),
 ];

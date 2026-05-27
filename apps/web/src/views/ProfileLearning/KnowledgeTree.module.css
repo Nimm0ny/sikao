@@ -1,0 +1,84 @@
+/*
+ * KnowledgeTree styles — sik-fu-b §2.5: 4-column grid name + bar + val + actions.
+ */
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 120px 1fr 64px auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3) var(--space-2);
+  border-bottom: 1px solid var(--color-border-subtle);
+}
+
+.row:last-child {
+  border-bottom: 0;
+}
+
+.row[data-severity='err'] {
+  background: var(--color-state-err-soft);
+}
+
+.row[data-severity='warn'] {
+  background: var(--color-state-warn-soft);
+}
+
+.name {
+  font-size: var(--font-body);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-medium);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+
+.barTrack {
+  position: relative;
+  display: block;
+  height: 6px;
+  border-radius: var(--radius-999);
+  background: var(--color-bg-sunken);
+  overflow: hidden;
+}
+
+.barFill {
+  display: block;
+  height: 100%;
+  border-radius: var(--radius-999);
+  background: var(--color-state-ok);
+  transition: width var(--dur-base) var(--ease-out);
+}
+
+.barFill[data-severity='err']  { background: var(--color-state-err); }
+.barFill[data-severity='warn'] { background: var(--color-state-warn); }
+
+.val {
+  font-size: var(--font-meta);
+  color: var(--color-text-primary);
+  font-weight: var(--font-weight-semibold);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.actions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.count {
+  font-size: var(--font-tiny);
+  color: var(--color-text-meta);
+  white-space: nowrap;
+}

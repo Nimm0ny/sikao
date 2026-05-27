@@ -1,9 +1,9 @@
 /*
- * BurgerDrawer — SIK-121 W3 H11 placeholder styles.
+ * BurgerDrawer - SIK-121 W3 H11 placeholder styles.
  * Minimal: trigger button + slide-in aside. Full drawer content
- * (nav items, Me entry) deferred to Mobile/Tablet Shell issue.
+ * (nav items, Me entry) is deferred to the Mobile/Tablet Shell issue.
  */
-/* touch-allow-file: placeholder hover rules are already guarded by a compound hover+pointer media query; current lint regex cannot parse that form */
+/* touch-allow-file: hover rules are wrapped in @media (hover: hover) below; lint false positive */
 .trigger {
   position: fixed;
   top: var(--space-3);
@@ -45,6 +45,7 @@
   padding: var(--space-4);
   box-sizing: border-box;
 }
+
 .drawer[data-open] {
   transform: translateX(0);
 }

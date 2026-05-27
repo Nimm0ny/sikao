@@ -1,117 +1,95 @@
-// lint-allow-ui-copy: V5 ProfileRecords page copy.
+// lint-allow-ui-copy: V5 ProfileRecords page copy. CJK strings are visual
+// contract from `Profile Records v1.html`.
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useProfileRecords } from '@sikao/api-client/profileQueries';
 import type { ProfileRecordsFilters } from '@sikao/api-client/types/home';
-import { PageHeader, Panel } from '../../components/layout';
-import { Skeleton, Badge } from '../../components/atom';
+import { PageHeader, ScreenLockShell, ScrollRegion } from '../../components/layout';
+import { Skeleton } from '../../components/atom';
 import { EmptyState } from '../../components/atom/EmptyState';
-import { Pagination } from '../../components/nav/Pagination';
 import { Button } from '../../components/form';
+import { SubNav } from '../Me/SubNav';
+import { FilterBar, type RecordKindFilter } from './FilterBar';
+import { RecordsWrap } from './RecordsWrap';
+import { groupByDay, formatRangeLabel } from './group';
 import styles from './ProfileRecords.module.css';
 
 /*
  * ProfileRecords — /profile/records drilldown.
  *
- * Why: paged list of the user's learning records. Current backend contract
- *      emits canonical `kind` values (`xingce_practice` / `essay_submission`);
- *      the UI maps them to user-facing Chinese labels. Each row is a Link
- *      to `record.href`.
+ * Why: sik-fu-c §1 — 4-row grid via ScreenLockShell. Global 4-tab nav
+ *      baseline (Rail/BottomTabBar [home, practice, review, note]) is
+ *      untouched; SubNav here is the Profile in-page sub-nav (8 pills,
+ *      shared with ProfileLearning) and not part of the H12 nav baseline.
+ *
+ *      Rows:
+ *        1. ws-topbar (PageHeader + 导出 placeholder)
+ *        2. sub-nav (8 in-page pills, active=records)
+ *        3. filter-bar (5 activity-kind seg-pills + date picker placeholder
+ *           + 仅看里程碑 placeholder; in-page filter, not navigation)
+ *        4. records-wrap (ScrollRegion → DayGroup × N + RecordsFoot)
+ *
+ *      4-state contract: loading / error / empty / ready. Errors and empty
+ *      states keep sub-nav + filter-bar visible per contract §3.
+ *
+ *      Backend kind values are `xingce_practice` / `essay_submission`
+ *      today; the visual filter has 5 pills mapping mock/review/note to
+ *      placeholders (disabled until those record kinds land — AGENT-H7
+ *      no fake counts).
  */
 
 const PAGE_SIZE = 20;
-const KINDS = ['', 'xingce_practice', 'essay_submission'] as const;
-const KIND_LABEL: Record<string, string> = {
-  '': '全部',
-  xingce_practice: '行测',
-  essay_submission: '申论',
-};
-
-function FilterBar({
-  filters,
-  onChange,
-}: {
-  readonly filters: ProfileRecordsFilters;
-  readonly onChange: (next: ProfileRecordsFilters) => void;
-}) {
-  return (
-    <div className={styles.filterBar} data-testid="profile-records-filter">
-      <label className={styles.filterField} htmlFor="profile-records-kind">
-        <span>类型</span>
-        <select
-          id="profile-records-kind"
-          aria-label="筛选记录类型"
-          value={filters.kind ?? ''}
-          onChange={(event) =>
-            onChange({ ...filters, kind: event.target.value || undefined, page: 1 })
-          }
-        >
-          {KINDS.map((kind) => (
-            <option key={kind} value={kind}>
-              {KIND_LABEL[kind] ?? kind}
-            </option>
-          ))}
-        </select>
-      </label>
-      <label className={styles.filterField} htmlFor="profile-records-from">
-        <span>从</span>
-        <input
-          id="profile-records-from"
-          aria-label="开始日期"
-          type="date"
-          value={filters.from ?? ''}
-          onChange={(event) =>
-            onChange({ ...filters, from: event.target.value || undefined, page: 1 })
-          }
-        />
-      </label>
-      <label className={styles.filterField} htmlFor="profile-records-to">
-        <span>到</span>
-        <input
-          id="profile-records-to"
-          aria-label="结束日期"
-          type="date"
-          value={filters.to ?? ''}
-          onChange={(event) =>
-            onChange({ ...filters, to: event.target.value || undefined, page: 1 })
-          }
-        />
-      </label>
-      <Button
-        variant="secondary"
-        size="sm"
-        onClick={() => onChange({ page: 1, size: PAGE_SIZE })}
-      >
-        重置
-      </Button>
-    </div>
-  );
-}
 
 export function ProfileRecords() {
   const [filters, setFilters] = useState<ProfileRecordsFilters>({
     page: 1,
     size: PAGE_SIZE,
   });
+  const [activeKind, setActiveKind] = useState<RecordKindFilter>('all');
   const query = useProfileRecords(filters);
 
+  const handleKindChange = (next: RecordKindFilter, backendKind: string | undefined) => {
+    setActiveKind(next);
+    setFilters((prev) => ({ ...prev, kind: backendKind, page: 1 }));
+  };
+
+  const items = query.data?.items ?? [];
+  const total = query.data?.total ?? 0;
+  const dayGroups = groupByDay(items);
+  const rangeLabel = formatRangeLabel(items);
+
   return (
-    <div className={styles.root} data-testid="profile-records">
+    <ScreenLockShell rows="auto auto auto minmax(0, 1fr)" testId="profile-records">
       <PageHeader
         title="学习记录"
         subtitle="按时间倒序查看历次练习、模考、周复盘"
         actions={
-          <Link to="/">
-            <Button variant="secondary" size="sm">
-              返回首页
+          <div className={styles.headerActions}>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled
+              aria-label="导出 (占位，待 SIK-FU-N)"
+              title="导出 PDF 占位（待 SIK-FU-N）"
+            >
+              导出
             </Button>
-          </Link>
+            <Link to="/">
+              <Button variant="secondary" size="sm">返回首页</Button>
+            </Link>
+          </div>
         }
       />
-      <FilterBar filters={filters} onChange={setFilters} />
+      <SubNav active="records" />
+      <FilterBar
+        active={activeKind}
+        onChange={handleKindChange}
+        total={total}
+        rangeLabel={rangeLabel}
+      />
 
-      {query.isLoading ? (
-        <Panel title="记录列表">
+      <ScrollRegion>
+        {query.isLoading ? (
           <div
             className={styles.stateWrap}
             role="status"
@@ -120,61 +98,39 @@ export function ProfileRecords() {
           >
             <Skeleton variant="text" lines={6} />
           </div>
-        </Panel>
-      ) : null}
+        ) : null}
 
-      {query.isError ? (
-        <Panel title="记录列表" variant="danger">
+        {query.isError ? (
           <div className={styles.stateWrap} data-testid="profile-records-error">
             <EmptyState
               title="无法加载学习记录"
               description={String((query.error as Error | null)?.message ?? '稍后再试')}
             />
           </div>
-        </Panel>
-      ) : null}
+        ) : null}
 
-      {query.isSuccess && (query.data?.items.length ?? 0) === 0 ? (
-        <Panel title="记录列表">
+        {query.isSuccess && items.length === 0 ? (
           <div className={styles.stateWrap} data-testid="profile-records-empty">
             <EmptyState
               title="暂无符合条件的记录"
               description="调整筛选条件或返回首页继续练习。"
             />
           </div>
-        </Panel>
-      ) : null}
+        ) : null}
 
-      {query.isSuccess && (query.data?.items.length ?? 0) > 0 ? (
-        <Panel title="记录列表" noPadding>
-          <ul className={styles.list}>
-            {query.data!.items.map((record) => (
-              <li key={record.id}>
-                <Link
-                  to={record.href}
-                  className={styles.row}
-                  data-testid={`profile-records-row-${record.id}`}
-                >
-                  <Badge size="sm" variant="cat-yanyu">
-                    {KIND_LABEL[record.kind] ?? record.kind}
-                  </Badge>
-                  <span className={styles.title}>{record.title}</span>
-                  <span className={styles.meta}>{record.occurredAt.slice(0, 10)}</span>
-                  <span className={styles.score}>{record.score ?? '—'}</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <div className={styles.paginationRow}>
-            <Pagination
-              current={filters.page ?? 1}
-              total={query.data?.total ?? 0}
-              pageSize={PAGE_SIZE}
-              onChange={(page) => setFilters((prev) => ({ ...prev, page }))}
-            />
-          </div>
-        </Panel>
-      ) : null}
-    </div>
+        {query.isSuccess && items.length > 0 ? (
+          <RecordsWrap
+            dayGroups={dayGroups}
+            total={total}
+            rangeLabel={rangeLabel}
+            onLoadMore={() => {
+              // wave 3: append page+1 results into the timeline. Disabled
+              // for now (no infinite-scroll backend signal yet).
+            }}
+            canLoadMore={items.length < total}
+          />
+        ) : null}
+      </ScrollRegion>
+    </ScreenLockShell>
   );
 }

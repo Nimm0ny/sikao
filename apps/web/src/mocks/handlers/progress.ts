@@ -27,7 +27,12 @@ const SAMPLE_WEAKNESS: WeaknessItemV2[] = [
 ];
 
 const SAMPLE_OVERVIEW: DashboardProgressResponseV2 = {
-  nearestExamTarget: null,
+  nearestExamTarget: {
+    examId: 'gk-2026',
+    examName: '2026 国考',
+    examDate: '2026-11-29',
+    daysUntil: 187,
+  },
   subjectAccuracies: [
     { subjectKey: 'yanyu', subjectLabel: '言语理解', accuracy: '0.72', answered: 200, correct: 144 },
     { subjectKey: 'shuliang', subjectLabel: '数量关系', accuracy: '0.42', answered: 120, correct: 50 },
@@ -40,7 +45,7 @@ const SAMPLE_OVERVIEW: DashboardProgressResponseV2 = {
     planSlice: {
       eventsDone: 14, eventsInWindowTotal: 28, eventsSkipped: 2,
       minutesPracticedInWindow: 240, minutesTargetInWindow: 480,
-      planId: 1, rangeFrom: null, rangeTo: null,
+      planId: 1, rangeFrom: '2026-04-01', rangeTo: '2026-11-29',
     },
   },
   weaknessTop3: SAMPLE_WEAKNESS,

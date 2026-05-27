@@ -1,77 +1,44 @@
 /*
  * Home view — V5 D.4.1 desktop page skeleton.
- * Why: 4-row Workspace grid (header / metric-row × 4 / Calendar / BottomRow × 3)
- *      per design.md §D.4.1. Calendar panel takes 1.6fr; bottom row stays 1fr;
- *      module spacing --space-4. Mobile collapses to single column.
+ * Why: ScreenLockShell owns the 4-row grid (header / metric-row / Calendar
+ *      / BottomRow). This module only styles the bottom row container that
+ *      hosts the 3 mini panels. MetricRow + HomeTopbar own their own
+ *      module CSS; metric-card styles live there now.
  */
 
-.root {
+.bottomRow {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1.6fr) minmax(0, 1fr);
+  grid-template-columns: 1.4fr 1.2fr 1fr;
   gap: var(--space-4);
-  width: 100%;
   min-height: 0;
 }
 
-.metricRow {
+.rightStack {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-rows: 1fr 1fr;
   gap: var(--space-4);
+  min-height: 0;
 }
 
-.metricCard {
+/*
+ * .bottomCard — compact card for the right-stack slots (本周回顾 / 最近练习).
+ * Why: V5 Panel's 57px header eats 40% of the 127px slot. This rule renders
+ *      the same card surface (bg / border / radius / shadow) but inlines a
+ *      single-padding container so children (with their own head + body)
+ *      can fill the slot. Mirrors prototype Home v2.1.html .bottom-card
+ *      (padding 14px 16px, gap 10).
+ */
+.bottomCard {
   background: var(--card-bg);
   border: var(--card-border);
   border-radius: var(--card-radius);
   box-shadow: var(--card-shadow-rest);
-  padding: var(--card-padding);
+  padding: 14px 16px; /* spacing-allow: prototype Home v2.1 .bottom-card padding 14/16 */
   display: flex;
   flex-direction: column;
   gap: var(--space-2);
-  box-sizing: border-box;
-}
-
-.metricLabel {
-  font-size: var(--font-meta);
-  color: var(--color-text-secondary);
-}
-
-.metricDelta {
-  font-size: var(--font-meta);
-  color: var(--color-text-meta);
-}
-.metricDelta[data-direction='up']   { color: var(--color-state-ok); }
-.metricDelta[data-direction='down'] { color: var(--color-state-err); }
-
-.calendarTabs {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-2);
-  font-size: var(--font-meta);
-  color: var(--color-text-secondary);
-}
-
-.calendarTabActive {
-  color: var(--color-text-primary);
-  font-weight: var(--font-weight-semibold);
-}
-
-.calendarTab {
-  cursor: default;
-}
-
-.calendarPlaceholder {
-  display: grid;
-  place-items: center;
-  min-height: 220px;
-  color: var(--color-text-meta);
-  font-size: var(--font-body);
-}
-
-.bottomRow {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: var(--space-4);
+  min-height: 0;
+  overflow: hidden;
 }
 
 .taskList {
@@ -151,11 +118,12 @@
   color: var(--color-text-meta);
 }
 
-@media (max-width: 1023.98px) {
-  .metricRow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .bottomRow { grid-template-columns: 1fr; }
+@media (max-width: 1279.98px) {
+  .bottomRow { grid-template-columns: 1fr 1fr; }
+  .rightStack { grid-column: span 2; grid-template-columns: 1fr 1fr; grid-template-rows: auto; }
 }
 
 @media (max-width: 767.98px) {
-  .metricRow { grid-template-columns: 1fr; }
+  .bottomRow { grid-template-columns: 1fr; }
+  .rightStack { grid-column: auto; grid-template-columns: 1fr; grid-template-rows: auto auto; }
 }

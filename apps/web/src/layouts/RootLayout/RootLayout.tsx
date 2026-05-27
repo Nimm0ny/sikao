@@ -1,7 +1,7 @@
 // lint-allow-ui-copy: V5-M3.5 Phase 4 page skeleton — Rail nav labels are
 // design tokens fixed by spec §D.4, not user-editable strings. ui-copy SSOT
 // migration tracked under future Phase 6+.
-import { useCallback, useMemo, useState } from 'react';
+import { useMemo } from 'react';
 import type { ReactNode } from 'react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -19,6 +19,7 @@ import type { CommandPaletteGroup } from '../../components/overlay';
 import { KeyboardShortcuts } from '../../components/system';
 import type { ShortcutEntry } from '../../components/system';
 import { RAIL_CMD } from '@/lib/ui-copy';
+import { useCommandPaletteStore } from '@/lib/commandPalette';
 import styles from './RootLayout.module.css';
 
 /*
@@ -72,9 +73,9 @@ export function RootLayout({ user }: RootLayoutProps) {
     target === HOME_PATH ? pathname === HOME_PATH : pathname.startsWith(target);
   const navTo = (path: string) => () => navigate(path);
 
-  const [paletteOpen, setPaletteOpen] = useState(false);
-  const openPalette = useCallback(() => setPaletteOpen(true), []);
-  const closePalette = useCallback(() => setPaletteOpen(false), []);
+  const paletteOpen = useCommandPaletteStore((s) => s.open);
+  const openPalette = useCommandPaletteStore((s) => s.openPalette);
+  const closePalette = useCommandPaletteStore((s) => s.closePalette);
 
   const navItems: RailNavItem[] = [
     { id: 'home', icon: <SpriteIcon id="nav-home" size={18} />, label: '首页', href: HOME_PATH, active: isActive(HOME_PATH), onClick: navTo(HOME_PATH) },

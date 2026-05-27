@@ -1,10 +1,4 @@
-.root {
-  display: grid;
-  grid-template-rows: auto auto auto 1fr;
-  gap: var(--space-4);
-  width: 100%;
-  min-height: 0;
-}
+/* screen-lock-allow: ScreenLockShell owns the grid; .root removed */
 
 .headerActions,
 .quickActions,

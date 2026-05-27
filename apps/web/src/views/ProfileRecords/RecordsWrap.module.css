@@ -1,0 +1,23 @@
+/*
+ * RecordsWrap — timeline outer card styles.
+ * Why: sik-fu-c §2.3 — wraps day-groups in paper card with shadow/radius
+ *      tokens; foot pinned at bottom (flex column). Nav baseline
+ *      (4 tabs) untouched.
+ */
+
+.wrap {
+  background: var(--color-bg-surface);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--card-radius);
+  box-shadow: var(--shadow-l1);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  padding: var(--space-2) 0;
+}

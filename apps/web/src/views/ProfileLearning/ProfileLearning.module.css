@@ -1,33 +1,40 @@
 /*
- * ProfileLearning — /profile/learning drilldown root.
- * Why: container layout for Header + PlanSlice (wave 2) + DiagnosisReport
- *      / WeaknessRadar / TimeseriesChart (wave 3). Section-based grid;
- *      mobile collapses to single column. Charts will lazy-load via
- *      React.lazy + Suspense in wave 3 (recharts kept out of the Home
- *      route chunk per plan §3.3 acceptance).
+ * ProfileLearning — /profile/learning drilldown styles.
+ * Why: sik-fu-b §1 — ScreenLockShell owns the 4-row grid (header /
+ *      sub-nav / range-bar / scroll region). This module styles the
+ *      inner learning-grid (KPI row + 2-col rows).
  */
 
-.root {
+.headerActions {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.learningGrid {
   display: flex;
   flex-direction: column;
   gap: var(--space-4);
-  width: 100%;
   min-width: 0;
 }
 
-.sectionGrid {
+.row2col {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--space-4);
+  min-width: 0;
+}
+
+.row2col[data-ratio='trend'] {
+  grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr);
+}
+
+.row2col[data-ratio='tree'] {
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
 }
 
 @media (max-width: 1023.98px) {
-  .sectionGrid { grid-template-columns: 1fr; }
-}
-
-.stateWrap {
-  padding: var(--space-5) var(--space-4);
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-3);
+  .row2col[data-ratio='trend'],
+  .row2col[data-ratio='tree'] {
+    grid-template-columns: 1fr;
+  }
 }

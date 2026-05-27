@@ -1,26 +1,33 @@
-// lint-allow-ui-copy: V5 D.4.1 Week calendar copy. CJK strings are visual
-// contract from the V5 prototype and Home Phase 04-Frontend-WU §F4.3.
+// lint-allow-ui-copy: V5 SIK-126 Week calendar copy. CJK strings are
+// visual contract from `.tmp_review/out/Tab1-Home/Home v2.1.html`.
 import { useMemo } from 'react';
 import { useEvents } from '@sikao/api-client/plansQueries';
 import { buildViewRange } from '@sikao/calendar-engine';
+import { usePlanStore } from '@sikao/domain';
 import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
-import { EventBlock } from './EventBlock';
+import { eventKindOf } from './eventKind';
 import styles from './WeekCalendarView.module.css';
 
 /*
- * WeekCalendarView — Home Section A · Week canvas.
- * 7-column grid (Mon-Sun), each column is a 24h × 36px-per-hour strip.
- * Events bucketed by local date (Asia/Shanghai). Same 4-state contract
- * as TodayCalendarView (cross-day slicing lifted to Wave 3 EventBlock
- * primitive via calendar-engine.sliceOccurrenceByDay).
+ * WeekCalendarView — V5 SIK-126 (Home v2.1 week view).
+ *
+ * Why: 7 columns x 3 row slot grid. Rows are time-of-day buckets:
+ *      早上 06:00–12:00, 中午 12:00–18:00, 晚上 18:00–06:00 (next day).
+ *      Each cell renders a dc-label heading and 0..N day-event chips.
+ *      Empty cells render the dc-empty placeholder. Today column gets
+ *      the brand-soft tint. Chip colors come from eventKindOf().
+ *
+ *      AGENT-H7: 4-state contract identical to Today / Month;
+ *      isLoading / isError / empty / ready surface from query.* directly.
  */
 
 const TZ = 'Asia/Shanghai';
-const HOUR_H = 36;
-const MIN_BLOCK_H = 18;
 const DOW_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] as const;
+const SLOT_LABELS = ['早上', '中午', '晚上'] as const;
+
+type SlotIndex = 0 | 1 | 2;
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const localStamp = (v: Date) => `${v.getFullYear()}-${pad(v.getMonth() + 1)}-${pad(v.getDate())}`;
@@ -31,7 +38,6 @@ interface WeekDay {
   readonly dom: number;
   readonly dowIndex: number;
   readonly isToday: boolean;
-  readonly isWeekend: boolean;
 }
 
 function buildWeekDays(anchorDate: string): WeekDay[] {
@@ -44,82 +50,108 @@ function buildWeekDays(anchorDate: string): WeekDay[] {
     const d = new Date(monday);
     d.setDate(monday.getDate() + i);
     const stamp = localStamp(d);
-    return { stamp, dom: d.getDate(), dowIndex: i, isToday: stamp === today, isWeekend: i >= 5 };
+    return { stamp, dom: d.getDate(), dowIndex: i, isToday: stamp === today };
   });
 }
 
-function geometryFor(event: PlanEventReadV2) {
-  const s = new Date(event.startAt);
-  const e = new Date(event.endAt);
-  const minutes = s.getHours() * 60 + s.getMinutes();
-  const dur = Math.max(0, (e.getTime() - s.getTime()) / 60_000);
-  return { top: (minutes / 60) * HOUR_H, height: Math.max(MIN_BLOCK_H, (dur / 60) * HOUR_H) };
+function slotForHour(hour: number): SlotIndex {
+  if (hour >= 6 && hour < 12) return 0; // 早上
+  if (hour >= 12 && hour < 18) return 1; // 中午
+  return 2; // 晚上 (18-23 + 0-5)
 }
 
-function WeekGrid({ days, eventsByDay }: {
+function bucketEvents(events: ReadonlyArray<PlanEventReadV2>): Map<string, PlanEventReadV2[]> {
+  // Key = `{stamp}|{slotIndex}`.
+  const map = new Map<string, PlanEventReadV2[]>();
+  for (const event of events) {
+    const start = new Date(event.startAt);
+    const key = `${localStamp(start)}|${slotForHour(start.getHours())}`;
+    const bucket = map.get(key);
+    if (bucket) bucket.push(event);
+    else map.set(key, [event]);
+  }
+  return map;
+}
+
+function formatChip(event: PlanEventReadV2): string {
+  const start = new Date(event.startAt);
+  return `${event.title} · ${pad(start.getHours())}:${pad(start.getMinutes())}`;
+}
+
+function WeekGrid({ days, eventsByCell }: {
   readonly days: ReadonlyArray<WeekDay>;
-  readonly eventsByDay: ReadonlyMap<string, ReadonlyArray<PlanEventReadV2>>;
+  readonly eventsByCell: ReadonlyMap<string, ReadonlyArray<PlanEventReadV2>>;
 }) {
+  // Cells are laid out row-first: slot 0 across all 7 days, slot 1, slot 2.
+  const slotIndices: ReadonlyArray<SlotIndex> = [0, 1, 2];
   return (
-    <div className={styles.grid} role="grid" aria-label="本周日历">
-      <div />
-      {days.map((d) => (
-        <div key={d.stamp} className={styles.dayHeader} data-today={d.isToday || undefined} role="columnheader">
-          <span className={styles.dow}>{DOW_LABELS[d.dowIndex]}</span>
-          <span className={styles.dom}>{d.dom}</span>
-        </div>
-      ))}
-      <div className={styles.hourCol} aria-hidden="true">
-        {Array.from({ length: 24 }, (_, h) => (
-          <span key={h} className={styles.hourLabel} style={{ top: `${h * HOUR_H}px` }}>{pad(h)}</span>
+    <>
+      <div className={styles.calHead} role="row">
+        {days.map((d) => (
+          <div
+            key={d.stamp}
+            role="columnheader"
+            className={styles.cellDay}
+            data-today={d.isToday || undefined}
+            data-testid={`home-week-head-${d.stamp}`}
+          >
+            <span className={styles.dLabel}>
+              {DOW_LABELS[d.dowIndex]}{d.isToday ? ' · 今日' : ''}
+            </span>
+            <span className={styles.dNum}>{d.dom}</span>
+          </div>
         ))}
       </div>
-      {days.map((d) => (
-        <div key={d.stamp} className={styles.dayCol} data-today={d.isToday || undefined} data-weekend={d.isWeekend || undefined} data-testid={`home-week-day-${d.stamp}`}>
-          {(eventsByDay.get(d.stamp) ?? []).map((event) => {
-            const { top, height } = geometryFor(event);
+      <div className={styles.calBody} role="grid" aria-label="本周日历">
+        {slotIndices.flatMap((slot) =>
+          days.map((d) => {
+            const bucket = eventsByCell.get(`${d.stamp}|${slot}`) ?? [];
             return (
-              <EventBlock
-                key={event.id}
-                event={event}
-                density="compact"
-                style={{ top: `${top}px`, height: `${height}px` }}
-                testId="home-week-event"
-              />
+              <div
+                key={`${d.stamp}-${slot}`}
+                role="gridcell"
+                className={styles.dayCell}
+                data-today={d.isToday || undefined}
+                data-testid={`home-week-cell-${d.stamp}-${slot}`}
+              >
+                <span className={styles.dcLabel}>{SLOT_LABELS[slot]}</span>
+                {bucket.length === 0 ? (
+                  <span className={styles.dcEmpty}>无安排</span>
+                ) : (
+                  bucket.map((event) => (
+                    <span
+                      key={event.id}
+                      className={styles.dayEvent}
+                      data-kind={eventKindOf(event)}
+                      data-testid="home-week-event"
+                      title={event.title}
+                    >
+                      {formatChip(event)}
+                    </span>
+                  ))
+                )}
+              </div>
             );
-          })}
-        </div>
-      ))}
-    </div>
+          }),
+        )}
+      </div>
+    </>
   );
 }
 
 export function WeekCalendarView() {
-  const anchorDate = todayStamp();
+  const anchorDate = usePlanStore((s) => s.currentDate);
   const window = useMemo(() => buildViewRange('week', { anchorDate, timeZone: TZ }), [anchorDate]);
   const query = useEvents({ from: window.from, to: window.to, tz: TZ, includePracticeBlocks: false });
   const days = useMemo(() => buildWeekDays(anchorDate), [anchorDate]);
-  const eventsByDay = useMemo(() => {
-    const map = new Map<string, PlanEventReadV2[]>();
-    for (const event of query.data?.data.events ?? []) {
-      const stamp = localStamp(new Date(event.startAt));
-      const bucket = map.get(stamp);
-      if (bucket) bucket.push(event);
-      else map.set(stamp, [event]);
-    }
-    return map;
-  }, [query.data]);
+  const eventsByCell = useMemo(
+    () => bucketEvents(query.data?.data.events ?? []),
+    [query.data],
+  );
   const total = query.data?.data.events.length ?? 0;
 
   return (
     <div className={styles.root} data-testid="home-week-calendar">
-      <header className={styles.head}>
-        <h3 className={styles.headTitle}>本周</h3>
-        <span className={styles.headMeta}>
-          {days[0]?.stamp} – {days[6]?.stamp}
-          {query.isSuccess ? ` · ${total} 个事件` : null}
-        </span>
-      </header>
       {query.isLoading ? (
         <div className={styles.stateWrap} role="status" aria-label="本周日历加载中" data-testid="home-week-loading">
           <Skeleton variant="rect" height={32} />
@@ -140,7 +172,7 @@ export function WeekCalendarView() {
           <EmptyState title="本周尚无事件" description="切换到“今日”或“月”视图查看其它窗口的计划。" />
         </div>
       ) : null}
-      {query.isSuccess && total > 0 ? <WeekGrid days={days} eventsByDay={eventsByDay} /> : null}
+      {query.isSuccess && total > 0 ? <WeekGrid days={days} eventsByCell={eventsByCell} /> : null}
     </div>
   );
 }
