@@ -15,16 +15,44 @@
   letter-spacing: 0.04em;
 }
 
-.brandDot {
-  width: 12px;
-  height: 12px;
-  border-radius: var(--radius-999);
-  background: var(--color-brand-primary);
+/*
+ * BrandMark — 28×28 ink-bg square with white "田" + dot, mirroring
+ * apps/web/public/favicon.svg (element/preview/logo.html SSOT).
+ * `color: var(--color-text-primary)` drives the inner <rect fill="currentColor">;
+ * `.brandMarkInk` / `.brandMarkDot` paint the white glyph via token, NOT
+ * literal hex (lint-hardcode keeps watch).
+ *
+ * SIK-121 W2.5 (2026-05-26): replaces the W1 12×12 .brandDot drift; matches
+ * H12 in docs/plan/sik-rail-v5-visual-contract.md.
+ */
+.brandMark {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
   flex-shrink: 0;
+  color: var(--color-text-primary);
+}
+
+.brandMarkInk {
+  stroke: var(--color-bg-surface);
+  fill: none;
+}
+
+.brandMarkDot {
+  fill: var(--color-bg-surface);
 }
 
 .brandWord {
   white-space: nowrap;
+}
+
+/* SIK-121 W2.5 H12 — collapsed rail hides the wordmark; the BrandMark
+ * stays visible and the entire .brandButton becomes the expand affordance.
+ * Without this rule the 80px collapsed rail still renders "SIKAO" wordmark
+ * which clips and breaks the row alignment with cmd / nav / me. */
+:root[data-rail='collapsed'] .brandWord {
+  display: none;
 }
 
 /*
@@ -182,10 +210,16 @@
 /* Collapsed rail: hide the text stack and recenter to avatar-only. The
  * Tooltip text is provided by the [data-tip="我的"] ::after on .meLink
  * (W2 will fold RailBrand / RailNav React <Tooltip> into the same
- * pattern; W1 only owns RailMe). */
+ * pattern; W1 only owns RailMe).
+ *
+ * SIK-121 W2.5 H13 (2026-05-26): pin to --row-h-sm so brand / nav / me
+ * align at the same 40×40 grid in collapsed state. cmd row stays 32×32
+ * (prototype home-frame.html:121 keeps cmd visually distinct as a
+ * smaller chip). */
 :root[data-rail='collapsed'] .meLink {
-  width: auto;
-  padding: var(--space-1);
+  width: var(--row-h-sm);
+  height: var(--row-h-sm);
+  padding: 0;
   justify-content: center;
 }
 

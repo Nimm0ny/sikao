@@ -3,6 +3,7 @@
  * Minimal: trigger button + slide-in aside. Full drawer content
  * (nav items, Me entry) deferred to Mobile/Tablet Shell issue.
  */
+/* touch-allow-file: placeholder hover rules are already guarded by a compound hover+pointer media query; current lint regex cannot parse that form */
 .trigger {
   position: fixed;
   top: var(--space-3);
@@ -10,7 +11,7 @@
   z-index: var(--z-rail);
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--space-1);
   align-items: center;
   justify-content: center;
   width: 40px;
@@ -65,7 +66,13 @@
   border-radius: var(--radius-10);
 }
 
+/* touch-allow: compound hover+pointer media query is already present; current lint regex only recognizes a single (...) clause */
 @media (hover: hover) and (pointer: fine) {
-  .trigger:hover { background: var(--color-bg-elevated); }
-  .close:hover { background: var(--color-bg-elevated); }
+  .trigger:hover {
+    background: var(--color-bg-elevated);
+  }
+
+  .close:hover {
+    background: var(--color-bg-elevated);
+  }
 }

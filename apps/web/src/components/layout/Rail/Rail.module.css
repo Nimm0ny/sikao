@@ -64,8 +64,25 @@
   border-radius: var(--radius-10);
   position: relative;
 }
+/* SIK-121 W2.5 H13 — pin collapsed brandButton to --row-h-sm so it
+ * aligns with nav rows at the same 40×40 grid (mirrors prototype
+ * home-frame.html:99 .rail-brand 36px height; we use V5 token 40px).
+ * Without this the button defaults to natural content size and breaks
+ * row-grid alignment with cmd 32 / nav 40 / me 40. */
+.rail[data-collapsed] .brandButton {
+  width: var(--row-h-sm);
+  height: var(--row-h-sm);
+  padding: 0;
+}
 
 .cmd { display: flex; flex-direction: column; width: 100%; }
+/* SIK-121 W2.5 H13 — collapsed state centers each row's content within
+ * the 80px rail. .rail[data-collapsed] { align-items: center } already
+ * centers direct children of the rail, but cmd / navList / me wrappers
+ * are 100% wide (so their inner button/link sits at the left edge by
+ * default). Force center alignment on those wrappers + their li children
+ * so cmd / nav / me share the same horizontal center as brand. */
+.rail[data-collapsed] .cmd { align-items: center; }
 
 .navSection {
   /* H10: prototype home-frame.html:101-102 — section heading 10px uppercase
@@ -89,13 +106,14 @@
   overflow-y: auto;
 }
 .navRow { width: 100%; }
+.rail[data-collapsed] .navRow { display: flex; justify-content: center; }
 
 .navItem {
   display: flex;
   align-items: center;
   gap: var(--space-3);
   width: 100%;
-  min-height: var(--row-h-md);
+  min-height: var(--row-h-sm);
   padding: 0 var(--space-3);
   border-radius: var(--radius-10);
   color: var(--color-text-secondary);
@@ -105,7 +123,17 @@
   box-sizing: border-box;
   position: relative;
 }
-.navItem[data-collapsed] { justify-content: center; padding: 0; width: var(--row-h-md); }
+/* SIK-121 W2.5 H13 (2026-05-26) — collapsed state pins navItem to a
+ * 40×40 square (--row-h-sm) so brand / nav / me share the same grid;
+ * cmd row stays 32×32 by design (matches home-frame.html:121 .rail-cmd
+ * collapsed). Was --row-h-md (52px) which broke alignment. */
+.navItem[data-collapsed] {
+  justify-content: center;
+  padding: 0;
+  width: var(--row-h-sm);
+  height: var(--row-h-sm);
+  min-height: var(--row-h-sm);
+}
 .navItem[data-active] {
   background: var(--color-bg-sunken);
   color: var(--color-text-primary);
@@ -128,6 +156,7 @@
 .navLabel { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 .me { display: flex; width: 100%; padding-top: var(--space-2); border-top: 1px solid var(--color-border-subtle); margin-top: auto; }
+.rail[data-collapsed] .me { justify-content: center; }
 
 .toggle {
   margin-left: auto;

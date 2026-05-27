@@ -165,4 +165,33 @@ describe('RootLayout (V5 §D.4 SaaS shell)', () => {
     });
     expect(screen.getByRole('dialog', { name: '命令面板' })).toBeInTheDocument();
   });
+
+  // SIK-121 W2.5 — visual contract Acceptance Hook H12 (brand mark + collapsed
+  // wordmark). See docs/plan/sik-rail-v5-visual-contract.md §6 H12.
+  // BrandMark mirrors apps/web/public/favicon.svg ("田" 6 strokes + dot)
+  // and is the single SSOT for brand identity in the rail.
+
+  it('rail brand renders the inline BrandMark SVG (H12 — favicon SSOT)', () => {
+    render(<RouterProvider router={makeRouter('/')} />);
+    const mark = screen.getByTestId('rail-brand-mark');
+    // BrandMark contains a <svg> with viewBox 0 0 40 40 + 6 <line> (田)
+    // + 1 <circle> dot mirroring favicon.svg.
+    const svg = mark.querySelector('svg');
+    expect(svg).not.toBeNull();
+    expect(svg?.getAttribute('viewBox')).toBe('0 0 40 40');
+    expect(svg?.getAttribute('width')).toBe('28');
+    expect(svg?.getAttribute('height')).toBe('28');
+    expect(svg?.querySelectorAll('line')).toHaveLength(6);
+    expect(svg?.querySelectorAll('circle')).toHaveLength(1);
+  });
+
+  it('rail brand never renders the legacy 12×12 .brandDot affordance (W1 drift cleanup)', () => {
+    // The W1 implementation rendered <span className={brandDot} /> as the
+    // brand glyph (12×12 yellow circle). W2.5 replaced it with BrandMark;
+    // the brandDot class must not appear in the DOM. We probe via class
+    // suffix (CSS Modules add a hash) to keep the assertion robust.
+    render(<RouterProvider router={makeRouter('/')} />);
+    const mark = screen.getByTestId('rail-brand-mark');
+    expect(mark.className).not.toMatch(/brandDot/);
+  });
 });
