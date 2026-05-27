@@ -179,6 +179,8 @@ describe('RootLayout (V5 §D.4 SaaS shell)', () => {
     const svg = mark.querySelector('svg');
     expect(svg).not.toBeNull();
     expect(svg?.getAttribute('viewBox')).toBe('0 0 40 40');
+    expect(svg?.getAttribute('width')).toBe('28');
+    expect(svg?.getAttribute('height')).toBe('28');
     expect(svg?.querySelectorAll('line')).toHaveLength(6);
     expect(svg?.querySelectorAll('circle')).toHaveLength(1);
   });

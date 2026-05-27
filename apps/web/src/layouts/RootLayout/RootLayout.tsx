@@ -121,13 +121,13 @@ export function RootLayout({ user }: RootLayoutProps) {
          * apps/web/public/favicon.svg (黑底圆角 + 白「田」6 stroke + 白圆点).
          * Why inline (not SpriteIcon): sprite system enforces 24×24 viewBox
          * + stroke-only contract via lint-icon-style (CP.5); brand mark is
-         * a filled glyph on a 40×40 viewBox token-themed via currentColor /
+         * a filled 28×28 glyph on a 40×40 viewBox token-themed via currentColor /
          * background. lint-icon-style scans .svg files only, so inline JSX
          * <svg> is exempt by scope (verified 2026-05-26).
          */}
         <svg
-          width="20"
-          height="20"
+          width="28"
+          height="28"
           viewBox="0 0 40 40"
           focusable="false"
           aria-hidden="true"
