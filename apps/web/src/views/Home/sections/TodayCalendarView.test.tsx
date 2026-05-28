@@ -21,11 +21,17 @@ function renderWithClient() {
   );
 }
 
+const pad = (n: number) => String(n).padStart(2, '0');
+const today = (() => {
+  const d = new Date();
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+})();
+
 const READY_EVENT = {
   id: 'e1',
   title: '言语理解 · 30 题',
-  startAt: '2026-05-24T08:00:00+08:00',
-  endAt: '2026-05-24T10:00:00+08:00',
+  startAt: `${today}T08:00:00+08:00`,
+  endAt: `${today}T10:00:00+08:00`,
   category: 'yanyu',
   status: 'planned',
   source: 'manual',

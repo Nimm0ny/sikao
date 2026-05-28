@@ -4,10 +4,10 @@ import { useMemo } from 'react';
 import { useEvents } from '@sikao/api-client/plansQueries';
 import { buildViewRange } from '@sikao/calendar-engine';
 import { usePlanStore } from '@sikao/domain';
-import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
 import { eventKindOf } from './eventKind';
+import { expandPlanEventsForView, type EnrichedOccurrence } from './calendarEvents';
 import {
   createDefaultCalendarViewConfig,
   type CalendarViewConfig,
@@ -30,6 +30,10 @@ import styles from './WeekCalendarView.module.css';
  *      the DOW header order and the grid-start offset. Default config
  *      keeps Monday-first; setting `startWeekOnMonday=false` swaps to
  *      Sunday-first per Requirement 4.
+ *
+ *      SIK-138 W4.5 (D16): events run through `expandPlanEventsForView`
+ *      so recurring rules emit one chip per occurrence inside the week
+ *      window.
  */
 
 const TZ = 'Asia/Shanghai';
@@ -71,27 +75,27 @@ function slotForHour(hour: number): SlotIndex {
   return 2; // 晚上 (18-23 + 0-5)
 }
 
-function bucketEvents(events: ReadonlyArray<PlanEventReadV2>): Map<string, PlanEventReadV2[]> {
-  // Key = `{stamp}|{slotIndex}`.
-  const map = new Map<string, PlanEventReadV2[]>();
-  for (const event of events) {
-    const start = new Date(event.startAt);
+function bucketEvents(items: ReadonlyArray<EnrichedOccurrence>): Map<string, EnrichedOccurrence[]> {
+  // Key = `{stamp}|{slotIndex}` — one bucket per (day, time-of-day slot).
+  const map = new Map<string, EnrichedOccurrence[]>();
+  for (const item of items) {
+    const start = new Date(item.occurrence.startAt);
     const key = `${localStamp(start)}|${slotForHour(start.getHours())}`;
     const bucket = map.get(key);
-    if (bucket) bucket.push(event);
-    else map.set(key, [event]);
+    if (bucket) bucket.push(item);
+    else map.set(key, [item]);
   }
   return map;
 }
 
-function formatChip(event: PlanEventReadV2): string {
-  const start = new Date(event.startAt);
-  return `${event.title} · ${pad(start.getHours())}:${pad(start.getMinutes())}`;
+function formatChip(item: EnrichedOccurrence): string {
+  const start = new Date(item.occurrence.startAt);
+  return `${item.event.title} · ${pad(start.getHours())}:${pad(start.getMinutes())}`;
 }
 
 function WeekGrid({ days, eventsByCell, dowLabels }: {
   readonly days: ReadonlyArray<WeekDay>;
-  readonly eventsByCell: ReadonlyMap<string, ReadonlyArray<PlanEventReadV2>>;
+  readonly eventsByCell: ReadonlyMap<string, ReadonlyArray<EnrichedOccurrence>>;
   readonly dowLabels: ReadonlyArray<string>;
 }) {
   // Cells are laid out row-first: slot 0 across all 7 days, slot 1, slot 2.
@@ -130,15 +134,15 @@ function WeekGrid({ days, eventsByCell, dowLabels }: {
                 {bucket.length === 0 ? (
                   <span className={styles.dcEmpty}>无安排</span>
                 ) : (
-                  bucket.map((event) => (
+                  bucket.map((item) => (
                     <span
-                      key={event.id}
+                      key={item.occurrence.id}
                       className={styles.dayEvent}
-                      data-kind={eventKindOf(event)}
+                      data-kind={eventKindOf(item.event)}
                       data-testid="home-week-event"
-                      title={event.title}
+                      title={item.event.title}
                     >
-                      {formatChip(event)}
+                      {formatChip(item)}
                     </span>
                   ))
                 )}
@@ -166,10 +170,11 @@ export function WeekCalendarView({ viewConfig }: WeekCalendarViewProps = {}) {
     [anchorDate, config.startWeekOnMonday],
   );
   const dowLabels = config.startWeekOnMonday ? DOW_LABELS_MON_FIRST : DOW_LABELS_SUN_FIRST;
-  const eventsByCell = useMemo(
-    () => bucketEvents(query.data?.data.events ?? []),
-    [query.data],
+  const occurrences = useMemo(
+    () => expandPlanEventsForView(query.data?.data.events ?? [], window),
+    [query.data, window],
   );
+  const eventsByCell = useMemo(() => bucketEvents(occurrences), [occurrences]);
   const total = query.data?.data.events.length ?? 0;
 
   return (

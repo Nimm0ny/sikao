@@ -4,10 +4,14 @@ import { useMemo } from 'react';
 import { useEvents } from '@sikao/api-client/plansQueries';
 import { buildViewRange } from '@sikao/calendar-engine';
 import { usePlanStore } from '@sikao/domain';
-import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
 import { eventKindOf } from './eventKind';
+import {
+  expandPlanEventsForView,
+  sliceMonthOccurrencesByDay,
+  type MonthDaySlice,
+} from './calendarEvents';
 import {
   createDefaultCalendarViewConfig,
   type CalendarViewConfig,
@@ -29,6 +33,12 @@ import styles from './MonthCalendarView.module.css';
  *      SIK-138 W4: `cardLimitPerCell` and `startWeekOnMonday` come from
  *      the injected CalendarViewConfig. Default config keeps `3` and
  *      Monday-first per Requirements 4 and 5.
+ *
+ *      SIK-138 W4.5 (D16 / D17): events are routed through
+ *      `expandPlanEventsForView` (recurring expansion) and then through
+ *      `sliceMonthOccurrencesByDay` so cross-day events render on every
+ *      day they touch and recurring rules emit one chip per occurrence
+ *      inside the visible window.
  */
 
 const TZ = 'Asia/Shanghai';
@@ -67,20 +77,21 @@ function buildMonthCells(anchorDate: string, startWeekOnMonday: boolean): MonthC
   });
 }
 
-function bucketEventsByDay(events: ReadonlyArray<PlanEventReadV2>): Map<string, PlanEventReadV2[]> {
-  const map = new Map<string, PlanEventReadV2[]>();
-  for (const event of events) {
-    const stamp = localStamp(new Date(event.startAt));
-    const bucket = map.get(stamp);
-    if (bucket) bucket.push(event);
-    else map.set(stamp, [event]);
+function bucketEventsByDay(
+  enriched: ReadonlyArray<MonthDaySlice>,
+): Map<string, MonthDaySlice[]> {
+  const map = new Map<string, MonthDaySlice[]>();
+  for (const item of enriched) {
+    const bucket = map.get(item.slice.day);
+    if (bucket) bucket.push(item);
+    else map.set(item.slice.day, [item]);
   }
   return map;
 }
 
 function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell }: {
   readonly cells: ReadonlyArray<MonthCell>;
-  readonly eventsByDay: ReadonlyMap<string, ReadonlyArray<PlanEventReadV2>>;
+  readonly eventsByDay: ReadonlyMap<string, ReadonlyArray<MonthDaySlice>>;
   readonly dowLabels: ReadonlyArray<string>;
   readonly cardLimitPerCell: number;
 }) {
@@ -94,9 +105,9 @@ function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell }: {
       <div className={styles.bodyScroll}>
         <div className={styles.gridBody} role="grid" aria-label="本月日历">
           {cells.map((cell) => {
-            const events = eventsByDay.get(cell.stamp) ?? [];
-            const visible = events.slice(0, cardLimitPerCell);
-            const overflow = events.length - visible.length;
+            const items = eventsByDay.get(cell.stamp) ?? [];
+            const visible = items.slice(0, cardLimitPerCell);
+            const overflow = items.length - visible.length;
             return (
               <div
                 key={cell.stamp}
@@ -108,15 +119,16 @@ function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell }: {
               >
                 <span className={styles.dom}>{cell.dom}</span>
                 <ul className={styles.eventList}>
-                  {visible.map((event) => (
+                  {visible.map((item) => (
                     <li
-                      key={event.id}
+                      key={`${item.slice.occurrenceRef}|${item.slice.day}`}
                       className={styles.eventChip}
                       data-testid="home-month-event"
-                      data-kind={eventKindOf(event)}
-                      title={event.title}
+                      data-kind={eventKindOf(item.event)}
+                      data-cross-day={!item.slice.isStartSlice || !item.slice.isEndSlice || undefined}
+                      title={item.event.title}
                     >
-                      {event.title}
+                      {item.event.title}
                     </li>
                   ))}
                   {overflow > 0 ? (
@@ -149,7 +161,11 @@ export function MonthCalendarView({ viewConfig }: MonthCalendarViewProps = {}) {
     [anchorDate, config.startWeekOnMonday],
   );
   const dowLabels = config.startWeekOnMonday ? DOW_LABELS_MON_FIRST : DOW_LABELS_SUN_FIRST;
-  const eventsByDay = useMemo(() => bucketEventsByDay(query.data?.data.events ?? []), [query.data]);
+  const slices = useMemo(() => {
+    const events = query.data?.data.events ?? [];
+    return sliceMonthOccurrencesByDay(expandPlanEventsForView(events, window));
+  }, [query.data, window]);
+  const eventsByDay = useMemo(() => bucketEventsByDay(slices), [slices]);
   const total = query.data?.data.events.length ?? 0;
 
   return (

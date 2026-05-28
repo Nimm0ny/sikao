@@ -4,10 +4,10 @@ import { useMemo } from 'react';
 import { useEvents } from '@sikao/api-client/plansQueries';
 import { buildViewRange } from '@sikao/calendar-engine';
 import { usePlanStore } from '@sikao/domain';
-import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
 import { eventKindOf } from './eventKind';
+import { expandPlanEventsForView, type EnrichedOccurrence } from './calendarEvents';
 import {
   createDefaultCalendarViewConfig,
   type CalendarViewConfig,
@@ -32,6 +32,10 @@ import styles from './TodayCalendarView.module.css';
  *      consume `startWeekOnMonday` / `cardLimitPerCell` directly, but the
  *      prop is reserved so future presets (chip density / detail-mode
  *      visibleProperties) can drive the strip without touching the panel.
+ *
+ *      SIK-138 W4.5 (D16): events run through `expandPlanEventsForView`
+ *      so recurring rules emit one geometry per occurrence inside the
+ *      day window.
  */
 
 const TZ = 'Asia/Shanghai';
@@ -43,9 +47,9 @@ function pad(n: number): string {
   return String(n).padStart(2, '0');
 }
 
-function geometryFor(event: PlanEventReadV2): { left: number; width: number } {
-  const start = new Date(event.startAt);
-  const end = new Date(event.endAt);
+function geometryFor(occurrence: EnrichedOccurrence['occurrence']): { left: number; width: number } {
+  const start = new Date(occurrence.startAt);
+  const end = new Date(occurrence.endAt);
   const dayStart = new Date(start);
   dayStart.setHours(0, 0, 0, 0);
   const startHour = (start.getTime() - dayStart.getTime()) / 3_600_000;
@@ -61,24 +65,24 @@ function formatTime(iso: string): string {
   return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function EventBlock({ event }: { readonly event: PlanEventReadV2 }) {
-  const { left, width } = geometryFor(event);
-  const kind = eventKindOf(event);
+function EventBlock({ item }: { readonly item: EnrichedOccurrence }) {
+  const { left, width } = geometryFor(item.occurrence);
+  const kind = eventKindOf(item.event);
   return (
     <article
       className={styles.event}
       data-testid="home-today-event"
       data-kind={kind}
-      data-status={event.status}
+      data-status={item.event.status}
       style={{ left: `${left}px`, width: `${width}px` }}
-      title={event.title}
+      title={item.event.title}
     >
-      <span className={styles.eventTitle}>{event.title}</span>
+      <span className={styles.eventTitle}>{item.event.title}</span>
       <span className={styles.eventTime}>
-        {formatTime(event.startAt)} – {formatTime(event.endAt)}
+        {formatTime(item.occurrence.startAt)} – {formatTime(item.occurrence.endAt)}
       </span>
-      {event.notes ? (
-        <span className={styles.eventDetail}>{event.notes}</span>
+      {item.event.notes ? (
+        <span className={styles.eventDetail}>{item.event.notes}</span>
       ) : null}
     </article>
   );
@@ -110,7 +114,11 @@ export function TodayCalendarView({ viewConfig }: TodayCalendarViewProps = {}) {
     tz: TZ,
     includePracticeBlocks: false,
   });
-  const events = query.data?.data.events ?? [];
+  const occurrences = useMemo(
+    () => expandPlanEventsForView(query.data?.data.events ?? [], window),
+    [query.data, window],
+  );
+  const eventsLoaded = (query.data?.data.events.length ?? 0) > 0;
 
   return (
     <div className={styles.root} data-testid="home-today-calendar">
@@ -129,12 +137,12 @@ export function TodayCalendarView({ viewConfig }: TodayCalendarViewProps = {}) {
           </div>
         </div>
       ) : null}
-      {query.isSuccess && events.length === 0 ? (
+      {query.isSuccess && !eventsLoaded ? (
         <div className={styles.stateWrap} data-testid="home-today-empty">
           <EmptyState title="今日尚无事件" description="可在“开始今日练习”CTA 中创建一次专项练习，或等待 AI 自动制定。" />
         </div>
       ) : null}
-      {query.isSuccess && events.length > 0 ? (
+      {query.isSuccess && eventsLoaded ? (
         <div className={styles.scroller}>
           <div className={styles.scrollerInner}>
             <div className={styles.head} aria-hidden="true">
@@ -143,8 +151,8 @@ export function TodayCalendarView({ viewConfig }: TodayCalendarViewProps = {}) {
               ))}
             </div>
             <div className={styles.body}>
-              {events.map((event) => (
-                <EventBlock key={event.id} event={event} />
+              {occurrences.map((item) => (
+                <EventBlock key={item.occurrence.id} item={item} />
               ))}
             </div>
           </div>
