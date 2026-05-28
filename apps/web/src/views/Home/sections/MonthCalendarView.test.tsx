@@ -111,4 +111,20 @@ describe('MonthCalendarView (Home M-A wave 2 commit 2)', () => {
     expect(screen.getByTestId('home-month-loading')).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByTestId('home-month-loading')).not.toBeInTheDocument());
   });
+
+  it('expands a daily recurring event into one chip per occurrence (W4.5 / D16)', async () => {
+    // Anchor today is the first occurrence; RRULE:DAILY;COUNT=3 should
+    // render three chips spread across three day cells inside the
+    // current month window.
+    const recurring = {
+      ...makeEvent('r1', '每日复盘'),
+      recurringRule: 'RRULE:FREQ=DAILY;COUNT=3',
+    };
+    server.use(http.get('/api/v2/plans/events', () => r([recurring])));
+    renderWithClient();
+    await waitFor(() =>
+      expect(screen.getAllByTestId('home-month-event').length).toBeGreaterThan(0),
+    );
+    expect(screen.getAllByTestId('home-month-event')).toHaveLength(3);
+  });
 });
