@@ -9,3 +9,4 @@ export type {
 
 export { CalendarPeekProvider } from './CalendarPeekProvider';
 export { useCalendarPeek } from './useCalendarPeek';
+export { CalendarPeekCard } from './CalendarPeekCard';

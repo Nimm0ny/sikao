@@ -1,0 +1,191 @@
+/*
+ * CalendarPeekCard — SIK-138 W6.
+ *
+ * Why: portal-mounted central card per visual contract §2. Scrim, head
+ *      with 6 buttons, kindbar, title, 8-row property table, notes.
+ *      All sizing comes from `--cal-peek-*` tokens (tokens.css §9).
+ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 80px var(--space-4) var(--space-6); /* spacing-allow: visual contract §2 peek vertical anchor 80px */
+  background: var(--cal-peek-scrim);
+  overflow-y: auto;
+}
+
+.card {
+  position: relative;
+  width: var(--cal-peek-width);
+  max-height: var(--cal-peek-max-h);
+  background: var(--card-bg);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--cal-peek-radius);
+  box-shadow: var(--shadow-l3);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  height: var(--cal-peek-head-h);
+  padding: 0 var(--space-3) 0 var(--space-4);
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.crumb {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+  font-weight: var(--font-weight-semibold);
+  letter-spacing: 0.04em;
+  margin-left: var(--space-2);
+}
+
+.flex {
+  flex: 1;
+}
+
+.counter {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+  font-variant-numeric: tabular-nums;
+  margin-right: var(--space-2);
+}
+
+.headBtn {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  background: transparent;
+  border-radius: var(--radius-6);
+  color: var(--color-text-meta);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  /* touch-allow: compound (hover: hover) and (pointer: fine) is the canonical hover query */
+  .headBtn:hover:not(:disabled) {
+    background: var(--color-bg-elevated);
+    color: var(--color-text-primary);
+  }
+}
+
+.headBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.headIcon {
+  width: var(--cal-icon-size);
+  height: var(--cal-icon-size);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--cal-peek-padding-y) var(--cal-peek-padding-x);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.kindBar {
+  width: var(--cal-peek-kindbar-w);
+  height: var(--cal-peek-kindbar-h);
+  border-radius: var(--radius-6);
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-h2);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: 1.2;
+  letter-spacing: -0.018em;
+}
+
+.props {
+  display: grid;
+  grid-template-columns: 140px minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+  padding: 0;
+  font-size: var(--font-meta);
+}
+
+.propRow {
+  display: contents;
+}
+
+.propLabel {
+  color: var(--color-text-meta);
+  font-weight: var(--font-weight-semibold);
+  margin: 0;
+}
+
+.propValue {
+  color: var(--color-text-primary);
+  margin: 0;
+  word-break: break-word;
+}
+
+.notesSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.notesHead {
+  margin: 0;
+  font-size: var(--font-meta);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-meta);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.notesBody {
+  margin: 0;
+  background: var(--card-bg-elevated);
+  border-radius: var(--radius-10);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-body);
+  color: var(--color-text-primary);
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.notesEmpty {
+  margin: 0;
+  background: var(--card-bg-elevated);
+  border-radius: var(--radius-10);
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+}
+
+.readonlyBanner {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px dashed var(--color-state-info);
+  border-radius: var(--radius-6);
+  background: var(--color-state-info-soft);
+  color: var(--color-state-info);
+  font-size: var(--font-meta);
+  text-align: center;
+}
