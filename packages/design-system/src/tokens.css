@@ -38,6 +38,147 @@
 /* CJK no-italic global reset (INV-3) */
 em, i { font-style: normal; }
 
+/* Self-hosted font assets — DM Sans route (2026-05-28)
+ * Why: V5 typography baseline switches from pure system stack to
+ * self-hosted DM Sans + Inter + JetBrains Mono, while keeping CJK on
+ * system fallback. External font CDNs are not allowed at runtime.
+ */
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/__design-system-fonts/dm-sans-latin-variable.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+
+@font-face {
+  font-family: 'DM Sans';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/__design-system-fonts/dm-sans-latin-ext-variable.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA,
+    U+02BD-02C5,
+    U+02C7-02CC,
+    U+02CE-02D7,
+    U+02DD-02FF,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+1D00-1DBF,
+    U+1E00-1E9F,
+    U+1EF2-1EFF,
+    U+2020,
+    U+20A0-20AB,
+    U+20AD-20C0,
+    U+2113,
+    U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/__design-system-fonts/inter-latin-variable.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('/__design-system-fonts/inter-latin-ext-variable.woff2') format('woff2');
+  unicode-range:
+    U+0100-02BA,
+    U+02BD-02C5,
+    U+02C7-02CC,
+    U+02CE-02D7,
+    U+02DD-02FF,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+1D00-1DBF,
+    U+1E00-1E9F,
+    U+1EF2-1EFF,
+    U+2020,
+    U+20A0-20AB,
+    U+20AD-20C0,
+    U+2113,
+    U+2C60-2C7F,
+    U+A720-A7FF;
+}
+
+@font-face {
+  font-family: 'JetBrains Mono';
+  font-style: normal;
+  font-weight: 400 600;
+  font-display: swap;
+  src: url('/__design-system-fonts/jetbrains-mono-latin.woff2') format('woff2');
+  unicode-range:
+    U+0000-00FF,
+    U+0131,
+    U+0152-0153,
+    U+02BB-02BC,
+    U+02C6,
+    U+02DA,
+    U+02DC,
+    U+0304,
+    U+0308,
+    U+0329,
+    U+2000-206F,
+    U+20AC,
+    U+2122,
+    U+2191,
+    U+2193,
+    U+2212,
+    U+2215,
+    U+FEFF,
+    U+FFFD;
+}
+
 /* Practice reading font-size (xingce 答题字号偏好, business feature) */
 :root { --practice-reading-fs: 16px; }
 [data-practice-font='sm'] { --practice-reading-fs: 13px; }
@@ -70,6 +211,37 @@ em, i { font-style: normal; }
  * ─────────────────────────────────────────────────────────────────────────── */
 
 :root {
+  /* §0.5 font families — self-hosted Latin, system CJK fallback */
+  --font-family-ui:
+    'DM Sans',
+    'Inter',
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Microsoft YaHei',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    system-ui,
+    sans-serif;
+  --font-family-ui-secondary:
+    'Inter',
+    'DM Sans',
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Microsoft YaHei',
+    -apple-system,
+    BlinkMacSystemFont,
+    'Segoe UI',
+    system-ui,
+    sans-serif;
+  --font-family-mono:
+    'JetBrains Mono',
+    ui-monospace,
+    'SFMono-Regular',
+    Menlo,
+    Consolas,
+    monospace;
+
   /* §1.1 color scale — neutral (gray ladder) */
   --color-neutral-50:  #F8F9FA;
   --color-neutral-100: #F1F3F5;
@@ -498,8 +670,8 @@ em, i { font-style: normal; }
   --bp-2xl: 1536px;  /* 1920-display main battlefield */
   --bp-3xl: 1920px;  /* ultra / 4K */
 
-  /* §5.2 max-width tokens — large-screen content caps (R2/Q5 decision) */
-  --max-w-workspace: 1440px;  /* main workspace cap — auto-center on 1920+ */
+  /* §5.2 max-width tokens — shared desktop sizing (SIK-128 Route A) */
+  --max-w-workspace: none;    /* shared entry-workspace default — no hidden 1440 cap */
   --max-w-reading:    720px;  /* long-form prose / question stem ≤75 CJK chars */
   --max-w-form:       560px;  /* settings / register / single-column form */
   --max-w-modal:      640px;  /* Modal default cap (use Drawer for content >640) */
