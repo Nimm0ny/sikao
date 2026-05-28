@@ -84,7 +84,7 @@ all materialized:
 |---|---|---|
 | Q1 / REQ-3.1 — Three-layer token architecture | `design.md §A.1` | `tokens.css` lines 60-460; primitive (§1) + semantic (§2-§3) + component (§4) |
 | Q2 / REQ-4.3 — N=4 module density on the home grid | `design.md §D.4.1` | Home metric-row × 4 + bottom row × 3 |
-| Q3 / REQ-5.5 — System font stack + tabular-nums for `<Numeric>` | `design.md §C.5` | `tokens.css --font-stack-{ui,mono}` + `Numeric.module.css font-variant-numeric: tabular-nums` |
+| Q3 / REQ-5.5 — self-hosted `DM Sans + Inter + JetBrains Mono` + tabular-nums for `<Numeric>` | `design.md §C.1.5a` | `tokens.css @font-face + --font-family-{ui,ui-secondary,mono}` + `Numeric.module.css font-variant-numeric: tabular-nums` |
 | Q4 / REQ-8.4 — BottomTabBar glassmorphism + auto-fallback | `design.md §E.1` | `BottomTabBar.module.css` `.nav` rule + ledger entry `mobile-bottom-nav-glassmorphism-fallback` |
 | Q5 / REQ-9.5 — V5 only defines exam token hooks; layout / resize / timer / state-machine in dedicated Exam spec | `design.md §D.4.6` | `tokens.css §4.7` 3 hooks + `apps/web/src/layouts/ExamLayout/` skeleton (test enforces no `<AppShell>` / `<Rail>` nesting) |
 | Q6 / REQ-12.2 — V4→V5 dual-track period | n/a | ARCHIVED by V5-M0.5 big-bang; lint-v4-token-residual is the regression guard going forward |
@@ -92,8 +92,8 @@ all materialized:
 | R1/Q5 — Exam interaction lives in dedicated spec | `design.md §D.4.6` | (deferred — Exam interaction spec) |
 | R2/Q1 — Note detail uses Drawer (not Modal) | `design.md §D.4.3` | Note view `<Drawer side="right" size="lg">`; test asserts no `<Modal>` rendered |
 | R2/Q2 — Tabs absorbs SegmentedControl as a 3-variant component | `design.md §D.3.3` | `Tabs.tsx` `variant: 'underline' \| 'pill' \| 'segmented'`; ScopeToggle = thin business alias |
-| R2/Q4 — RailMe avatar replaces 5th nav row on desktop | `design.md §D.3.32` + `§D.5.2` | RootLayout: 5 nav items + RailMe avatar slot; mobile BottomTabBar exposes 我的 as 5th tab |
-| R2/Q5 — `--max-w-workspace = 1440px` | `design.md §C.4.1` | `tokens.css` line 485; Workspace `data-max-width="workspace"` selector |
+| R2/Q4 — RailMe avatar replaces a dedicated nav row on desktop | `design.md §D.3.32` + `§D.5.2` | RootLayout: 4 nav items + RailMe avatar slot; mobile BottomTabBar keeps 4-tab baseline and routes 我的 outside navItems |
+| R2/Q5 — `--max-w-workspace = none`（`SIK-128` Route A supersede） | `design.md §C.4.1` | `tokens.css` workspace token + Workspace `data-max-width="workspace"` selector |
 | R2/Q6 — Answer-system business components stay in V5 | `design.md §D.3.28-31` | OptionItem / QuestionStem / AnswerSheet / TimerDisplay all skeleton-landed in Phase 3 wave 14 |
 
 

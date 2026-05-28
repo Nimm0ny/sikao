@@ -61,9 +61,22 @@ Full table in `packages/design-system/src/tokens.css`; key buckets:
 - **Type scale** `--font-{display,h1,h2,h3,card,body,meta,tiny}`: 40 /
   32 / 24 / 18 / 16 / 13 / 12 / 11 (mobile compact: 34 / 28 / 20 / 16 /
   14 / 13 / 11 / 10)
+- **Font families** `--font-family-{ui,ui-secondary,mono}`: self-hosted
+  `DM Sans` / `Inter` / `JetBrains Mono` + system fallback
 - **Weight** `--font-weight-{regular,medium,semibold,bold}`
 - **Shadow** `--shadow-l1..l4` (l1 card-rest .. l4 toast)
 - **Motion** `--ease-{out,emphasized}` / `--dur-{fast,base,emphasized}`
+
+### Font-family rules
+
+- `--font-family-ui` is the global UI default: self-hosted `DM Sans`
+  first, `Inter` second, then system CJK fallback.
+- `--font-family-ui-secondary` is reserved for dense Latin-heavy UI when
+  a future screen needs a more neutral secondary voice.
+- `--font-family-mono` is mandatory for `kbd`, mono, and tech metadata.
+- Runtime must not request `fonts.googleapis.com` /
+  `fonts.gstatic.com`.
+- App code must not hardcode `font-family`; use tokens or `inherit`.
 
 ### Semantic layer (light + dark / night cover)
 
@@ -89,8 +102,8 @@ Full table in `packages/design-system/src/tokens.css`; key buckets:
   exposes only these 3 tokens; resize / timer / state-machine logic
   delivered by the dedicated Exam spec, not V5)
 - **Content caps** `--max-w-{workspace,reading,form,modal,prose}` —
-  `--max-w-workspace = 1440px` (R2/Q5 decision: 1920+ ergonomics cap
-  for the Workspace column; never overridden by pages)
+  `--max-w-workspace = none` (SIK-128 Route A: shared entry-workspace
+  default is uncapped; reading/form/prose keep explicit narrow caps)
 - **Mobile** `--mobile-{topbar-h,bottom-nav-h,rail-drawer-w}` /
   `--touch-target-min` 40 / `--sheet-handle-{w,h}`
 
@@ -104,7 +117,7 @@ Full table in `packages/design-system/src/tokens.css`; key buckets:
 | `--bp-md` | 768px | iPad portrait | hidden, drawer-on-burger | two-column allowed, compact |
 | `--bp-lg` | 1024px | iPad landscape / 13" laptop | collapsed 80px | comfortable |
 | `--bp-xl` | 1280px | desktop default | expanded 240px | standard |
-| `--bp-2xl` | 1536px | **1920 main-stage** (work area = 1440 capped by `--max-w-workspace`) | expanded 240px | standard |
+| `--bp-2xl` | 1536px | **1920 main-stage** (workspace fills Rail-remaining width) | expanded 240px | standard |
 | `--bp-3xl` | 1920px | ultra / 4K | expanded 240px | standard |
 
 ### Rail collapse state machine (§C.4.3)
@@ -256,6 +269,8 @@ above.
 | `lint-practice-svg-only` | CP.5 (practice/essay buttons SVG-only) | active |
 | `lint-cn-simplified` | i18n hygiene (no traditional CN drift) | active |
 | `lint-v4-token-residual` | CP.8 (regression guard — 0 V4 names) | active (post-big-bang regression guard) |
+| `lint-font-family-token` | typography governance | active |
+| `lint-external-font-hosts` | self-host / no external font runtime | active |
 | `lint-ui-copy-ssot` | content SSOT (`@/lib/ui-copy`) | warn-only (Phase 8+ promotion to error) |
 
 `apps/web/v5-baseline-report.md` (Phase 7 task 23.1) records the
@@ -293,7 +308,7 @@ the spec.
 
 ## Related Vault entries
 
-- [[Frontend Style Guide.html]] — V4 / pre-V5 reference (kept for
+- [[Frontend Style Guide.html]] — historical reference only; not current font authority (superseded by V5 + DM Sans route)
   historical context; superseded by this document + spec triplet)
 - [[Web-Layout]] — desktop SaaS shell layout cookbook
 - [[Mobile-Layout]] — mobile shell + bottom-tab pattern

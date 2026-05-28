@@ -64,8 +64,8 @@
 
   - [ ] 1.5 Breakpoints + max-w-workspace + safe-area
     - 依赖：1.4。
-    - 产出物：tokens.css §5 breakpoint 与限宽区块；`--max-w-workspace = 1440px` / `--max-w-reading 720` / `--max-w-form 560` / `--max-w-modal 640` / `--max-w-prose 800`；safe-area `env()` 注册。
-    - 验收：浏览器 1920 / 1280 / 1024 / 768 / 480 / 375 各档加载 demo HTML 验证 max-w 居中；safe-area 在 iOS 模拟器命中。
+    - 产出物：tokens.css §5 breakpoint 与限宽区块；`--max-w-workspace = none`（`SIK-128` Route A supersede） / `--max-w-reading 720` / `--max-w-form 560` / `--max-w-modal 640` / `--max-w-prose 800`；safe-area `env()` 注册。
+    - 验收：浏览器 1920 / 1440 / 1280 / 1024 / 768 / 480 / 375 各档加载 demo HTML，验证 shared workspace 无 hidden 1440 cap；safe-area 在 iOS 模拟器命中。
     - 回滚：`git revert <sha>`，限宽失效但 token 不会被业务引用所以无破坏。
     - _Requirements: 4.1, 4.2, 4.3, 9.5, 10.1_
 
@@ -694,7 +694,7 @@
 
 - [ ] 25.1 同步 `docs/vault/04-design/Design-System.md` 至 V5
   - 依赖：1.x–14.x（token + 组件契约稳定后）。
-  - 产出物：`docs/vault/04-design/Design-System.md` 整章节重写——含 V5 三层 token 表、35 组件契约速查、断点与 Rail 折叠规则、Tabs 3-variant 合并说明（R2/Q2）、Note 用 Drawer 不用 Modal 强制约束（R2/Q1）、`max-w-workspace = 1440px`（R2/Q5）、Exam 独立 layout 不复用 SaaS Shell；指向 `.kiro/specs/frontend-style-guide-v5/{requirements,design,tasks}.md` 作为详细出处。
+  - 产出物：`docs/vault/04-design/Design-System.md` 整章节重写——含 V5 三层 token 表、35 组件契约速查、DM Sans 自托管字体体系、断点与 Rail 折叠规则、Tabs 3-variant 合并说明（R2/Q2）、Note 用 Drawer 不用 Modal 强制约束（R2/Q1）、`max-w-workspace = none`（`SIK-128` Route A supersede / R2/Q5）、Exam 独立 layout 不复用 SaaS Shell；指向 `.kiro/specs/frontend-style-guide-v5/{requirements,design,tasks}.md` 作为详细出处。
   - 验收：H5 review gate 触发（>50 行文档新增），独立 subagent review 通过；diff `docs/vault/04-design/Design-System.md` 与 spec 三件套 token 表 0 差异。
   - 回滚：`git revert <sha>` 恢复 V4 版 Design-System.md。
   - _Requirements: 11.2, 11.4_

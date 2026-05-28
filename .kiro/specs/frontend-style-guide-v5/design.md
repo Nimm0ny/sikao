@@ -150,6 +150,20 @@
 | `--font-weight-semibold` | 600 |
 | `--font-weight-bold` | 700 |
 
+#### C.1.5a 字体族（2026-05-28 DM Sans route）
+
+| Token | 值 | 用途 |
+|---|---|---|
+| `--font-family-ui` | `"DM Sans", "Inter", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif` | 全局 UI 主字体 |
+| `--font-family-ui-secondary` | `"Inter", "DM Sans", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif` | 次级 Latin fallback / 保留位 |
+| `--font-family-mono` | `"JetBrains Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace` | `kbd` / mono / tech metadata |
+
+规则：
+
+- 字体文件通过 design-system 自托管，禁止运行时请求 Google Fonts。
+- `apps/**/src/**` 不允许直写 `font-family`，只能走 token 或 `inherit`。
+- CJK 继续系统 fallback，不自托管中文字体。
+
 #### C.1.6 阴影 scale
 
 | Token | Light 值 | Dark 值 |
@@ -316,8 +330,8 @@ V5 主战场是 **桌面 1920×1080**，但要同时 cover 手机、平板、小
 | `--bp-md` | 768px | iPad 竖屏 | 隐藏 | 双列允许，依然紧凑档 |
 | `--bp-lg` | 1024px | iPad 横屏 / 13" 笔记本 | 折叠态 80px | 进入舒适档 |
 | `--bp-xl` | 1280px | 桌面默认 | 完整 240px | 标准 |
-| `--bp-2xl` | 1536px | **1920 主战场（实际工作区 1440，受 --max-w-workspace 限制）** | 完整 240px | 标准 |
-| `--bp-3xl` | 1920px | 超大屏 / 4K | 完整 240px + 大屏限宽生效 | Workspace `max-width: var(--max-w-workspace) = 1440px` 居中 |
+| `--bp-2xl` | 1536px | **1920 主战场（workspace 吃满 Rail 余宽）** | 完整 240px | 标准 |
+| `--bp-3xl` | 1920px | 超大屏 / 4K | 完整 240px + 不再强制大屏限宽 | Workspace 跟随共享 token 语义 |
 
 **实现方式**：tasks 阶段用预编译数值进 `tokens.css`（不依赖 `var()` 在 media query 内）：
 
@@ -334,18 +348,18 @@ V5 主战场是 **桌面 1920×1080**，但要同时 cover 手机、平板、小
 
 | Token | 值 | 用途 |
 |---|---|---|
-| `--max-w-workspace` | **1440px**（R2/Q5 决策） | 主 workspace 内容区上限，1920+ 屏自动居中 |
+| `--max-w-workspace` | **none**（2026-05-27 `SIK-128` Route A supersede） | 共享 entry-workspace 默认值；1920+ 不再自动加 1440 cap |
 | `--max-w-reading` | 720px | 题目阅读 / 长文正文列宽（line-length ≤ 75 字）|
 | `--max-w-form` | 560px | 设置 / 注册 / 表单单列限宽 |
 | `--max-w-modal` | 640px | Modal 默认上限（内容繁重场景用 Drawer 替代） |
 | `--max-w-prose` | 800px | 富文本笔记编辑 / 申论作答区 |
 
 **规则**：
-- 任何 `<Workspace>` 在 `--bp-3xl` 必须居中 + `max-width: var(--max-w-workspace)`，左右留呼吸空间。
+- 任何 `<Workspace>` 继续通过 `--max-w-workspace` 接共享语义；`SIK-128` Route A 后该 token 默认解析为 `none`。
 - 任何"长文阅读 / 正文连续段落"容器必须限到 `--max-w-reading`，不接受全宽。
 - 任何"表单输入序列"必须限到 `--max-w-form`，避免 input 拉到 1200px 横扫。
 
-**1920 屏行为**：`ws = min(1920 - rail-w, 1440)`。展开态左右各 120px 留白；折叠态左右各 200px 留白。**workspace 内容尺寸不变**——折叠在主战场是纯沉浸开关。
+**1920 屏行为**：`ws = 1920 - rail-w`。展开态 `1680`，折叠态 `1840`；与 1280/1440 一样，折叠后卡片与主区一起变宽，不再制造 1440 synthetic gutter。
 
 #### C.4.3 Rail 折叠规则（多分辨率行为统一）
 
@@ -388,7 +402,7 @@ V5 把 Rail 折叠定为**确定性的 UI 状态**，不允许各页面自己重
 **工程实现要点**：
 
 - `--rail-w` 由 `--rail-w-expanded`(240) / `--rail-w-collapsed`(80) 通过 `:root[data-rail="collapsed"]` 切换；`.rail { width: var(--rail-w); transition: width .25s var(--ease-out) }`。
-- workspace 用 `flex: 1 + max-width: var(--max-w-workspace)`，宽度变化由 transition 自然过渡。
+- workspace 用 `flex: 1 + max-width: var(--max-w-workspace)`；Route A 后共享 token 默认等于 `none`，宽度变化由 transition 自然过渡。
 - `prefers-reduced-motion` 下 transition 缩短为 0ms，但**不禁用折叠功能**。
 
 #### C.4.4 Tablet 中间档（768–1279px）
@@ -458,7 +472,7 @@ V5 强制以下场景**只**接受 SVG 图标，禁止文字符号 / emoji / 图
 
 | 场景 | 位置 | 大小 | stroke-width |
 |---|---|---|---|
-| **导航栏 / Rail nav** | 首页 / 练习 / 复盘 / 笔记 / 题库 / 我的 | 18 | 1.7 |
+| **导航栏 / Rail nav** | 首页 / 练习 / 复盘 / 笔记（Me 独立走 RailMe） | 18 | 1.7 |
 | **顶部命令搜索 trigger** | rail-cmd 放大镜 | 14 | 1.8 |
 | **顶部 icon-btn** | 通知、字号切换、收藏、分享、更多 (...) | 16 | 1.8 |
 | **按钮内 icon-leading / icon-trailing** | btn-primary "+ 新建"、"开始练习"、"继续上次" 等 | 16 | 2.0 |
@@ -1198,7 +1212,7 @@ interface WorkspaceProps {
 }
 ```
 
-强制规则：所有桌面页面**必须**用 `<AppShell>` 包裹，禁止业务页面手写 Rail+main 结构。Rail 的 `navItems` 顺序固定为 [首页, 练习, 复盘, 笔记, 题库]，不允许业务侧重排。
+强制规则：所有桌面页面**必须**用 `<AppShell>` 包裹，禁止业务页面手写 Rail+main 结构。Rail 的 `navItems` 顺序固定为 [首页, 练习, 复盘, 笔记]；Me 入口仅由 RailMe 提供，不允许业务侧重排。
 
 #### D.3.33 Panel / PageHeader / Section（容器三件套）
 
@@ -1274,8 +1288,8 @@ V5 页面骨架以 `.tmp_review/out/Home v2.1.html` / `Practice v1.html` / `Note
 ├─ <Rail w=var(--rail-w)/>               ← 左侧固定 240px / 折叠 80px
 │   ├─ <RailBrand>                        SIKAO logo + 折叠按钮
 │   ├─ <RailCmd>                          命令搜索（Cmd/Ctrl+K）
-│   ├─ <RailNav>                          首页 / 练习 / 复盘 / 笔记 / 题库
-│   └─ <RailMe>                           avatar popover (我的菜单)
+│   ├─ <RailNav>                          首页 / 练习 / 复盘 / 笔记
+│   └─ <RailMe>                           avatar entry (我的)
 └─ <Workspace flex=1 padding=var(--space-4) var(--space-5)>
     └─ <CSS Grid>                         不同页面 grid-template-rows 不同
         ├─ <Topbar h=var(--topbar-h)>     greeting + 操作区
@@ -1435,8 +1449,8 @@ V4 完全没定义移动端，V5 必须 cover。Mobile Shell 在 `--bp-md`（768
 ├─ <Workspace overflow=auto padding-inline=safe-left/right>
 │   └─ 业务内容（单列纵向，紧凑档间距）
 └─ <BottomTabBar h=mobile-bottom-nav-h padding-bottom=safe-bottom>
-    └─ 5 个 tab：首页 / 练习 / 复盘 / 笔记 / 我的
-        玻璃拟态 + 自动降级（Q4 决策）
+    └─ 4 个 tab：首页 / 练习 / 复盘 / 笔记
+        玻璃拟态 + 自动降级（Q4 决策）；我的入口独立于 navItems
 ```
 
 `<BurgerBtn>` 触发的抽屉 = `<Drawer side="left" size="sm">` 内嵌 Rail 内容，与桌面 Rail 复用 navItems。
