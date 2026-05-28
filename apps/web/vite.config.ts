@@ -1,11 +1,44 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
+import {
+  createDesignSystemFontHostMiddleware,
+  DESIGN_SYSTEM_FONT_ROUTE_PREFIX,
+  listDesignSystemFonts,
+} from './src/dev/designSystemFontHost';
+import { createPrototypeHostMiddleware } from './src/dev/prototypeHost';
 
 // SIKAO Web — sikao/apps/web
 // 端口 18080 是硬约束（见 docs/vault/03-tech/Architecture.md）
 export default defineConfig({
-  plugins: [react()],
+  plugins: [
+    react(),
+    {
+      name: 'prototype-host',
+      apply: 'serve',
+      configureServer(server) {
+        // Why: SIK-128 H11 acceptance needs prototype pages to be reachable
+        // from localhost. Browser/Chrome block file:// URLs by policy, so we
+        // expose .tmp_review assets through a dev-only route instead.
+        server.middlewares.use(createPrototypeHostMiddleware(__dirname));
+      },
+    },
+    {
+      name: 'design-system-font-host',
+      configureServer(server) {
+        server.middlewares.use(createDesignSystemFontHostMiddleware(__dirname));
+      },
+      generateBundle() {
+        for (const file of listDesignSystemFonts(__dirname)) {
+          this.emitFile({
+            type: 'asset',
+            fileName: `${DESIGN_SYSTEM_FONT_ROUTE_PREFIX.slice(1)}/${file.fileName}`,
+            source: file.bytes,
+          });
+        }
+      },
+    },
+  ],
   build: {
     target: 'es2020',
     cssCodeSplit: true,
