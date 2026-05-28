@@ -6,6 +6,8 @@ created: 2026-05-24
 updated: 2026-05-26
 mode: Master
 issue: Frontend-Tab-Runtime-Rewire-2026-05-24
+
+> **2026-05-28 ledger update**：本计划中的实现拆分仍可作为历史编排参考，但账本执行与 Evidence Block 回写规则已切到 `docs/engineering/notion-workflow.md`。文中 `Multica` 相关章节自此按历史账本说明处理。
 ---
 
 # Frontend Tab Runtime Rewire — Post Big-Bang Wiring Plan
@@ -23,7 +25,7 @@ issue: Frontend-Tab-Runtime-Rewire-2026-05-24
 - 4 条线 file-level 隔离（`apps/web/src/views/{Home,Practice,Review,Note}/`
   各自子目录；`packages/api-client/src/queries/*.ts` 已按 phase 拆文件；
   `packages/domain/src/<phase>/` 同样按子领域拆目录）
-- Home 是阻塞起点：`RootLayout` + 5-tab nav + `/` 已登录路由收口、AuthGuard
+- Home 是阻塞起点：`RootLayout` + 4-tab nav（Me 独立走 RailMe）+ `/` 已登录路由收口、AuthGuard
   钩子、`/profile/records` 跨 tab 回链都在 Home 线落地，其余 Tab 必须等
   Home 线 M-Auth 收口后才能拿到「真实登录态」做接入
 - Home 线 M-Auth 收口后，Practice / Review / Note 三线允许并行，但每条
@@ -188,24 +190,24 @@ issue: Frontend-Tab-Runtime-Rewire-2026-05-24
 - 不实现真正的 session 跳转目标页（属 Practice 线）
 
 
-### 3.5 Home M-Records · /profile/records + 5-tab nav 收口
+### 3.5 Home M-Records · /profile/records + 4-tab nav 收口
 
-**目标**：落 `/profile/records` 钻取页 + RootLayout 5-tab nav 完整
-（Home / Practice / Review / Note / Me）+ legacy redirect 占位。
+**目标**：落 `/profile/records` 钻取页 + RootLayout 4-tab nav 收口
+（Home / Practice / Review / Note；Me 独立走 RailMe）+ legacy redirect 占位。
 
 | 项 | 说明 |
 |---|---|
-| 视觉原型 | `Tab5-Profile/Profile Records v1.html` + `Tab1-Home/Home v2.1.html` 5-tab nav 区 |
-| 落地路径 | 新建 `apps/web/src/views/ProfileRecords/{ProfileRecords.tsx,RecordList.tsx,FilterBar.tsx,Pagination.tsx}`；`apps/web/src/layouts/RootLayout/Rail.tsx` + `BottomTabBar.tsx` 完成 5-tab；`apps/web/src/router/index.tsx` 加 `/profile/records` + 6 条 legacy redirect |
+| 视觉原型 | `Tab5-Profile/Profile Records v1.html` + `home-frame.html` 4-tab nav / RailMe 区 |
+| 落地路径 | 新建 `apps/web/src/views/ProfileRecords/{ProfileRecords.tsx,RecordList.tsx,FilterBar.tsx,Pagination.tsx}`；`apps/web/src/layouts/RootLayout/Rail.tsx` + `BottomTabBar.tsx` 收口 4-tab + RailMe 唯一入口；`apps/web/src/router/index.tsx` 加 `/profile/records` + 6 条 legacy redirect |
 | 接线对象 | `profileQueries.useProfileRecords`（含 `LearningRecordItemV2.href` 必填字段，已锁 contract）、Pagination 已在 V5 components |
 | MSW handlers | `apps/web/src/mocks/handlers/records.ts`（mock 含 xingce / shenlun / mock-exam / weekly review 4 类 record） |
-| 验证 | typecheck / lint / vitest（redirect coverage + ProfileRecords 集成 test + a11y vitest-axe）/ Chrome MCP smoke 5-tab |
+| 验证 | typecheck / lint / vitest（redirect coverage + ProfileRecords 集成 test + a11y vitest-axe）/ Chrome MCP smoke 4-tab + RailMe |
 | PR 数 | 4 |
 
 **Acceptance**
 
-- 5-tab nav desktop（Rail）+ mobile（BottomTabBar）都到位且 active 状
-  态正确
+- 4-tab nav desktop（Rail）+ mobile（BottomTabBar）都到位且 active 状
+  态正确；Me 入口仅由 RailMe 提供
 - 6 条 legacy redirect：`/app /study/today /dashboard /practice/center
   /wrong-book /plan /progress /me` 全部跳到 canonical 路径
 - ProfileRecords 4 状态 + 分组（按 record type）+ 分页 + filter（type
@@ -538,15 +540,15 @@ causeAnalysisQueries + weeklyReviewQueries；新建 `packages/domain/src/review/
 
 ### 5.4 Review M-Hub · WU-FR7 + WU-FR8 + WU-FR9 · QuestionHub + Redo + Cause UI
 
-**目标**：落 `/q/:id` 题目中枢页（含 ctx 解析）+ redo 流程 + cause analysis
+**目标**：落 `/question-hub` 题目中枢页（含 ctx 解析）+ redo 流程 + cause analysis
 UI（单题 + 聚合）。
 
 | 项 | 说明 |
 |---|---|
 | 视觉原型 | `_cross/Question Hub v1.html`、`Question Hub v2.html`、`Tab3-Review/Review Redo v1.html` |
-| 落地路径 | `apps/web/src/views/QuestionHub/QuestionHub.tsx` 重写；新增 `sections/{StemSection,AnswerHistorySection,CauseAnalysisSection,RelatedNotesSection,RedoCTA}.tsx`；新建 `apps/web/src/views/QuestionRedo/QuestionRedo.tsx`（路由 `/q/:id/redo`）；`dialogs/CauseAnalysisDialog.tsx`、`GroupCauseAnalysisDialog.tsx` |
+| 落地路径 | `apps/web/src/views/QuestionHub/QuestionHub.tsx` 重写；新增 `sections/{StemSection,AnswerHistorySection,CauseAnalysisSection,RelatedNotesSection,RedoCTA}.tsx`；如未来恢复独立 redo route，再新建 `apps/web/src/views/QuestionRedo/QuestionRedo.tsx` 并单开 Define-First；`dialogs/CauseAnalysisDialog.tsx`、`GroupCauseAnalysisDialog.tsx` |
 | 接线对象 | `useQuestionHub`、`useCauseAnalysis`、`useGroupCauseAnalysis`、`@sikao/answer-engine` 部分（redo 模式） |
-| 路由 | `/q/:id`、`/q/:id/redo`（脱壳） |
+| 路由 | `/question-hub`（当前 V5 收口真相；旧 `/q/:id` 方案已过时，需单独重开定义） |
 | 验证 | typecheck / lint / vitest（ctx 解析 + redo 状态机 + cause 编辑）/ Chrome MCP smoke |
 | PR 数 | 9 |
 
@@ -748,7 +750,7 @@ backlog 在 wave 末决定 cancel 重定向或同步标 done。
 | 文件 | 写入 milestone | 冻结条件 |
 |---|---|---|
 | `apps/web/src/router/index.tsx` | Home M-Auth, M-B, M-Records · Practice M-Center / M-Entry / M-Session / M-Mock / M-Stats · Review M-All / M-Hub / M-Closeout · Note M-Api / M-Editor | 每条线 PR 内只增不改其他线的路由；有冲突时按主线顺序优先合 Home |
-| `apps/web/src/layouts/RootLayout/Rail.tsx` | Home M-Records 落 5-tab（含撤除当前的「题库」一级 nav，将题库交互改由 Review M-Hub QuestionHub 承载）；Note M-Api 改第 4 tab 显隐 | Home M-Records 之后冻结；Note M-Api 是仅有的合法后续修改 |
+| `apps/web/src/layouts/RootLayout/Rail.tsx` | Home M-Records 落 4-tab + RailMe 唯一入口（含撤除旧「题库」一级 nav，将题库交互改由 Review M-Hub QuestionHub 承载）；Note M-Api 改第 4 tab 显隐 | Home M-Records 之后冻结；Note M-Api 是仅有的合法后续修改 |
 | `apps/web/src/layouts/RootLayout/BottomTabBar.tsx` | 同上 | 同上 |
 | `apps/web/src/main.tsx` | Home M-Auth 一次写 DEV bypass + MSW + provider；后续不改 | Home M-Auth 完成后冻结 |
 | `apps/web/src/setupTests.ts` | Home M-Auth 一次写 MSW server | 同上 |
@@ -758,7 +760,7 @@ backlog 在 wave 末决定 cancel 重定向或同步标 done。
 | 跳转源 | 跳转目标 | 落地 milestone |
 |---|---|---|
 | Home M-C → /practice/sessions/:id | Practice M-Session | accept(session) 触发；前置条件 Practice M-Session done，否则跳 BootCard 占位 |
-| Practice M-Session SessionResult → /q/:id?ctx=practice | Review M-Hub | Review M-Hub done 之前跳 BootCard 占位 |
+| Practice M-Session SessionResult → /question-hub?ctx=practice | Review M-Hub | Review M-Hub done 之前跳 BootCard 占位 |
 | Review M-Hub SaveAsNoteButton → /notes/:id | Note M-Editor | Note M-Editor done 之前 stub 占位 + toast「笔记功能即将上线」 |
 | Note M-Closeout WeeklyBanner → useWeeklyReview hook | Review M-Closeout | hook 复用（同一个 query family，不 fork） |
 | Practice M-Stats `/profile/practice-preferences` | Profile（待规划） | 暂落在 Practice 线，未来 Profile Phase 启动后迁移 |
@@ -803,7 +805,7 @@ npm run test:a11y -w @sikao/web              # axe vitest 套件
   前端视觉 milestone 额外做规范审查官 + Chrome MCP smoke
 
 
-## 8. Multica 账本布局
+## 8. Historical Multica 账本布局
 
 每条线在所属父 issue 下加新 child（不重开旧 child）。命名约定：
 

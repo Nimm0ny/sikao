@@ -138,7 +138,7 @@ V4 → V5 切换会触达所有业务 Phase（Home / Practice / Notes / Profile 
 Marketing landing 页面（`apps/web/src/views/marketing/**`）：
 
 - 同样按 surface 整页切 V5 token
-- **不受 `--max-w-workspace=1440` 限制**（marketing 用更宽 hero / 全宽 banner）
+- 不走 RootLayout shared workspace 语义（marketing 用更宽 hero / 全宽 banner）
 - Footer / 法律页 3 个属于普通页面，按标准流程切
 
 切换时机：Phase 6 后置（21.1a–g 均不直接覆盖 marketing），由 Marketing Phase 单独提 PR 切。

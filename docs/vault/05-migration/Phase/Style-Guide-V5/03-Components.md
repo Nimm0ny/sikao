@@ -73,6 +73,8 @@ prop API 完整签名见 [`design.md` §D.3`](../../../../../.kiro/specs/fronten
 | D.3.27 | `<ProgressLinear>` / `<ProgressRing>` | 进度 | indeterminate / value | `value` clamp 0-100；indeterminate 渲染 spin keyframes |
 | D.3.10 | `<EmptyState>` / `<Skeleton>` | 占位 | 4 illustration / pulse | EmptyState illustration 必须 SVG；Skeleton `prefers-reduced-motion` 退化为静态 opacity 循环 |
 
+`kbd` / mono surfaces（如 Rail `⌘K` hint、Tooltip shortcut、CommandPalette shortcut）必须消费 `--font-family-mono`，不得继续 `inherit`。
+
 ### 3.4 表单原子（10 个）
 
 | # | 组件 | 用途 | 状态 | 关键约束 |
@@ -113,8 +115,8 @@ prop API 完整签名见 [`design.md` §D.3`](../../../../../.kiro/specs/fronten
 | # | 组件 | 用途 | 关键约束 |
 |---|---|---|---|
 | D.3.32a | `<AppShell>` | 桌面端 Shell | 桌面页面**必须**用 `<AppShell>` 包裹，禁手写 Rail+main 结构 |
-| D.3.32b | `<Rail>` | 左侧固定侧栏 | navItems 顺序固定为 [首页, 练习, 复盘, 笔记, 题库]，**不允许业务侧重排**；含 RailBrand / RailCmd / RailNav / RailMe 子组件；折叠规则详见 [02-Token-System §6](./02-Token-System.md) |
-| D.3.32c | `<Workspace>` | 内容主体 | `maxWidth="workspace"` 在 1920 屏自动居中限到 1440 |
+| D.3.32b | `<Rail>` | 左侧固定侧栏 | navItems 顺序固定为 [首页, 练习, 复盘, 笔记]，Me 入口仅由 RailMe 提供，**不允许业务侧重排**；含 RailBrand / RailCmd / RailNav / RailMe 子组件；折叠规则详见 [02-Token-System §6](./02-Token-System.md) |
+| D.3.32c | `<Workspace>` | 内容主体 | `maxWidth="workspace"` = 共享 desktop 默认（SIK-128 Route A 后不再自动 1440 cap）；窄列 surface 必须显式用 `reading` / `form` / `prose` |
 | D.3.33a | `<Panel>` | 通用容器 | `variant="danger"` 边框红 + 左侧 4px err 条 + 全行 err 文字色（仅在 danger panel 内生效） |
 | D.3.33b | `<PageHeader>` | 页面头 | h2 主标题 + 副标 + breadcrumb + 右侧 actions |
 | D.3.33c | `<Section>` | 页面分段 | spacing `sm/md/lg` 三档间距 |

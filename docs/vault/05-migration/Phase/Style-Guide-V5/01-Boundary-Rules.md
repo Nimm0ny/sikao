@@ -74,7 +74,7 @@ M11   ── V5 Phase 8 文档同步 + spec 关闭
 | **Profile** | 在 V5-M9 兜底实施 | V5 M3 后 |
 | **Review / Question Hub** | 按 D.4.5 实现；compact-card 用 `--card-radius-sm` (12px) | V5 M3 + Review 后端 M0-M7 收尾 |
 | **Onboarding / Auth** | 在 V5 框架下从零实现，**无 V4 alias 兼容期** | V5 M3 后 |
-| **Marketing** | landing 页用 V5；不受 `--max-w-workspace=1440` 限制 | V5-M9 内 |
+| **Marketing** | landing 页用 V5；不走 RootLayout shared workspace 语义 | V5-M9 内 |
 
 ### 3.3 Exam 模式（独立 Phase 未来承接）
 
