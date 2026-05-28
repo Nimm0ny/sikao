@@ -12,9 +12,10 @@ fileMatchPattern: "**/RootLayout*,**/Rail*,**/BottomTabBar*,**/AppShell*"
 1. **Nav 项数 = 4**：`[首页, 练习, 复盘, 笔记]`，顺序固定，不可增删。
 2. **Nav 项 id**：`home / practice / review / note`，不可改名。
 3. **Nav href**：`/ / /practice / /review / /note`，不可改路径。
-4. **Me 入口唯一**：仅由 RailMe avatar slot 提供（`aria-label="我的"`），不在 navItems 数组中。
+4. **Me 入口唯一**：仅由 RailMe `button` trigger + account popover 提供（`aria-label="我的"`），不在 navItems 数组中。
 5. **BottomTabBar 同步**：移动端 tabBarItems 必须与 navItems 保持一致（同 4 项）。
 6. **禁止「题库」回归**：任何 `id: 'question-bank'` / `id: 'qbank'` / label 含「题库」的 nav 项一律禁止。
+7. **账户扩展面收口**：未来 profile/account 入口只能改共享 `views/Me/accountNav.ts` 账户地图；不得借机改 `navItems` / `tabBarItems` / Rail 结构。
 
 ## 触发条件
 
@@ -34,6 +35,6 @@ fileMatchPattern: "**/RootLayout*,**/Rail*,**/BottomTabBar*,**/AppShell*"
 
 ## 来源
 
-- `docs/plan/sik-rail-v5-visual-contract.md` §6 H01/H02
+- `docs/plan/sik-rail-v5-visual-contract.md` §7 H01/H02
 - SIK-121 W1 commit `bbcfdf4f8`
 - lhr 2026-05-25 拍板

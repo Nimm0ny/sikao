@@ -6,7 +6,7 @@
 > Goal: 在动代码之前，把"几屏、每屏长什么样、卡片去哪/能不能改"全部摊开讨论清楚再实施。
 > 范围限定：本文不涉及任何视觉元素（颜色 / 排版 / 间距 / 图标），只定功能结构与交互边界。
 
-> **2026-05-28 runtime truth update**：当前运行时已收口为 4-tab + RailMe，题目中枢页已收口为 `/question-hub`。本文内保留的 `5-tab`、`/notes*` 与 `/q/:id*` 仅用于 IA / 历史决策追溯；本文自此不再承担当前 router SSOT 角色。
+> **2026-05-28 runtime truth update**：当前运行时已收口为 `4-tab + RailMe trigger/popover`，题目中枢页已收口为 `/question-hub`。sidebar 结构自 `SIK-121 W5` 起冻结，后续只允许补 `Me` 内容。本文内保留的 `5-tab`、`/notes*` 与 `/q/:id*` 仅用于 IA / 历史决策追溯；本文自此不再承担当前 router SSOT 角色。
 
 > **落地文档**：本文是 IA 历史决策档案。当前实现真相以 `apps/web/src/router/index.tsx`、`RootLayout.tsx` 与各 Phase active 文档顶部的 runtime truth note 为准。
 >

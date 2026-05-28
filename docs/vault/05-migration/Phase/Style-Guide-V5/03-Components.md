@@ -60,7 +60,7 @@ prop API 完整签名见 [`design.md` §D.3`](../../../../../.kiro/specs/fronten
 
 | # | 组件 | 用途 | 状态 | 关键约束 |
 |---|---|---|---|---|
-| D.3.20 | `<Popover>` | 触发式浮层 | open / closed | `--menu-bg` + `--shadow-l3` + `--radius-12`；`aria-haspopup` 自动绑定 |
+| D.3.20 | `<Popover>` | 触发式浮层 | open / closed | `--menu-bg` + `--shadow-l3` + `--radius-12`；默认保留 caller 的 `aria-haspopup`，仅在 caller 未声明时才注入 |
 | D.3.19 | `<Tooltip>` | hover 设备专属提示 | hover 触发 | 触屏（pointer: coarse）**不渲染**，改长按 Sheet；icon-only 按钮**必须**配 |
 
 ### 3.3 视觉原子（5 个）
@@ -115,7 +115,7 @@ prop API 完整签名见 [`design.md` §D.3`](../../../../../.kiro/specs/fronten
 | # | 组件 | 用途 | 关键约束 |
 |---|---|---|---|
 | D.3.32a | `<AppShell>` | 桌面端 Shell | 桌面页面**必须**用 `<AppShell>` 包裹，禁手写 Rail+main 结构 |
-| D.3.32b | `<Rail>` | 左侧固定侧栏 | navItems 顺序固定为 [首页, 练习, 复盘, 笔记]，Me 入口仅由 RailMe 提供，**不允许业务侧重排**；含 RailBrand / RailCmd / RailNav / RailMe 子组件；折叠规则详见 [02-Token-System §6](./02-Token-System.md) |
+| D.3.32b | `<Rail>` | 左侧固定侧栏 | navItems 顺序固定为 [首页, 练习, 复盘, 笔记]，Me 入口仅由 RailMe `button` trigger + account popover 提供，**不允许业务侧重排**；sidebar 已冻结，后续只允许补 `Me` 内容；含 RailBrand / RailCmd / RailNav / RailMe 子组件；折叠规则详见 [02-Token-System §6](./02-Token-System.md) |
 | D.3.32c | `<Workspace>` | 内容主体 | `maxWidth="workspace"` = 共享 desktop 默认（SIK-128 Route A 后不再自动 1440 cap）；窄列 surface 必须显式用 `reading` / `form` / `prose` |
 | D.3.33a | `<Panel>` | 通用容器 | `variant="danger"` 边框红 + 左侧 4px err 条 + 全行 err 文字色（仅在 danger panel 内生效） |
 | D.3.33b | `<PageHeader>` | 页面头 | h2 主标题 + 副标 + breadcrumb + 右侧 actions |

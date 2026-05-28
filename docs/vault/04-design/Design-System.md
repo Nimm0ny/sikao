@@ -188,6 +188,12 @@ spec for the canonical contract**.
 | **layout** | AppShell / Rail / Workspace / Panel / PageHeader / Section / MobileAppShell / MobileTopBar / BottomTabBar | §D.3.32-33 |
 | **layouts/** | RootLayout (V5-M3.5) / ExamLayout (V5-M3) | §D.4 / §D.4.6 |
 
+Desktop shell note:
+
+- Rail 的全局结构已冻结为 `4-tab + RailMe trigger/popover`。后续不得再改 sidebar 结构；只允许补充 `Me` 内容。
+- RailMe 不是第 5 个 nav 项，而是独立 `button` trigger，打开 account popover。
+- RailMe popover 的视觉 SSOT 是 `pop-head + pop-summary + pop-list`，细则见 `docs/plan/sik-rail-v5-visual-contract.md`。
+
 ### Page container trees (§D.4)
 
 - **D.4.1 Home** — 4-row grid: PageHeader → MetricRow × 4 → Calendar

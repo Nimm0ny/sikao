@@ -92,7 +92,7 @@ all materialized:
 | R1/Q5 — Exam interaction lives in dedicated spec | `design.md §D.4.6` | (deferred — Exam interaction spec) |
 | R2/Q1 — Note detail uses Drawer (not Modal) | `design.md §D.4.3` | Note view `<Drawer side="right" size="lg">`; test asserts no `<Modal>` rendered |
 | R2/Q2 — Tabs absorbs SegmentedControl as a 3-variant component | `design.md §D.3.3` | `Tabs.tsx` `variant: 'underline' \| 'pill' \| 'segmented'`; ScopeToggle = thin business alias |
-| R2/Q4 — RailMe avatar replaces a dedicated nav row on desktop | `design.md §D.3.32` + `§D.5.2` | RootLayout: 4 nav items + RailMe avatar slot; mobile BottomTabBar keeps 4-tab baseline and routes 我的 outside navItems |
+| R2/Q4 — RailMe trigger/popover replaces a dedicated nav row on desktop | `design.md §D.3.32` + `§D.5.2` | RootLayout: 4 nav items + RailMe button trigger + account popover; mobile BottomTabBar keeps 4-tab baseline and routes 我的 outside navItems |
 | R2/Q5 — `--max-w-workspace = none`（`SIK-128` Route A supersede） | `design.md §C.4.1` | `tokens.css` workspace token + Workspace `data-max-width="workspace"` selector |
 | R2/Q6 — Answer-system business components stay in V5 | `design.md §D.3.28-31` | OptionItem / QuestionStem / AnswerSheet / TimerDisplay all skeleton-landed in Phase 3 wave 14 |
 

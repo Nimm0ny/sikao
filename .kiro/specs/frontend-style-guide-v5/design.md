@@ -472,7 +472,7 @@ V5 强制以下场景**只**接受 SVG 图标，禁止文字符号 / emoji / 图
 
 | 场景 | 位置 | 大小 | stroke-width |
 |---|---|---|---|
-| **导航栏 / Rail nav** | 首页 / 练习 / 复盘 / 笔记（Me 独立走 RailMe） | 18 | 1.7 |
+| **导航栏 / Rail nav** | 首页 / 练习 / 复盘 / 笔记（Me 独立走 RailMe trigger/popover） | 18 | 1.7 |
 | **顶部命令搜索 trigger** | rail-cmd 放大镜 | 14 | 1.8 |
 | **顶部 icon-btn** | 通知、字号切换、收藏、分享、更多 (...) | 16 | 1.8 |
 | **按钮内 icon-leading / icon-trailing** | btn-primary "+ 新建"、"开始练习"、"继续上次" 等 | 16 | 2.0 |
@@ -1212,7 +1212,7 @@ interface WorkspaceProps {
 }
 ```
 
-强制规则：所有桌面页面**必须**用 `<AppShell>` 包裹，禁止业务页面手写 Rail+main 结构。Rail 的 `navItems` 顺序固定为 [首页, 练习, 复盘, 笔记]；Me 入口仅由 RailMe 提供，不允许业务侧重排。
+强制规则：所有桌面页面**必须**用 `<AppShell>` 包裹，禁止业务页面手写 Rail+main 结构。Rail 的 `navItems` 顺序固定为 [首页, 练习, 复盘, 笔记]；Me 入口仅由 RailMe `button` trigger + account popover 提供，不允许业务侧重排。`SIK-121 W5` 起 sidebar 冻结，后续只允许补 `Me` 内容。
 
 #### D.3.33 Panel / PageHeader / Section（容器三件套）
 
@@ -1289,7 +1289,7 @@ V5 页面骨架以 `.tmp_review/out/Home v2.1.html` / `Practice v1.html` / `Note
 │   ├─ <RailBrand>                        SIKAO logo + 折叠按钮
 │   ├─ <RailCmd>                          命令搜索（Cmd/Ctrl+K）
 │   ├─ <RailNav>                          首页 / 练习 / 复盘 / 笔记
-│   └─ <RailMe>                           avatar entry (我的)
+│   └─ <RailMe>                           button trigger + account popover (我的)
 └─ <Workspace flex=1 padding=var(--space-4) var(--space-5)>
     └─ <CSS Grid>                         不同页面 grid-template-rows 不同
         ├─ <Topbar h=var(--topbar-h)>     greeting + 操作区

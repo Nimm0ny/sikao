@@ -25,7 +25,7 @@ issue: Frontend-Tab-Runtime-Rewire-2026-05-24
 - 4 条线 file-level 隔离（`apps/web/src/views/{Home,Practice,Review,Note}/`
   各自子目录；`packages/api-client/src/queries/*.ts` 已按 phase 拆文件；
   `packages/domain/src/<phase>/` 同样按子领域拆目录）
-- Home 是阻塞起点：`RootLayout` + 4-tab nav（Me 独立走 RailMe）+ `/` 已登录路由收口、AuthGuard
+- Home 是阻塞起点：`RootLayout` + 4-tab nav（Me 独立走 RailMe trigger/popover）+ `/` 已登录路由收口、AuthGuard
   钩子、`/profile/records` 跨 tab 回链都在 Home 线落地，其余 Tab 必须等
   Home 线 M-Auth 收口后才能拿到「真实登录态」做接入
 - Home 线 M-Auth 收口后，Practice / Review / Note 三线允许并行，但每条
@@ -193,21 +193,21 @@ issue: Frontend-Tab-Runtime-Rewire-2026-05-24
 ### 3.5 Home M-Records · /profile/records + 4-tab nav 收口
 
 **目标**：落 `/profile/records` 钻取页 + RootLayout 4-tab nav 收口
-（Home / Practice / Review / Note；Me 独立走 RailMe）+ legacy redirect 占位。
+（Home / Practice / Review / Note；Me 独立走 RailMe trigger/popover）+ legacy redirect 占位。
 
 | 项 | 说明 |
 |---|---|
 | 视觉原型 | `Tab5-Profile/Profile Records v1.html` + `home-frame.html` 4-tab nav / RailMe 区 |
-| 落地路径 | 新建 `apps/web/src/views/ProfileRecords/{ProfileRecords.tsx,RecordList.tsx,FilterBar.tsx,Pagination.tsx}`；`apps/web/src/layouts/RootLayout/Rail.tsx` + `BottomTabBar.tsx` 收口 4-tab + RailMe 唯一入口；`apps/web/src/router/index.tsx` 加 `/profile/records` + 6 条 legacy redirect |
+| 落地路径 | 新建 `apps/web/src/views/ProfileRecords/{ProfileRecords.tsx,RecordList.tsx,FilterBar.tsx,Pagination.tsx}`；`apps/web/src/layouts/RootLayout/Rail.tsx` + `BottomTabBar.tsx` 收口 4-tab + RailMe trigger/popover 唯一入口；`apps/web/src/router/index.tsx` 加 `/profile/records` + 6 条 legacy redirect |
 | 接线对象 | `profileQueries.useProfileRecords`（含 `LearningRecordItemV2.href` 必填字段，已锁 contract）、Pagination 已在 V5 components |
 | MSW handlers | `apps/web/src/mocks/handlers/records.ts`（mock 含 xingce / shenlun / mock-exam / weekly review 4 类 record） |
-| 验证 | typecheck / lint / vitest（redirect coverage + ProfileRecords 集成 test + a11y vitest-axe）/ Chrome MCP smoke 4-tab + RailMe |
+| 验证 | typecheck / lint / vitest（redirect coverage + ProfileRecords 集成 test + a11y vitest-axe）/ Chrome MCP smoke 4-tab + RailMe trigger/popover |
 | PR 数 | 4 |
 
 **Acceptance**
 
 - 4-tab nav desktop（Rail）+ mobile（BottomTabBar）都到位且 active 状
-  态正确；Me 入口仅由 RailMe 提供
+  态正确；Me 入口仅由 RailMe trigger/popover 提供
 - 6 条 legacy redirect：`/app /study/today /dashboard /practice/center
   /wrong-book /plan /progress /me` 全部跳到 canonical 路径
 - ProfileRecords 4 状态 + 分组（按 record type）+ 分页 + filter（type
@@ -750,7 +750,7 @@ backlog 在 wave 末决定 cancel 重定向或同步标 done。
 | 文件 | 写入 milestone | 冻结条件 |
 |---|---|---|
 | `apps/web/src/router/index.tsx` | Home M-Auth, M-B, M-Records · Practice M-Center / M-Entry / M-Session / M-Mock / M-Stats · Review M-All / M-Hub / M-Closeout · Note M-Api / M-Editor | 每条线 PR 内只增不改其他线的路由；有冲突时按主线顺序优先合 Home |
-| `apps/web/src/layouts/RootLayout/Rail.tsx` | Home M-Records 落 4-tab + RailMe 唯一入口（含撤除旧「题库」一级 nav，将题库交互改由 Review M-Hub QuestionHub 承载）；Note M-Api 改第 4 tab 显隐 | Home M-Records 之后冻结；Note M-Api 是仅有的合法后续修改 |
+| `apps/web/src/layouts/RootLayout/Rail.tsx` | Home M-Records 落 4-tab + RailMe trigger/popover 唯一入口（含撤除旧「题库」一级 nav，将题库交互改由 Review M-Hub QuestionHub 承载） | Home M-Records / SIK-121 W5 后冻结；后续只允许补 Me 内容，不再改 sidebar 结构 |
 | `apps/web/src/layouts/RootLayout/BottomTabBar.tsx` | 同上 | 同上 |
 | `apps/web/src/main.tsx` | Home M-Auth 一次写 DEV bypass + MSW + provider；后续不改 | Home M-Auth 完成后冻结 |
 | `apps/web/src/setupTests.ts` | Home M-Auth 一次写 MSW server | 同上 |

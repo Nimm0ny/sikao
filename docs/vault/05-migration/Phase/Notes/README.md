@@ -5,7 +5,7 @@
 > **Phase 父目录**：[../README.md](../README.md)
 > **Last Updated**: 2026-05-25
 
-> **2026-05-28 runtime truth update**：当前全局壳已收口为 4-tab + RailMe。本文中的 `/notes*` 与 `/q/:id*` 记法仅保留为历史 Phase 设计与跨 Phase 决策追溯；当前运行时 route authority 以 `apps/web/src/router/index.tsx` 为准，其中 Note shell 入口是 `/note`，QuestionHub 入口是 `/question-hub`。
+> **2026-05-28 runtime truth update**：当前全局壳已收口为 `4-tab + RailMe trigger/popover`。sidebar 自 `SIK-121 W5` 起冻结，后续只允许补 `Me` 内容。本文中的 `/notes*` 与 `/q/:id*` 记法仅保留为历史 Phase 设计与跨 Phase 决策追溯；当前运行时 route authority 以 `apps/web/src/router/index.tsx` 为准，其中 Note shell 入口是 `/note`，QuestionHub 入口是 `/question-hub`。
 
 ---
 
@@ -37,7 +37,7 @@
 
 | 前置 | 状态 | 说明 |
 |---|---|---|
-| Phase-Home 完工 | ⏳ | 依赖 LLM 模块 / audit / cron / AppShell 4-tab + RailMe |
+| Phase-Home 完工 | ⏳ | 依赖 LLM 模块 / audit / cron / AppShell 4-tab + RailMe trigger/popover |
 | Phase-Practice NoteV2 schema 升级 | ✅ | linked_question_id + visibility 已就位 |
 | Phase-Review Cross-Tab 定义 | ✅ | Cross-2~4 / ReviewItemV2(note_card) 接口就绪 |
 | TipTap 选型 | ✅ | N-Ed-1 拍板 TipTap Headless WYSIWYG |
@@ -138,7 +138,7 @@ Community P1:   PATCH /notes/{id}/visibility, GET /notes/community
 
 | 依赖方向 | 说明 |
 |---|---|
-| Notes ← Home | LLM 模块 / audit / cron / AppShell 4-tab + RailMe |
+| Notes ← Home | LLM 模块 / audit / cron / AppShell 4-tab + RailMe trigger/popover |
 | Notes ← Practice | NoteV2 schema（linked_question_id + visibility 已加） |
 | Notes ← Review | ReviewItemV2(source_kind=note_card) 写入接口 |
 | Notes → Review | AI 摘要确认 → 写入 ReviewItemV2 |
