@@ -45,6 +45,12 @@ export interface MonthEventChipProps {
    * skip the slice altogether.
    */
   readonly slice?: CrossDaySlice;
+  /**
+   * Click handler. SIK-138 W6 wires this to `useCalendarPeek().open` so
+   * any chip in the month view opens the read-only peek card. Optional
+   * because storybook / unit tests may render chips without a peek.
+   */
+  readonly onClick?: () => void;
 }
 
 const KIND_VAR_BY_KIND: Readonly<Record<EventKind, string>> = {
@@ -105,7 +111,7 @@ function SourceIcon({ source }: { readonly source: string }) {
   return null;
 }
 
-export function MonthEventChip({ event, visibleProperties, slice }: MonthEventChipProps) {
+export function MonthEventChip({ event, visibleProperties, slice, onClick }: MonthEventChipProps) {
   const kind = eventKindOf(event);
   const isCrossDay = slice !== undefined && (!slice.isStartSlice || !slice.isEndSlice);
 
@@ -118,14 +124,17 @@ export function MonthEventChip({ event, visibleProperties, slice }: MonthEventCh
   const renderTarget = showProp(visibleProperties, 'target');
 
   return (
-    <span
+    <button
+      type="button"
       className={styles.chip}
       data-testid="home-month-event"
       data-kind={kind}
       data-cross-day={isCrossDay || undefined}
       data-kind-disabled={renderKind ? undefined : true}
       style={renderKind ? kindStyle(kind) : undefined}
+      onClick={onClick}
       title={event.title}
+      aria-label={`查看事件：${event.title}`}
     >
       <span className={styles.titles}>
         {renderTitle ? (
@@ -165,6 +174,6 @@ export function MonthEventChip({ event, visibleProperties, slice }: MonthEventCh
       {/* eventKindLabel intentionally exposed for screen readers via aria-hidden;
           visible kind cue is the border-left color, sr text below mirrors it. */}
       <span className={styles.srOnly}>{eventKindLabel(kind)}</span>
-    </span>
+    </button>
   );
 }

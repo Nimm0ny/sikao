@@ -17,6 +17,12 @@ import {
   type CalendarViewConfig,
 } from './calendarViewConfig';
 import { MonthEventChip } from './MonthEventChip';
+import {
+  CalendarPeekCard,
+  CalendarPeekProvider,
+  useCalendarPeek,
+  type CalendarPeekListEntry,
+} from './peek';
 import styles from './MonthCalendarView.module.css';
 
 /*
@@ -97,6 +103,27 @@ function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell, visiblePro
   readonly cardLimitPerCell: number;
   readonly visibleProperties: readonly CalendarCardProperty[];
 }) {
+  const peek = useCalendarPeek();
+
+  // Peek list scope: chronological list of every chip currently rendered
+  // in the visible month grid. prev / next walk this scope; entries are
+  // keyed by `${occurrenceRef}|${day}` so cross-day slices each get their
+  // own entry but resolve to the same source event.
+  const peekList = useMemo<ReadonlyArray<CalendarPeekListEntry>>(() => {
+    const out: CalendarPeekListEntry[] = [];
+    for (const cell of cells) {
+      const items = eventsByDay.get(cell.stamp) ?? [];
+      const visible = items.slice(0, cardLimitPerCell);
+      for (const item of visible) {
+        out.push({
+          id: `${item.slice.occurrenceRef}|${item.slice.day}`,
+          event: item.event,
+        });
+      }
+    }
+    return out;
+  }, [cells, eventsByDay, cardLimitPerCell]);
+
   return (
     <>
       <div className={styles.dowRow} role="row">
@@ -121,18 +148,19 @@ function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell, visiblePro
               >
                 <span className={styles.dom}>{cell.dom}</span>
                 <ul className={styles.eventList}>
-                  {visible.map((item) => (
-                    <li
-                      key={`${item.slice.occurrenceRef}|${item.slice.day}`}
-                      className={styles.eventListItem}
-                    >
-                      <MonthEventChip
-                        event={item.event}
-                        slice={item.slice}
-                        visibleProperties={visibleProperties}
-                      />
-                    </li>
-                  ))}
+                  {visible.map((item) => {
+                    const entryId = `${item.slice.occurrenceRef}|${item.slice.day}`;
+                    return (
+                      <li key={entryId} className={styles.eventListItem}>
+                        <MonthEventChip
+                          event={item.event}
+                          slice={item.slice}
+                          visibleProperties={visibleProperties}
+                          onClick={() => peek.open({ ...item.event, id: entryId }, peekList)}
+                        />
+                      </li>
+                    );
+                  })}
                   {overflow > 0 ? (
                     <li className={styles.moreLabel} data-testid="home-month-overflow">
                       +{overflow} 更多
@@ -153,7 +181,19 @@ export interface MonthCalendarViewProps {
   readonly viewConfig?: CalendarViewConfig;
 }
 
-export function MonthCalendarView({ viewConfig }: MonthCalendarViewProps = {}) {
+export function MonthCalendarView(props: MonthCalendarViewProps = {}) {
+  // Provider mount lives at the view root so every chip below can call
+  // useCalendarPeek(). Card renders a portal so its DOM escapes the grid
+  // overflow context; nothing else changes about the view's layout.
+  return (
+    <CalendarPeekProvider>
+      <MonthCalendarViewBody {...props} />
+      <CalendarPeekCard />
+    </CalendarPeekProvider>
+  );
+}
+
+function MonthCalendarViewBody({ viewConfig }: MonthCalendarViewProps) {
   const anchorDate = usePlanStore((s) => s.currentDate);
   const config = viewConfig ?? createDefaultCalendarViewConfig('month');
   const window = useMemo(() => buildViewRange('month', { anchorDate, timeZone: TZ }), [anchorDate]);

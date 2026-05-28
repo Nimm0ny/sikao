@@ -8,9 +8,16 @@
 
 .chip {
   --cal-chip-kind-color: var(--color-text-meta);
+  /* Reset native button styles since the chip now ships as <button>; the
+   * visual surface is otherwise unchanged from the W5 span baseline. */
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: inherit;
+  text-align: left;
   display: flex;
   align-items: center;
   gap: var(--space-1);
+  width: 100%;
   min-width: 0;
   padding: var(--cal-chip-padding-y) var(--cal-chip-padding-x);
   border: 1px solid var(--color-border-subtle);
