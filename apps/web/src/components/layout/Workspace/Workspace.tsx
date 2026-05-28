@@ -5,11 +5,11 @@ import styles from './Workspace.module.css';
  * Workspace — V5 D.3.32 layout (skeleton).
  *
  * Why: right-side main content container that lives next to <Rail>. Owns the
- *      large-screen content cap (--max-w-workspace 1440px etc.) so pages
- *      can stay readable on 1920+ displays without manually wiring max-width
- *      everywhere. Default token is 'workspace'; 'reading' / 'form' / 'prose'
- *      hand off to the matching --max-w-* token; 'none' opts out (e.g. a page
- *      that owns its own grid).
+ *      shared desktop canvas token. After SIK-128 Route A, default
+ *      'workspace' means "fill the Rail-remaining width"; narrow reading /
+ *      form ergonomics must use the explicit 'reading' / 'form' / 'prose'
+ *      tokens. 'none' remains the escape hatch for a page that owns its own
+ *      sizing contract entirely.
  */
 
 export type WorkspaceMaxWidth = 'workspace' | 'reading' | 'form' | 'prose' | 'none';

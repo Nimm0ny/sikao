@@ -18,6 +18,7 @@ import { CommandPalette } from '../../components/overlay';
 import type { CommandPaletteGroup } from '../../components/overlay';
 import { KeyboardShortcuts } from '../../components/system';
 import type { ShortcutEntry } from '../../components/system';
+import { useAuthStore } from '@sikao/domain';
 import { RAIL_CMD } from '@/lib/ui-copy';
 import { useCommandPaletteStore } from '@/lib/commandPalette';
 import styles from './RootLayout.module.css';
@@ -69,6 +70,7 @@ const ME_SUBTITLE_FALLBACK = 'Lv.4 学习达人';
 export function RootLayout({ user }: RootLayoutProps) {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const authUser = useAuthStore((s) => s.user);
   const isActive = (target: string) =>
     target === HOME_PATH ? pathname === HOME_PATH : pathname.startsWith(target);
   const navTo = (path: string) => () => navigate(path);
@@ -170,8 +172,13 @@ export function RootLayout({ user }: RootLayoutProps) {
     </button>
   );
 
-  const meName = user?.displayName ?? '我';
-  const meSub = user?.subtitle ?? ME_SUBTITLE_FALLBACK;
+  const resolvedUser = user ?? (authUser ? {
+    displayName: authUser.displayName,
+    avatarSrc: undefined,
+    subtitle: ME_SUBTITLE_FALLBACK,
+  } : undefined);
+  const meName = resolvedUser?.displayName ?? '我';
+  const meSub = resolvedUser?.subtitle ?? ME_SUBTITLE_FALLBACK;
   const me: ReactNode = (
     <a
       href={ME_PATH}
@@ -195,10 +202,11 @@ export function RootLayout({ user }: RootLayoutProps) {
       }}
     >
       <Avatar
-        src={user?.avatarSrc}
-        fallback={getInitials(user)}
-        alt={user?.displayName}
-        size="sm"
+        src={resolvedUser?.avatarSrc}
+        fallback={getInitials(resolvedUser)}
+        alt={resolvedUser?.displayName}
+        size="md"
+        status="online"
       />
       <span className={styles.meStack}>
         <span className={styles.meName}>{meName}</span>

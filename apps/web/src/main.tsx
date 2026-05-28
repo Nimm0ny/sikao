@@ -47,8 +47,8 @@ async function bootstrapDevEnvironment(): Promise<void> {
   // prod builds where `import.meta.env.DEV` is replaced with `false`.
   const DEV_USER = {
     id: -1,
-    displayName: 'DEV',
-    email: 'dev@local',
+    displayName: 'lhr',
+    email: 'lhr@example.com',
     onboardingCompleted: true,
     accessToken: 'dev-bypass',
   };

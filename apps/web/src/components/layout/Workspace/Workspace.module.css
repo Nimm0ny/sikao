@@ -1,9 +1,9 @@
 /*
  * Workspace — V5 D.3.32 layout (skeleton).
- * Why: 1920+ ergonomic content cap. data-max-width attr selector flips
- *      max-width between four content-shape tokens (--max-w-workspace,
- *      --max-w-reading, --max-w-form, --max-w-prose) per design §C.4.1.
- *      'none' removes the cap so pages with their own grid can opt out.
+ * Why: shared desktop canvas token switch. After SIK-128 Route A,
+ *      'workspace' resolves to the uncapped entry-view default, while
+ *      reading/form/prose still map to narrow content-shape tokens.
+ *      'none' remains the page-local opt-out for fully custom sizing.
  */
 .workspace {
   flex: 1 1 auto;
