@@ -1,9 +1,9 @@
 // lint-allow-ui-copy: V5-M3.5 Phase 4 page skeleton — Rail nav labels are
 // design tokens fixed by spec §D.4, not user-editable strings. ui-copy SSOT
 // migration tracked under future Phase 6+.
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import {
   AppShell,
   Rail,
@@ -14,11 +14,20 @@ import {
 import type { RailNavItem } from '../../components/layout';
 import type { BottomTabBarItem } from '../../components/layout';
 import { Avatar, SpriteIcon } from '../../components/atom';
-import { CommandPalette } from '../../components/overlay';
+import { CommandPalette, Popover } from '../../components/overlay';
 import type { CommandPaletteGroup } from '../../components/overlay';
 import { KeyboardShortcuts } from '../../components/system';
 import type { ShortcutEntry } from '../../components/system';
+import {
+  ACCOUNT_NAV_ITEMS,
+  getActiveAccountNavKey,
+  isAccountFamilyPath,
+} from '../../views/Me/accountNav';
 import { useAuthStore } from '@sikao/domain';
+import {
+  useProgressOverview,
+  useProgressWeeklySummary,
+} from '@sikao/api-client/progressQueries';
 import { RAIL_CMD } from '@/lib/ui-copy';
 import { useCommandPaletteStore } from '@/lib/commandPalette';
 import styles from './RootLayout.module.css';
@@ -26,13 +35,11 @@ import styles from './RootLayout.module.css';
 /*
  * RootLayout — V5 §D.4 SaaS shell wrapper.
  *
- * SIK-121 W1 (2026-05-25): nav收敛到 4-tab [首页 / 练习 / 复盘 / 笔记],
- * 「我的」入口仅由 RailMe 头像（左下角）提供，不再单独占 nav 槽位 — 防止
- * 任何 Tab1 子 issue 从原型 HTML 数 5-tab 再犯错。详见
- * docs/plan/sik-rail-v5-visual-contract.md §1–§2 + Acceptance Hooks
- * H01/H02。原型 home-frame.html 的 .rail-bottom 也仅有 .rail-me 一段，
- * 与本实现一致。展开态 RailMe 渲染 Avatar + meStack(meName + meSub)；
- * 折叠态由 Rail.tsx 的 [data-tip="我的"] ::after Tooltip 提供文字提示。
+ * SIK-121 W1/W5 (2026-05-25 / 2026-05-28): nav收敛到 4-tab [首页 / 练习 /
+ * 复盘 / 笔记]；「我的」入口仍只由 RailMe 提供，但已从直达 /me 的 link
+ * 收口为唯一 button trigger + account popover。账户地图 SSOT 位于
+ * views/Me/accountNav.ts，供 RootLayout 与 Profile SubNav 共用，避免
+ * 任意 Tab1 / Profile issue 再把 account 扩展面塞回 global nav。
  *
  * SIK-121 W2 (2026-05-25): cmd-k surface (H05). RootLayout owns the
  * CommandPalette open state and injects the rail trigger via the
@@ -45,8 +52,8 @@ import styles from './RootLayout.module.css';
  * (separate spec) — BottomTabBar 也只有 4 项。
  *
  * Active tab derives from URL pathname so deep links land correctly.
- * Plain-click navigation goes through useNavigate; modifier-clicks fall
- * through to native href for "open in new tab".
+ * Rail nav plain-click navigation goes through useNavigate; RailMe owns a
+ * separate button-triggered account popover instead of native href behavior.
  *
  * Nav icons are sprite consumers via <SpriteIcon>.
  */
@@ -56,16 +63,29 @@ const PRACTICE_PATH = '/practice';
 const REVIEW_PATH = '/review';
 const NOTE_PATH = '/note';
 const ME_PATH = '/me';
+const INTL_NUMBER = new Intl.NumberFormat('zh-CN');
 
 interface RootLayoutProps {
   readonly user?: {
     readonly displayName: string;
     readonly avatarSrc?: string;
     readonly subtitle?: string;
+    readonly email?: string | null;
   };
 }
 
 const ME_SUBTITLE_FALLBACK = 'Lv.4 学习达人';
+
+const ACCOUNT_MENU_ICONS: Record<(typeof ACCOUNT_NAV_ITEMS)[number]['key'], string> = {
+  overview: 'nav-home',
+  info: 'info',
+  goals: 'calendar',
+  learning: 'trend',
+  records: 'notebook',
+  preferences: 'check',
+  security: 'warning',
+  settings: 'settings',
+};
 
 export function RootLayout({ user }: RootLayoutProps) {
   const { pathname } = useLocation();
@@ -78,6 +98,15 @@ export function RootLayout({ user }: RootLayoutProps) {
   const paletteOpen = useCommandPaletteStore((s) => s.open);
   const openPalette = useCommandPaletteStore((s) => s.openPalette);
   const closePalette = useCommandPaletteStore((s) => s.closePalette);
+  const [meMenuAnchorPath, setMeMenuAnchorPath] = useState<string | null>(null);
+  const activeAccountNavKey = getActiveAccountNavKey(pathname);
+  const isAccountArea = isAccountFamilyPath(pathname);
+  const meMenuOpen = meMenuAnchorPath === pathname;
+  const progressOverview = useProgressOverview();
+  const weeklySummary = useProgressWeeklySummary();
+  const setMeMenuOpen = (open: boolean) => {
+    setMeMenuAnchorPath(open ? pathname : null);
+  };
 
   const navItems: RailNavItem[] = [
     { id: 'home', icon: <SpriteIcon id="nav-home" size={18} />, label: '首页', href: HOME_PATH, active: isActive(HOME_PATH), onClick: navTo(HOME_PATH) },
@@ -176,43 +205,140 @@ export function RootLayout({ user }: RootLayoutProps) {
     displayName: authUser.displayName,
     avatarSrc: undefined,
     subtitle: ME_SUBTITLE_FALLBACK,
+    email: authUser.email ?? null,
   } : undefined);
   const meName = resolvedUser?.displayName ?? '我';
   const meSub = resolvedUser?.subtitle ?? ME_SUBTITLE_FALLBACK;
+  const meEmail = resolvedUser?.email ?? null;
+  const progressAllTime = progressOverview.data?.summary.allTime;
+  const meMenuSummary = [
+    {
+      key: 'questions',
+      value:
+        progressAllTime !== undefined
+          ? INTL_NUMBER.format(progressAllTime.itemsAnswered)
+          : '—',
+      label: '累计题',
+    },
+    {
+      key: 'accuracy',
+      value:
+        progressAllTime?.accuracy !== undefined
+          ? formatAccuracyPct(progressAllTime.accuracy)
+          : '—',
+      label: '正确率',
+    },
+    {
+      key: 'streak',
+      value:
+        typeof weeklySummary.data?.streakDays === 'number'
+          ? INTL_NUMBER.format(weeklySummary.data.streakDays)
+          : '—',
+      label: '连续天',
+    },
+  ] as const;
   const me: ReactNode = (
-    <a
-      href={ME_PATH}
-      className={styles.meLink}
-      data-testid="rail-me-link"
-      data-tip="我的"
-      aria-current={isActive(ME_PATH) ? 'page' : undefined}
-      aria-label="我的"
-      onClick={(event) => {
-        if (
-          event.button !== 0 ||
-          event.metaKey ||
-          event.ctrlKey ||
-          event.shiftKey ||
-          event.altKey
-        ) {
-          return;
-        }
-        event.preventDefault();
-        navigate(ME_PATH);
-      }}
+    <Popover
+      open={meMenuOpen}
+      onOpenChange={setMeMenuOpen}
+      side="right"
+      align="end"
+      width={280}
+      panelLabel="账户菜单"
+      panelClassName={styles.meMenuPanel}
+      trigger={(
+        <button
+          type="button"
+          className={styles.meTrigger}
+          data-testid="rail-me-trigger"
+          data-tip="我的"
+          data-active={isAccountArea || undefined}
+          aria-label="我的"
+          aria-haspopup="dialog"
+        >
+          <Avatar
+            src={resolvedUser?.avatarSrc}
+            fallback={getInitials(resolvedUser)}
+            alt={resolvedUser?.displayName}
+            size="md"
+            status="online"
+          />
+          <span className={styles.meStack}>
+            <span className={styles.meName}>{meName}</span>
+            <span className={styles.meSub}>{meSub}</span>
+          </span>
+        </button>
+      )}
     >
-      <Avatar
-        src={resolvedUser?.avatarSrc}
-        fallback={getInitials(resolvedUser)}
-        alt={resolvedUser?.displayName}
-        size="md"
-        status="online"
-      />
-      <span className={styles.meStack}>
-        <span className={styles.meName}>{meName}</span>
-        <span className={styles.meSub}>{meSub}</span>
-      </span>
-    </a>
+      <div className={styles.meMenu} data-testid="rail-me-menu">
+        <div className={styles.meMenuHead} data-testid="rail-me-menu-head">
+          <div className={styles.meMenuAvatar}>
+            <Avatar
+              src={resolvedUser?.avatarSrc}
+              fallback={getInitials(resolvedUser)}
+              alt={resolvedUser?.displayName}
+              size="lg"
+            />
+          </div>
+          <div className={styles.meMenuIdentity}>
+            <div className={styles.meMenuName}>{meName}</div>
+            {meEmail !== null ? (
+              <div className={styles.meMenuMail}>{meEmail}</div>
+            ) : null}
+            <div className={styles.meMenuBadge}>{meSub}</div>
+          </div>
+        </div>
+        <div className={styles.meMenuSummary} data-testid="rail-me-menu-summary">
+          {meMenuSummary.map((item) => (
+            <div key={item.key}>
+              <b>{item.value}</b>
+              <span>{item.label}</span>
+            </div>
+          ))}
+        </div>
+        <ul className={styles.meMenuList} role="list">
+          {ACCOUNT_NAV_ITEMS.map((item) => {
+            const isCurrent = activeAccountNavKey === item.key;
+            if (!item.enabled) {
+              return (
+                <li key={item.key}>
+                  <span
+                    className={styles.meMenuItem}
+                    data-active={isCurrent || undefined}
+                    data-disabled="true"
+                    data-testid={`rail-me-menu-item-${item.key}`}
+                    aria-disabled="true"
+                  >
+                    <span className={styles.meMenuIcon} aria-hidden="true">
+                      <SpriteIcon id={ACCOUNT_MENU_ICONS[item.key]} size={14} />
+                    </span>
+                    <span className={styles.meMenuLabel}>{item.label}</span>
+                    <span className={styles.meMenuState}>未开放</span>
+                  </span>
+                </li>
+              );
+            }
+            return (
+              <li key={item.key}>
+                <Link
+                  to={item.to}
+                  className={styles.meMenuItem}
+                  data-active={isCurrent || undefined}
+                  data-testid={`rail-me-menu-item-${item.key}`}
+                  aria-current={isCurrent ? 'page' : undefined}
+                  onClick={() => setMeMenuOpen(false)}
+                >
+                  <span className={styles.meMenuIcon} aria-hidden="true">
+                    <SpriteIcon id={ACCOUNT_MENU_ICONS[item.key]} size={14} />
+                  </span>
+                  <span className={styles.meMenuLabel}>{item.label}</span>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      </div>
+    </Popover>
   );
 
   const desktopRail = (
@@ -249,6 +375,13 @@ export function RootLayout({ user }: RootLayoutProps) {
 function getInitials(user: RootLayoutProps['user']): string {
   if (!user || user.displayName.length === 0) return '我';
   return user.displayName.slice(0, 1);
+}
+
+function formatAccuracyPct(raw: string | null | undefined): string {
+  if (raw === null || raw === undefined) return '—';
+  const num = Number(raw);
+  if (!Number.isFinite(num)) return '—';
+  return `${Math.round(num * 100)}%`;
 }
 
 export type { RootLayoutProps };

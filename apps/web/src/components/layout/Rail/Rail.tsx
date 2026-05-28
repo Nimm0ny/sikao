@@ -21,7 +21,7 @@ import styles from './Rail.module.css';
  *      heading; Tooltip mode unified across brand / nav / me onto the pure
  *      CSS [data-tip]::after pattern (no React <Tooltip> overlay), matching
  *      W1 RailMe so all 3 collapsed-state tooltips share one CSS contract.
- *      See docs/plan/sik-rail-v5-visual-contract.md §6 H05–H10.
+ *      See docs/plan/sik-rail-v5-visual-contract.md §7 H05–H10.
  */
 
 const STORAGE_KEY = 'v5-rail-collapsed';

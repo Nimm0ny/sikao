@@ -173,7 +173,7 @@
 /* Tooltip — pure CSS [data-tip]::after, mirrors prototype
  * home-frame.html:127-138 .rail-btn[data-tip]::after pattern. Only renders
  * in the collapsed state; expanded keeps text inline. brandButton +
- * navItem share the same contract; .meLink owns its own ::after inside
+ * navItem share the same contract; .meTrigger owns its own ::after inside
  * RootLayout.module.css (W1 owner). */
 .brandButton[data-tip],
 .navItem[data-tip] {

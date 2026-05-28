@@ -27,6 +27,7 @@ import styles from './Popover.module.css';
 
 type Side = 'top' | 'right' | 'bottom' | 'left';
 type Align = 'start' | 'center' | 'end';
+type AriaHasPopup = boolean | 'dialog' | 'grid' | 'listbox' | 'menu' | 'tree';
 
 export interface PopoverProps {
   readonly open: boolean;
@@ -35,12 +36,14 @@ export interface PopoverProps {
   readonly side?: Side;
   readonly align?: Align;
   readonly width?: number | 'auto' | 'trigger';
+  readonly panelLabel?: string;
+  readonly panelClassName?: string;
   readonly closeOnClickOutside?: boolean;
   readonly children: ReactNode;
 }
 
 interface TriggerInjectedProps {
-  readonly 'aria-haspopup': true;
+  readonly 'aria-haspopup': AriaHasPopup;
   readonly 'aria-expanded': boolean;
   readonly onClick: (e: ReactMouseEvent<HTMLElement>) => void;
   readonly ref: (node: HTMLElement | null) => void;
@@ -95,6 +98,8 @@ export function Popover({
   side = 'bottom',
   align = 'start',
   width = 'auto',
+  panelLabel,
+  panelClassName,
   closeOnClickOutside = true,
   children,
 }: PopoverProps) {
@@ -110,9 +115,12 @@ export function Popover({
   if (!isValidElement(trigger)) {
     throw new Error('Popover: `trigger` must be a valid React element');
   }
-  const triggerProps = trigger.props as { onClick?: (e: ReactMouseEvent<HTMLElement>) => void };
+  const triggerProps = trigger.props as {
+    readonly onClick?: (e: ReactMouseEvent<HTMLElement>) => void;
+    readonly 'aria-haspopup'?: AriaHasPopup;
+  };
   const injected: TriggerInjectedProps = {
-    'aria-haspopup': true,
+    'aria-haspopup': triggerProps['aria-haspopup'] ?? true,
     'aria-expanded': open,
     onClick: (e) => {
       triggerProps.onClick?.(e);
@@ -165,11 +173,12 @@ export function Popover({
         ? createPortal(
             <div
               ref={panelRef}
-              role="dialog"
+              role={panelLabel !== undefined ? 'dialog' : undefined}
+              aria-label={panelLabel ?? undefined}
               data-popover-panel="true"
               data-side={side}
               data-align={align}
-              className={styles.panel}
+              className={panelClassName !== undefined ? `${styles.panel} ${panelClassName}` : styles.panel}
               style={panelStyle}
             >
               {children}

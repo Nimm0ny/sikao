@@ -10,7 +10,7 @@ import styles from './BurgerDrawer.module.css';
  * content (nav list, Me entry) belongs to a future Mobile/Tablet Shell
  * issue. This wave only provides the hook + toggle mechanism.
  *
- * Contract: docs/plan/sik-rail-v5-visual-contract.md §2.5 + §6 H11.
+ * Contract: docs/plan/sik-rail-v5-visual-contract.md §2.5 + §7 H11.
  */
 
 export interface BurgerDrawerProps {
