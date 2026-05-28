@@ -1,11 +1,15 @@
 ---
 type: engineering
-status: active
+status: archived
 owner: xiaodeng
 last-reviewed: 2026-05-21
+archived-at: 2026-05-28
 ---
 
 # Multica Workflow
+
+> **DEPRECATED 2026-05-28**：Multica 已废弃，Notion 即 SSOT。新流程见 [`./notion-workflow.md`](./notion-workflow.md)。
+> 本文件保留作为历史档案；不要按本文件操作。
 
 > Multica 是任务账本，不替代工程门禁。
 

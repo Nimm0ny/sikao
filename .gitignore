@@ -49,6 +49,7 @@ database/seeds/mvp-demo/generated/
 .claude/
 tmp/
 .multica/
+.notion/
 .playwright-cli/
 
 # Playwright local artifacts (visual regression baselines + report + traces)
