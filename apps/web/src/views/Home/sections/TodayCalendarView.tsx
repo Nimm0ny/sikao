@@ -8,6 +8,10 @@ import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
 import { eventKindOf } from './eventKind';
+import {
+  createDefaultCalendarViewConfig,
+  type CalendarViewConfig,
+} from './calendarViewConfig';
 import styles from './TodayCalendarView.module.css';
 
 /*
@@ -22,6 +26,12 @@ import styles from './TodayCalendarView.module.css';
  *
  *      AGENT-H7: 4-state contract identical to Week / Month views;
  *      isLoading / isError / empty / ready surface from query.* directly.
+ *
+ *      SIK-138 W4: accepts `viewConfig` to satisfy Requirement 1 (one
+ *      config object shared across the three views). Today V1 does not
+ *      consume `startWeekOnMonday` / `cardLimitPerCell` directly, but the
+ *      prop is reserved so future presets (chip density / detail-mode
+ *      visibleProperties) can drive the strip without touching the panel.
  */
 
 const TZ = 'Asia/Shanghai';
@@ -74,8 +84,22 @@ function EventBlock({ event }: { readonly event: PlanEventReadV2 }) {
   );
 }
 
-export function TodayCalendarView() {
+export interface TodayCalendarViewProps {
+  /**
+   * Optional explicit config; when omitted the component falls back to
+   * `createDefaultCalendarViewConfig('today')`. CalendarPanel always
+   * supplies one in production; tests and storybook may render the view
+   * standalone without wiring the panel.
+   */
+  readonly viewConfig?: CalendarViewConfig;
+}
+
+export function TodayCalendarView({ viewConfig }: TodayCalendarViewProps = {}) {
   const anchorDate = usePlanStore((s) => s.currentDate);
+  // viewConfig is reserved for future detail-mode hooks (D19/D20). Today V1
+  // does not branch on it; reading the field here keeps the unused-prop
+  // lint quiet without disabling the rule.
+  void (viewConfig ?? createDefaultCalendarViewConfig('today'));
   const window = useMemo(
     () => buildViewRange('today', { anchorDate, timeZone: TZ }),
     [anchorDate],

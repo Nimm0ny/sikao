@@ -8,6 +8,10 @@ import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
 import { eventKindOf } from './eventKind';
+import {
+  createDefaultCalendarViewConfig,
+  type CalendarViewConfig,
+} from './calendarViewConfig';
 import styles from './MonthCalendarView.module.css';
 
 /*
@@ -21,11 +25,15 @@ import styles from './MonthCalendarView.module.css';
  *      cells dim per the prototype.
  *
  *      AGENT-H7: 4-state contract identical to Today / Week.
+ *
+ *      SIK-138 W4: `cardLimitPerCell` and `startWeekOnMonday` come from
+ *      the injected CalendarViewConfig. Default config keeps `3` and
+ *      Monday-first per Requirements 4 and 5.
  */
 
 const TZ = 'Asia/Shanghai';
-const DOW_LABELS = ['一', '二', '三', '四', '五', '六', '日'] as const;
-const MAX_CHIPS_PER_CELL = 3;
+const DOW_LABELS_MON_FIRST = ['一', '二', '三', '四', '五', '六', '日'] as const;
+const DOW_LABELS_SUN_FIRST = ['日', '一', '二', '三', '四', '五', '六'] as const;
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const localStamp = (v: Date) => `${v.getFullYear()}-${pad(v.getMonth() + 1)}-${pad(v.getDate())}`;
@@ -38,12 +46,13 @@ interface MonthCell {
   readonly isToday: boolean;
 }
 
-function buildMonthCells(anchorDate: string): MonthCell[] {
+function buildMonthCells(anchorDate: string, startWeekOnMonday: boolean): MonthCell[] {
   const anchor = new Date(`${anchorDate}T00:00:00`);
   const year = anchor.getFullYear();
   const month = anchor.getMonth();
   const monthStart = new Date(year, month, 1);
-  const offset = (monthStart.getDay() + 6) % 7;
+  // Requirement 4: Monday-first uses (day + 6) % 7; Sunday-first uses day.
+  const offset = startWeekOnMonday ? (monthStart.getDay() + 6) % 7 : monthStart.getDay();
   const gridStart = new Date(year, month, 1 - offset);
   const today = todayStamp();
   // 6 weeks x 7 days = 42 cells covers any month layout.
@@ -69,14 +78,16 @@ function bucketEventsByDay(events: ReadonlyArray<PlanEventReadV2>): Map<string, 
   return map;
 }
 
-function MonthGrid({ cells, eventsByDay }: {
+function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell }: {
   readonly cells: ReadonlyArray<MonthCell>;
   readonly eventsByDay: ReadonlyMap<string, ReadonlyArray<PlanEventReadV2>>;
+  readonly dowLabels: ReadonlyArray<string>;
+  readonly cardLimitPerCell: number;
 }) {
   return (
     <>
       <div className={styles.dowRow} role="row">
-        {DOW_LABELS.map((label) => (
+        {dowLabels.map((label) => (
           <div key={label} className={styles.dowCell} role="columnheader">{label}</div>
         ))}
       </div>
@@ -84,7 +95,7 @@ function MonthGrid({ cells, eventsByDay }: {
         <div className={styles.gridBody} role="grid" aria-label="本月日历">
           {cells.map((cell) => {
             const events = eventsByDay.get(cell.stamp) ?? [];
-            const visible = events.slice(0, MAX_CHIPS_PER_CELL);
+            const visible = events.slice(0, cardLimitPerCell);
             const overflow = events.length - visible.length;
             return (
               <div
@@ -123,11 +134,21 @@ function MonthGrid({ cells, eventsByDay }: {
   );
 }
 
-export function MonthCalendarView() {
+export interface MonthCalendarViewProps {
+  /** See TodayCalendarViewProps for the standalone-render rationale. */
+  readonly viewConfig?: CalendarViewConfig;
+}
+
+export function MonthCalendarView({ viewConfig }: MonthCalendarViewProps = {}) {
   const anchorDate = usePlanStore((s) => s.currentDate);
+  const config = viewConfig ?? createDefaultCalendarViewConfig('month');
   const window = useMemo(() => buildViewRange('month', { anchorDate, timeZone: TZ }), [anchorDate]);
   const query = useEvents({ from: window.from, to: window.to, tz: TZ, includePracticeBlocks: false });
-  const cells = useMemo(() => buildMonthCells(anchorDate), [anchorDate]);
+  const cells = useMemo(
+    () => buildMonthCells(anchorDate, config.startWeekOnMonday),
+    [anchorDate, config.startWeekOnMonday],
+  );
+  const dowLabels = config.startWeekOnMonday ? DOW_LABELS_MON_FIRST : DOW_LABELS_SUN_FIRST;
   const eventsByDay = useMemo(() => bucketEventsByDay(query.data?.data.events ?? []), [query.data]);
   const total = query.data?.data.events.length ?? 0;
 
@@ -153,7 +174,14 @@ export function MonthCalendarView() {
           <EmptyState title="本月尚无事件" description="可在“开始今日练习”CTA 中创建一次专项练习。" />
         </div>
       ) : null}
-      {query.isSuccess && total > 0 ? <MonthGrid cells={cells} eventsByDay={eventsByDay} /> : null}
+      {query.isSuccess && total > 0 ? (
+        <MonthGrid
+          cells={cells}
+          eventsByDay={eventsByDay}
+          dowLabels={dowLabels}
+          cardLimitPerCell={config.cardLimitPerCell}
+        />
+      ) : null}
     </div>
   );
 }

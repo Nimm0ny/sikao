@@ -161,3 +161,16 @@ export function buildHomeCalendarPreferencePatch(
 
   return patch;
 }
+
+/**
+ * Adapt the typed `HomeCalendarPreferencePatch` to the schema-less shape
+ * accepted by `useDashboardPreferenceStore.patchPreferences`. The store's
+ * input type is `{[key: string]: unknown}`, which TS treats as
+ * incompatible with our typed lens; this widening lives at the W3 boundary
+ * so callers do not need ad-hoc casts.
+ */
+export function toDashboardPreferencesPatch(
+  patch: HomeCalendarPreferencePatch,
+): Record<string, unknown> {
+  return { ...patch };
+}

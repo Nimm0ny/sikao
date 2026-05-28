@@ -8,6 +8,10 @@ import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
 import { eventKindOf } from './eventKind';
+import {
+  createDefaultCalendarViewConfig,
+  type CalendarViewConfig,
+} from './calendarViewConfig';
 import styles from './WeekCalendarView.module.css';
 
 /*
@@ -21,10 +25,16 @@ import styles from './WeekCalendarView.module.css';
  *
  *      AGENT-H7: 4-state contract identical to Today / Month;
  *      isLoading / isError / empty / ready surface from query.* directly.
+ *
+ *      SIK-138 W4: `startWeekOnMonday` from CalendarViewConfig drives both
+ *      the DOW header order and the grid-start offset. Default config
+ *      keeps Monday-first; setting `startWeekOnMonday=false` swaps to
+ *      Sunday-first per Requirement 4.
  */
 
 const TZ = 'Asia/Shanghai';
-const DOW_LABELS = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] as const;
+const DOW_LABELS_MON_FIRST = ['周一', '周二', '周三', '周四', '周五', '周六', '周日'] as const;
+const DOW_LABELS_SUN_FIRST = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'] as const;
 const SLOT_LABELS = ['早上', '中午', '晚上'] as const;
 
 type SlotIndex = 0 | 1 | 2;
@@ -40,15 +50,16 @@ interface WeekDay {
   readonly isToday: boolean;
 }
 
-function buildWeekDays(anchorDate: string): WeekDay[] {
+function buildWeekDays(anchorDate: string, startWeekOnMonday: boolean): WeekDay[] {
   const anchor = new Date(`${anchorDate}T00:00:00`);
-  const offset = (anchor.getDay() + 6) % 7;
-  const monday = new Date(anchor);
-  monday.setDate(anchor.getDate() - offset);
+  // Requirement 4: Monday-first uses (day + 6) % 7; Sunday-first uses day.
+  const offset = startWeekOnMonday ? (anchor.getDay() + 6) % 7 : anchor.getDay();
+  const start = new Date(anchor);
+  start.setDate(anchor.getDate() - offset);
   const today = todayStamp();
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+    const d = new Date(start);
+    d.setDate(start.getDate() + i);
     const stamp = localStamp(d);
     return { stamp, dom: d.getDate(), dowIndex: i, isToday: stamp === today };
   });
@@ -78,9 +89,10 @@ function formatChip(event: PlanEventReadV2): string {
   return `${event.title} · ${pad(start.getHours())}:${pad(start.getMinutes())}`;
 }
 
-function WeekGrid({ days, eventsByCell }: {
+function WeekGrid({ days, eventsByCell, dowLabels }: {
   readonly days: ReadonlyArray<WeekDay>;
   readonly eventsByCell: ReadonlyMap<string, ReadonlyArray<PlanEventReadV2>>;
+  readonly dowLabels: ReadonlyArray<string>;
 }) {
   // Cells are laid out row-first: slot 0 across all 7 days, slot 1, slot 2.
   const slotIndices: ReadonlyArray<SlotIndex> = [0, 1, 2];
@@ -96,7 +108,7 @@ function WeekGrid({ days, eventsByCell }: {
             data-testid={`home-week-head-${d.stamp}`}
           >
             <span className={styles.dLabel}>
-              {DOW_LABELS[d.dowIndex]}{d.isToday ? ' · 今日' : ''}
+              {dowLabels[d.dowIndex]}{d.isToday ? ' · 今日' : ''}
             </span>
             <span className={styles.dNum}>{d.dom}</span>
           </div>
@@ -139,11 +151,21 @@ function WeekGrid({ days, eventsByCell }: {
   );
 }
 
-export function WeekCalendarView() {
+export interface WeekCalendarViewProps {
+  /** See TodayCalendarViewProps for the standalone-render rationale. */
+  readonly viewConfig?: CalendarViewConfig;
+}
+
+export function WeekCalendarView({ viewConfig }: WeekCalendarViewProps = {}) {
   const anchorDate = usePlanStore((s) => s.currentDate);
+  const config = viewConfig ?? createDefaultCalendarViewConfig('week');
   const window = useMemo(() => buildViewRange('week', { anchorDate, timeZone: TZ }), [anchorDate]);
   const query = useEvents({ from: window.from, to: window.to, tz: TZ, includePracticeBlocks: false });
-  const days = useMemo(() => buildWeekDays(anchorDate), [anchorDate]);
+  const days = useMemo(
+    () => buildWeekDays(anchorDate, config.startWeekOnMonday),
+    [anchorDate, config.startWeekOnMonday],
+  );
+  const dowLabels = config.startWeekOnMonday ? DOW_LABELS_MON_FIRST : DOW_LABELS_SUN_FIRST;
   const eventsByCell = useMemo(
     () => bucketEvents(query.data?.data.events ?? []),
     [query.data],
@@ -172,7 +194,9 @@ export function WeekCalendarView() {
           <EmptyState title="本周尚无事件" description="切换到“今日”或“月”视图查看其它窗口的计划。" />
         </div>
       ) : null}
-      {query.isSuccess && total > 0 ? <WeekGrid days={days} eventsByCell={eventsByCell} /> : null}
+      {query.isSuccess && total > 0 ? (
+        <WeekGrid days={days} eventsByCell={eventsByCell} dowLabels={dowLabels} />
+      ) : null}
     </div>
   );
 }

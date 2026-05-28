@@ -9,6 +9,12 @@ import type { PlanCalendarView } from '@sikao/domain/plan/usePlanStore';
 import { TodayCalendarView } from './TodayCalendarView';
 import { WeekCalendarView } from './WeekCalendarView';
 import { MonthCalendarView } from './MonthCalendarView';
+import {
+  buildHomeCalendarPreferencePatch,
+  toDashboardPreferencesPatch,
+  useCalendarViewConfig,
+} from './calendarViewConfig';
+import type { CalendarViewConfig } from './calendarViewConfig';
 import styles from './CalendarPanel.module.css';
 
 /*
@@ -21,15 +27,19 @@ import styles from './CalendarPanel.module.css';
  *
  *      Responsibilities:
  *        1. View segment (today / week / month) — writes usePlanStore +
- *           persists via useDashboardPreferenceStore.
+ *           persists via useDashboardPreferenceStore using the W3
+ *           buildHomeCalendarPreferencePatch (Requirement 7).
  *        2. Anchor navigation (prev / today / next) — shifts the anchor
  *           date in usePlanStore; calendar bodies subscribe.
  *        3. +new button — disabled placeholder (SIK-FU-N).
  *        4. Countdown chip — static placeholder until exam target store.
- *        5. Body slot — renders the active calendar canvas.
+ *        5. CalendarViewConfig — resolved via useCalendarViewConfig and
+ *           passed to today / week / month views as a prop. Per
+ *           Requirement 1, child views must not read the store directly.
  *
  *      AGENT-H7: no fallback defaults. `rows` prop is required by
- *      ScreenLockShell; view must be one of the literal union.
+ *      ScreenLockShell; view must be one of the literal union; preference
+ *      writes go through the W3 builder which fail-fasts on bad input.
  */
 
 const VIEW_KEYS = ['today', 'week', 'month'] as const satisfies ReadonlyArray<PlanCalendarView>;
@@ -39,8 +49,6 @@ const SEGMENT_ITEMS: ReadonlyArray<TabItem> = [
   { key: 'week', label: '本周' },
   { key: 'month', label: '本月' },
 ];
-
-const PREF_KEY = 'homeCalendarView';
 
 function isPlanCalendarView(value: unknown): value is PlanCalendarView {
   return typeof value === 'string' && (VIEW_KEYS as ReadonlyArray<string>).includes(value);
@@ -79,11 +87,13 @@ export function CalendarPanel({ countdown }: CalendarPanelProps) {
   const setCurrentView = usePlanStore((s) => s.setCurrentView);
   const setCurrentDate = usePlanStore((s) => s.setCurrentDate);
   const patchPreferences = useDashboardPreferenceStore((s) => s.patchPreferences);
+  const viewConfig = useCalendarViewConfig(currentView);
 
   const handleViewChange = useCallback((nextKey: string): void => {
     if (!isPlanCalendarView(nextKey)) return;
     setCurrentView(nextKey);
-    void patchPreferences({ [PREF_KEY]: nextKey });
+    const patch = buildHomeCalendarPreferencePatch({ homeCalendarView: nextKey });
+    void patchPreferences(toDashboardPreferencesPatch(patch));
   }, [setCurrentView, patchPreferences]);
 
   const handlePrev = useCallback(() => {
@@ -162,14 +172,20 @@ export function CalendarPanel({ countdown }: CalendarPanelProps) {
         {panelActions}
       </header>
       <div className={styles.body}>
-        <CalendarBody view={currentView} />
+        <CalendarBody view={currentView} viewConfig={viewConfig} />
       </div>
     </section>
   );
 }
 
-function CalendarBody({ view }: { readonly view: PlanCalendarView }) {
-  if (view === 'today') return <TodayCalendarView />;
-  if (view === 'week') return <WeekCalendarView />;
-  return <MonthCalendarView />;
+function CalendarBody({
+  view,
+  viewConfig,
+}: {
+  readonly view: PlanCalendarView;
+  readonly viewConfig: CalendarViewConfig;
+}) {
+  if (view === 'today') return <TodayCalendarView viewConfig={viewConfig} />;
+  if (view === 'week') return <WeekCalendarView viewConfig={viewConfig} />;
+  return <MonthCalendarView viewConfig={viewConfig} />;
 }

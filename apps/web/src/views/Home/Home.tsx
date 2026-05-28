@@ -6,6 +6,7 @@ import { useEffect } from 'react';
 import { Panel, ScreenLockShell, ScrollRegion } from '../../components/layout';
 import { useDashboardPreferenceStore, usePlanStore } from '@sikao/domain';
 import { CalendarPanel } from './sections/CalendarPanel';
+import { readHomeCalendarView } from './sections/calendarViewConfig';
 import { HomeTopbar } from './sections/HomeTopbar';
 import { MetricRow } from './sections/MetricRow';
 import { WeeklyReviewSection } from './sections/WeeklyReviewSection';
@@ -25,18 +26,19 @@ import styles from './Home.module.css';
  *      hydration effect.
  */
 
-const CALENDAR_VIEW_KEYS = ['today', 'week', 'month'] as const;
-
 export function Home() {
   // SIK-90 Wave 2 (2026-05-25): hydrate persisted calendar view from
   // useDashboardPreferenceStore into usePlanStore once on mount so the
   // CalendarPanel renders the right view without flashing the store
   // default. CalendarPanel itself owns the user-driven view changes.
+  // SIK-138 W4 (2026-05-28): narrow via the W3 reader so the literal
+  // membership check lives in one place; behavior is unchanged.
   useEffect(() => {
-    const persisted =
-      useDashboardPreferenceStore.getState().preferences?.['homeCalendarView'];
-    if (typeof persisted === 'string' && (CALENDAR_VIEW_KEYS as ReadonlyArray<string>).includes(persisted)) {
-      usePlanStore.getState().setCurrentView(persisted as typeof CALENDAR_VIEW_KEYS[number]);
+    const persisted = readHomeCalendarView(
+      useDashboardPreferenceStore.getState().preferences,
+    );
+    if (persisted !== null) {
+      usePlanStore.getState().setCurrentView(persisted);
     }
   }, []);
 

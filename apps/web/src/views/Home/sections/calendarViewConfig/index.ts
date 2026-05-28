@@ -44,4 +44,7 @@ export {
   readCardLimitPerCell,
   readHomeCalendarView,
   readStartWeekOnMonday,
+  toDashboardPreferencesPatch,
 } from './preferenceKeys';
+
+export { useCalendarViewConfig } from './useCalendarViewConfig';
