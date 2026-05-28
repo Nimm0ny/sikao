@@ -25,6 +25,7 @@ import type { BottomTabBarItem } from './BottomTabBar';
 const items: BottomTabBarItem[] = [
   { id: 'home', icon: <svg data-testid="home-svg" />, label: '首页', href: '/', active: true },
   { id: 'practice', icon: <svg data-testid="practice-svg" />, label: '练习', href: '/practice' },
+  { id: 'review', icon: <svg data-testid="review-svg" />, label: '复盘', href: '/review' },
   {
     id: 'note',
     icon: <svg data-testid="note-svg" />,
@@ -32,7 +33,6 @@ const items: BottomTabBarItem[] = [
     href: '/note',
     badge: 3,
   },
-  { id: 'me', icon: <svg data-testid="me-svg" />, label: '我的', href: '/me' },
 ];
 
 describe('BottomTabBar', () => {

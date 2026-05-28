@@ -159,7 +159,7 @@ describe('Rail', () => {
       <Rail
         brand={<span>BR</span>}
         navItems={navItems}
-        me={<a data-testid="me-slot" aria-label="我的" href="/me">ME</a>}
+        me={<button type="button" data-testid="me-slot" aria-label="我的">ME</button>}
         collapsed={false}
       />,
     );
@@ -172,7 +172,7 @@ describe('Rail', () => {
   });
 
   // SIK-121 W2 — visual contract Acceptance Hooks H05-H10 + Tooltip pattern unify.
-  // See docs/plan/sik-rail-v5-visual-contract.md §6.
+  // See docs/plan/sik-rail-v5-visual-contract.md §7.
 
   it('cmd slot renders inside Rail when provided (H05 surface)', () => {
     // RootLayout owns the cmd-k button content; Rail just exposes the slot.

@@ -14,6 +14,7 @@ function Harness({ initialOpen = false, onChange }: { initialOpen?: boolean; onC
           onChange?.(v);
         }}
         trigger={<button type="button">trigger</button>}
+        panelLabel="测试浮层"
       >
         <span data-testid="panel-content">menu body</span>
       </Popover>
@@ -42,6 +43,42 @@ describe('Popover', () => {
     const trigger = screen.getByRole('button', { name: 'trigger' });
     expect(trigger.getAttribute('aria-haspopup')).toBe('true');
     expect(trigger.getAttribute('aria-expanded')).toBe('true');
+  });
+
+  it('preserves a caller-provided aria-haspopup value on the trigger', () => {
+    render(
+      <Popover
+        open
+        onOpenChange={() => {}}
+        trigger={<button type="button" aria-haspopup="listbox">trigger</button>}
+      >
+        <span>menu body</span>
+      </Popover>,
+    );
+    expect(screen.getByRole('button', { name: 'trigger' })).toHaveAttribute(
+      'aria-haspopup',
+      'listbox',
+    );
+  });
+
+  it('applies the optional accessible name onto the dialog panel', () => {
+    render(<Harness initialOpen />);
+    expect(screen.getByRole('dialog', { name: '测试浮层' })).toBeInTheDocument();
+  });
+
+  it('does not force role=dialog when no accessible name is provided', () => {
+    render(
+      <Popover
+        open
+        onOpenChange={() => {}}
+        trigger={<button type="button">plain trigger</button>}
+      >
+        <span data-testid="plain-panel">plain body</span>
+      </Popover>,
+    );
+    expect(screen.queryByRole('dialog')).toBeNull();
+    const panel = screen.getByTestId('plain-panel').parentElement;
+    expect(panel?.getAttribute('role')).toBeNull();
   });
 
   it('calls onOpenChange(false) when clicking outside', () => {

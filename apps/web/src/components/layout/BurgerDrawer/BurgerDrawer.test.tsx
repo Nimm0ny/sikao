@@ -4,7 +4,7 @@ import { BurgerDrawer } from './BurgerDrawer';
 
 /*
  * BurgerDrawer — SIK-121 W3 H11 placeholder tests.
- * Contract: docs/plan/sik-rail-v5-visual-contract.md §2.5 + §6 H11.
+ * Contract: docs/plan/sik-rail-v5-visual-contract.md §2.5 + §7 H11.
  */
 
 describe('BurgerDrawer (SIK-121 W3 H11 placeholder)', () => {
