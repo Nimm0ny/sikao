@@ -32,3 +32,16 @@ export {
   createCalendarViewConfigPreset,
   createDefaultCalendarViewConfig,
 } from './factory';
+
+export type {
+  HomeCalendarPreferenceKey,
+  HomeCalendarPreferencePatch,
+} from './preferenceKeys';
+
+export {
+  HOME_CALENDAR_PREFERENCE_KEYS,
+  buildHomeCalendarPreferencePatch,
+  readCardLimitPerCell,
+  readHomeCalendarView,
+  readStartWeekOnMonday,
+} from './preferenceKeys';
