@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse, delay } from 'msw';
 import { server } from '../../../mocks/server';
 import { MonthCalendarView } from './MonthCalendarView';
+import { createCalendarViewConfig } from './calendarViewConfig';
 
 function renderWithClient() {
   const client = new QueryClient({
@@ -59,6 +60,36 @@ describe('MonthCalendarView (Home M-A wave 2 commit 2)', () => {
     const overflow = screen.getByTestId('home-month-overflow');
     expect(overflow).toHaveTextContent('+2');
     expect(overflow).toHaveTextContent('更多');
+  });
+
+  it('honors a custom cardLimitPerCell from viewConfig', async () => {
+    const events = Array.from({ length: 5 }, (_, i) => makeEvent(`m${i}`, `Event ${i}`));
+    server.use(http.get('/api/v2/plans/events', () => r(events)));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 } } });
+    render(
+      <QueryClientProvider client={client}>
+        <MonthCalendarView
+          viewConfig={createCalendarViewConfig({ view: 'month', cardLimitPerCell: 2 })}
+        />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(2));
+    expect(screen.getByTestId('home-month-overflow')).toHaveTextContent('+3');
+  });
+
+  it('renders Sunday-first DOW labels when startWeekOnMonday=false', async () => {
+    server.use(http.get('/api/v2/plans/events', () => r([makeEvent('m1', 'Event')])));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 } } });
+    render(
+      <QueryClientProvider client={client}>
+        <MonthCalendarView
+          viewConfig={createCalendarViewConfig({ view: 'month', startWeekOnMonday: false })}
+        />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getAllByRole('columnheader')).toHaveLength(7));
+    const dowLabels = screen.getAllByRole('columnheader').map((el) => el.textContent);
+    expect(dowLabels).toEqual(['日', '一', '二', '三', '四', '五', '六']);
   });
 
   it('empty: renders EmptyState when API returns []', async () => {

@@ -8,6 +8,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse, delay } from 'msw';
 import { server } from '../../../mocks/server';
 import { WeekCalendarView } from './WeekCalendarView';
+import { createCalendarViewConfig } from './calendarViewConfig';
 
 function renderWithClient() {
   const client = new QueryClient({
@@ -68,5 +69,24 @@ describe('WeekCalendarView (Home M-A wave 2)', () => {
     renderWithClient();
     expect(screen.getByTestId('home-week-loading')).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByTestId('home-week-loading')).not.toBeInTheDocument());
+  });
+
+  it('renders Sunday-first DOW labels when startWeekOnMonday=false', async () => {
+    server.use(http.get('/api/v2/plans/events', () => r([READY_EVENT])));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 } } });
+    render(
+      <QueryClientProvider client={client}>
+        <WeekCalendarView
+          viewConfig={createCalendarViewConfig({ view: 'week', startWeekOnMonday: false })}
+        />
+      </QueryClientProvider>,
+    );
+    await waitFor(() => expect(screen.getAllByRole('columnheader')).toHaveLength(7));
+    const labels = screen
+      .getAllByRole('columnheader')
+      // Strip the per-day numeric DOM and the today suffix so the order
+      // assertion is stable regardless of which weekday we render on.
+      .map((el) => (el.querySelector('span:first-child')?.textContent ?? '').replace(' · 今日', ''));
+    expect(labels).toEqual(['周日', '周一', '周二', '周三', '周四', '周五', '周六']);
   });
 });
