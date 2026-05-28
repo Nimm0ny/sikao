@@ -63,7 +63,7 @@ last-reviewed: 2026-05-25
 
 11. `AGENT-H11 Visual Contract Define-First`
     Trigger: 任何视觉/前端 phase 任务（含新建 view、改 view 布局、改导航/Rail/底栏、改卡片密度、改 Calendar/列表骨架），且对应原型 HTML 已存在于 `.tmp_review/out/**`。
-    Must: 实现前必须落 `docs/plan/<sik>-<feature>-visual-contract.md`，并被对应 issue 的 `## Acceptance` 显式引用为验收依据。契约最少含 Layout Topology / Required Interactive Elements / Information Density / Token Map / Visual Drift from Prototype / Acceptance Hooks 六块。
+    Must: 实现前必须落 `docs/plan/<sik>-<feature>-visual-contract.md`，并被对应 issue 的 `## Acceptance` 显式引用为验收依据。契约最少含 Layout Topology / Required Interactive Elements / Information Density / Token Map / SSOT Conflicts / Visual Drift from Prototype / Acceptance Hooks 七块；desktop 验收默认含 `1440/1920` 双开。
     If conflict: 没有 visual-contract.md，不得开 Runner；不得标 `done`。
 
 ## Supporting Docs

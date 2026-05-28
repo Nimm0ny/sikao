@@ -22,7 +22,7 @@ last-reviewed: 2026-05-25
 
 ## 2. 必须产物
 
-`docs/plan/<sik>-<feature>-visual-contract.md`，6 块结构：
+`docs/plan/<sik>-<feature>-visual-contract.md`，7 块结构：
 
 ### 2.1 Layout Topology
 
@@ -61,14 +61,26 @@ height: 100vh + overflow: hidden → ScreenLockShell
 
 **禁**：直接复制原型 var 进生产代码 / color-mix 百分比硬编码 / 无来源的 px 数值。
 
-### 2.5 Visual Drift from Prototype
+### 2.5 SSOT Conflicts
+
+把**原型默认行为**与**当前系统默认行为**逐条对比，至少写：
+
+- 冲突项（例如 prototype `.workspace { flex: 1 }` vs token `--max-w-workspace: 1440px`）
+- 各自 authority（原型 / tokens / design doc / issue comment / 已落代码）
+- 当前采用哪一方作为真相源
+- lhr 拍板日期
+- 若只做部分收口，明确后续 owner / follow-up issue
+
+如果没有冲突，必须显式写 `no conflicts`；不能省略整节。
+
+### 2.6 Visual Drift from Prototype
 
 | 项 | 原型 | 本次实现 | 偏离原因 | lhr 拍板日期 |
 |---|---|---|---|---|
 
 如完全一致写 `no drift`。**所有偏离必须有 lhr 拍板日期；没有日期视为未授权偏离。**
 
-### 2.6 Acceptance Hooks
+### 2.7 Acceptance Hooks
 
 这是给 Reviewer / Verifier 用的对照清单：
 
@@ -78,7 +90,8 @@ height: 100vh + overflow: hidden → ScreenLockShell
 加上：
 
 - Chrome MCP 双开 diff 截图归档路径：`.tmp_review/visual-diff/<sik>/`
-  - 必须有 `prototype.png` + `implementation.png` 两份，分辨率 1440×900（desktop）+ 390×844（mobile）
+  - desktop **必须**有 `1440×900` 与 `1920×1080` 两档的 `prototype` + `implementation`
+  - mobile / tablet 只在任务 scope 明确涉及对应 surface 时追加；不能用 mobile 代替 1920
 - a11y vitest-axe 0 violation 命令 + log 路径
 
 ## 3. 流程顺序
@@ -86,7 +99,7 @@ height: 100vh + overflow: hidden → ScreenLockShell
 ```
 [Master Mode]
   ├─ 派 Reviewer 跑「原型逐项提取」：读 .tmp_review/out/**.html，输出 contract draft
-  ├─ Master 审 contract draft：补 drift + Acceptance Hooks，定稿
+  ├─ Master 审 contract draft：补 SSOT Conflicts + drift + Acceptance Hooks，定稿
   ├─ contract 落 docs/plan/<sik>-<feature>-visual-contract.md
   └─ Multica issue.description 的 ## Acceptance 段显式引用 contract 文件路径（必须）
 
@@ -94,16 +107,16 @@ height: 100vh + overflow: hidden → ScreenLockShell
   ├─ 按 contract 实现，每 wave PR commit message 引用 contract section
   ├─ 完成后跑 typecheck / lint / lint-screen-lock / vitest-axe / Chrome MCP smoke
   ├─ 截 prototype + implementation 双图存到 .tmp_review/visual-diff/<sik>/
-  └─ 按 contract 2.6 Acceptance Hooks 表逐项打勾或标偏离
+  └─ 按 contract 2.7 Acceptance Hooks 表逐项打勾或标偏离
 
 [Reviewer Mode] — 独立 subagent
-  ├─ 读 contract 2.6 + 实际代码 / smoke 截图
+  ├─ 读 contract 2.7 + 实际代码 / smoke 截图
   ├─ 输出 docs/reviews/<sik>-<wave>.md：发现项 / 严重度 / 建议
   └─ 任何 high 未处理项 = review fail
 
 [Master Mode]
   ├─ 收 review 报告 + Evidence Block
-  ├─ contract 2.5 / 2.6 全部 PASS 才能标 done
+  ├─ contract 2.5 / 2.6 / 2.7 全部 PASS 才能标 done
   └─ 标 done 时回写 Evidence Block，包含 contract 路径 + diff 截图路径 + review 报告路径
 ```
 
@@ -111,8 +124,10 @@ height: 100vh + overflow: hidden → ScreenLockShell
 
 - ❌ contract 文件不存在直接开 Runner
 - ❌ contract 只列原型，不列 drift 和 acceptance hooks
-- ❌ 实现与 contract 2.5 drift 表不一致，但 commit message / PR 描述里没解释
+- ❌ 发现 prototype / token / design doc 冲突，却没写 `SSOT Conflicts`
+- ❌ 实现与 contract 2.6 drift 表不一致，但 commit message / PR 描述里没解释
 - ❌ Chrome MCP smoke 只截实现，没有原型对照
+- ❌ desktop 只验 1440，不验 1920
 - ❌ Reviewer 报告只写 "review pass"，没列检查项
 - ❌ 把 Plan §X 落地路径的"文件清单"当成视觉契约（文件清单不是视觉契约）
 

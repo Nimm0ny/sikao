@@ -81,15 +81,16 @@
       2. **Required Interactive Elements**：必须存在的按钮/控件清单（不能少）
       3. **Information Density**：每卡 N 个元素 + 视觉编码（颜色/icon/数值排版）
       4. **Token Map**：原型 var → V5 token 一一映射（引用 `Prototype-Token-Map.md`）
-      5. **Visual Drift from Prototype**：本次实施和原型不一致的点 + 偏离原因 + lhr 拍板日期；如无偏离写 `no drift`
-      6. **Acceptance Hooks**：实现 vs 原型对照表（项 / 原型 / 实现 / PASS|偏离）+ Chrome MCP 双开 diff 截图归档路径
+      5. **SSOT Conflicts**：原型默认行为 vs 当前 token/system 默认行为的冲突表 + 采用哪一方为真相源 + lhr 拍板日期
+      6. **Visual Drift from Prototype**：本次实施和原型不一致的点 + 偏离原因 + lhr 拍板日期；如无偏离写 `no drift`
+      7. **Acceptance Hooks**：实现 vs 原型对照表（项 / 原型 / 实现 / PASS|偏离）+ `1440/1920` Chrome MCP 双开 diff 截图归档路径
     If conflict: 没有 visual-contract.md，不得开 Runner；不得标 `done`；issue acceptance 没显式引用 contract，issue 视为未完成。
 
 12. `AGENT-H12 Nav Baseline Lock`
     Trigger: 任何前端 Tab Phase 任务、任何涉及 `RootLayout.tsx` / `Rail.tsx` / `BottomTabBar.tsx` 的改动。
     Must: nav 基座不变量：`navItems` 精确 4 项 `[home, practice, review, note]`（首页/练习/复盘/笔记），顺序固定；Me 入口仅由 RailMe avatar slot 提供，不在 navItems 中；`tabBarItems` 与 `navItems` 同步；禁止「题库」/ `id:'me'` 回归 navItems。
     If conflict: 停止执行，显式报 nav baseline 冲突，等 lhr 明确批准后才能变更。
-    Source: SIK-121 W1 `bbcfdf4f8`，lhr 2026-05-25 拍板。Steering `.kiro/steering/nav-baseline.md` + Hook `nav-baseline-guard` 双重防御。
+    Source: SIK-121 W1 `bbcfdf4f8`，lhr 2026-05-25 拍板；2026-05-28 lhr 明确批准移除 `nav-baseline-guard` hook 依赖。当前以 Steering `.kiro/steering/nav-baseline.md` + RootLayout/Rail/BottomTabBar 测试与契约作为剩余防线。
 
 ### 0.3 Fast Path
 
@@ -106,7 +107,7 @@
 - [ ] 已完成需求 intake，明确 requirement / acceptance / blockers
 - [ ] 需要时已 Define-First，plan doc / 契约已落档
 - [ ] 视觉/前端任务已落 `visual-contract.md` 并被 issue acceptance 引用（H11）
-- [ ] 视觉/前端任务已附 实现 vs 原型 对照表（PASS / 偏离）+ Chrome MCP 双开 diff 截图（H11）
+- [ ] 视觉/前端任务已附 实现 vs 原型 对照表（PASS / 偏离）+ `1440/1920` Chrome MCP 双开 diff 截图（H11）
 - [ ] 需要时已完成独立 subagent review，且 review 报告落档到 `docs/reviews/<sik>-<wave>.md`
 - [ ] `typecheck / lint / tests / browser smoke`（适用项）都有 PASS 证据
 - [ ] Multica 任务已回写 Evidence Block
