@@ -1,0 +1,150 @@
+/*
+ * MonthEventChip — SIK-138 W5.
+ *
+ * Why: visual contract §3 chip surface; tinted bg uses color-mix with
+ *      `--cal-chip-kind-color` set per chip, falling back to neutral when
+ *      the kind channel is disabled.
+ */
+
+.chip {
+  --cal-chip-kind-color: var(--color-text-meta);
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--cal-chip-padding-y) var(--cal-chip-padding-x);
+  border: 1px solid var(--color-border-subtle);
+  border-left: var(--cal-chip-border-w) solid var(--cal-chip-kind-color);
+  border-radius: var(--cal-chip-radius);
+  background: color-mix(
+    in srgb,
+    var(--cal-chip-kind-color) var(--cal-chip-tint-alpha),
+    var(--card-bg)
+  );
+  color: var(--color-text-primary);
+  font-size: 10px; /* spacing-allow: prototype month chip 10px (visual contract §3) */
+  line-height: 1.35;
+  cursor: pointer;
+  user-select: none;
+}
+
+.chip[data-kind-disabled='true'] {
+  border-left-color: var(--color-border-default);
+  background: var(--color-bg-elevated);
+}
+
+.chip[data-cross-day='true'] {
+  /* Visually hint continuation by softening the right edge. The cell logic
+   * still owns the +N overflow; this is a per-chip cue only. */
+  border-right: 1px dashed var(--color-border-default);
+}
+
+.titles {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+  gap: 1px; /* spacing-allow: sub-token nudge between title and meta lines (visual contract §3) */
+}
+
+.titleText {
+  font-weight: var(--font-weight-semibold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.metaText {
+  font-size: 9.5px; /* spacing-allow: prototype month chip meta 9.5px (visual contract §3) */
+  color: var(--color-text-meta);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.icons {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  color: var(--color-text-meta);
+  flex-shrink: 0;
+}
+
+.icon {
+  width: var(--cal-icon-size);
+  height: var(--cal-icon-size);
+}
+
+.dot {
+  width: var(--cal-status-dot-size);
+  height: var(--cal-status-dot-size);
+  border-radius: 50%;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  border: 1.5px solid var(--color-text-meta);
+  background: transparent;
+  position: relative;
+}
+
+.dot[data-status='in_progress'] {
+  background: var(--cal-chip-kind-color);
+  border-color: var(--cal-chip-kind-color);
+}
+
+.dot[data-status='done'] {
+  background: var(--color-state-ok);
+  border-color: var(--color-state-ok);
+}
+
+.dot[data-status='done']::after {
+  content: '';
+  position: absolute;
+  left: 1.5px;
+  top: 3px;
+  width: 4px;
+  height: 2px;
+  border-left: 1.5px solid var(--color-bg-surface);
+  border-bottom: 1.5px solid var(--color-bg-surface);
+  transform: rotate(-45deg);
+}
+
+.dot[data-status='skipped'] {
+  border-color: var(--color-text-disabled);
+}
+
+.dot[data-status='skipped']::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1.5px;
+  background: var(--color-text-disabled);
+  transform: translateY(-50%);
+}
+
+.targetBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: var(--color-state-info-soft);
+  color: var(--color-state-info);
+  font-size: 9px; /* spacing-allow: prototype target badge 9px (visual contract §3) */
+  font-weight: var(--font-weight-bold);
+  flex-shrink: 0;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px; /* spacing-allow: visually-hidden utility (clip-path SR-only pattern) */
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}

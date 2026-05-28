@@ -737,3 +737,42 @@ em, i { font-style: normal; }
     --rail-w: var(--rail-w-collapsed);
   }
 }
+
+/* ── §8 V5 Calendar chip tokens — SIK-138 W5 ──────────────────────────────
+ * MonthEventChip + future Week / Today chip + Peek consume these tokens to
+ * encode the four event kinds across border-left + tint channels. Visual
+ * contract: docs/plan/sik-138-home-calendar-notion-like-visual-contract.md
+ * §3 / §4. The kind family is intentionally distinct from `--color-cat-*`
+ * (subject classifier) and `--color-state-*` (status semantics).
+ * ─────────────────────────────────────────────────────────────────────── */
+
+:root {
+  /* §8.1 calendar event kind — light. Aligns with prototype mock at
+   * .tmp_review/out/Tab1-Home-mock/home-calendar-notion-like-mock.html. */
+  --cal-kind-plan:      var(--color-text-secondary);
+  --cal-kind-practice:  var(--color-state-warn);
+  --cal-kind-mock:      var(--color-state-ok);
+  --cal-kind-milestone: var(--color-state-err);
+
+  /* §8.2 chip layout knobs — W5 only owns the chip-channel parameters. */
+  --cal-chip-border-w:    4px;
+  --cal-chip-tint-alpha:  8%;
+  --cal-chip-radius:      var(--radius-6);
+  --cal-chip-gap:         var(--space-2);
+  --cal-chip-padding-y:   3px;
+  --cal-chip-padding-x:   var(--space-2);
+  --cal-status-dot-size:  8px;
+  --cal-icon-size:        12px;
+}
+
+[data-v5-theme='dark'],
+[data-theme='dark'],
+[data-theme='night'] {
+  /* §8.1 calendar event kind — dark. Reuse semantic state palette so the
+   * dark-theme contrast curve already vetted for state colors carries over
+   * to chip tints. */
+  --cal-kind-plan:      var(--color-text-secondary);
+  --cal-kind-practice:  var(--color-state-warn);
+  --cal-kind-mock:      var(--color-state-ok);
+  --cal-kind-milestone: var(--color-state-err);
+}

@@ -6,7 +6,6 @@ import { buildViewRange } from '@sikao/calendar-engine';
 import { usePlanStore } from '@sikao/domain';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
-import { eventKindOf } from './eventKind';
 import {
   expandPlanEventsForView,
   sliceMonthOccurrencesByDay,
@@ -14,8 +13,10 @@ import {
 } from './calendarEvents';
 import {
   createDefaultCalendarViewConfig,
+  type CalendarCardProperty,
   type CalendarViewConfig,
 } from './calendarViewConfig';
+import { MonthEventChip } from './MonthEventChip';
 import styles from './MonthCalendarView.module.css';
 
 /*
@@ -89,11 +90,12 @@ function bucketEventsByDay(
   return map;
 }
 
-function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell }: {
+function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell, visibleProperties }: {
   readonly cells: ReadonlyArray<MonthCell>;
   readonly eventsByDay: ReadonlyMap<string, ReadonlyArray<MonthDaySlice>>;
   readonly dowLabels: ReadonlyArray<string>;
   readonly cardLimitPerCell: number;
+  readonly visibleProperties: readonly CalendarCardProperty[];
 }) {
   return (
     <>
@@ -122,13 +124,13 @@ function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell }: {
                   {visible.map((item) => (
                     <li
                       key={`${item.slice.occurrenceRef}|${item.slice.day}`}
-                      className={styles.eventChip}
-                      data-testid="home-month-event"
-                      data-kind={eventKindOf(item.event)}
-                      data-cross-day={!item.slice.isStartSlice || !item.slice.isEndSlice || undefined}
-                      title={item.event.title}
+                      className={styles.eventListItem}
                     >
-                      {item.event.title}
+                      <MonthEventChip
+                        event={item.event}
+                        slice={item.slice}
+                        visibleProperties={visibleProperties}
+                      />
                     </li>
                   ))}
                   {overflow > 0 ? (
@@ -196,6 +198,7 @@ export function MonthCalendarView({ viewConfig }: MonthCalendarViewProps = {}) {
           eventsByDay={eventsByDay}
           dowLabels={dowLabels}
           cardLimitPerCell={config.cardLimitPerCell}
+          visibleProperties={config.visibleProperties}
         />
       ) : null}
     </div>

@@ -101,22 +101,10 @@
   min-width: 0;
 }
 
-.eventChip {
-  font-size: 10px; /* spacing-allow: prototype month chip 10px */
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-10);
-  background: var(--color-bg-elevated);
-  border-left: 2px solid var(--color-text-meta);
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.eventListItem {
+  /* Chip lives in MonthEventChip; the LI is a layout slot only. */
+  min-width: 0;
 }
-
-.eventChip[data-kind='plan']      { background: var(--color-bg-elevated); border-left-color: var(--color-text-primary); }
-.eventChip[data-kind='practice']  { background: var(--color-brand-soft); border-left-color: var(--color-brand-primary); }
-.eventChip[data-kind='mock']      { background: var(--color-brand-primary); border-left-color: var(--color-text-primary); }
-.eventChip[data-kind='milestone'] { background: var(--color-state-err-soft); border-left-color: var(--color-state-err); color: var(--color-text-primary); }
 
 .moreLabel {
   font-size: 9.5px; /* spacing-allow: prototype month more label 9.5px */
