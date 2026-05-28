@@ -776,3 +776,29 @@ em, i { font-style: normal; }
   --cal-kind-mock:      var(--color-state-ok);
   --cal-kind-milestone: var(--color-state-err);
 }
+
+/* ── §9 V5 Calendar peek tokens — SIK-138 W6 ──────────────────────────────
+ * CalendarPeekCard + sub-components (head / properties / notes) consume
+ * these tokens. Visual contract:
+ *   docs/plan/sik-138-home-calendar-notion-like-visual-contract.md §3 / §4.
+ * Peek visuals are isolated from chip tokens — same kind palette but
+ * dedicated layout knobs.
+ * ─────────────────────────────────────────────────────────────────────── */
+
+:root {
+  --cal-peek-width:        min(720px, 92vw);
+  --cal-peek-max-h:        calc(100vh - 144px);
+  --cal-peek-radius:       var(--radius-14);
+  --cal-peek-padding-x:    var(--space-7);
+  --cal-peek-padding-y:    var(--space-6);
+  --cal-peek-head-h:       44px;
+  --cal-peek-kindbar-w:    48px;
+  --cal-peek-kindbar-h:    4px;
+  --cal-peek-scrim:        rgba(26, 29, 32, 0.32);
+}
+
+[data-v5-theme='dark'],
+[data-theme='dark'],
+[data-theme='night'] {
+  --cal-peek-scrim: rgba(0, 0, 0, 0.55);
+}
