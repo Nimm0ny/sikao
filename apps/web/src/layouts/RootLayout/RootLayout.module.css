@@ -10,9 +10,9 @@
   align-items: center;
   gap: var(--space-2);
   font-weight: var(--font-weight-bold);
-  font-size: var(--font-card);
+  font-size: 15px; /* spacing-allow: prototype rail title 15px */
   color: var(--color-text-primary);
-  letter-spacing: 0.04em;
+  letter-spacing: -0.02em;
 }
 
 /*
@@ -154,21 +154,24 @@
   display: none;
 }
 
-:root[data-rail='collapsed'] .cmdButton[data-tip]::after {
-  display: block;
-}
-
 @media (hover: hover) and (pointer: fine) {
   /* touch-allow: hover-gated tooltip reveal. */
   :root[data-rail='collapsed'] .cmdButton:hover[data-tip]::after {
+    display: block;
     opacity: 1;
   }
+}
+
+:root[data-rail='collapsed'] .cmdButton:focus-visible[data-tip]::after {
+  display: block;
+  opacity: 1;
 }
 
 .meLink {
   display: inline-flex;
   align-items: center;
   gap: var(--space-2);
+  min-height: 44px;
   border-radius: var(--radius-10);
   padding: var(--space-1) var(--space-2);
   text-decoration: none;
@@ -180,6 +183,22 @@
   width: 100%;
   min-width: 0;
   position: relative;
+  box-sizing: border-box;
+}
+
+.meLink[aria-current='page'] {
+  background: var(--color-bg-sunken);
+}
+
+.meLink[aria-current='page']::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 8px;
+  width: 3px;
+  height: 24px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-text-primary);
 }
 
 .meStack {
@@ -191,7 +210,7 @@
 }
 
 .meName {
-  font-size: var(--font-meta);
+  font-size: 13px; /* spacing-allow: prototype me-name 13px */
   font-weight: var(--font-weight-semibold);
   color: var(--color-text-primary);
   overflow: hidden;
@@ -200,7 +219,7 @@
 }
 
 .meSub {
-  font-size: var(--font-tiny);
+  font-size: 10.5px; /* spacing-allow: prototype me-sub 10.5px */
   color: var(--color-text-meta);
   overflow: hidden;
   text-overflow: ellipsis;
@@ -219,6 +238,7 @@
 :root[data-rail='collapsed'] .meLink {
   width: var(--row-h-sm);
   height: var(--row-h-sm);
+  min-height: var(--row-h-sm);
   padding: 0;
   justify-content: center;
 }
@@ -254,15 +274,17 @@
   display: none;
 }
 
-:root[data-rail='collapsed'] .meLink[data-tip]::after {
-  display: block;
-}
-
 @media (hover: hover) and (pointer: fine) {
   /* touch-allow: hover-gated tooltip reveal. */
   :root[data-rail='collapsed'] .meLink:hover[data-tip]::after {
+    display: block;
     opacity: 1;
   }
+}
+
+:root[data-rail='collapsed'] .meLink:focus-visible[data-tip]::after {
+  display: block;
+  opacity: 1;
 }
 
 @media (hover: hover) and (pointer: fine) {
