@@ -1,7 +1,7 @@
 ﻿# Sikao 复盘 Phase 落地 Plan（索引）
 
 > **Status**: ACCEPTED
-> **Scope**: 一级导航 Tab 3 = 复盘（默认今日 + 智能三卡 + 周回顾条）+ `/review/all` 全部错题 + `/review/insights` 数据洞察 + `/q/:id` 题目中枢页（独立路由，跨 tab 共用）
+> **Scope**: 一级导航 Tab 3 = 复盘（默认今日 + 智能三卡 + 周回顾条）+ `/review/all` 全部错题 + `/review/insights` 数据洞察 + `/question-hub` 题目中枢页（当前运行时真相）
 > **原则**：完整落地（不走最小化路线）/ 后端先行 / 前端 UI 最后做 / 每 PR 受 AGENTS H9 约束（≤15 文件 / ≤400 行）
 > **Last Updated**: 2026-05-21
 > **Phase 父目录**：[../README.md](../README.md)
@@ -9,6 +9,8 @@
 > ⚠️ **开工前必读**：[A0-Codebase-Reality-Check.md](./A0-Codebase-Reality-Check.md)
 >
 > 本 Phase 的 00-11 文档基于 [Frontend-IA-V2.md](../../Frontend-IA-V2.md) 决策稿编写，描述的是**目标态**。**A0** 记录代码现实与目标的 delta（ReviewItemV2 stub 用 `source_kind` 不是 `reason` / ReviewAttemptV2 已存在 / wrong-book 路由整族迁移 / legacy 11 个组件去留 等）。子文档与 A0 §11 冲突时**以 A0 为准**。
+>
+> **2026-05-28 runtime truth update**：当前运行时题目中枢页已收口为 `/question-hub`。本文中保留的 `/q/:id` / `/q/:id/redo` 主要用于历史设计与跨 Phase 决策追溯；本文不再承担当前 router authority，当前真相以 `apps/web/src/router/index.tsx` 为准。
 
 ---
 
@@ -29,7 +31,7 @@
 | [05-SRS-Engine](./05-SRS-Engine.md) | WU-R3 + 任何写 SRS 状态机的代码 |
 | [06-AI-Cause-Analysis](./06-AI-Cause-Analysis.md) | WU-R5 + LLM prompt 调用方 |
 | [07-Smart-Review-Aggregation](./07-Smart-Review-Aggregation.md) | WU-FR5 智能三卡前端聚合 |
-| [08-Question-Hub-Page](./08-Question-Hub-Page.md) | WU-FR8 `/q/:id` 中枢页 |
+| [08-Question-Hub-Page](./08-Question-Hub-Page.md) | WU-FR8 `/question-hub` 中枢页 |
 | [09-Cross-Tab-Wiring](./09-Cross-Tab-Wiring.md) | 任何动 Practice / Notes / Home 接口的 PR |
 | [10-NonFunctional](./10-NonFunctional.md) | 性能 / 限流 / 部署 |
 | [11-Testing](./11-Testing.md) | invariant + e2e + 跨 Phase 集成测试 |
@@ -58,8 +60,8 @@
 - 全部错题 `/review/all`：4 segment（错题 / 标记 / 手动 / 智能）+ 筛选 + 排序 + 多选批量
 - 数据洞察 `/review/insights`：3 张图（错题趋势 / 错因聚类 / 再做正确率）
 - 已掌握 `/review/graduated` + 归档区 `/review/archived`
-- 题目中枢页 `/q/:id`：跨 tab 共用，复盘 / 练习 / 笔记 / 收藏夹 / 首页弱项卡 deep link 终点
-- 错题重做 `/q/:id/redo`：脱壳，复用 PracticeSessionV2(source_mode=wrong_redo)
+- 题目中枢页 `/question-hub`：当前运行时入口；旧 `/q/:id` 保留为历史设计
+- 错题重做 `/q/:id/redo`：历史设计保留，未来若恢复需单开定义
 - AI 错因分析（按需触发）：单题 + 多题聚合
 - SRS 排队引擎：简化版三档 + graduated；schema 预留 SM-2 字段
 - 周回顾系统：实时聚合 + 一键生成笔记
@@ -79,7 +81,7 @@
 - queries `reviewQueries / causeAnalysisQueries / weeklyReviewQueries`
 - views：ReviewToday / ReviewAll / ReviewInsights / QuestionHub / QuestionRedo
 - 11 个 legacy wrong-book 组件去留（部分复用，部分重写，部分删）
-- 路由 redirect：/wrong-book/* / /practice/questions/:id 整族 → /review/* / /q/:id
+- 路由 redirect：/wrong-book/* / /practice/questions/:id 整族 → /review/* / `/question-hub`（旧 `/q/:id` 仅作历史桥接说明）
 
 ### 2.2 不在范围内
 
@@ -107,7 +109,7 @@
 | 决策 | 拍板 |
 |---|---|
 | **D-Review-Default-View** | 默认 = 今日 + 智能三卡 + 周回顾条（不展示"全部错题"，避免 P7 压垮） |
-| **D-Question-Hub** | `/q/:id` 独立路由，跨 tab 共用 |
+| **D-Question-Hub** | `/question-hub` 当前运行时入口；旧 `/q/:id` 保留为历史设计 |
 | **D-Fav-Location** | 收藏夹归 Notes tab，不进 SRS 队列；本 Phase 仅在题目中枢页提供"加入复盘"按钮 |
 | **R-1** | 入队来源 = 多源（wrong_answer / flagged_persistent / re_failed / manual_add / note_card 五种 source_kind） |
 | **R-2** | 队列 = 后端 ReviewItemV2；智能复盘 = 前端 S-front 聚合（与 IA-V2 D8 一致） |
@@ -201,7 +203,7 @@ M7   week 5-6        WU-FR1：API client + types
 M8   week 6          WU-FR2 + WU-FR3：domain stores + queries
 M9   week 6-7        WU-FR4：默认视图（周回顾条 + SRS 队列 + 三卡）
 M10  week 7-8        WU-FR5 + WU-FR6 + WU-FR7：智能三卡聚合 + 全部错题视图 + 数据洞察
-M11  week 8-9        WU-FR8：题目中枢页 `/q/:id`（跨 tab）
+M11  week 8-9        WU-FR8：题目中枢页 `/question-hub`（当前运行时真相）
 M12  week 9          WU-FR9 + WU-FR10：错因 UI（含 dimension override + EvolutionTimeline）+ 加入计划 CTA
 M12b week 9-10       WU-FR13：Confidence Rating UI（4 档 prompt + badge + mismatch banner + session 状态机）
 M12c week 10         WU-FR14：Debt Management UI（DebtBar 5 模式 + RampupBanner + HardQuestionBadge + Profile slider）
@@ -212,11 +214,11 @@ M14  week 11         WU-FR12：e2e（含 review-confidence + review-debt）+ a11
 ---
 
 
-### 7.3 Multica Child Matrix
+### 7.3 Historical Multica Child Matrix
 
-> This table is the Review Phase execution ledger mirror.
-> The parent Multica issue `SIK-45` and this table must stay semantically aligned.
-> If they drift, update both in the same task before any child issue proceeds.
+> This table is the Review Phase historical ledger mirror.
+> **Historical only**: this table preserves the old Multica ledger mapping. Since 2026-05-28, active execution ledger and Evidence Block policy follow `docs/engineering/notion-workflow.md`, not this section.
+> Keep it only for audit/backtrace context; do not use it as an active execution gate.
 
 | Identifier | Milestone | Focus | Depends on | Status | Gate |
 |---|---|---|---|---|---|
@@ -335,7 +337,7 @@ M14  week 11         WU-FR12：e2e（含 review-confidence + review-debt）+ a11
 ## 13. 关联文档
 
 - [../README.md](../README.md) — Phase 总入口
-- [../../Frontend-IA-V2.md](../../Frontend-IA-V2.md) — IA 决策 SSOT（D 系列原始来源）
+- [../../Frontend-IA-V2.md](../../Frontend-IA-V2.md) — IA 历史决策档案（D 系列原始来源，非当前 router authority）
 - [../Home/README.md](../Home/README.md) — Phase-Home（依赖项）
 - [../Practice/README.md](../Practice/README.md) — Phase-Practice（依赖项 + 入队写入侧）
 - [../Notes/README.md](../Notes/README.md) — Phase-Notes（收藏夹归属 + AI 摘要 → 复盘卡）
@@ -356,7 +358,7 @@ M14  week 11         WU-FR12：e2e（含 review-confidence + review-debt）+ a11
 | ReviewInsights（错题趋势 + 错因聚类气泡 + 再做正确率提升 + AI 洞察） | `/review/insights` | [`.tmp_review/out/Tab3-Review/Review Insights v1.html`](../../../../.tmp_review/out/Tab3-Review/Review%20Insights%20v1.html) |
 | ReviewGraduated（毕业卡片墙 + 邮戳） | `/review/graduated` | [`.tmp_review/out/Tab3-Review/Review Graduated v1.html`](../../../../.tmp_review/out/Tab3-Review/Review%20Graduated%20v1.html) |
 | ReviewArchived（归档 table + 归档原因 + 恢复 actions） | `/review/archived` | [`.tmp_review/out/Tab3-Review/Review Archived v1.html`](../../../../.tmp_review/out/Tab3-Review/Review%20Archived%20v1.html) |
-| 题目中枢页（跨 tab 共用） | `/q/:id` | [`.tmp_review/out/_cross/Question Hub v2.html`](../../../../.tmp_review/out/_cross/Question%20Hub%20v2.html) |
+| 题目中枢页（跨 tab 共用） | `/question-hub`（旧 `/q/:id` 历史方案） | [`.tmp_review/out/_cross/Question Hub v2.html`](../../../../.tmp_review/out/_cross/Question%20Hub%20v2.html) |
 
 历史 V4 一屏混合视图（`Review.html` / `Review v1.html` / `Review Redo v1.html`）保留作版本对照，新实施以上面 v1 子路由原型为准（D-Review-Default-View）。
 

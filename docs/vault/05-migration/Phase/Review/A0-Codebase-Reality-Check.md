@@ -5,6 +5,8 @@
 > **目的**：把当前代码库与 Tab 3 目标态的 delta 摊开，避免下游 WU 文档撞到代码现实。
 > **必读对象**：所有 Review Phase 的 PR agent。开工前必读，比 00-Decisions 更前置。
 
+> **2026-05-28 runtime truth update**：本文中的 `/q/:id` / `/q/:id/redo` 主要用于历史设计与 delta 对照；本文不再承担当前 router authority，当前 QuestionHub 入口以 `/question-hub` 为准。
+
 ---
 
 ## 0. 为什么有这份文档

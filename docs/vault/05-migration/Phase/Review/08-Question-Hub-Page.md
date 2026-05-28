@@ -9,18 +9,17 @@
 ## 1. 路由定义
 
 ```
-/q/:id           — 题目中枢页（不脱壳，保留 RailMini / TabBar）
-/q/:id/redo      — 重做页（脱壳，全屏 session）
+/question-hub           — 题目中枢页（当前 V5 实现；保留 RootLayout / Rail / BottomTabBar）
+/question-hub/redo      — 重做页（未来若恢复独立 route，再单开 contract）
 ```
 
-- `/q/:id` 是顶层路由，不在 AppShell children 内（QHub-1）
-- 但**不脱壳**——仍渲染 RailMini（桌面）/ TabBar（移动）
-- `/q/:id/redo` 是脱壳路由（D15）
+- 当前仓内真相以 `apps/web/src/router/index.tsx` 为准：QuestionHub 已收口为 `/question-hub`，位于 `RootLayout` children 内。
+- 本文原 `/q/:id` 设计保留为历史 spec，不再作为当前运行时路由 authority；文中若继续出现 `/q/:id*`，均按历史记法处理。
+- 若未来恢复单题 deep-link route，必须新开 Define-First 文档，不得继续援引本页的旧路径。
 
 ```tsx
 // apps/web/src/router/index.tsx
-{ path: "/q/:id", element: <QuestionHub /> },
-{ path: "/q/:id/redo", element: <QuestionRedo /> },
+{ path: "/question-hub", element: <QuestionHub /> },
 ```
 
 ---

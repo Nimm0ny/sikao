@@ -4,6 +4,8 @@
 > **Last Updated**: 2026-05-21
 > **前置阅读**：[01-Boundary-Rules](./01-Boundary-Rules.md) · [05-SRS-Engine](./05-SRS-Engine.md) §8 · [10-NonFunctional](./10-NonFunctional.md)
 
+> **2026-05-28 runtime truth update**：本文中出现的 `/q/:id` / `/q/:id/redo` 测试路径保留为历史方案说明；本文不再承担当前 router authority，当前 QuestionHub 入口以 `/question-hub` 为准。
+
 ---
 
 ## 1. 测试金字塔

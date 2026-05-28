@@ -5,6 +5,8 @@
 > **前置阅读**：[A0-Codebase-Reality-Check](./A0-Codebase-Reality-Check.md)（字段命名 / 表结构 / 路径 delta）
 > **SSOT 声明**：本文是 Phase-Review 全部决策的唯一来源。下游文档（01~11）引用本文条目编号；冲突时**以 A0 为准**。
 
+> **2026-05-28 runtime truth update**：本文中保留的 `/q/:id` / `/q/:id/redo` 主要用于历史设计与跨 Phase 追溯；本文不再承担当前 router authority，当前 QuestionHub 入口以 `/question-hub` 为准。
+
 ---
 
 ## 1. 跨 Phase 继承决策（IA-V2 原始来源）

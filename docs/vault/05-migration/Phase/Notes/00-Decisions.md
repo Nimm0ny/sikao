@@ -5,6 +5,8 @@
 > **前置阅读**：[Phase/README.md](../README.md) · [Frontend-IA-V2.md §2.4](../../Frontend-IA-V2.md)
 > **SSOT 声明**：本文是 Phase-Notes 全部决策的唯一来源。下游文档（01~06）引用本文条目编号；冲突时以本文为准。
 
+> **2026-05-28 runtime truth update**：本文中保留的 `/notes*` 与 `/q/:id*` 记法主要用于历史设计与跨 Phase 决策追溯；当前运行时 route authority 以 `apps/web/src/router/index.tsx` 为准，其中 Note shell 入口是 `/note`，QuestionHub 入口是 `/question-hub`。
+
 ---
 
 ## 0. 决策序列编号约定

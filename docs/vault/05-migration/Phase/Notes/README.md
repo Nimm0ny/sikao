@@ -5,6 +5,8 @@
 > **Phase 父目录**：[../README.md](../README.md)
 > **Last Updated**: 2026-05-25
 
+> **2026-05-28 runtime truth update**：当前全局壳已收口为 4-tab + RailMe。本文中的 `/notes*` 与 `/q/:id*` 记法仅保留为历史 Phase 设计与跨 Phase 决策追溯；当前运行时 route authority 以 `apps/web/src/router/index.tsx` 为准，其中 Note shell 入口是 `/note`，QuestionHub 入口是 `/question-hub`。
+
 ---
 
 ## 0. 范围总述
@@ -35,7 +37,7 @@
 
 | 前置 | 状态 | 说明 |
 |---|---|---|
-| Phase-Home 完工 | ⏳ | 依赖 LLM 模块 / audit / cron / AppShell 5-tab |
+| Phase-Home 完工 | ⏳ | 依赖 LLM 模块 / audit / cron / AppShell 4-tab + RailMe |
 | Phase-Practice NoteV2 schema 升级 | ✅ | linked_question_id + visibility 已就位 |
 | Phase-Review Cross-Tab 定义 | ✅ | Cross-2~4 / ReviewItemV2(note_card) 接口就绪 |
 | TipTap 选型 | ✅ | N-Ed-1 拍板 TipTap Headless WYSIWYG |
@@ -136,7 +138,7 @@ Community P1:   PATCH /notes/{id}/visibility, GET /notes/community
 
 | 依赖方向 | 说明 |
 |---|---|
-| Notes ← Home | LLM 模块 / audit / cron / AppShell 5-tab |
+| Notes ← Home | LLM 模块 / audit / cron / AppShell 4-tab + RailMe |
 | Notes ← Practice | NoteV2 schema（linked_question_id + visibility 已加） |
 | Notes ← Review | ReviewItemV2(source_kind=note_card) 写入接口 |
 | Notes → Review | AI 摘要确认 → 写入 ReviewItemV2 |
@@ -161,7 +163,7 @@ Community P1:   PATCH /notes/{id}/visibility, GET /notes/community
 - [../Home/README.md](../Home/README.md) — Phase-Home（LLM / audit / cron 基础设施）
 - [../Practice/README.md](../Practice/README.md) — Phase-Practice（NoteV2 schema 升级）
 - [../Review/README.md](../Review/README.md) — Phase-Review（Cross-Tab Wiring）
-- [../../Frontend-IA-V2.md](../../Frontend-IA-V2.md) — IA 决策 SSOT（§2.4 Tab 4）
+- [../../Frontend-IA-V2.md](../../Frontend-IA-V2.md) — IA 历史决策档案（§2.4 Tab 4，非当前 router authority）
 
 ---
 
@@ -214,10 +216,10 @@ Community P1:   PATCH /notes/{id}/visibility, GET /notes/community
 
 ---
 
-## 13. Multica Child Matrix
+## 13. Historical Multica Child Matrix
 
 > This table mirrors the Notes Phase execution ledger shape.
-> `SIK-44` 是父账本，`SIK-46` 起的子 issue 必须按本表推进；如果里程碑拆分、依赖或 gate 语义漂移，必须在同一任务里一起修正本地 SSOT 与 Multica 账本。
+> **Historical only**：该表保留旧 Multica 账本映射，便于追溯历史 issue。自 2026-05-28 起，执行账本与 Evidence Block 回写以 `docs/engineering/notion-workflow.md` 为准，不再按本表驱动状态流转。
 
 | Identifier | Milestone | Focus | Depends on | Status | Gate |
 |---|---|---|---|---|---|

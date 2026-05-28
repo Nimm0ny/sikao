@@ -13,7 +13,7 @@
 > **2026-05-21 口径重定基线**：`M3 / SIK-34` 的后端 deliverables 已落到 `origin/main`。`SIK-34` 当前保留 `blocked`，仅反映旧 Home 前端 runtime 触发了既有 full typecheck gate；该阻塞不再卡住后端 `M4-M6`，只继续约束旧 Home 前端 `M7-M12 / F1-F8` 参考轨。
 > **2026-05-22 更新**：`M0.5 / SIK-31` 已解锁前端 full typecheck blocker。旧 Home 前端仍未自动重启；`M7-M12` 继续保持 paused reference track，直到新的前端重构计划显式接管。
 > **2026-05-22 restart baseline**：前端 runtime 轨已在 `main` 上显式重启，并已完成 `M7 / SIK-38`、`M8 / SIK-39`、`M9 / SIK-40` 与 `M10 / SIK-41`。
-> **2026-05-23 closeout**：`M11-M12` 已完成，canonical `"/"` Home、`/profile/records`、5-tab nav、legacy redirect 收口、a11y 自动化与 Browser smoke 已补齐；Home Phase 当前实现面已收口到完成态。
+> **2026-05-23 closeout**：`M11-M12` 已完成，canonical `"/"` Home、`/profile/records`、4-tab nav + RailMe 唯一入口、legacy redirect 收口、a11y 自动化与 Browser smoke 已补齐；Home Phase 当前实现面已收口到完成态。
 
 ---
 
@@ -234,7 +234,7 @@ M12  week 13-14      WU-F8：e2e + a11y + 浏览器矩阵验收（2026-05-23 完
 ## 12. 关联文档
 
 - [../README.md](../README.md) — Phase 总入口（其他 Phase 导航）
-- [../../Frontend-IA-V2.md](../../Frontend-IA-V2.md) — IA 决策 SSOT（D 系列原始来源）
+- [../../Frontend-IA-V2.md](../../Frontend-IA-V2.md) — IA 历史决策档案（D 系列原始来源，非当前 router authority）
 - [../../Migration-Status.md](../../Migration-Status.md) — 整体迁移现状
 - [../../Migration-Plan.md](../../Migration-Plan.md) — 整体迁移计划
 - [../../../03-tech/Architecture.md](../../../03-tech/Architecture.md) — 技术架构

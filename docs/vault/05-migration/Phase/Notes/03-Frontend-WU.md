@@ -5,6 +5,8 @@
 > **前置阅读**：[00-Decisions](./00-Decisions.md) · [01-Data-Model](./01-Data-Model.md) · [02-Backend-WU](./02-Backend-WU.md)
 > **Convention**: 每个 WU 对应一组 PR；PR 按 AGENTS-H9 ≤15 文件 / ≤400 行；前端视觉 PR 必须经 browser smoke
 
+> **2026-05-28 runtime truth update**：本文中的 `/notes*` 与 `/q/:id*` 路径保留为历史 WU 设计与跨 Phase 追溯；当前运行时 route authority 以 `apps/web/src/router/index.tsx` 为准，其中 Note shell 入口是 `/note`，QuestionHub 入口是 `/question-hub`。
+
 ---
 
 ## 0. WU 总览

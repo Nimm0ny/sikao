@@ -4,6 +4,8 @@
 > **Last Updated**: 2026-05-21
 > **前置阅读**：[A0-Codebase-Reality-Check](./A0-Codebase-Reality-Check.md) · [02-Data-Model](./02-Data-Model.md) §7（Pydantic → TS types）
 
+> **2026-05-28 runtime truth update**：本文中出现的 `/q/:id` / `/q/:id/redo` 保留为历史方案说明；本文不再承担当前 router authority，当前 QuestionHub 入口以 `/question-hub` 为准。
+
 ---
 
 ## 概述
