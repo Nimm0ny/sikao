@@ -116,7 +116,7 @@ html, body { height: 100%; overflow: hidden; }
 | 区域 | Owner Issue / Plan | 联动 issue 不得改 |
 |---|---|---|
 | `AppShell` 高度模型（一屏锁死父链） | `docs/plan/sik-fu-a-home-visual-contract.md` | 任何 view |
-| 桌面 Rail 结构（分组 / 5-tab） | 待定（Wave 2 SIK-FU-A 拍板） | - |
+| 桌面 Rail 结构（4-tab + RailMe） | `docs/plan/sik-rail-v5-visual-contract.md` | 其它 view 不得回滚到 5-tab |
 | Home `bottomRow #1`（占第 1 格） | SIK-FU-A | SIK-91/92 不得改 |
 | Home `bottomRow #2` Progress | SIK-91 | - |
 | Home `bottomRow #3` Recommendation | SIK-92 | - |

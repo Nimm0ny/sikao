@@ -122,6 +122,13 @@ feed-pill 右侧文字按推荐显示 `estimatedMinutes + '分'` 或 `sessionLen
 | `--r-tiny` | `--radius-10` |
 | `--shadow-1` | `--shadow-l1` |
 
+### 4.1 SSOT Conflicts
+
+| 冲突 | 原型 authority | 系统 authority | 当前裁决 |
+|---|---|---|---|
+| Home bottom row 所在横向画布 | Home 原型默认 workspace 吃满 Rail 余宽 | 旧 V5 `workspace=1440 cap` 默认值 | 底层横向画布 owner 已被 `SIK-128` supersede；本契约继续只 owner bottomRow #2/#3 的局部密度与编码 |
+| desktop 验收档位 | 本契约初版主要列 `1440` | `2026-05-27` 之后 desktop 主战场要求补 `1920` | 自本契约起 desktop 验收补 `1920` pair |
+
 ## 5. Visual Drift from Prototype
 
 | 项 | 原型 | 本次实现 | 偏离原因 | lhr 拍板 |
@@ -144,6 +151,7 @@ feed-pill 右侧文字按推荐显示 `estimatedMinutes + '分'` 或 `sessionLen
 | D7 | 4 状态全覆盖 | n/a | vitest 用例 | ☐ |
 
 Chrome MCP 双开 diff 截图归档到 `.tmp_review/visual-diff/sik-fu-d/`，重点截 Home bottomRow #2 + #3。
+2026-05-27 `SIK-128` supersede：desktop 额外必须补 `prototype-desktop-1920x1080.png` + `implementation-desktop-1920x1080.png`。
 
 ## 7. Wave Plan
 

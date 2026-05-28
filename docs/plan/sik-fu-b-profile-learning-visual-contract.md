@@ -133,6 +133,13 @@ learning-grid 内部 3 行：
 
 > heatmap `data-l='3'` 原型用 `var(--brand-yellow-hover)` 配 `color: #fff`，但 V5 brand 是黄色 → 黄底白字对比度不足。本 issue 改用 `--color-text-primary`（黑字）on `--color-brand-hover`，写进 drift §5。
 
+### 4.1 SSOT Conflicts
+
+| 冲突 | 原型 authority | 系统 authority | 当前裁决 |
+|---|---|---|---|
+| ProfileLearning 横向画布默认值 | 原型入口页默认吃满 Rail 余宽 | 旧 V5 `workspace=1440 cap` 默认值 | 横向画布 owner 已被 `SIK-128` supersede；本契约继续 owner KPI / Trend / KnowledgeTree / Heatmap 密度 |
+| desktop 验收档位 | 本契约初版以 `1440 + mobile` 为主 | `2026-05-27` 之后 desktop 主战场要求补 `1920` | 自本契约起 desktop 验收补 `1920` pair |
+
 ## 5. Visual Drift from Prototype
 
 | 项 | 原型 | 本次实现 | 偏离原因 | lhr 拍板 |
@@ -156,6 +163,7 @@ learning-grid 内部 3 行：
 | B8 | 一屏锁死 + 内部局部滚 | html/body overflow:hidden | Chrome MCP smoke | ☐ |
 
 Chrome MCP 双开 diff 截图归档到 `.tmp_review/visual-diff/sik-fu-b/`，含 desktop + mobile 两套。
+2026-05-27 `SIK-128` supersede：desktop 额外必须补 `prototype-desktop-1920x1080.png` + `implementation-desktop-1920x1080.png`。
 
 ## 7. Wave Plan
 

@@ -7,24 +7,29 @@
  */
 
 .root {
-  background: var(--card-bg);
-  border: var(--card-border);
-  border-radius: var(--card-radius);
-  box-shadow: var(--card-shadow-rest);
-  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .scroller {
   --hour-col-w: 120px;
   --total-w: calc(12 * var(--hour-col-w));
   --strip-h: 132px;
+  flex: 1 1 auto;
+  min-height: 0;
   overflow-x: auto;
   overflow-y: hidden;
 }
 
 .scrollerInner {
   width: var(--total-w);
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .head {
@@ -35,7 +40,8 @@
 
 .cellHour {
   padding: var(--space-2) var(--space-3);
-  font-size: var(--font-tiny);
+  font-size: 10.5px; /* spacing-allow: prototype hour label 10.5px */
+  font-weight: var(--font-weight-medium);
   color: var(--color-text-meta);
   border-right: 1px solid var(--color-border-subtle);
 }
@@ -43,7 +49,8 @@
 
 .body {
   position: relative;
-  height: var(--strip-h);
+  flex: 1 1 auto;
+  min-height: var(--strip-h);
   background-image: linear-gradient(
     to right,
     var(--color-border-subtle) 0 1px,
@@ -60,7 +67,7 @@
    */
   position: absolute;
   top: var(--space-3);
-  bottom: var(--space-3);
+  height: calc(var(--strip-h) - (2 * var(--space-3)));
   border-radius: var(--radius-10);
   padding: var(--space-2) var(--space-3);
   background: var(--color-bg-elevated);
@@ -80,20 +87,21 @@
 .event[data-kind='milestone'] { background: var(--color-state-err-soft); border-left-color: var(--color-state-err); color: var(--color-text-primary); }
 
 .eventTitle {
-  font-size: var(--font-meta);
-  font-weight: var(--font-weight-semibold);
+  font-size: 13px; /* spacing-allow: prototype today event title 13px */
+  font-weight: var(--font-weight-bold);
+  line-height: 1.25;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
 .eventTime {
-  font-size: var(--font-tiny);
+  font-size: 11px; /* spacing-allow: prototype today event time 11px */
   color: var(--color-text-meta);
 }
 
 .eventDetail {
-  font-size: var(--font-tiny);
+  font-size: 11px; /* spacing-allow: prototype today event detail 11px */
   color: var(--color-text-secondary);
   white-space: nowrap;
   overflow: hidden;
