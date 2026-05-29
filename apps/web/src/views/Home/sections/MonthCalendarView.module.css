@@ -132,18 +132,23 @@
   padding: 0;
   display: flex;
   flex-direction: column;
+  flex: 1 1 auto;
   gap: var(--space-1);
+  min-height: 0;
   min-width: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
 .eventListItem {
   /* Chip lives in MonthEventChip; the LI is a layout slot only. */
+  flex: 0 0 auto;
   min-width: 0;
 }
 
-.moreLabel {
-  font-size: 9.5px; /* spacing-allow: prototype month more label 9.5px */
-  color: var(--color-text-meta);
+.eventList::-webkit-scrollbar {
+  display: none;
 }
 
 .stateWrap {

@@ -58,7 +58,7 @@ const PRESET_PROPERTIES: Readonly<
 
 const DEFAULT_LIMIT_PER_VIEW: Readonly<Record<CalendarView, number>> = Object.freeze({
   today: Number.MAX_SAFE_INTEGER,
-  week: Number.MAX_SAFE_INTEGER,
+  week: 3,
   month: 3,
 });
 
