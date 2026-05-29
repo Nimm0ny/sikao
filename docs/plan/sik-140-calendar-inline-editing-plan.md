@@ -128,3 +128,28 @@ SIK-138 Peek 有 readonly placeholder / banner。Phase 4 解锁写后，banner
 - Master：可编辑字段子集拍板 + banner 移除策略拍板 + 提交交互（失焦 vs 显式按钮）拍板
 - Runner：Wave 0-3 实现（建议排在 SIK-139 之后）
 - Verifier：双开 browser + axe + Evidence
+
+## 10. W0 Closeout Decisions (2026-05-30)
+
+本节覆盖前文里所有“候选 / 待拍板”旧措辞，作为当前 W0 define-first 的收口版本：
+
+- Phase 4 V1 固定可编辑字段集合：
+  - `title`
+  - `notes`
+  - `status`
+  - `category`
+  - `targetId`
+- `targetId` 已纳入 V1，不再是“待定是否纳入”。
+- `category` 是受控选择，不是自由文本。
+- readonly banner 三态已经锁定：
+  - `read-only`：保留旧 banner
+  - `partial-editable`：文案改为 `部分字段现已可编辑；时间与重复规则仍为只读。`
+  - `fully-editable`：静态 banner 全局移除
+- 键盘 ownership 已锁定：
+  - idle/read-only：`Esc` 关闭 Peek，`ArrowUp/ArrowDown` 做 prev/next
+  - editing(single-line/select)：`Esc` cancel，`ArrowUp/ArrowDown` 只归当前控件，`Enter` save
+  - editing(notes textarea)：`Esc` cancel，`ArrowUp/ArrowDown` 只归 textarea，`Ctrl/Cmd+Enter` save
+  - saving：`prev/next/close` disabled，`Esc` ignored，禁止切条目
+- scrim 规则已锁定：
+  - editing：先 cancel 当前字段，再 close Peek
+  - saving：ignored，不允许通过遮罩关闭
