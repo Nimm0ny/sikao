@@ -104,6 +104,11 @@ function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell, visiblePro
   readonly visibleProperties: readonly CalendarCardProperty[];
 }) {
   const peek = useCalendarPeek();
+  // SIK-139 W0 (D20): read-time optimistic patches keyed by real event id.
+  // The grid reads the map once and hands each chip its own patch so an
+  // in-flight reschedule (Phase 3) previews before the refetch lands. The
+  // grid never writes the store.
+  const optimisticEvents = usePlanStore((s) => s.optimisticEvents);
 
   // Peek list scope: chronological list of every chip currently rendered
   // in the visible month grid. prev / next walk this scope; entries are
@@ -156,6 +161,8 @@ function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell, visiblePro
                           event={item.event}
                           slice={item.slice}
                           visibleProperties={visibleProperties}
+                          peekAnchorId={entryId}
+                          optimisticPatch={optimisticEvents.get(item.event.id)}
                           onClick={() => peek.open({ ...item.event, id: entryId }, peekList)}
                         />
                       </li>

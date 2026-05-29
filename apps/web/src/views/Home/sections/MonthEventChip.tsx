@@ -51,6 +51,24 @@ export interface MonthEventChipProps {
    * because storybook / unit tests may render chips without a peek.
    */
   readonly onClick?: () => void;
+  /**
+   * Per-slice anchor id for `data-peek-anchor`. SIK-139 W0: Phase 3 drag
+   * and the peek both need a stable, unique handle per rendered chip. The
+   * month view passes the `${occurrenceRef}|${day}` entry id so cross-day
+   * slices of one event each get a distinct anchor. Falls back to the
+   * event id when omitted (single-slice render / unit tests). Note this is
+   * distinct from `data-event-id`, which always carries the real event id
+   * (the mutation target).
+   */
+  readonly peekAnchorId?: string;
+  /**
+   * Read-time optimistic patch (SIK-138 D20 placeholder, consumed by
+   * SIK-139). The month view reads `usePlanStore.optimisticEvents.get(
+   * event.id)` and passes it here; the chip renders `{...event, ...patch}`
+   * so an in-flight reschedule previews before the refetch lands. This is
+   * render-only — the chip never writes the store (AGENT-H7 read-only).
+   */
+  readonly optimisticPatch?: Partial<PlanEventReadV2>;
 }
 
 const KIND_VAR_BY_KIND: Readonly<Record<EventKind, string>> = {
@@ -111,7 +129,18 @@ function SourceIcon({ source }: { readonly source: string }) {
   return null;
 }
 
-export function MonthEventChip({ event, visibleProperties, slice, onClick }: MonthEventChipProps) {
+export function MonthEventChip({
+  event: sourceEvent,
+  visibleProperties,
+  slice,
+  onClick,
+  peekAnchorId,
+  optimisticPatch,
+}: MonthEventChipProps) {
+  // SIK-139 W0 (D20): merge the optimistic patch over the source event for
+  // render only. When no patch is supplied this is a no-op spread, so the
+  // existing read-only behavior is preserved bit-for-bit.
+  const event = optimisticPatch ? { ...sourceEvent, ...optimisticPatch } : sourceEvent;
   const kind = eventKindOf(event);
   const isCrossDay = slice !== undefined && (!slice.isStartSlice || !slice.isEndSlice);
 
@@ -128,6 +157,8 @@ export function MonthEventChip({ event, visibleProperties, slice, onClick }: Mon
       type="button"
       className={styles.chip}
       data-testid="home-month-event"
+      data-event-id={event.id}
+      data-peek-anchor={peekAnchorId ?? event.id}
       data-kind={kind}
       data-cross-day={isCrossDay || undefined}
       data-kind-disabled={renderKind ? undefined : true}
