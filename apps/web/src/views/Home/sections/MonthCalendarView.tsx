@@ -1,6 +1,6 @@
 // lint-allow-ui-copy: V5 SIK-126 Month calendar copy. CJK strings are
 // visual contract from `.tmp_review/out/Tab1-Home/Home v2.1.html`.
-import { useMemo } from 'react';
+import { lazy, Suspense, useMemo } from 'react';
 import { useEvents } from '@sikao/api-client/plansQueries';
 import { buildViewRange } from '@sikao/calendar-engine';
 import { usePlanStore } from '@sikao/domain';
@@ -24,6 +24,12 @@ import {
   type CalendarPeekListEntry,
 } from './peek';
 import styles from './MonthCalendarView.module.css';
+
+// SIK-139 W1: the dnd-kit runtime ships in a lazy chunk (08-NonFunctional
+// §1.2 — dnd-kit MUST be lazy-loaded, off the Home first-paint path). The
+// static MonthGrid below renders as the Suspense fallback so LCP never
+// waits on the dnd chunk; the dnd-enabled grid swaps in once loaded.
+const MonthGridDnd = lazy(() => import('./dragDrop/MonthGridDnd'));
 
 /*
  * MonthCalendarView — V5 SIK-126 (Home v2.1 month view).
@@ -155,6 +161,12 @@ function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell, visiblePro
                 <ul className={styles.eventList}>
                   {visible.map((item) => {
                     const entryId = `${item.slice.occurrenceRef}|${item.slice.day}`;
+                    // SIK-139 W1 (F-2): two distinct chip handles, do not
+                    // conflate them. `data-event-id` (= item.event.id, passed
+                    // via optimisticPatch lookup + read by Wave 2 mutation) is
+                    // the real reschedule/mutation target. `peekAnchorId`
+                    // (= entryId `${occurrenceRef}|${day}`) is the per-slice
+                    // peek/drag handle — unique per cross-day slice.
                     return (
                       <li key={entryId} className={styles.eventListItem}>
                         <MonthEventChip
@@ -240,13 +252,29 @@ function MonthCalendarViewBody({ viewConfig }: MonthCalendarViewProps) {
         </div>
       ) : null}
       {query.isSuccess && total > 0 ? (
-        <MonthGrid
-          cells={cells}
-          eventsByDay={eventsByDay}
-          dowLabels={dowLabels}
-          cardLimitPerCell={config.cardLimitPerCell}
-          visibleProperties={config.visibleProperties}
-        />
+        // SIK-139 W1: progressively enhance to the dnd-enabled grid. The
+        // static MonthGrid renders as the Suspense fallback (identical DOM,
+        // no drag) so first paint / LCP never waits on the lazy dnd chunk;
+        // MonthGridDnd swaps in once @dnd-kit loads.
+        <Suspense
+          fallback={
+            <MonthGrid
+              cells={cells}
+              eventsByDay={eventsByDay}
+              dowLabels={dowLabels}
+              cardLimitPerCell={config.cardLimitPerCell}
+              visibleProperties={config.visibleProperties}
+            />
+          }
+        >
+          <MonthGridDnd
+            cells={cells}
+            eventsByDay={eventsByDay}
+            dowLabels={dowLabels}
+            cardLimitPerCell={config.cardLimitPerCell}
+            visibleProperties={config.visibleProperties}
+          />
+        </Suspense>
       ) : null}
     </div>
   );

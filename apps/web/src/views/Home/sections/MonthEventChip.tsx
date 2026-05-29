@@ -1,7 +1,15 @@
 // lint-allow-ui-copy: V5 SIK-138 W5 calendar chip copy. CJK strings (kind /
 // status / source labels) come from visual contract §3 channel encodings.
 import { Download, Link2, Plus, Sparkles } from 'lucide-react';
-import type { CSSProperties } from 'react';
+import type { CSSProperties, Ref } from 'react';
+// Type-only import: SIK-139 W1. Pulling dnd-kit's draggable shapes as types
+// keeps this chip statically importable with ZERO runtime dnd-kit dependency
+// (verbatimModuleSyntax erases the import), so the chip stays in the Home
+// first-paint chunk while the dnd-kit runtime is lazy-loaded via MonthGridDnd.
+import type {
+  DraggableAttributes,
+  DraggableSyntheticListeners,
+} from '@dnd-kit/core';
 
 import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 import type { CrossDaySlice } from '@sikao/calendar-engine';
@@ -69,6 +77,24 @@ export interface MonthEventChipProps {
    * render-only — the chip never writes the store (AGENT-H7 read-only).
    */
   readonly optimisticPatch?: Partial<PlanEventReadV2>;
+  /**
+   * Drag wiring from dnd-kit's `useDraggable`. SIK-139 W1: MonthGridDnd
+   * computes the hook per chip and threads the result here so the chip
+   * becomes a drag handle while staying a plain, statically-importable
+   * component (the hook lives in the lazy dnd chunk, not in this file).
+   * Omitted in the static (non-dnd) render path and in unit tests, where
+   * the chip behaves exactly as the SIK-138 read-only chip.
+   *
+   * `isDragging` toggles the dragging visual state (visual contract §4:
+   * `--cal-drag-*` shadow lift). `onClick` is preserved alongside drag so
+   * a plain click still opens the Peek (visual contract §2).
+   */
+  readonly drag?: {
+    readonly setNodeRef: Ref<HTMLButtonElement>;
+    readonly attributes: DraggableAttributes;
+    readonly listeners: DraggableSyntheticListeners;
+    readonly isDragging: boolean;
+  };
 }
 
 const KIND_VAR_BY_KIND: Readonly<Record<EventKind, string>> = {
@@ -136,6 +162,7 @@ export function MonthEventChip({
   onClick,
   peekAnchorId,
   optimisticPatch,
+  drag,
 }: MonthEventChipProps) {
   // SIK-139 W0 (D20): merge the optimistic patch over the source event for
   // render only. When no patch is supplied this is a no-op spread, so the
@@ -155,6 +182,7 @@ export function MonthEventChip({
   return (
     <button
       type="button"
+      ref={drag?.setNodeRef}
       className={styles.chip}
       data-testid="home-month-event"
       data-event-id={event.id}
@@ -162,10 +190,13 @@ export function MonthEventChip({
       data-kind={kind}
       data-cross-day={isCrossDay || undefined}
       data-kind-disabled={renderKind ? undefined : true}
+      data-dragging={drag?.isDragging || undefined}
       style={renderKind ? kindStyle(kind) : undefined}
       onClick={onClick}
       title={event.title}
       aria-label={`查看事件：${event.title}`}
+      {...(drag?.attributes ?? {})}
+      {...(drag?.listeners ?? {})}
     >
       <span className={styles.titles}>
         {renderTitle ? (
