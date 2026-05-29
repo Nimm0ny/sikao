@@ -161,7 +161,7 @@ SIK-138 chip 占 7 通道（kind 边色 / title / category / status dot / source
 - **本地日 helper 选型（H1 修正，详见 §5 C9）**：repo 现有**两个**本地日 helper：
   - 引擎层 `@sikao/calendar-engine` `toLocalDateStamp(value, tz)`（timezone.ts:19，经 index 导出，**不抛错只格式化**）。
   - 应用层 `dragDrop/conflictGuard.ts` `zonedDateKey(iso, tz)`（L66，SIK-139 引入，**解析失败显式抛错**，H7-compliant，有 `conflictGuard.test.ts` 覆盖）。
-  - **W1 决策**：tone 派生要求解析失败抛错，故采用 **`zonedDateKey` 同款抛错语义**；落地选型（直接 import / 提升为 shared util）W1 实现时定，不得静默降级到不抛错的 `toLocalDateStamp`。
+  - **W1 决策（lhr 2026-05-29 拍板）**：tone 派生要求解析失败抛错，将抛错语义的本地日 helper **提升为 shared util**（如 `@sikao/shared-utils` 或 calendar-engine 导出），统一供 tone 派生 + conflictGuard 复用；不得静默降级到不抛错的 `toLocalDateStamp`。原 `conflictGuard.ts` 的 `zonedDateKey` 改为引用该 shared util（保持 test 绿）。
 
 ### 3.3 chip 几何（遵守原型 v2.1）
 
@@ -235,8 +235,8 @@ SIK-138 chip 占 7 通道（kind 边色 / title / category / status dot / source
 | C6 | 周 chip 可点性 | 原型 `.day-event` 有 hover popover，无点击详情 | SIK-126 实现周 chip 是纯 `<span>` 不可点 | **W5 接现有只读 Peek**（统一月/周交互） | 2026-05-29 |
 | C7 | 周 cell chip 上限 | 原型周 cell 无明确上限 | SIK-126 实现周 cell 无 `cardLimitPerCell` 上限 | **统一 ≤3 条 + 格内滑动**（与月一致） | 2026-05-29 |
 | C8 | chip 几何 token | 原型 `.m-event` radius 5px / border-left 3px | SIK-138 `--cal-chip-radius=--radius-6` / `--cal-chip-border-w=4px` | **收敛到原型基准**（radius 5 / border 3，W1 落 token） | 2026-05-29 |
-| C9 | 本地日 helper（H7 时区正确性） | n/a | repo 现有**两个** helper：引擎层 `toLocalDateStamp`（timezone.ts:19，**不抛错**）+ 应用层 `zonedDateKey`（conflictGuard.ts:66，SIK-139，**抛错**，test 覆盖） | **采用抛错语义**（`zonedDateKey` 同款）：tone 派生解析失败必须抛错（H7），不得用不抛错的 `toLocalDateStamp`；W1 定具体落地（直接 import / 提为 shared util） | 2026-05-29 |
-| C10 | 截图归档路径 | n/a | workflow §2.7 = `.tmp_review/visual-diff/<sik>/`；lhr 任务卡 = `.tmp_review/out/sik-142-w<N>/` | **任务卡路径为主**（lhr 显式指令优先于 workflow 默认；与原型同根便于对照） | 2026-05-29 |
+| C9 | 本地日 helper（H7 时区正确性） | n/a | repo 现有**两个** helper：引擎层 `toLocalDateStamp`（timezone.ts:19，**不抛错**）+ 应用层 `zonedDateKey`（conflictGuard.ts:66，SIK-139，**抛错**，test 覆盖） | **抛错语义提为 shared util**（lhr 拍板）：tone 派生 + conflictGuard 共用；解析失败必抛（H7），不得用不抛错的 `toLocalDateStamp`；`zonedDateKey` 改引用 shared util 保 test 绿 | 2026-05-29 |
+| C10 | 截图归档路径 | n/a | workflow §2.7 = `.tmp_review/visual-diff/<sik>/`；lhr 任务卡曾写 `.tmp_review/out/sik-142-w<N>/` | **归一到 workflow §2.7 强制路径 `.tmp_review/visual-diff/sik-142/`**（lhr 2026-05-29 拍板，按 workflow 标准） | 2026-05-29 |
 
 > C1 是本 issue 最大主动偏离，理由（lhr 拍板）：备考工具里「做没做 / 是不是今天 / 逾期没」比「plan 还是 practice」更高频有用；颜色是单一通道，不能同时背 kind + 时间状态。详细 drift 见 §6。
 >
@@ -289,9 +289,9 @@ SIK-138 chip 占 7 通道（kind 边色 / title / category / status dot / source
 
 ### 7.2 截图归档
 
-- 主归档路径（lhr 本任务卡显式指定）：`.tmp_review/out/sik-142-w<N>/`
-  - 每 wave **必须**有 `1440×900` 与 `1920×1080` 两档实现截图；W1+ 配原型对照。
-- **路径冲突说明（H1，见 §5 C10）**：`visual-contract-workflow.md` §2.7 规定的强制路径是 `.tmp_review/visual-diff/<sik>/`；本任务卡 lhr 显式指定 `.tmp_review/out/sik-142-w<N>/`（与原型同根 `.tmp_review/out/Tab1-Home/` 便于对照）。**采用任务卡路径为主**（lhr 显式指令优先），如 lhr 要求归一到 workflow 标准路径，W1 起改用 `visual-diff`。
+- 归档路径（workflow §2.7 强制，lhr 2026-05-29 拍板归一）：`.tmp_review/visual-diff/sik-142/`
+  - 每 wave **必须**有 `1440×900` 与 `1920×1080` 两档实现截图；W1+ 配原型对照（`prototype` + `implementation` 各一）。
+  - 命名建议：`w<N>-<view>-<width>-{prototype|impl}.png`（如 `w1-month-1440-impl.png`）。
 - prototype 对照来源：`.tmp_review/out/Tab1-Home/Home v2.1.html`（月/周视图）。
 
 ### 7.3 a11y / 验证命令（每 wave）
