@@ -118,3 +118,12 @@ Reference:
 | no fake numeric fallback allowed | current no aggregate render | future chip / peek branches | PASS (W0 design) |
 | 1440/1920 screenshot archive path reserved | `.tmp_review/visual-diff/sik-141/` | future Wave 2/3 browser evidence | PASS (W0 scaffold) |
 | dual-open diff hook reserved | current no aggregation screenshots | `1440/1920` diff archive under `.tmp_review/visual-diff/sik-141/` | PASS (W0 scaffold) |
+| chip ready microline renders on month path | title-only chip baseline | `MonthEventChip.tsx` + `MonthCalendarView.tsx` | PASS (W2) |
+| peek ready block renders metrics | peek without aggregation baseline | `CalendarPeekAggregation.tsx` + `CalendarPeekCard.tsx` | PASS (W2) |
+| empty state labels render explicitly in chip and peek | no aggregate baseline | `eventAggregates.ts` + month/week/peek tests | PASS (W2) |
+| month dnd path keeps aggregate text | dnd path baseline | `MonthGridDnd.tsx` + `MonthGridDnd.test.tsx` | PASS (W2) |
+| dual-line chip budget respects cardLimitPerCell | single-line chip window baseline | month/week/dnd `space-8` max-height budget | PASS (W2) |
+| 1440 ready chip / ready peek screenshots archived | `.tmp_review/visual-diff/sik-141/` | `w2-1440-month-chip-ready.png` / `w2-1440-peek-ready.png` | PASS (W2) |
+| 1920 empty-state peek screenshot archived | `.tmp_review/visual-diff/sik-141/` | `w2-1920-peek-empty.png` | PASS (W2) |
+| >100 event ids split into multiple aggregate batches | W0 batch-limit contract | `eventAggregates.test.tsx` | PASS (W3) |
+| aggregate-ready peek has no axe violations | aggregate render a11y closeout | `CalendarPeekCard.test.tsx` | PASS (W3) |
