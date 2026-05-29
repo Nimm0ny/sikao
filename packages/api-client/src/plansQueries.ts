@@ -4,6 +4,8 @@ import { homeQueryKeys } from './homeQueryKeys';
 import { api } from './request';
 import type {
   EventWindowFilters,
+  PlanEventAggregateBatchRequestV2,
+  PlanEventAggregateBatchResponseV2,
   EventWindowResponseV2,
   PlanAdjustmentListResponseV2,
   PlanAdjustmentReadV2,
@@ -29,6 +31,19 @@ export function fetchEvents(filters: EventWindowFilters): Promise<EventWindowRes
       tz: filters.tz ?? 'Asia/Shanghai',
     },
   });
+}
+
+function normalizeAggregateEventIds(eventIds: readonly string[]): string[] {
+  return Array.from(new Set(eventIds)).sort((left, right) => left.localeCompare(right));
+}
+
+export function fetchEventAggregates(
+  payload: PlanEventAggregateBatchRequestV2,
+): Promise<PlanEventAggregateBatchResponseV2> {
+  return api.post<PlanEventAggregateBatchResponseV2, PlanEventAggregateBatchRequestV2>(
+    '/plans/events/aggregates',
+    { eventIds: normalizeAggregateEventIds(payload.eventIds) },
+  );
 }
 
 export function fetchEvent(eventId: string | number): Promise<PlanEventReadV2> {
@@ -64,6 +79,17 @@ export function useEvents(filters: EventWindowFilters): UseQueryResult<EventWind
   return useQuery({
     queryKey: homeQueryKeys.plans.events(filters),
     queryFn: () => fetchEvents(filters),
+  });
+}
+
+export function useEventAggregates(
+  eventIds: readonly string[],
+): UseQueryResult<PlanEventAggregateBatchResponseV2> {
+  const normalizedEventIds = normalizeAggregateEventIds(eventIds);
+  return useQuery({
+    queryKey: homeQueryKeys.plans.eventAggregates(normalizedEventIds),
+    queryFn: () => fetchEventAggregates({ eventIds: normalizedEventIds }),
+    enabled: normalizedEventIds.length > 0,
   });
 }
 

@@ -1589,6 +1589,50 @@ class PlanEventUpdateRequestV2(CamelModel):
     target_id: int | None = None
 
 
+class PlanEventAggregateBatchRequestV2(CamelModel):
+    event_ids: list[str] = Field(min_length=1, max_length=100)
+
+    @field_validator("event_ids")
+    @classmethod
+    def validate_event_ids(cls, values: list[str]) -> list[str]:
+        normalized = [value.strip() for value in values]
+        if any(not value for value in normalized):
+            raise ValueError("event_ids cannot contain blank values")
+        if len(set(normalized)) != len(normalized):
+            raise ValueError("event_ids must be distinct")
+        return normalized
+
+
+PlanEventAggregateAvailabilityV2 = Literal[
+    "ready",
+    "event_unavailable",
+    "missing_linked_session",
+    "session_not_found",
+    "not_submitted",
+    "unsupported_track",
+    "no_graded_items",
+]
+
+
+class PlanEventAggregateMetricsV2(CamelModel):
+    attempted_count: int
+    correct_count: int
+    accuracy: float
+    active_seconds: int | None = None
+    source_kind: Literal["practice_session", "mock_exam"]
+
+
+class PlanEventAggregateReadV2(CamelModel):
+    event_id: str
+    linked_session_id: int | None = None
+    availability: PlanEventAggregateAvailabilityV2
+    metrics: PlanEventAggregateMetricsV2 | None = None
+
+
+class PlanEventAggregateBatchResponseV2(CamelModel):
+    items: list[PlanEventAggregateReadV2] = Field(default_factory=list)
+
+
 class PlanEventBulkDeleteRequestV2(CamelModel):
     plan_id: int | None = None
     from_date: date | None = Field(default=None, alias="from")

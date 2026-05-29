@@ -16,6 +16,8 @@ from sikao_api.db.models_v2 import UserV2
 from sikao_api.db.schemas_v2 import (
     EventConflictsRequestV2,
     EventConflictsResponseV2,
+    PlanEventAggregateBatchRequestV2,
+    PlanEventAggregateBatchResponseV2,
     EventWindowResponseV2,
     OperationAckV2,
     PlanAdjustmentListResponseV2,
@@ -40,6 +42,7 @@ from sikao_api.modules.llm.application.service import HomeLlmService, HomeLlmStr
 from sikao_api.modules.plans.application.adjustment_service import AdjustmentServiceV2
 from sikao_api.modules.plans.application.event_command_service import EventCommandServiceV2
 from sikao_api.modules.plans.application.event_delete_service import EventDeleteServiceV2
+from sikao_api.modules.plans.application.event_aggregate_service import EventAggregateServiceV2
 from sikao_api.modules.plans.application.event_query_service import EventQueryServiceV2
 from sikao_api.modules.plans.application.plan_service import PlanServiceV2
 from sikao_api.modules.system.application.errors import ServiceError
@@ -141,6 +144,22 @@ def create_event(
     )
     session.commit()
     return result
+
+
+@router.post(
+    "/events/aggregates",
+    response_model=PlanEventAggregateBatchResponseV2,
+    dependencies=[Depends(verify_csrf_v2)],
+)
+def list_event_aggregates(
+    payload: PlanEventAggregateBatchRequestV2,
+    user: Annotated[UserV2, Depends(get_current_user_v2)],
+    session: Annotated[Session, Depends(get_db_session)],
+) -> PlanEventAggregateBatchResponseV2:
+    return EventAggregateServiceV2(session).list_event_aggregates(
+        user=user,
+        event_ids=payload.event_ids,
+    )
 
 
 @router.get("/events/{event_id}", response_model=PlanEventReadV2)

@@ -77,6 +77,38 @@ export interface EventWindowFilters {
   readonly tz?: string;
 }
 
+export type PlanEventAggregateAvailabilityV2 =
+  | 'ready'
+  | 'event_unavailable'
+  | 'missing_linked_session'
+  | 'session_not_found'
+  | 'not_submitted'
+  | 'unsupported_track'
+  | 'no_graded_items';
+
+export interface PlanEventAggregateMetricsV2 {
+  readonly attemptedCount: number;
+  readonly correctCount: number;
+  readonly accuracy: number;
+  readonly activeSeconds: number | null;
+  readonly sourceKind: 'practice_session' | 'mock_exam';
+}
+
+export interface PlanEventAggregateReadV2 {
+  readonly eventId: string;
+  readonly linkedSessionId: number | null;
+  readonly availability: PlanEventAggregateAvailabilityV2;
+  readonly metrics: PlanEventAggregateMetricsV2 | null;
+}
+
+export interface PlanEventAggregateBatchRequestV2 {
+  readonly eventIds: readonly string[];
+}
+
+export interface PlanEventAggregateBatchResponseV2 {
+  readonly items: readonly PlanEventAggregateReadV2[];
+}
+
 export interface ProgressTimeseriesFilters {
   readonly from: string;
   readonly to: string;

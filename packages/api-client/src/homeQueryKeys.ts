@@ -15,6 +15,8 @@ export const homeQueryKeys = {
     detail: (planId: number) => [...homeQueryKeys.plans.all(), 'detail', planId] as const,
     events: (filters: EventWindowFilters) =>
       [...homeQueryKeys.plans.all(), 'events', filters] as const,
+    eventAggregates: (eventIds: readonly string[]) =>
+      [...homeQueryKeys.plans.all(), 'event-aggregates', [...eventIds]] as const,
     event: (eventId: string | number) =>
       [...homeQueryKeys.plans.all(), 'event', String(eventId)] as const,
     adjustments: (status?: string | null) =>
