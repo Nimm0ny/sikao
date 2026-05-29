@@ -30,6 +30,8 @@ export interface CalendarPeekHeadProps {
   readonly canStep: boolean;
   readonly currentIndex: number;
   readonly listLength: number;
+  readonly navigationDisabled?: boolean;
+  readonly closeDisabled?: boolean;
 }
 
 export function CalendarPeekHead({
@@ -39,6 +41,8 @@ export function CalendarPeekHead({
   canStep,
   currentIndex,
   listLength,
+  navigationDisabled = false,
+  closeDisabled = false,
 }: CalendarPeekHeadProps) {
   return (
     <header className={styles.head} data-testid="home-calendar-peek-head">
@@ -66,7 +70,7 @@ export function CalendarPeekHead({
         type="button"
         className={styles.headBtn}
         onClick={onPrev}
-        disabled={!canStep}
+        disabled={navigationDisabled || !canStep}
         aria-label="上一条"
         data-testid="home-calendar-peek-prev"
       >
@@ -76,7 +80,7 @@ export function CalendarPeekHead({
         type="button"
         className={styles.headBtn}
         onClick={onNext}
-        disabled={!canStep}
+        disabled={navigationDisabled || !canStep}
         aria-label="下一条"
         data-testid="home-calendar-peek-next"
       >
@@ -104,6 +108,7 @@ export function CalendarPeekHead({
         type="button"
         className={styles.headBtn}
         onClick={onClose}
+        disabled={closeDisabled}
         aria-label="关闭"
         data-testid="home-calendar-peek-close"
       >

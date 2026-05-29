@@ -1,5 +1,5 @@
 import { useId } from 'react';
-import type { ChangeEvent, ReactNode } from 'react';
+import type { ChangeEvent, KeyboardEventHandler, ReactNode } from 'react';
 import styles from './Input.module.css';
 
 /*
@@ -42,6 +42,8 @@ export interface InputProps {
   readonly id?: string;
   readonly name?: string;
   readonly 'aria-label'?: string;
+  readonly autoFocus?: boolean;
+  readonly onKeyDown?: KeyboardEventHandler<HTMLInputElement>;
 }
 
 export function Input({
@@ -60,6 +62,8 @@ export function Input({
   id,
   name,
   'aria-label': ariaLabel,
+  autoFocus = false,
+  onKeyDown,
 }: InputProps) {
   const reactId = useId();
   const inputId = id ?? `input-${reactId}`;
@@ -98,9 +102,11 @@ export function Input({
           placeholder={placeholder}
           disabled={disabled}
           readOnly={readOnly}
+          autoFocus={autoFocus}
           aria-label={ariaLabel}
           aria-invalid={showError ? true : undefined}
           aria-describedby={describedBy}
+          onKeyDown={onKeyDown}
           onChange={(e: ChangeEvent<HTMLInputElement>) => onChange(e.target.value)}
         />
         {suffix !== undefined ? (

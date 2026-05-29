@@ -1,5 +1,5 @@
 import { useEffect, useId, useLayoutEffect, useRef } from 'react';
-import type { ChangeEvent } from 'react';
+import type { ChangeEvent, KeyboardEventHandler } from 'react';
 import styles from './Textarea.module.css';
 
 /*
@@ -37,6 +37,8 @@ export interface TextareaProps {
   readonly disabled?: boolean;
   readonly readOnly?: boolean;
   readonly 'aria-label'?: string;
+  readonly autoFocus?: boolean;
+  readonly onKeyDown?: KeyboardEventHandler<HTMLTextAreaElement>;
 }
 
 // Line-height in px, paired with .textarea font-size + line-height rules
@@ -66,6 +68,8 @@ export function Textarea({
   disabled = false,
   readOnly = false,
   'aria-label': ariaLabel,
+  autoFocus = false,
+  onKeyDown,
 }: TextareaProps) {
   if (rows !== undefined && autosize !== undefined) {
     throw new Error('Textarea: `rows` and `autosize` are mutually exclusive');
@@ -124,9 +128,11 @@ export function Textarea({
           placeholder={placeholder}
           disabled={disabled}
           readOnly={readOnly}
+          autoFocus={autoFocus}
           aria-label={ariaLabel}
           aria-invalid={invalid ? true : undefined}
           aria-describedby={describedBy}
+          onKeyDown={onKeyDown}
           onChange={(e: ChangeEvent<HTMLTextAreaElement>) => onChange(e.target.value)}
         />
         {showCount && maxLength !== undefined ? (

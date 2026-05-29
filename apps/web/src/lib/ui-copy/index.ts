@@ -1,9 +1,5 @@
 /*
  * @/lib/ui-copy — V5 UI copy SSOT.
- *
- * Why: lint-ui-copy-ssot enforces that any inline CJK string longer than
- *      4 characters in `apps/web/src/{views,components}/**` must come from
- *      this module so copy stays centralized and reviewable.
  */
 
 export const PAGINATION = {
@@ -26,4 +22,11 @@ export const CALENDAR_DND = {
   invalidEventTime: '事件时间数据异常',
   canceledReschedule: '已取消改期',
   conflictCheckIncomplete: '落点冲突校验未完成',
+} as const;
+
+export const CALENDAR_INLINE = {
+  saveFailed: '保存失败，请重试',
+  titleSaveFailed: '标题未能保存，请重试',
+  notesSaveFailed: '备注未能保存，请重试',
+  emptyTitle: '标题不能为空',
 } as const;
