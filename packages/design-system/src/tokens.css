@@ -838,7 +838,7 @@ em, i { font-style: normal; }
 :root {
   --cal-peek-width:        min(720px, 92vw);
   --cal-peek-max-h:        calc(100vh - 144px);
-  --cal-peek-radius:       var(--radius-14);
+  --cal-peek-radius:       var(--card-radius);
   --cal-peek-padding-x:    var(--space-7);
   --cal-peek-padding-y:    var(--space-6);
   --cal-peek-head-h:       44px;

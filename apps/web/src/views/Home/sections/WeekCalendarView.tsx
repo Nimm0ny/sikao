@@ -14,6 +14,12 @@ import {
   type CalendarViewConfig,
 } from './calendarViewConfig';
 import { MonthEventChip } from './MonthEventChip';
+import {
+  CalendarPeekCard,
+  CalendarPeekProvider,
+  useCalendarPeek,
+  type CalendarPeekListEntry,
+} from './peek';
 import styles from './WeekCalendarView.module.css';
 
 const TZ = 'Asia/Shanghai';
@@ -22,6 +28,7 @@ const DOW_LABELS_SUN_FIRST = ['周日', '周一', '周二', '周三', '周四', 
 const SLOT_LABELS = ['早上', '中午', '晚上'] as const;
 
 type SlotIndex = 0 | 1 | 2;
+const SLOT_INDICES: ReadonlyArray<SlotIndex> = [0, 1, 2];
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const localStamp = (value: Date) =>
@@ -81,6 +88,21 @@ function bucketEvents(items: ReadonlyArray<EnrichedOccurrence>): Map<string, Enr
   return map;
 }
 
+function buildWeekPeekEntry(item: EnrichedOccurrence): CalendarPeekListEntry {
+  return {
+    id: `${item.occurrence.occurrenceRef}|${weekDaySlice(item).day}`,
+    event: item.event,
+  };
+}
+
+function compareWeekPeekEntries(a: CalendarPeekListEntry, b: CalendarPeekListEntry): number {
+  const startDiff = new Date(a.event.startAt).getTime() - new Date(b.event.startAt).getTime();
+  if (startDiff !== 0) return startDiff;
+  const endDiff = new Date(a.event.endAt).getTime() - new Date(b.event.endAt).getTime();
+  if (endDiff !== 0) return endDiff;
+  return a.id.localeCompare(b.id);
+}
+
 function WeekGrid({
   days,
   eventsByCell,
@@ -96,7 +118,20 @@ function WeekGrid({
   readonly today: string;
   readonly cardLimitPerCell: number;
 }) {
-  const slotIndices: ReadonlyArray<SlotIndex> = [0, 1, 2];
+  const peek = useCalendarPeek();
+  const peekList = useMemo<ReadonlyArray<CalendarPeekListEntry>>(() => {
+    const out: CalendarPeekListEntry[] = [];
+    for (const day of days) {
+      for (const slot of SLOT_INDICES) {
+        const bucket = eventsByCell.get(`${day.stamp}|${slot}`) ?? [];
+        for (const item of bucket) {
+          out.push(buildWeekPeekEntry(item));
+        }
+      }
+    }
+    out.sort(compareWeekPeekEntries);
+    return out;
+  }, [days, eventsByCell]);
   return (
     <>
       <div className={styles.calHead} role="row">
@@ -117,7 +152,7 @@ function WeekGrid({
         ))}
       </div>
       <div className={styles.calBody} role="grid" aria-label="本周日历">
-        {slotIndices.flatMap((slot) =>
+        {SLOT_INDICES.flatMap((slot) =>
           days.map((day) => {
             const bucket = eventsByCell.get(`${day.stamp}|${slot}`) ?? [];
             return (
@@ -138,20 +173,25 @@ function WeekGrid({
                     data-scrollable={bucket.length > cardLimitPerCell || undefined}
                     style={{ maxHeight: buildVisibleRowsMaxHeight(cardLimitPerCell) }}
                   >
-                    {bucket.map((item) => (
-                      <div
-                        key={item.occurrence.id}
-                        className={styles.dayEventSlot}
-                        data-testid="home-week-event"
-                      >
-                        <MonthEventChip
-                          event={item.event}
-                          slice={weekDaySlice(item)}
-                          visibleProperties={visibleProperties}
-                          today={today}
-                        />
-                      </div>
-                    ))}
+                    {bucket.map((item) => {
+                      const peekEntry = buildWeekPeekEntry(item);
+                      return (
+                        <div
+                          key={item.occurrence.id}
+                          className={styles.dayEventSlot}
+                          data-testid="home-week-event"
+                        >
+                          <MonthEventChip
+                            event={item.event}
+                            slice={weekDaySlice(item)}
+                            visibleProperties={visibleProperties}
+                            today={today}
+                            peekAnchorId={peekEntry.id}
+                            onClick={() => peek.open({ ...item.event, id: peekEntry.id }, peekList)}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -168,6 +208,15 @@ export interface WeekCalendarViewProps {
 }
 
 export function WeekCalendarView({ viewConfig }: WeekCalendarViewProps = {}) {
+  return (
+    <CalendarPeekProvider>
+      <WeekCalendarViewBody viewConfig={viewConfig} />
+      <CalendarPeekCard />
+    </CalendarPeekProvider>
+  );
+}
+
+function WeekCalendarViewBody({ viewConfig }: WeekCalendarViewProps) {
   const anchorDate = usePlanStore((state) => state.currentDate);
   const config = viewConfig ?? createDefaultCalendarViewConfig('week');
   const window = useMemo(
