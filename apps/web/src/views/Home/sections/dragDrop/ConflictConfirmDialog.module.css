@@ -1,0 +1,107 @@
+/*
+ * ConflictConfirmDialog — SIK-139 W3.
+ *
+ * Why: visual contract §4 "冲突确认层" reuses the Peek/dialog tokens
+ *      (--cal-peek-scrim + --shadow-l4 + --radius-14) rather than inventing a
+ *      new modal skin. This is a WRITABLE confirm layer (confirm / cancel),
+ *      not the read-only Peek, but it shares the same portal + scrim + central
+ *      card geometry so the two surfaces feel consistent. Token single source
+ *      (Requirement 9): every value flows through tokens.css — no prototype
+ *      vars, no color-mix percentages, no literal shadows.
+ */
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 80px var(--space-4) var(--space-6); /* spacing-allow: matches Peek vertical anchor (CalendarPeekCard) */
+  background: var(--cal-peek-scrim);
+  overflow-y: auto;
+}
+
+.card {
+  position: relative;
+  width: var(--cal-peek-width);
+  max-height: var(--cal-peek-max-h);
+  background: var(--card-bg);
+  border: 1px solid var(--color-border-default);
+  border-radius: var(--cal-peek-radius);
+  box-shadow: var(--shadow-l4);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.head {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-5) var(--cal-peek-padding-x) var(--space-3);
+  border-bottom: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
+
+.title {
+  margin: 0;
+  font-size: var(--font-h2);
+  font-weight: var(--font-weight-bold);
+  color: var(--color-text-primary);
+  line-height: 1.2;
+  letter-spacing: -0.018em;
+}
+
+.subtitle {
+  margin: 0;
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-4) var(--cal-peek-padding-x);
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-3) var(--space-4);
+  background: var(--card-bg-elevated);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-10);
+}
+
+.itemTitle {
+  font-size: var(--font-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.itemTime {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+  font-variant-numeric: tabular-nums;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--cal-peek-padding-x) var(--space-5);
+  border-top: 1px solid var(--color-border-subtle);
+  flex-shrink: 0;
+}
