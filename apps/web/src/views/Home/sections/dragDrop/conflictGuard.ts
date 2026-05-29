@@ -22,14 +22,28 @@
  *      the UTC instant back to its Asia/Shanghai calendar day so the window
  *      matches what the month grid actually shows (a UTC slice would be off
  *      by one day across the +08:00 boundary).
+ *
+ *      SIK-142 W1 (contract §5 C9): `zonedDateKey` was promoted to
+ *      `@sikao/shared-utils` so the chip tone derivation can reuse the same
+ *      fail-fast (throwing) local-day mapping. It is re-exported here so this
+ *      module's existing call sites and `conflictGuard.test.ts` are unchanged.
  */
 import { detectEventConflicts } from '@sikao/api-client/plansQueries';
+import { zonedDateKey } from '@sikao/shared-utils';
 import type {
   EventConflictItemV2,
   EventConflictsRequestV2,
   EventConflictsResponseV2,
   ProposedPlanEventV2,
 } from '@sikao/api-client/types/home';
+
+/**
+ * Re-export the shared fail-fast local-day mapper. SIK-142 W1 moved the
+ * implementation to `@sikao/shared-utils`; this alias keeps the W3 import
+ * surface (`import { zonedDateKey } from './conflictGuard'`) and its tests
+ * intact.
+ */
+export { zonedDateKey };
 
 /** ISO-datetime window as produced by `buildViewRange` (UTC instants). */
 export interface ConflictWindow {
@@ -55,26 +69,6 @@ export interface ConflictGuardResult {
 export type DetectConflictsFn = (
   payload: EventConflictsRequestV2,
 ) => Promise<EventConflictsResponseV2>;
-
-/**
- * Map a UTC ISO instant to its calendar day (YYYY-MM-DD) in `timeZone`.
- *
- * `en-CA` formats as ISO-ordered `YYYY-MM-DD`, so this yields the date key
- * the server's `ExistingWindowV2` expects. Throws on an unparseable instant
- * (AGENT-H7 — no silent fallback to "today" or the raw string).
- */
-export function zonedDateKey(iso: string, timeZone: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) {
-    throw new Error(`conflictGuard: unparseable window instant "${iso}"`);
-  }
-  return new Intl.DateTimeFormat('en-CA', {
-    timeZone,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-}
 
 /**
  * Ask the server whether the proposed (shifted) event conflicts with any
