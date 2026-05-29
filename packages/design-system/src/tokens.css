@@ -327,6 +327,7 @@ em, i { font-style: normal; }
   --space-8: 64px;
 
   /* §1.3 radius scale */
+  --radius-5:   5px;
   --radius-10:  10px;
   --radius-12:  12px;
   --radius-16:  16px;
@@ -754,10 +755,14 @@ em, i { font-style: normal; }
   --cal-kind-mock:      var(--color-state-ok);
   --cal-kind-milestone: var(--color-state-err);
 
-  /* §8.2 chip layout knobs — W5 only owns the chip-channel parameters. */
-  --cal-chip-border-w:    4px;
+  /* §8.2 chip layout knobs — W5 owns the chip-channel parameters.
+   * SIK-142 W1 (contract §3.3 / §4.2 / §5 C8): geometry converges to the
+   * prototype `.m-event` baseline — border-left 3px (was 4px) and radius 5px
+   * (was an undefined `--radius-6`; now the real `--radius-5`). The week chip
+   * reuses MonthEventChip so both views share this one geometry. */
+  --cal-chip-border-w:    3px;
   --cal-chip-tint-alpha:  8%;
-  --cal-chip-radius:      var(--radius-6);
+  --cal-chip-radius:      var(--radius-5);
   --cal-chip-gap:         var(--space-2);
   --cal-chip-padding-y:   3px;
   --cal-chip-padding-x:   var(--space-2);
@@ -785,6 +790,29 @@ em, i { font-style: normal; }
    * keyboard user can see exactly where Enter will commit. Single-source in
    * the --cal-drag family, no new color (Requirement 9). */
   --cal-keyboard-ring: var(--color-focus-ring);
+
+  /* §8.4 calendar event time-status tone — SIK-142 W1 (contract §3.2 / §4.2).
+   * The chip color channel encodes TIME COMPLETION STATUS, not event kind
+   * (kind moves to a neutral leading icon — §3.1 / §4.3). Five tones cascade
+   * done > skipped > overdue > today > future (deriveChipTone). Each token
+   * re-references an existing V5 semantic token — NO hex, NO color-mix % —
+   * so the dark theme follows automatically (the semantic tokens already
+   * carry their dark-curve values). 15 tokens: {tone}-{border,bg,text}. */
+  --cal-event-done-border:     var(--color-state-ok);
+  --cal-event-done-bg:         var(--color-state-ok-soft);
+  --cal-event-done-text:       var(--color-text-primary);
+  --cal-event-skipped-border:  var(--color-text-disabled);
+  --cal-event-skipped-bg:      var(--color-bg-sunken);
+  --cal-event-skipped-text:    var(--color-text-meta);
+  --cal-event-overdue-border:  var(--color-text-disabled);
+  --cal-event-overdue-bg:      var(--color-bg-sunken);
+  --cal-event-overdue-text:    var(--color-text-meta);
+  --cal-event-today-border:    var(--color-brand-primary);
+  --cal-event-today-bg:        var(--color-brand-soft);
+  --cal-event-today-text:      var(--color-text-primary);
+  --cal-event-future-border:   var(--color-brand-soft);
+  --cal-event-future-bg:       var(--color-bg-surface);
+  --cal-event-future-text:     var(--color-text-primary);
 }
 
 [data-v5-theme='dark'],
