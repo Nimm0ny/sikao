@@ -57,4 +57,5 @@ export type DashboardCalendarView = 'today' | 'week' | 'month';
 export interface ViewRangeAnchor {
   readonly anchorDate: string;
   readonly timeZone: string;
+  readonly startWeekOnMonday?: boolean;
 }

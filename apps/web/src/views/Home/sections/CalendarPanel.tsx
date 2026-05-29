@@ -2,10 +2,11 @@
 // visual contract from the V5 prototype (Home v2.1.html panel-head) and
 // sik-fu-a-home-visual-contract.md §2.3.
 import { useCallback, useId } from 'react';
-import { Tabs, type TabItem } from '../../../components/nav/Tabs';
-import { Button } from '../../../components/form';
 import { useDashboardPreferenceStore, usePlanStore } from '@sikao/domain';
 import type { PlanCalendarView } from '@sikao/domain/plan/usePlanStore';
+
+import { Tabs, type TabItem } from '../../../components/nav/Tabs';
+import { Button } from '../../../components/form';
 import { TodayCalendarView } from './TodayCalendarView';
 import { WeekCalendarView } from './WeekCalendarView';
 import { MonthCalendarView } from './MonthCalendarView';
@@ -16,31 +17,6 @@ import {
 } from './calendarViewConfig';
 import type { CalendarViewConfig } from './calendarViewConfig';
 import styles from './CalendarPanel.module.css';
-
-/*
- * CalendarPanel — Home Section A · single-panel Calendar.
- *
- * Why: sik-fu-a-home-visual-contract.md §1.3 — merges the old PlanSection
- *      + Today/Week/Month CalendarView double-head into a single Panel
- *      with unified head: left panel-tabs + right panel-actions (4 buttons)
- *      + countdown chip.
- *
- *      Responsibilities:
- *        1. View segment (today / week / month) — writes usePlanStore +
- *           persists via useDashboardPreferenceStore using the W3
- *           buildHomeCalendarPreferencePatch (Requirement 7).
- *        2. Anchor navigation (prev / today / next) — shifts the anchor
- *           date in usePlanStore; calendar bodies subscribe.
- *        3. +new button — disabled placeholder (SIK-FU-N).
- *        4. Countdown chip — static placeholder until exam target store.
- *        5. CalendarViewConfig — resolved via useCalendarViewConfig and
- *           passed to today / week / month views as a prop. Per
- *           Requirement 1, child views must not read the store directly.
- *
- *      AGENT-H7: no fallback defaults. `rows` prop is required by
- *      ScreenLockShell; view must be one of the literal union; preference
- *      writes go through the W3 builder which fail-fasts on bad input.
- */
 
 const VIEW_KEYS = ['today', 'week', 'month'] as const satisfies ReadonlyArray<PlanCalendarView>;
 
@@ -55,17 +31,13 @@ function isPlanCalendarView(value: unknown): value is PlanCalendarView {
 }
 
 export interface CalendarPanelProps {
-  /** Countdown chip override. Defaults to placeholder. */
   readonly countdown?: { readonly label: string; readonly daysUntil: number };
 }
 
 function shiftDate(dateStr: string, amount: number, unit: 'day' | 'month'): string {
   const d = new Date(`${dateStr}T00:00:00`);
-  if (unit === 'day') {
-    d.setDate(d.getDate() + amount);
-  } else {
-    d.setMonth(d.getMonth() + amount);
-  }
+  if (unit === 'day') d.setDate(d.getDate() + amount);
+  else d.setMonth(d.getMonth() + amount);
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
@@ -80,6 +52,18 @@ function todayStamp(): string {
   return `${y}-${m}-${d}`;
 }
 
+function shiftCalendarAnchor(view: PlanCalendarView, currentDate: string, direction: -1 | 1): string {
+  if (view === 'today') return shiftDate(currentDate, direction, 'day');
+  if (view === 'week') return shiftDate(currentDate, direction * 7, 'day');
+  return shiftDate(currentDate, direction * 21, 'day');
+}
+
+function navAriaLabel(view: PlanCalendarView, direction: -1 | 1): string {
+  if (view === 'today') return direction < 0 ? '上一日' : '下一日';
+  if (view === 'week') return direction < 0 ? '上一周' : '下一周';
+  return direction < 0 ? '上 3 周' : '下 3 周';
+}
+
 export function CalendarPanel({ countdown }: CalendarPanelProps) {
   const headingId = useId();
   const currentView = usePlanStore((s) => s.currentView);
@@ -89,69 +73,29 @@ export function CalendarPanel({ countdown }: CalendarPanelProps) {
   const patchPreferences = useDashboardPreferenceStore((s) => s.patchPreferences);
   const viewConfig = useCalendarViewConfig(currentView);
 
-  const handleViewChange = useCallback((nextKey: string): void => {
-    if (!isPlanCalendarView(nextKey)) return;
-    setCurrentView(nextKey);
-    const patch = buildHomeCalendarPreferencePatch({ homeCalendarView: nextKey });
-    void patchPreferences(toDashboardPreferencesPatch(patch));
-  }, [setCurrentView, patchPreferences]);
+  const handleViewChange = useCallback(
+    (nextKey: string): void => {
+      if (!isPlanCalendarView(nextKey)) return;
+      setCurrentView(nextKey);
+      const patch = buildHomeCalendarPreferencePatch({ homeCalendarView: nextKey });
+      void patchPreferences(toDashboardPreferencesPatch(patch));
+    },
+    [patchPreferences, setCurrentView],
+  );
 
   const handlePrev = useCallback(() => {
-    if (currentView === 'today') setCurrentDate(shiftDate(currentDate, -1, 'day'));
-    else if (currentView === 'week') setCurrentDate(shiftDate(currentDate, -7, 'day'));
-    else setCurrentDate(shiftDate(currentDate, -1, 'month'));
-  }, [currentView, currentDate, setCurrentDate]);
+    setCurrentDate(shiftCalendarAnchor(currentView, currentDate, -1));
+  }, [currentDate, currentView, setCurrentDate]);
 
   const handleNext = useCallback(() => {
-    if (currentView === 'today') setCurrentDate(shiftDate(currentDate, 1, 'day'));
-    else if (currentView === 'week') setCurrentDate(shiftDate(currentDate, 7, 'day'));
-    else setCurrentDate(shiftDate(currentDate, 1, 'month'));
-  }, [currentView, currentDate, setCurrentDate]);
+    setCurrentDate(shiftCalendarAnchor(currentView, currentDate, 1));
+  }, [currentDate, currentView, setCurrentDate]);
 
   const handleToday = useCallback(() => {
     setCurrentDate(todayStamp());
   }, [setCurrentDate]);
 
   const cd = countdown ?? { label: '国考', daysUntil: 138 };
-
-  const panelActions = (
-    <div className={styles.actions}>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handlePrev}
-        aria-label={currentView === 'today' ? '上一日' : currentView === 'week' ? '上一周' : '上一月'}
-      >
-        ◀
-      </Button>
-      <Button variant="ghost" size="sm" onClick={handleToday} aria-label="回到今天">
-        ○
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleNext}
-        aria-label={currentView === 'today' ? '下一日' : currentView === 'week' ? '下一周' : '下一月'}
-      >
-        ▶
-      </Button>
-      <Button
-        variant="ghost"
-        size="sm"
-        disabled
-        aria-label="新建事件 (Plan 创建落 SIK-FU-N)"
-      >
-        ＋
-      </Button>
-      <span
-        className={styles.countdown}
-        aria-label={`${cd.label}倒计时`}
-        data-testid="home-calendar-countdown"
-      >
-        {cd.label} D-<b className={styles.countdownNum}>{cd.daysUntil}</b>
-      </span>
-    </div>
-  );
 
   return (
     <section
@@ -169,7 +113,42 @@ export function CalendarPanel({ countdown }: CalendarPanelProps) {
           noPanel
           aria-label="日历视图切换"
         />
-        {panelActions}
+        <div className={styles.actions}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handlePrev}
+            aria-label={navAriaLabel(currentView, -1)}
+          >
+            ◀
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleToday} aria-label="回到今天">
+            ○
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleNext}
+            aria-label={navAriaLabel(currentView, 1)}
+          >
+            ▶
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            disabled
+            aria-label="新建事件 (Plan 创建落 SIK-FU-N)"
+          >
+            ＋
+          </Button>
+          <span
+            className={styles.countdown}
+            aria-label={`${cd.label}倒计时`}
+            data-testid="home-calendar-countdown"
+          >
+            {cd.label} D-<b className={styles.countdownNum}>{cd.daysUntil}</b>
+          </span>
+        </div>
       </header>
       <div className={styles.body}>
         <CalendarBody view={currentView} viewConfig={viewConfig} />

@@ -189,7 +189,10 @@ export interface WeekCalendarViewProps {
 export function WeekCalendarView({ viewConfig }: WeekCalendarViewProps = {}) {
   const anchorDate = usePlanStore((s) => s.currentDate);
   const config = viewConfig ?? createDefaultCalendarViewConfig('week');
-  const window = useMemo(() => buildViewRange('week', { anchorDate, timeZone: TZ }), [anchorDate]);
+  const window = useMemo(
+    () => buildViewRange('week', { anchorDate, timeZone: TZ, startWeekOnMonday: config.startWeekOnMonday }),
+    [anchorDate, config.startWeekOnMonday],
+  );
   const query = useEvents({ from: window.from, to: window.to, tz: TZ, includePracticeBlocks: false });
   const days = useMemo(
     () => buildWeekDays(anchorDate, config.startWeekOnMonday),

@@ -71,15 +71,12 @@ interface MonthCell {
 
 function buildMonthCells(anchorDate: string, startWeekOnMonday: boolean): MonthCell[] {
   const anchor = new Date(`${anchorDate}T00:00:00`);
-  const year = anchor.getFullYear();
   const month = anchor.getMonth();
-  const monthStart = new Date(year, month, 1);
-  // Requirement 4: Monday-first uses (day + 6) % 7; Sunday-first uses day.
-  const offset = startWeekOnMonday ? (monthStart.getDay() + 6) % 7 : monthStart.getDay();
-  const gridStart = new Date(year, month, 1 - offset);
+  const offset = startWeekOnMonday ? (anchor.getDay() + 6) % 7 : anchor.getDay();
+  const gridStart = new Date(anchor);
+  gridStart.setDate(anchor.getDate() - offset);
   const today = todayStamp();
-  // 6 weeks x 7 days = 42 cells covers any month layout.
-  return Array.from({ length: 42 }, (_, i) => {
+  return Array.from({ length: 21 }, (_, i) => {
     const d = new Date(gridStart);
     d.setDate(gridStart.getDate() + i);
     const stamp = localStamp(d);
@@ -103,7 +100,7 @@ function bucketEventsByDay(
 }
 
 /**
- * Chunk the flat 42-cell grid into weeks of 7 so the static fallback wraps
+ * Chunk the flat rolling window into weeks of 7 so the static fallback wraps
  * each week in a `role="row"` — identical grid → row → gridcell nesting as
  * the dnd grid (SIK-139 W4). Both paths must match or the Suspense swap
  * would shift the ARIA structure. display:contents on the row keeps the CSS
@@ -239,7 +236,10 @@ export function MonthCalendarView(props: MonthCalendarViewProps = {}) {
 function MonthCalendarViewBody({ viewConfig }: MonthCalendarViewProps) {
   const anchorDate = usePlanStore((s) => s.currentDate);
   const config = viewConfig ?? createDefaultCalendarViewConfig('month');
-  const window = useMemo(() => buildViewRange('month', { anchorDate, timeZone: TZ }), [anchorDate]);
+  const window = useMemo(
+    () => buildViewRange('month', { anchorDate, timeZone: TZ, startWeekOnMonday: config.startWeekOnMonday }),
+    [anchorDate, config.startWeekOnMonday],
+  );
   const query = useEvents({ from: window.from, to: window.to, tz: TZ, includePracticeBlocks: false });
   const cells = useMemo(
     () => buildMonthCells(anchorDate, config.startWeekOnMonday),

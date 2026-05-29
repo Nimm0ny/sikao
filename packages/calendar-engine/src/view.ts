@@ -15,11 +15,23 @@ function addUtcDays(day: Date, delta: number): Date {
   return next;
 }
 
+function startOfMondayWeekUtcDay(anchorDate: Date): Date {
+  const weekday = anchorDate.getUTCDay();
+  const weekOffset = (weekday + 6) % 7;
+  return addUtcDays(anchorDate, -weekOffset);
+}
+
+function startOfWeekUtcDay(anchorDate: Date, startWeekOnMonday: boolean): Date {
+  if (startWeekOnMonday) return startOfMondayWeekUtcDay(anchorDate);
+  return addUtcDays(anchorDate, -anchorDate.getUTCDay());
+}
+
 export function buildViewRange(
   view: DashboardCalendarView,
   anchor: ViewRangeAnchor,
 ): CalendarWindow {
   const anchorDate = parseIsoDay(anchor.anchorDate);
+  const startWeekOnMonday = anchor.startWeekOnMonday ?? true;
 
   if (view === 'today') {
     return {
@@ -29,9 +41,7 @@ export function buildViewRange(
   }
 
   if (view === 'week') {
-    const weekday = anchorDate.getUTCDay();
-    const weekOffset = (weekday + 6) % 7;
-    const weekStartDay = addUtcDays(anchorDate, -weekOffset);
+    const weekStartDay = startOfWeekUtcDay(anchorDate, startWeekOnMonday);
     const weekEndDay = addUtcDays(weekStartDay, 6);
     return {
       from: startOfLocalDay(formatUtcDay(weekStartDay), anchor.timeZone).toISOString(),
@@ -39,11 +49,11 @@ export function buildViewRange(
     };
   }
 
-  const monthStartDay = new Date(Date.UTC(anchorDate.getUTCFullYear(), anchorDate.getUTCMonth(), 1));
-  const monthEndDay = new Date(Date.UTC(anchorDate.getUTCFullYear(), anchorDate.getUTCMonth() + 1, 0));
+  const windowStartDay = startOfWeekUtcDay(anchorDate, startWeekOnMonday);
+  const windowEndDay = addUtcDays(windowStartDay, 20);
   return {
-    from: startOfLocalDay(formatUtcDay(monthStartDay), anchor.timeZone).toISOString(),
-    to: endOfLocalDay(formatUtcDay(monthEndDay), anchor.timeZone).toISOString(),
+    from: startOfLocalDay(formatUtcDay(windowStartDay), anchor.timeZone).toISOString(),
+    to: endOfLocalDay(formatUtcDay(windowEndDay), anchor.timeZone).toISOString(),
   };
 }
 
