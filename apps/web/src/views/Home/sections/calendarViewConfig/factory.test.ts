@@ -20,7 +20,7 @@ import {
 } from './errors';
 import type { CalendarView } from './types';
 
-const ALL_VIEWS: readonly CalendarView[] = ['today', 'week', 'month'];
+const ALL_VIEWS: readonly CalendarView[] = ['week', 'month'];
 
 describe('createCalendarViewConfigPreset', () => {
   it('compact preset locks visibleProperties to ["title", "kind"]', () => {
@@ -52,11 +52,8 @@ describe('createCalendarViewConfigPreset', () => {
     }
   });
 
-  it('default cardLimitPerCell is 3 for month/week and unlimited for today', () => {
+  it('default cardLimitPerCell is 3 for month/week', () => {
     expect(createCalendarViewConfigPreset('month', 'default').cardLimitPerCell).toBe(3);
-    expect(createCalendarViewConfigPreset('today', 'default').cardLimitPerCell).toBe(
-      Number.MAX_SAFE_INTEGER,
-    );
     expect(createCalendarViewConfigPreset('week', 'default').cardLimitPerCell).toBe(3);
   });
 
@@ -149,7 +146,7 @@ describe('createCalendarViewConfig (overrides)', () => {
 
   it('honors a visibleProperties override and freezes the result', () => {
     const cfg = createCalendarViewConfig({
-      view: 'today',
+      view: 'week',
       visibleProperties: ['title', 'status'],
     });
     expect(cfg.visibleProperties).toEqual(['title', 'status']);
@@ -159,7 +156,7 @@ describe('createCalendarViewConfig (overrides)', () => {
   it('throws UnknownCalendarPropertyError when visibleProperties contains an unknown name', () => {
     expect(() =>
       createCalendarViewConfig({
-        view: 'today',
+        view: 'week',
         // @ts-expect-error invalid property name is rejected at runtime
         visibleProperties: ['title', 'duration'],
       }),

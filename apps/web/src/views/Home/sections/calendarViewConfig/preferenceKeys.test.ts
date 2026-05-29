@@ -38,10 +38,13 @@ describe('HOME_CALENDAR_PREFERENCE_KEYS', () => {
 });
 
 describe('readHomeCalendarView', () => {
-  it('returns the literal when the persisted value matches', () => {
-    expect(readHomeCalendarView({ homeCalendarView: 'today' })).toBe('today');
+  it('returns the literal when the persisted value matches week/month', () => {
     expect(readHomeCalendarView({ homeCalendarView: 'week' })).toBe('week');
     expect(readHomeCalendarView({ homeCalendarView: 'month' })).toBe('month');
+  });
+
+  it('explicitly normalizes legacy today to week', () => {
+    expect(readHomeCalendarView({ homeCalendarView: 'today' })).toBe('week');
   });
 
   it('returns null for unknown literals, wrong types, or missing keys', () => {
@@ -133,6 +136,12 @@ describe('buildHomeCalendarPreferencePatch', () => {
   });
 
   it('rejects unknown view literals with InvalidCalendarViewError', () => {
+    expect(() =>
+      buildHomeCalendarPreferencePatch({
+        // @ts-expect-error invalid view literal is rejected at runtime
+        homeCalendarView: 'today',
+      }),
+    ).toThrow(InvalidCalendarViewError);
     expect(() =>
       buildHomeCalendarPreferencePatch({
         // @ts-expect-error invalid view literal is rejected at runtime

@@ -1,15 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { render, screen, within, fireEvent } from '@testing-library/react';
+import { render, screen, within, fireEvent, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse } from 'msw';
 import { server } from '../../mocks/server';
+import { useDashboardPreferenceStore, usePlanStore } from '@sikao/domain';
 import { useCommandPaletteStore } from '@/lib/commandPalette';
 import { Home } from './Home';
 
 function renderHome() {
-  // Default segment view defers to the persisted preference store; both
-  // TodayCalendarView and WeekCalendarView consume useEvents on mount, so
+  // Default segment view defers to the persisted preference store; week/month
+  // consume useEvents on mount, so
   // we provide a QueryClient + a stub /plans/events handler so the render
   // doesn't throw during these structural assertions.
   server.use(
@@ -49,6 +50,24 @@ function renderHome() {
   );
 }
 
+afterEach(() => {
+  localStorage.clear();
+  usePlanStore.setState({
+    currentPlanId: null,
+    currentView: 'week',
+    currentDate: '2026-05-30',
+    selectedRange: null,
+    optimisticEvents: new Map(),
+  });
+  useDashboardPreferenceStore.setState({
+    preferences: {},
+    profileLoaded: false,
+    isPersisting: false,
+    lastPersistedAt: null,
+    lastPersistError: null,
+  });
+});
+
 describe('Home view (D.4.1)', () => {
   it('renders the 4 metric-row cards (countdown / today / week / review)', () => {
     renderHome();
@@ -62,8 +81,35 @@ describe('Home view (D.4.1)', () => {
   it('renders a real calendar body inside the CalendarPanel', () => {
     renderHome();
     // Default view is 'week' (store default); WeekCalendarView lands.
-    // SIK-90 Wave 2: CalendarPanel replaced PlanSection + double-head.
     expect(screen.getByTestId('home-week-calendar')).toBeInTheDocument();
+  });
+
+  it('normalizes persisted legacy today view to week on mount', () => {
+    usePlanStore.setState({ currentView: 'month' });
+    useDashboardPreferenceStore.setState({
+      preferences: { homeCalendarView: 'today' },
+      profileLoaded: true,
+    });
+    renderHome();
+    expect(usePlanStore.getState().currentView).toBe('week');
+  });
+
+  it('reacts to delayed preference hydration after mount', () => {
+    usePlanStore.setState({ currentView: 'week' });
+    renderHome();
+    act(() => {
+      useDashboardPreferenceStore.setState({
+        preferences: { homeCalendarView: 'month' },
+        profileLoaded: true,
+      });
+    });
+    expect(usePlanStore.getState().currentView).toBe('month');
+  });
+
+  it('hydrates persisted month from local fallback on mount', () => {
+    localStorage.setItem('sikao.home.dashboard-preferences', JSON.stringify({ homeCalendarView: 'month' }));
+    renderHome();
+    expect(usePlanStore.getState().currentView).toBe('month');
   });
 
   it('renders the CalendarPanel container in place of the calendar Panel', () => {

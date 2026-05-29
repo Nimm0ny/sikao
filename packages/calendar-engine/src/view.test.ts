@@ -10,13 +10,6 @@ describe('buildViewRange', () => {
     startWeekOnMonday: false,
   } as const;
 
-  it('returns the anchor local day for today view', () => {
-    expect(buildViewRange('today', anchor)).toEqual({
-      from: '2026-05-29T16:00:00.000Z',
-      to: '2026-05-30T16:00:00.000Z',
-    });
-  });
-
   it('returns the Monday-start calendar week for week view', () => {
     expect(buildViewRange('week', anchor)).toEqual({
       from: '2026-05-24T16:00:00.000Z',
