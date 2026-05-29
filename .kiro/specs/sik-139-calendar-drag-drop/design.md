@@ -136,9 +136,78 @@ keyboard path
      默认单次平移（scope 缺省，后端裁决单次语义），series 级改期 UI 仍是 Non-goal。
    - recurring chip 拖拽时给一处轻提示"仅改这次"（文案待视觉契约定），避免误解为改整条。
 
-## Non-goals
+## W3 Conflict Check Design (Define-First, 2026-05-29)
 
-- inline 编辑（SIK-140）/ 聚合属性（SIK-141）/ 周·今日 resize / series 改期 UI / 新建拖拽
+> 在 W2 的 drop 编排（`resolveCalendarDrop` → `commitReschedule`）之上插入落点冲突
+> 校验。契约形状已对当前 main 代码核实（`api.generated.ts`）。
+
+### 调用边界（复用既有，不新增端点）
+
+- 端点：`POST /plans/events/conflicts`，client `detectEventConflicts(payload)` /
+  hook `useDetectConflicts()`（均已存在于 `plansMutations.ts`）。
+- 请求 `EventConflictsRequestV2`：
+  - `events: ProposedPlanEventV2[]` — 放**改期后**的那一个 proposed 事件
+    （字段：`title` / `category` / `startAt` / `endAt`（date-time）/ `timezone` /
+    `recurringRule?`）。改期后的 `startAt`/`endAt` 取自 `rescheduleEvent` 的结果；
+    其余字段取自被拖拽事件。
+  - `existingWindow: { from, to }`（date）— 落点所在的查询窗口（复用月视图当前
+    `buildViewRange('month', ...)` 的 from/to）。
+- 响应 `EventConflictsResponseV2`：`conflicts: EventConflictItemV2[]`
+  （每项 `startAt` / `endAt` / `kind` / `sourceId` / `title`）。`conflicts` 为空数组
+  即无冲突。
+
+### 决策流（插在乐观写之前）
+
+```text
+resolveCalendarDrop → reschedule decision (startAt/endAt)
+  → detectEventConflicts({ events:[proposed], existingWindow })
+      response.conflicts 为空 → 直接走 W2 commitReschedule（乐观 + PATCH）
+      response.conflicts 非空 → 打开二次确认弹层（列出 conflicts）
+          用户「确认改期」 → 走 commitReschedule（乐观 + PATCH）
+          用户「取消」     → 不写 store、不发 PATCH、清拖拽态
+  → detect 请求本身失败（网络/解析）→ 抛错 + toast + 不提交（AGENT-H7，
+     这是 error，不是「有冲突」的正常返回）
+```
+
+关键区分（design Decisions 1 已拍板）：「有冲突」是**正常业务返回**走二次确认；
+「detect 请求失败」是**错误**走 fail-fast。两者不可混为一谈。
+
+### 模块（建议，Runner 可微调）
+
+```text
+dragDrop/
+  conflictGuard.ts          # detectEventConflicts 包装：入参 proposed+window，
+                            #   出参 { hasConflict, conflicts }；纯网络封装，
+                            #   请求失败抛错（不吞）
+  ConflictConfirmDialog.tsx # 二次确认弹层：列出 conflicts，确认/取消两按钮
+  ConflictConfirmDialog.module.css
+```
+
+弹层视觉：复用 Peek/dialog 既有 token（`--cal-peek-scrim` + `--shadow-l4` +
+`--radius-14`，见契约 §4 冲突确认层行），portal 挂载 + FocusTrap + Esc 取消 +
+focus restore（与 SIK-138 Peek 同 a11y 套路，但这是**可写**的确认层，非只读 Peek）。
+
+### Fail-Fast（H7，补 requirements R6/R7）
+
+- detect 请求失败 → 抛错 + `toast.error` + 不提交，不静默当「无冲突」放行。
+- 弹层「取消」→ 干净退出（无 store 写、无 PATCH）。
+- 确认后的 commitReschedule 失败路径沿用 W2（乐观回滚 + toast）。
+
+### 与 W2 编排的接缝
+
+`commitReschedule` 不动（W2 已 review pass）；W3 在它**之前**加一道 conflict gate，
+gate 通过（无冲突或用户确认）才调 `commitReschedule`。这样 W2 的乐观/回滚契约零改动，
+W3 只新增「校验 + 确认」前置。
+
+### W3 Testing（TDD）
+
+- `conflictGuard.test.ts`：无冲突 / 有冲突 / 请求失败抛错（mock detect）
+- conflict gate 编排测试：有冲突 → 不直接提交、开弹层；确认 → commitReschedule；
+  取消 → 无副作用；detect 失败 → toast + 无提交
+- `ConflictConfirmDialog` 渲染 + a11y（FocusTrap / Esc / 按钮）
+- browser smoke（Verifier）：真实冲突落点 → 弹层 → 确认落格 / 取消归位
+
+
 
 ## H11 视觉契约原型缺口（Wave 0 blocker，需 lhr 裁决）
 
