@@ -1,5 +1,7 @@
-// lint-allow-ui-copy: SIK-140 W2 editable property row labels and edit CTA
+// lint-allow-ui-copy: SIK-140 W2/W3 editable property row labels and edit CTA
 // are issue-scoped and aligned with the define-first contract.
+import type { KeyboardEventHandler } from 'react';
+
 import type { PlanEventReadV2, PlanEventUpdateRequestV2 } from '@sikao/api-client/types/home';
 
 import { Button, Select } from '../../../../components/form';
@@ -28,22 +30,6 @@ const STATUS_OPTIONS = [
 
 const PLACEHOLDER = '—';
 type EditableStatus = NonNullable<PlanEventUpdateRequestV2['status']>;
-
-function formatTimeRange(event: PlanEventReadV2): string {
-  const start = new Date(event.startAt);
-  const end = new Date(event.endAt);
-  const pad = (n: number) => String(n).padStart(2, '0');
-  const fmt = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
-  const sameDay =
-    start.getFullYear() === end.getFullYear() &&
-    start.getMonth() === end.getMonth() &&
-    start.getDate() === end.getDate();
-  const datePart = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
-  return sameDay
-    ? `${datePart} ${fmt(start)} – ${fmt(end)}`
-    : `${datePart} ${fmt(start)} → ${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())} ${fmt(end)}`;
-}
-
 type EditablePropField = 'status' | 'category' | 'targetId' | null;
 
 export interface CalendarPeekPropertiesProps {
@@ -65,8 +51,24 @@ export interface CalendarPeekPropertiesProps {
   readonly onStatusChange: (value: EditableStatus) => void;
   readonly onCategoryChange: (value: string) => void;
   readonly onTargetChange: (value: string) => void;
+  readonly onEditorKeyDown: KeyboardEventHandler<HTMLButtonElement>;
   readonly onSave: () => void;
   readonly onCancel: () => void;
+}
+
+function formatTimeRange(event: PlanEventReadV2): string {
+  const start = new Date(event.startAt);
+  const end = new Date(event.endAt);
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const fmt = (d: Date) => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const sameDay =
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth() &&
+    start.getDate() === end.getDate();
+  const datePart = `${start.getFullYear()}-${pad(start.getMonth() + 1)}-${pad(start.getDate())}`;
+  return sameDay
+    ? `${datePart} ${fmt(start)} – ${fmt(end)}`
+    : `${datePart} ${fmt(start)} → ${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())} ${fmt(end)}`;
 }
 
 function renderReadonlyValue(event: PlanEventReadV2, key: string): string {
@@ -135,6 +137,7 @@ export function CalendarPeekProperties({
   onStatusChange,
   onCategoryChange,
   onTargetChange,
+  onEditorKeyDown,
   onSave,
   onCancel,
 }: CalendarPeekPropertiesProps) {
@@ -167,6 +170,8 @@ export function CalendarPeekProperties({
                     value={draftStatus}
                     onChange={onStatusChange}
                     options={STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
+                    autoFocus
+                    onKeyDown={onEditorKeyDown}
                     aria-label="编辑状态"
                     disabled={isSaving}
                   />
@@ -179,6 +184,8 @@ export function CalendarPeekProperties({
                     value={draftCategory}
                     onChange={onCategoryChange}
                     options={categoryOptions.map((option) => ({ value: option, label: option }))}
+                    autoFocus
+                    onKeyDown={onEditorKeyDown}
                     aria-label="编辑分类"
                     disabled={isSaving}
                   />
@@ -194,6 +201,8 @@ export function CalendarPeekProperties({
                       { value: '', label: '无' },
                       ...targetOptions.map((option) => ({ value: String(option), label: String(option) })),
                     ]}
+                    autoFocus
+                    onKeyDown={onEditorKeyDown}
                     aria-label="编辑目标"
                     disabled={isSaving}
                   />

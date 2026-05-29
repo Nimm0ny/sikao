@@ -312,6 +312,29 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
     }
   }
 
+  function handlePropEditorKeyDown(event_: ReactKeyboardEvent<HTMLButtonElement>) {
+    if (event_.nativeEvent.isComposing) return;
+    if (event_.key === 'Escape') {
+      event_.preventDefault();
+      cancelEditing();
+      return;
+    }
+    if (event_.key !== 'Enter' || isSaving) return;
+    if (event_.currentTarget.getAttribute('aria-expanded') === 'true') return;
+    event_.preventDefault();
+    if (activeField === 'status') {
+      void saveStatus();
+      return;
+    }
+    if (activeField === 'category') {
+      void saveCategory();
+      return;
+    }
+    if (activeField === 'targetId') {
+      void saveTarget();
+    }
+  }
+
   return (
     <div
       className={styles.overlay}
@@ -406,6 +429,7 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
               onStatusChange={setDraftStatus}
               onCategoryChange={setDraftCategory}
               onTargetChange={setDraftTargetId}
+              onEditorKeyDown={handlePropEditorKeyDown}
               onSave={() => {
                 if (activeField === 'status') void saveStatus();
                 if (activeField === 'category') void saveCategory();
@@ -419,7 +443,6 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
               isSaving={isSaving}
               draft={draftNotes}
               errorText={activeField === 'notes' ? fieldError ?? undefined : undefined}
-              bannerMode={activeField === null ? 'partial' : 'hidden'}
               editDisabled={activeField !== null}
               onDraftChange={setDraftNotes}
               onEdit={() => beginEdit('notes')}

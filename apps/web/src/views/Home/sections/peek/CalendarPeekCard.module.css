@@ -216,13 +216,3 @@
   color: var(--color-text-meta);
 }
 
-.readonlyBanner {
-  margin: 0;
-  padding: var(--space-2) var(--space-3);
-  border: 1px dashed var(--color-state-info);
-  border-radius: var(--radius-10);
-  background: var(--color-state-info-soft);
-  color: var(--color-state-info);
-  font-size: var(--font-meta);
-  text-align: center;
-}

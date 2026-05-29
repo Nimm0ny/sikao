@@ -1,5 +1,5 @@
-// lint-allow-ui-copy: SIK-140 W1 notes editor / partial-editable banner copy
-// is issue-scoped and documented in the define-first spec + visual contract.
+// lint-allow-ui-copy: SIK-140 W1/W3 notes editor copy is issue-scoped
+// and documented in the define-first spec + visual contract.
 import type { KeyboardEvent } from 'react';
 
 import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
@@ -7,15 +7,12 @@ import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 import { Button, Textarea } from '../../../../components/form';
 import styles from './CalendarPeekCard.module.css';
 
-const PARTIAL_EDITABLE_BANNER = '部分字段现已可编辑；时间与重复规则仍为只读。';
-
 export interface CalendarPeekNotesProps {
   readonly event: PlanEventReadV2;
   readonly isEditing: boolean;
   readonly isSaving: boolean;
   readonly draft: string;
   readonly errorText?: string;
-  readonly bannerMode: 'partial' | 'hidden';
   readonly editDisabled?: boolean;
   readonly onDraftChange: (value: string) => void;
   readonly onEdit: () => void;
@@ -29,7 +26,6 @@ export function CalendarPeekNotes({
   isSaving,
   draft,
   errorText,
-  bannerMode,
   editDisabled = false,
   onDraftChange,
   onEdit,
@@ -97,11 +93,6 @@ export function CalendarPeekNotes({
           暂无备注
         </p>
       )}
-      {bannerMode === 'partial' && !isEditing ? (
-        <p className={styles.readonlyBanner} data-testid="home-calendar-peek-readonly-banner">
-          {PARTIAL_EDITABLE_BANNER}
-        </p>
-      ) : null}
     </section>
   );
 }

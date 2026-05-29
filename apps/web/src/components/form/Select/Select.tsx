@@ -1,5 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
-import type { KeyboardEvent, MouseEvent, ReactElement } from 'react';
+import type { KeyboardEvent, KeyboardEventHandler, MouseEvent, ReactElement } from 'react';
 import { Popover } from '../../overlay/Popover';
 import styles from './Select.module.css';
 
@@ -42,6 +42,24 @@ export interface SelectOption<T> {
 
 export type SelectSize = 'sm' | 'md' | 'lg';
 
+function enabledOptions<T>(options: ReadonlyArray<SelectOption<T>>): SelectOption<T>[] {
+  return options.filter((option) => option.disabled !== true);
+}
+
+function nextOptionByDirection<T>(
+  options: ReadonlyArray<SelectOption<T>>,
+  currentValue: T,
+  direction: 1 | -1,
+): SelectOption<T> | undefined {
+  const selectable = enabledOptions(options);
+  if (selectable.length === 0) return undefined;
+  const currentIndex = selectable.findIndex((option) => option.value === currentValue);
+  if (currentIndex === -1) {
+    return direction === 1 ? selectable[0] : selectable[selectable.length - 1];
+  }
+  return selectable[(currentIndex + direction + selectable.length) % selectable.length];
+}
+
 export interface SelectProps<T = string> {
   readonly value: T;
   readonly onChange: (v: T) => void;
@@ -52,6 +70,8 @@ export interface SelectProps<T = string> {
   readonly size?: SelectSize;
   readonly invalid?: boolean;
   readonly disabled?: boolean;
+  readonly autoFocus?: boolean;
+  readonly onKeyDown?: KeyboardEventHandler<HTMLButtonElement>;
   readonly 'aria-label'?: string;
 }
 
@@ -102,6 +122,8 @@ export function Select<T = string>({
   size = 'md',
   invalid = false,
   disabled = false,
+  autoFocus = false,
+  onKeyDown,
   'aria-label': ariaLabel,
 }: SelectProps<T>) {
   const [open, setOpen] = useState(false);
@@ -138,9 +160,22 @@ export function Select<T = string>({
   };
 
   const handleTriggerKeyDown = (e: KeyboardEvent<HTMLButtonElement>) => {
+    onKeyDown?.(e);
+    if (e.defaultPrevented) return;
     if (disabled) return;
     if (e.key === 'Escape') {
       setOpen(false);
+      return;
+    }
+    if (!searchable && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+      e.preventDefault();
+      const next = nextOptionByDirection(options, value, e.key === 'ArrowDown' ? 1 : -1);
+      if (next !== undefined) onChange(next.value);
+      return;
+    }
+    if (!searchable && (e.key === 'Enter' || e.key === ' ')) {
+      e.preventDefault();
+      setOpen((current) => !current);
     }
   };
 
@@ -172,6 +207,7 @@ export function Select<T = string>({
       data-disabled={disabled || undefined}
       data-open={open || undefined}
       disabled={disabled}
+      autoFocus={autoFocus}
       onKeyDown={handleTriggerKeyDown}
     >
       <span
