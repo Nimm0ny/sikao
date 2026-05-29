@@ -114,15 +114,52 @@ keyboard path
 - Wave 3：冲突校验 + UX
 - Wave 4：键盘路径 + a11y + 验收 closeout
 
-## Open Decisions（待 Master 拍板）
+## Decisions（Master 拍板 2026-05-29，lhr 可推翻）
 
-1. 冲突落点 UX：硬阻断 vs 二次确认弹层
-2. 键盘改期入口：chip 内联移动模式 vs 复用 Peek 卡片承载
-3. recurring occurrence 拖拽是否在 V1 暴露（默认单次）或直接 defer 到后续 Phase
+> 这三项原为 Open Decisions。Master 先给默认裁决让 Wave 1+ 不被阻塞；
+> 任一项 lhr 可推翻，推翻则改本节 + 同步 Acceptance。
+
+1. **冲突落点 UX = 二次确认弹层（非硬阻断）**
+   - 理由：硬阻断会让"明知冲突仍要改期"的合法场景无路可走；日历改期不是
+     强一致写，冲突是软约束。`detectEventConflicts` 返回 conflict 时弹确认层
+     （列出冲突事件），用户确认后照常走 optimistic + PATCH；取消则回滚拖拽态。
+   - Fail-Fast 不冲突：detect **请求本身失败**仍抛错 + 回滚（§Error Handling），
+     这里"有冲突"是正常业务返回，不是错误。
+2. **键盘改期入口 = chip 内联移动模式（dnd-kit KeyboardSensor）**
+   - 理由：dnd-kit `KeyboardSensor` 原生支持，与拖拽共用同一 `onDragEnd` 编排，
+     实现面最小、行为最一致；Peek 承载会引入"只读 Peek 里塞写操作"的范围蔓延
+     （那是 SIK-140 的事，Phase 3 不碰 Peek 写）。
+   - chip 聚焦 → `Space/Enter` 进入移动模式 → 方向键按日步进预览 → `Enter` 确认 /
+     `Esc` 取消；落点经 `aria-live=polite` 播报。
+3. **recurring occurrence 拖拽 = V1 暴露，默认单次（scope 缺省）**
+   - 理由：occurrence 已能拖（chip 就是单个 occurrence），强行禁用反而要加特判；
+     默认单次平移（scope 缺省，后端裁决单次语义），series 级改期 UI 仍是 Non-goal。
+   - recurring chip 拖拽时给一处轻提示"仅改这次"（文案待视觉契约定），避免误解为改整条。
 
 ## Non-goals
 
 - inline 编辑（SIK-140）/ 聚合属性（SIK-141）/ 周·今日 resize / series 改期 UI / 新建拖拽
+
+## H11 视觉契约原型缺口（Wave 0 blocker，需 lhr 裁决）
+
+H11 要求"对应原型已存在于 `.tmp_review/out/**`"时实现前必落 visual-contract。
+现状核查（2026-05-29）：
+
+- 月视图静态布局原型存在：`.tmp_review/out/Tab1-Home/Home Month Calendar v1.html`
+- 但该原型**只有静态 chip + DayDetailDialog，无任何拖拽态 / drop 高亮 / 键盘移动态**
+- Phase 3 的交互态（dragging chip / drop-target 日格高亮 / keyboard-move 预览 /
+  冲突确认层）**无原型来源**
+
+可用的 SSOT 复用面（非凭空发明）：
+
+- `--color-focus-ring` / `--input-ring-focus`（focus 态）
+- `--cal-*` token 家族（kind / chip / peek）已存在
+- Design-System §B 卡片状态词表**已含 `dragging` 态**（5 卡型 × 9 态）
+
+裁决请求（lhr）：Phase 3 交互态无独立原型，建议**视觉契约以"扩展 Design-System §B
+dragging 态 + 复用 focus-ring/cal token 推导 drop/keyboard 态"为基准**，原型对照表
+仅覆盖静态月视图布局不回归，交互态走 token 推导 + 实现即契约。等 lhr 确认后再开
+Wave 0 视觉契约落档。
 
 ## References
 
