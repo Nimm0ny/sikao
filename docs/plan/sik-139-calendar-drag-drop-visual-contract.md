@@ -28,7 +28,7 @@ token-derivation-approved-by: lhr (2026-05-29)
 |---|---|---|
 | Wave 0 | 无（仅 `data-event-id` / `data-peek-anchor` 属性 + optimistic 渲染 merge） | §3 信息密度不回归 |
 | Wave 1 | dragging chip 态 | §1 §2 §4（Design-System §B dragging 推导） |
-| Wave 2 | drop-target 日格高亮 + 乐观预览 | §4（focus-ring / cal token 推导） |
+| Wave 2 | drop-target 日格高亮（可见）+ 乐观 patch（状态层，月视图 chip 不显示时间故无可见位移，落位以 refetch 为准） | §4（focus-ring / cal token 推导） |
 | Wave 3 | 冲突确认层 | §2 §4（复用 Peek scrim / dialog token） |
 | Wave 4 | keyboard-move 预览态 + aria-live | §4（focus-ring 推导）+ §2 a11y |
 
@@ -65,7 +65,10 @@ chip 信息密度沿用 SIK-138 W5（visual contract §3 七通道），Phase 3 
 
 - chip 元素数不变：kind 边色 + title + （按 preset）category / status dot / source icon / link icon / target badge
 - 拖拽态**不新增持久可见元素**；dragging / drop 高亮是**瞬态视觉**（拖拽结束即消失）
-- 乐观预览：optimistic patch 改的是既有通道的值（如 title / status），不加新通道
+- 乐观预览：optimistic patch 改的是既有通道的值（如 title / status），不加新通道。
+  注（W2 review L-3）：W2 改期 patch 写的是 `startAt/endAt`，但月视图 chip 不渲染时间、
+  也不按 optimistic 重投影到目标格，故 W2 改期在月视图**无可见乐观位移**；真实落位以 PATCH
+  成功后的 refetch 为准。可见的乐观时间预览需 chip 显示时间或落格重投影，属后续增强。
 - recurring 拖拽轻提示"仅改这次"：瞬态 tooltip/inline hint，非持久 chip 元素
 
 密度不回归判据：拖拽前后静态 chip 的 DOM 元素数 / 视觉编码与 SIK-138 W5 完全一致。

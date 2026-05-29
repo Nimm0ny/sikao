@@ -48,6 +48,7 @@ import {
   type CalendarDropDecision,
   type DropDragData,
 } from './resolveCalendarDrop';
+import { commitReschedule } from './commitReschedule';
 import { useRescheduleEvent } from './useRescheduleEvent';
 import styles from '../MonthCalendarView.module.css';
 
@@ -214,23 +215,15 @@ function MonthGridDndInner({
       return; // 'cancel' (outside / no data) or 'noop' (same day)
     }
 
-    const { eventId, title, startAt, endAt } = decision;
-    // Optimistic preview, then PATCH the real event.
-    upsertOptimisticEvent(eventId, { startAt, endAt });
-    reschedule.mutate(
-      { eventId, startAt, endAt },
-      {
-        onSuccess: () => {
-          // Let the invalidated refetch become the source of truth.
-          removeOptimisticEvent(eventId);
-        },
-        onError: () => {
-          // Roll back the optimistic patch and tell the user (H7).
-          removeOptimisticEvent(eventId);
-          toast.error('改期失败', `「${title}」未能改期，请重试`);
-        },
-      },
-    );
+    // Orchestration extracted to commitReschedule (W2 review M-1) so the
+    // optimistic-write → PATCH → success-clear / reject-rollback path is
+    // unit-tested without driving a real dnd drop. Behavior is unchanged.
+    commitReschedule(decision, {
+      upsertOptimisticEvent,
+      removeOptimisticEvent,
+      mutate: (variables, callbacks) => reschedule.mutate(variables, callbacks),
+      notifyError: (title) => toast.error('改期失败', `「${title}」未能改期，请重试`),
+    });
   }
 
   function handleDragCancel(): void {
