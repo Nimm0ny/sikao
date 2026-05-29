@@ -1,37 +1,11 @@
 import { useEffect } from 'react';
 import { createPortal } from 'react-dom';
-
-import { FocusTrap } from '../../../../components/system/FocusTrap';
-import { Button } from '../../../../components/form/Button/Button';
 import type { EventConflictItemV2 } from '@sikao/api-client/types/home';
+
+import { CALENDAR_DND } from '../../../../lib/ui-copy';
+import { Button } from '../../../../components/form/Button/Button';
+import { FocusTrap } from '../../../../components/system/FocusTrap';
 import styles from './ConflictConfirmDialog.module.css';
-
-/*
- * ConflictConfirmDialog — SIK-139 W3.
- *
- * Why: design Decisions 1 picks a SECOND-CONFIRM dialog (not a hard block) as
- *      the landing-conflict UX. When `detectEventConflicts` returns conflicts,
- *      the drop is NOT auto-committed; this layer lists the colliding events
- *      and lets the user confirm (proceed with the reschedule) or cancel
- *      (no store write, no PATCH — the W2 commit path is never entered).
- *
- *      Reuses the SIK-138 Peek a11y recipe (portal to body + FocusTrap + Esc
- *      + focus restore + body scroll lock), but unlike the read-only Peek this
- *      is a WRITABLE confirm surface. Visual contract §4: tokens are the
- *      Peek/dialog family (--cal-peek-scrim + --shadow-l4 + --cal-peek-radius).
- *
- *      AGENT-H7: Esc / scrim / cancel all route to onCancel (clean exit, no
- *      side effect). Only the explicit confirm button calls onConfirm.
- */
-
-// lint-allow-ui-copy: SIK-139 W3 conflict confirm copy. Drag-reschedule
-// conflict layer strings; CJK visual contract per spec design §W3.
-const COPY = {
-  title: '落点存在冲突',
-  subtitle: '该时段已有以下安排，仍要改到这一天吗？',
-  cancel: '取消',
-  confirm: '仍然改期',
-} as const;
 
 const TIME_FMT = new Intl.DateTimeFormat('zh-CN', {
   timeZone: 'Asia/Shanghai',
@@ -42,14 +16,13 @@ const TIME_FMT = new Intl.DateTimeFormat('zh-CN', {
   hour12: false,
 });
 
-/** Format a conflict's window for display; unparseable instants show raw. */
 function formatConflictTime(startAt: string, endAt: string): string {
   const start = new Date(startAt);
   const end = new Date(endAt);
   if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) {
-    return `${startAt} – ${endAt}`;
+    return `${startAt} - ${endAt}`;
   }
-  return `${TIME_FMT.format(start)} – ${TIME_FMT.format(end)}`;
+  return `${TIME_FMT.format(start)} - ${TIME_FMT.format(end)}`;
 }
 
 export interface ConflictConfirmDialogProps {
@@ -65,21 +38,17 @@ export function ConflictConfirmDialog({
   onConfirm,
   onCancel,
 }: ConflictConfirmDialogProps) {
-  // Esc closes (cancel semantics). Only attached while open so a closed
-  // dialog never steals global key events (mirrors CalendarPeekCard).
   useEffect(() => {
     if (!open) return;
-    function handleKeyDown(e: KeyboardEvent) {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        onCancel();
-      }
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key !== 'Escape') return;
+      event.preventDefault();
+      onCancel();
     }
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [open, onCancel]);
+  }, [onCancel, open]);
 
-  // Body scroll lock while open (mirrors the Peek / Modal pattern).
   useEffect(() => {
     if (!open) return;
     const previous = document.body.style.overflow;
@@ -98,8 +67,8 @@ export function ConflictConfirmDialog({
       className={styles.overlay}
       data-testid="home-conflict-overlay"
       role="presentation"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onCancel();
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onCancel();
       }}
     >
       <FocusTrap active={open}>
@@ -112,22 +81,32 @@ export function ConflictConfirmDialog({
           data-testid="home-conflict-dialog"
         >
           <header className={styles.head}>
-            <h2 id="home-conflict-title" className={styles.title}>{COPY.title}</h2>
-            <p id="home-conflict-subtitle" className={styles.subtitle}>{COPY.subtitle}</p>
+            <h2 id="home-conflict-title" className={styles.title}>
+              {CALENDAR_DND.conflictTitle}
+            </h2>
+            <p id="home-conflict-subtitle" className={styles.subtitle}>
+              {CALENDAR_DND.conflictSubtitle}
+            </p>
           </header>
           <div className={styles.body}>
             <ul className={styles.list} data-testid="home-conflict-list">
-              {conflicts.map((c) => (
-                <li key={`${c.kind}:${c.sourceId}`} className={styles.item}>
-                  <span className={styles.itemTitle}>{c.title}</span>
-                  <span className={styles.itemTime}>{formatConflictTime(c.startAt, c.endAt)}</span>
+              {conflicts.map((conflict) => (
+                <li key={`${conflict.kind}:${conflict.sourceId}`} className={styles.item}>
+                  <span className={styles.itemTitle}>{conflict.title}</span>
+                  <span className={styles.itemTime}>
+                    {formatConflictTime(conflict.startAt, conflict.endAt)}
+                  </span>
                 </li>
               ))}
             </ul>
           </div>
           <footer className={styles.footer}>
-            <Button variant="secondary" onClick={onCancel}>{COPY.cancel}</Button>
-            <Button variant="danger" onClick={onConfirm}>{COPY.confirm}</Button>
+            <Button variant="secondary" onClick={onCancel}>
+              {CALENDAR_DND.cancel}
+            </Button>
+            <Button variant="danger" onClick={onConfirm}>
+              {CALENDAR_DND.confirmReschedule}
+            </Button>
           </footer>
         </div>
       </FocusTrap>

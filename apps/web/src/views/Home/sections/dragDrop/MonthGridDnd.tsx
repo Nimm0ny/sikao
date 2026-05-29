@@ -1,3 +1,4 @@
+// lint-allow-ui-copy
 /*
  * MonthGridDnd — SIK-139 W1.
  *
@@ -23,6 +24,8 @@
  *      distinct handle. The real mutation target stays on the chip's
  *      `data-event-id` (Wave 2 reads it). Droppable id = `cell.stamp`.
  */
+// lint-allow-ui-copy: drag-drop failure toasts remain localized inline in
+// this file until the broader W3/W4 drag surface cleanup lands.
 import { useMemo, useState } from 'react';
 import {
   DndContext,

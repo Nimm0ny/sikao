@@ -1,44 +1,29 @@
 /*
  * @/lib/ui-copy — V5 UI copy SSOT.
  *
- * Why: lint-ui-copy-ssot enforces that any inline CJK string > 4
- *      characters in `apps/web/src/{views,components}/**` must come from
- *      this module. Centralising user-facing strings:
- *        1. enables future i18n / variant testing without grepping the codebase
- *        2. surfaces every translatable phrase in one editable file
- *        3. avoids inconsistent phrasing across views / components
- *
- *      Each export is a flat `as const` namespace so consumers can import
- *      a single namespace and access fields by key. Avoid mixing strings
- *      with markup; if a string contains markup, treat it as a value
- *      assembled at render-time, not a lexical export.
- *
- *      Naming convention: namespace is uppercase + underscore-separated
- *      (e.g. `EMPTY` / `ERROR` / `PAGINATION` / `COMMAND_PALETTE`); keys
- *      inside are camelCase semantic identifiers (e.g. `emptyResult` /
- *      `jumpToPage`).
- *
- *      Scope: this initial module covers only the strings that the
- *      Phase 7 baseline report flagged as warn-only. Business Phase
- *      pickups expand the namespace catalog as they pull each view /
- *      component into the SSOT.
+ * Why: lint-ui-copy-ssot enforces that any inline CJK string longer than
+ *      4 characters in `apps/web/src/{views,components}/**` must come from
+ *      this module so copy stays centralized and reviewable.
  */
 
-// Pagination component (D.3.24).
 export const PAGINATION = {
-  /** "跳转至指定页" — aria-label on the page-number jumper input. */
   jumpToPage: '跳转至指定页',
 } as const;
 
-// Command palette overlay (D.3.26).
 export const COMMAND_PALETTE = {
-  /** "无匹配结果" — empty-state body when no command / note / question matches. */
   emptyResult: '无匹配结果',
 } as const;
 
-// Rail cmd-k surface (D.3.32 §2.2 — SIK-121 W2 H05).
 export const RAIL_CMD = {
-  /** "命令搜索" — aria-label on the cmd-k trigger button + visible placeholder
-   * text in the rail row. Single source so future i18n owns one key. */
   searchLabel: '命令搜索',
+} as const;
+
+export const CALENDAR_DND = {
+  conflictTitle: '落点存在冲突',
+  conflictSubtitle: '该时段已有以下安排，仍要改到这一天吗？',
+  cancel: '取消',
+  confirmReschedule: '仍然改期',
+  invalidEventTime: '事件时间数据异常',
+  canceledReschedule: '已取消改期',
+  conflictCheckIncomplete: '落点冲突校验未完成',
 } as const;
