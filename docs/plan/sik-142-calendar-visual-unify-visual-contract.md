@@ -275,9 +275,9 @@ SIK-138 chip 占 7 通道（kind 边色 / title / category / status dot / source
 | A5 skipped 删除线 / overdue 无 | §6 D3（原型无） | MonthEventChip.module.css | **PASS**（W1：`.titleText[data-skipped]` line-through；overdue 无删除线，单测覆盖） |
 | A6 kind 中性 leading 图标 | §6 D1 | MonthEventChip.tsx + EventKindIcon.tsx | **PASS**（W1：lucide CalendarDays/Dumbbell/FileCheck/Flag，`--color-text-meta` 中性色） |
 | A7 source/link/target 移出 chip | §6 D4 | MonthEventChip.tsx（删通道） | **PASS**（W1：chip 仅 tone/kind-icon/title/done；category/dot/source/link/target 全移除，单测断言 null） |
-| A8 月视图 3 周 rolling（21 格） | renderMonth L1789-1815 | buildMonthCells | 待 W2 |
-| A9 月视图 `repeat(3,1fr)` + overflow hidden | `.view-month .cal-body` L862-866 | MonthCalendarView.module.css | 待 W2 |
-| A10 prev/next ±3 周翻页 | n/a（原型 anchor 推导） | CalendarPanel handlePrev/Next | 待 W2 |
+| A8 月视图 3 周 rolling（21 格） | renderMonth L1789-1815 | buildMonthCells | **PASS**（W2：42→21；Monday-first 默认窗口 2026-05-25→2026-06-14，Sunday-first 配置窗口 2026-05-24→2026-06-13，单测锁定） |
+| A9 月视图 `repeat(3,1fr)` + overflow hidden | `.view-month .cal-body` L862-866 | MonthCalendarView.module.css | **PASS**（W2：browser smoke 1440/1920 均为 3 rows，`bodyOverflow=hidden`，grid rows 等比分配） |
+| A10 prev/next ±3 周翻页 | n/a（原型 anchor 推导） | CalendarPanel handlePrev/Next | **PASS**（W2：month 模式 aria-label=`上 3 周/下 3 周`，anchor 按 21 天步进；CalendarPanel.test.tsx 覆盖） |
 | A11 月+周 cell ≤3 条 | `top3 = slice(0,3)` L1804 | calendarViewConfig cardLimitPerCell | 待 W3 |
 | A12 格内滑动无滚动条 | `.view-today` 隐藏滚动条 L778-786 | Month/Week cell CSS | 待 W3 |
 | A13 去 `+N 更多` | §5 C3 | MonthCalendarView.tsx | 待 W3 |
