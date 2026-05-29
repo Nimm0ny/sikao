@@ -126,3 +126,10 @@ prototype-baseline: .tmp_review/out/Tab1-Home-mock/home-calendar-notion-like-moc
 | 1440 target edit/save screenshots archived | `.tmp_review/visual-diff/sik-140/` | `w2-1440-target-edit.png` / `w2-1440-target-saved.png` | PASS (W2) |
 | 1920 failure rollback screenshots archived | `.tmp_review/visual-diff/sik-140/` | `w2-1920-status-edit.png` / `w2-1920-status-failure.png` | PASS (W2) |
 | edit-state axe passes for prop editor | edit-state a11y requirement | `CalendarPeekCard.test.tsx` (`axe.run(...)`) | PASS (W2) |
+| static banner removed in fully-editable phase | W1/W2 partial banner baseline | `CalendarPeekNotes.tsx` | PASS (W3) |
+| status prop editor auto-focuses combobox | readonly prop row baseline | `CalendarPeekProperties.tsx` + `CalendarPeekCard.test.tsx` | PASS (W3) |
+| keyboard-only `ArrowDown + Enter` saves prop edit | W2 mouse-first editor baseline | `Select.tsx` + `CalendarPeekCard.tsx` + `CalendarPeekCard.test.tsx` | PASS (W3) |
+| Escape cancels prop edit without closing peek | edit-state key ownership spec | `CalendarPeekCard.tsx` + `CalendarPeekCard.test.tsx` | PASS (W3) |
+| week-opened peek matches fully-editable no-banner baseline | week chip open baseline | `WeekCalendarView.test.tsx` | PASS (W3) |
+| 1440 no-banner + edit-focus screenshots archived | `.tmp_review/visual-diff/sik-140/` | `w3-1440-rest-no-banner.png` / `w3-1440-status-edit-focus.png` | PASS (W3) |
+| 1920 keyboard-save + failure screenshots archived | `.tmp_review/visual-diff/sik-140/` | `w3-1920-status-saved-enter.png` / `w3-1920-status-failure.png` | PASS (W3) |
