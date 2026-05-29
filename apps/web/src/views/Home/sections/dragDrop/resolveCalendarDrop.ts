@@ -24,6 +24,13 @@ export interface DropDragData {
   readonly startAt: string;
   readonly endAt: string;
   readonly title: string;
+  // SIK-139 W3: descriptive fields the conflict pre-check needs to build the
+  // proposed (shifted) event for `detectEventConflicts`. Optional so the W2
+  // decision logic + tests are unchanged; the gate reads them off the drag
+  // data alongside the shifted times.
+  readonly category?: string;
+  readonly timezone?: string | null;
+  readonly recurringRule?: string | null;
 }
 
 export type CalendarDropDecision =
