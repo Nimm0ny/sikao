@@ -1,17 +1,17 @@
 /*
- * MonthEventChip — SIK-138 W5.
+ * MonthEventChip — SIK-138 W5 surface, re-channelled by SIK-142 W1.
  *
- * Why: visual contract §3 chip surface; tinted bg uses color-mix with
- *      `--cal-chip-kind-color` set per chip, falling back to neutral when
- *      the kind channel is disabled.
+ * Why: §3.2 tone (time-completion status) drives the chip's border-left + bg
+ *      + text color via the `--cal-event-{tone}-*` tokens (tokens.css §8.4).
+ *      Geometry converges to the prototype `.m-event` baseline (radius 5px /
+ *      border-left 3px) through `--cal-chip-*`. Color is single-sourced in
+ *      tokens — no hex, no color-mix %, no prototype vars.
  */
 
 .chip {
-  --cal-chip-kind-color: var(--color-text-meta);
-  /* Reset native button styles since the chip now ships as <button>; the
-   * visual surface is otherwise unchanged from the W5 span baseline. */
-  appearance: none;
+  /* -webkit-appearance must precede appearance (vendor-prefix ordering). */
   -webkit-appearance: none;
+  appearance: none;
   font-family: inherit;
   text-align: left;
   display: flex;
@@ -21,35 +21,56 @@
   min-width: 0;
   padding: var(--cal-chip-padding-y) var(--cal-chip-padding-x);
   border: 1px solid var(--color-border-subtle);
-  border-left: var(--cal-chip-border-w) solid var(--cal-chip-kind-color);
+  border-left: var(--cal-chip-border-w) solid var(--color-border-default);
   border-radius: var(--cal-chip-radius);
-  background: color-mix(
-    in srgb,
-    var(--cal-chip-kind-color) var(--cal-chip-tint-alpha),
-    var(--card-bg)
-  );
+  background: var(--color-bg-elevated);
   color: var(--color-text-primary);
-  font-size: 10px; /* spacing-allow: prototype month chip 10px (visual contract §3) */
+  font-size: 11px; /* spacing-allow: prototype .m-event 11px (visual contract §3.3) */
   line-height: 1.35;
   cursor: pointer;
+  -webkit-user-select: none;
   user-select: none;
 }
 
-.chip[data-kind-disabled='true'] {
-  border-left-color: var(--color-border-default);
-  background: var(--color-bg-elevated);
+/* §3.2 tone — the primary color channel. Each tone sets border-left + bg +
+ * text from the --cal-event-* tokens (all V5 semantic re-references). */
+.chip[data-tone='done'] {
+  border-left-color: var(--cal-event-done-border);
+  background: var(--cal-event-done-bg);
+  color: var(--cal-event-done-text);
+}
+
+.chip[data-tone='skipped'] {
+  border-left-color: var(--cal-event-skipped-border);
+  background: var(--cal-event-skipped-bg);
+  color: var(--cal-event-skipped-text);
+}
+
+.chip[data-tone='overdue'] {
+  border-left-color: var(--cal-event-overdue-border);
+  background: var(--cal-event-overdue-bg);
+  color: var(--cal-event-overdue-text);
+}
+
+.chip[data-tone='today'] {
+  border-left-color: var(--cal-event-today-border);
+  background: var(--cal-event-today-bg);
+  color: var(--cal-event-today-text);
+}
+
+.chip[data-tone='future'] {
+  border-left-color: var(--cal-event-future-border);
+  background: var(--cal-event-future-bg);
+  color: var(--cal-event-future-text);
 }
 
 .chip[data-cross-day='true'] {
-  /* Visually hint continuation by softening the right edge. The cell logic
-   * still owns the +N overflow; this is a per-chip cue only. */
+  /* Soften the right edge to hint continuation; cell logic owns overflow. */
   border-right: 1px dashed var(--color-border-default);
 }
 
-/* SIK-139 W1: dragging state (visual contract §4). The chip lifts one
- * shadow layer (--cal-drag-shadow = --shadow-l2) and softens opacity so it
- * reads as "picked up", with geometry unchanged. dnd-kit applies an inline
- * transform during the drag; this rule only owns the surface treatment. */
+/* SIK-139 W1: dragging state (visual contract §4). Lifts one shadow layer
+ * and softens opacity so the chip reads as "picked up"; geometry unchanged. */
 .chip[data-dragging='true'] {
   box-shadow: var(--cal-drag-shadow);
   opacity: var(--cal-drag-opacity);
@@ -57,11 +78,17 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* NF-A11y §7.2: drop the drag opacity shift when the user prefers reduced
-   * motion; the lift shadow alone signals the dragging state. */
   .chip[data-dragging='true'] {
     opacity: 1;
   }
+}
+
+/* kind neutral leading icon (§4.3) — no kind color; meta tint only. */
+.kindIcon {
+  width: var(--cal-icon-size);
+  height: var(--cal-icon-size);
+  flex-shrink: 0;
+  color: var(--color-text-meta);
 }
 
 .titles {
@@ -69,7 +96,6 @@
   flex-direction: column;
   min-width: 0;
   flex: 1;
-  gap: 1px; /* spacing-allow: sub-token nudge between title and meta lines (visual contract §3) */
 }
 
 .titleText {
@@ -79,87 +105,18 @@
   text-overflow: ellipsis;
 }
 
-.metaText {
-  font-size: 9.5px; /* spacing-allow: prototype month chip meta 9.5px (visual contract §3) */
-  color: var(--color-text-meta);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+/* skipped tone: strikethrough title (§3.2 — distinguishes skipped from the
+ * same-gray overdue tone; the line is the colorblind-safe primary cue). */
+.titleText[data-skipped='true'] {
+  text-decoration: line-through;
 }
 
-.icons {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-1);
-  color: var(--color-text-meta);
-  flex-shrink: 0;
-}
-
-.icon {
+/* done ✓ — double-encodes the done tone alongside color (§3.2, colorblind). */
+.doneCheck {
   width: var(--cal-icon-size);
   height: var(--cal-icon-size);
-}
-
-.dot {
-  width: var(--cal-status-dot-size);
-  height: var(--cal-status-dot-size);
-  border-radius: 50%;
   flex-shrink: 0;
-  box-sizing: border-box;
-  border: 1.5px solid var(--color-text-meta);
-  background: transparent;
-  position: relative;
-}
-
-.dot[data-status='in_progress'] {
-  background: var(--cal-chip-kind-color);
-  border-color: var(--cal-chip-kind-color);
-}
-
-.dot[data-status='done'] {
-  background: var(--color-state-ok);
-  border-color: var(--color-state-ok);
-}
-
-.dot[data-status='done']::after {
-  content: '';
-  position: absolute;
-  left: 1.5px;
-  top: 3px;
-  width: 4px;
-  height: 2px;
-  border-left: 1.5px solid var(--color-bg-surface);
-  border-bottom: 1.5px solid var(--color-bg-surface);
-  transform: rotate(-45deg);
-}
-
-.dot[data-status='skipped'] {
-  border-color: var(--color-text-disabled);
-}
-
-.dot[data-status='skipped']::after {
-  content: '';
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1.5px;
-  background: var(--color-text-disabled);
-  transform: translateY(-50%);
-}
-
-.targetBadge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  background: var(--color-state-info-soft);
-  color: var(--color-state-info);
-  font-size: 9px; /* spacing-allow: prototype target badge 9px (visual contract §3) */
-  font-weight: var(--font-weight-bold);
-  flex-shrink: 0;
+  color: var(--cal-event-done-border);
 }
 
 .srOnly {
