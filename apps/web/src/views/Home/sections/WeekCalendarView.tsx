@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { useEvents } from '@sikao/api-client/plansQueries';
 import { buildViewRange, type CrossDaySlice } from '@sikao/calendar-engine';
 import { usePlanStore } from '@sikao/domain';
+import { zonedDateKey } from '@sikao/shared-utils';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
 import { MonthEventChip } from './MonthEventChip';
@@ -80,9 +81,13 @@ function slotForHour(hour: number): SlotIndex {
  * its tone (§3.2) on the occurrence's local day. The week buckets one chip per
  * (day, slot) and never spans cells, so `day` = the occurrence start day and
  * both slice ends mark a complete (non-cross-day) slice.
+ *
+ * H7 / contract §3.2: the tone anchor day is the Asia/Shanghai calendar day
+ * (via `zonedDateKey`, throws on a bad timestamp) — NOT the browser-local day —
+ * so the chip tone matches the month path regardless of the host time zone.
  */
 function weekDaySlice(item: EnrichedOccurrence): CrossDaySlice {
-  const day = localStamp(new Date(item.occurrence.startAt));
+  const day = zonedDateKey(item.occurrence.startAt, TZ);
   return {
     occurrenceRef: item.occurrence.occurrenceRef,
     day,
@@ -226,7 +231,7 @@ export function WeekCalendarView({ viewConfig }: WeekCalendarViewProps = {}) {
           eventsByCell={eventsByCell}
           dowLabels={dowLabels}
           visibleProperties={config.visibleProperties}
-          today={todayStamp()}
+          today={zonedDateKey(new Date().toISOString(), TZ)}
         />
       ) : null}
     </div>

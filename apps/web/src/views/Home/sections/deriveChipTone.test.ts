@@ -110,6 +110,19 @@ describe('deriveChipTone local-day anchoring (H7 borderline)', () => {
     expect(tone).toBe<ChipTone>('today');
   });
 
+  it('overdue for a cross-day slice whose occurrence already ended before today', () => {
+    // Cross-day occurrence 05-20..05-22, slice rendered in the 05-21 cell.
+    // anchorDay (slice.day 05-21) < today and the occurrence end 05-22 < today
+    // → overdue (slice.day does NOT short-circuit to today/future here).
+    const tone = deriveChipTone(
+      ev({ status: 'planned', startAt: at('2026-05-20'), endAt: at('2026-05-22', '12:00') }),
+      TODAY,
+      { day: '2026-05-21' },
+      TZ,
+    );
+    expect(tone).toBe<ChipTone>('overdue');
+  });
+
   it('throws on an unparseable timestamp (no silent fallback, H7)', () => {
     expect(() =>
       deriveChipTone(ev({ startAt: 'not-a-date', endAt: 'not-a-date' }), TODAY, undefined, TZ),

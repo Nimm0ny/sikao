@@ -71,6 +71,20 @@ describe('WeekCalendarView (Home M-A wave 2)', () => {
     await waitFor(() => expect(screen.queryByTestId('home-week-loading')).not.toBeInTheDocument());
   });
 
+  it('reuses MonthEventChip read-only (renders home-month-event, not draggable)', async () => {
+    server.use(http.get('/api/v2/plans/events', () => r([READY_EVENT])));
+    renderWithClient();
+    // SIK-142 W1: the week chip is now MonthEventChip (data-testid
+    // home-month-event), reused read-only — no dnd draggable attributes and
+    // no onClick wiring (W5 will add the Peek). It still carries the tone
+    // data-attr so the time-status color channel renders.
+    await waitFor(() => expect(screen.getByTestId('home-month-event')).toBeInTheDocument());
+    const chip = screen.getByTestId('home-month-event');
+    expect(chip).toHaveAttribute('data-tone');
+    expect(chip).not.toHaveAttribute('aria-roledescription', 'draggable');
+    expect(chip).not.toHaveAttribute('data-dragging');
+  });
+
   it('renders Sunday-first DOW labels when startWeekOnMonday=false', async () => {
     server.use(http.get('/api/v2/plans/events', () => r([READY_EVENT])));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 } } });
