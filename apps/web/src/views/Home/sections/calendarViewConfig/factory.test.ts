@@ -52,14 +52,12 @@ describe('createCalendarViewConfigPreset', () => {
     }
   });
 
-  it('default cardLimitPerCell is 3 for month and unlimited for today / week', () => {
+  it('default cardLimitPerCell is 3 for month/week and unlimited for today', () => {
     expect(createCalendarViewConfigPreset('month', 'default').cardLimitPerCell).toBe(3);
     expect(createCalendarViewConfigPreset('today', 'default').cardLimitPerCell).toBe(
       Number.MAX_SAFE_INTEGER,
     );
-    expect(createCalendarViewConfigPreset('week', 'default').cardLimitPerCell).toBe(
-      Number.MAX_SAFE_INTEGER,
-    );
+    expect(createCalendarViewConfigPreset('week', 'default').cardLimitPerCell).toBe(3);
   });
 
   it('shared defaults are startWeekOnMonday=true and dateField="startAt"', () => {

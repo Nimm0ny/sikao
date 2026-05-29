@@ -88,16 +88,16 @@ describe('MonthCalendarView', () => {
     expect(screen.getByTestId('home-month-cell-2026-06-14')).toBeInTheDocument();
   });
 
-  it('caps chips at 3 and renders the overflow label', async () => {
+  it('renders all events and removes the +N overflow label', async () => {
     const events = Array.from({ length: 5 }, (_, i) => makeEvent(`m${i}`, `Event ${i}`));
     server.use(http.get('/api/v2/plans/events', () => response(events)));
     renderWithClient();
-    await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(3));
-    const overflow = screen.getByTestId('home-month-overflow');
-    expect(overflow).toHaveTextContent('+2');
+    await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(5));
+    expect(screen.queryByTestId('home-month-overflow')).not.toBeInTheDocument();
+    expect(screen.getByTestId(`home-month-event-list-${today}`)).toHaveAttribute('data-scrollable', 'true');
   });
 
-  it('honors a custom cardLimitPerCell from viewConfig', async () => {
+  it('uses cardLimitPerCell to size the visible month list window', async () => {
     const events = Array.from({ length: 5 }, (_, i) => makeEvent(`m${i}`, `Event ${i}`));
     server.use(http.get('/api/v2/plans/events', () => response(events)));
     renderWithClient(
@@ -105,8 +105,17 @@ describe('MonthCalendarView', () => {
         viewConfig={createCalendarViewConfig({ view: 'month', cardLimitPerCell: 2 })}
       />,
     );
-    await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(2));
-    expect(screen.getByTestId('home-month-overflow')).toHaveTextContent('+3');
+    await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(5));
+    expect(screen.getByTestId(`home-month-event-list-${today}`)).toHaveStyle({
+      maxHeight: 'calc(2 * var(--space-6) + 1 * var(--space-1))',
+    });
+  });
+
+  it('keeps a non-overflowing list non-scrollable', async () => {
+    server.use(http.get('/api/v2/plans/events', () => response([makeEvent('m1', 'Only one')])));
+    renderWithClient();
+    await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(1));
+    expect(screen.getByTestId(`home-month-event-list-${today}`)).not.toHaveAttribute('data-scrollable');
   });
 
   it('renders Sunday-first DOW labels when startWeekOnMonday=false', async () => {

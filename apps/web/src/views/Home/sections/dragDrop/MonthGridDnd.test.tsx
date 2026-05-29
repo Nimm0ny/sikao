@@ -132,8 +132,38 @@ describe('MonthGridDnd (SIK-139 W1)', () => {
       event: makeEvent(`m${i}`, `Event ${i}`, DAY),
     }));
     renderGrid(items);
-    expect(screen.getAllByTestId('home-month-event')).toHaveLength(3);
-    expect(screen.getByTestId('home-month-overflow')).toHaveTextContent('+2');
+    expect(screen.getAllByTestId('home-month-event')).toHaveLength(5);
+    expect(screen.queryByTestId('home-month-overflow')).not.toBeInTheDocument();
+    expect(screen.getByTestId(`home-month-event-list-${DAY}`)).toHaveAttribute('data-scrollable', 'true');
+  });
+
+  it('uses cardLimitPerCell to size the dnd month list window', () => {
+    const items: MonthDaySlice[] = Array.from({ length: 5 }, (_, i) => ({
+      slice: makeSlice(`m${i}`, DAY),
+      event: makeEvent(`m${i}`, `Event ${i}`, DAY),
+    }));
+    const eventsByDay = new Map<string, MonthDaySlice[]>([[DAY, items]]);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 }, mutations: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <CalendarPeekProvider>
+          <MonthGridDnd
+            cells={makeCells()}
+            eventsByDay={eventsByDay}
+            dowLabels={DOW}
+            cardLimitPerCell={2}
+            visibleProperties={DEFAULT_PROPS}
+            window={{ from: '2026-04-30T16:00:00.000Z', to: '2026-05-31T15:59:59.999Z' }}
+          />
+          <CalendarPeekCard />
+        </CalendarPeekProvider>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByTestId(`home-month-event-list-${DAY}`)).toHaveStyle({
+      maxHeight: 'calc(2 * var(--space-6) + 1 * var(--space-1))',
+    });
   });
 
   it('renders an in-flight optimistic patch title (Wave 0 D20 merge preserved)', () => {
