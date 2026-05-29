@@ -102,6 +102,21 @@ function bucketEventsByDay(
   return map;
 }
 
+/**
+ * Chunk the flat 42-cell grid into weeks of 7 so the static fallback wraps
+ * each week in a `role="row"` — identical grid → row → gridcell nesting as
+ * the dnd grid (SIK-139 W4). Both paths must match or the Suspense swap
+ * would shift the ARIA structure. display:contents on the row keeps the CSS
+ * grid layout unchanged.
+ */
+function chunkIntoWeeks(cells: ReadonlyArray<MonthCell>): ReadonlyArray<ReadonlyArray<MonthCell>> {
+  const weeks: MonthCell[][] = [];
+  for (let i = 0; i < cells.length; i += 7) {
+    weeks.push(cells.slice(i, i + 7));
+  }
+  return weeks;
+}
+
 function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell, visibleProperties }: {
   readonly cells: ReadonlyArray<MonthCell>;
   readonly eventsByDay: ReadonlyMap<string, ReadonlyArray<MonthDaySlice>>;
@@ -137,58 +152,67 @@ function MonthGrid({ cells, eventsByDay, dowLabels, cardLimitPerCell, visiblePro
 
   return (
     <>
-      <div className={styles.dowRow} role="row">
-        {dowLabels.map((label) => (
-          <div key={label} className={styles.dowCell} role="columnheader">{label}</div>
-        ))}
-      </div>
-      <div className={styles.bodyScroll}>
-        <div className={styles.gridBody} role="grid" aria-label="本月日历">
-          {cells.map((cell) => {
-            const items = eventsByDay.get(cell.stamp) ?? [];
-            const visible = items.slice(0, cardLimitPerCell);
-            const overflow = items.length - visible.length;
-            return (
-              <div
-                key={cell.stamp}
-                className={styles.cell}
-                data-out-of-month={!cell.inMonth || undefined}
-                data-today={cell.isToday || undefined}
-                data-testid={`home-month-cell-${cell.stamp}`}
-                role="gridcell"
-              >
-                <span className={styles.dom}>{cell.dom}</span>
-                <ul className={styles.eventList}>
-                  {visible.map((item) => {
-                    const entryId = `${item.slice.occurrenceRef}|${item.slice.day}`;
-                    // SIK-139 W1 (F-2): two distinct chip handles, do not
-                    // conflate them. `data-event-id` (= item.event.id, passed
-                    // via optimisticPatch lookup + read by Wave 2 mutation) is
-                    // the real reschedule/mutation target. `peekAnchorId`
-                    // (= entryId `${occurrenceRef}|${day}`) is the per-slice
-                    // peek/drag handle — unique per cross-day slice.
-                    return (
-                      <li key={entryId} className={styles.eventListItem}>
-                        <MonthEventChip
-                          event={item.event}
-                          slice={item.slice}
-                          visibleProperties={visibleProperties}
-                          peekAnchorId={entryId}
-                          optimisticPatch={optimisticEvents.get(item.event.id)}
-                          onClick={() => peek.open({ ...item.event, id: entryId }, peekList)}
-                        />
-                      </li>
-                    );
-                  })}
-                  {overflow > 0 ? (
-                    <li className={styles.moreLabel} data-testid="home-month-overflow">
-                      +{overflow} 更多
-                    </li>
-                  ) : null}
-                </ul>
+      <div className={styles.gridRoot} role="grid" aria-label="本月日历">
+        <div className={styles.dowRow} role="row">
+          {dowLabels.map((label) => (
+            <div key={label} className={styles.dowCell} role="columnheader">{label}</div>
+          ))}
+        </div>
+        <div className={styles.bodyScroll}>
+          <div className={styles.gridBody} role="rowgroup">
+            {chunkIntoWeeks(cells).map((week) => (
+              // W4 grid ARIA fix: grid → rowgroup → row → gridcell. Mirrors
+              // MonthGridDnd exactly so the Suspense swap never shifts the
+              // ARIA structure. display:contents row keeps the CSS grid.
+              <div key={week[0]?.stamp ?? 'week'} className={styles.gridRow} role="row">
+                {week.map((cell) => {
+                  const items = eventsByDay.get(cell.stamp) ?? [];
+                  const visible = items.slice(0, cardLimitPerCell);
+                  const overflow = items.length - visible.length;
+                  return (
+                    <div
+                      key={cell.stamp}
+                      className={styles.cell}
+                      data-out-of-month={!cell.inMonth || undefined}
+                      data-today={cell.isToday || undefined}
+                      data-testid={`home-month-cell-${cell.stamp}`}
+                      role="gridcell"
+                    >
+                      <span className={styles.dom}>{cell.dom}</span>
+                      <ul className={styles.eventList}>
+                        {visible.map((item) => {
+                          const entryId = `${item.slice.occurrenceRef}|${item.slice.day}`;
+                          // SIK-139 W1 (F-2): two distinct chip handles, do not
+                          // conflate them. `data-event-id` (= item.event.id, passed
+                          // via optimisticPatch lookup + read by Wave 2 mutation) is
+                          // the real reschedule/mutation target. `peekAnchorId`
+                          // (= entryId `${occurrenceRef}|${day}`) is the per-slice
+                          // peek/drag handle — unique per cross-day slice.
+                          return (
+                            <li key={entryId} className={styles.eventListItem}>
+                              <MonthEventChip
+                                event={item.event}
+                                slice={item.slice}
+                                visibleProperties={visibleProperties}
+                                peekAnchorId={entryId}
+                                optimisticPatch={optimisticEvents.get(item.event.id)}
+                                onClick={() => peek.open({ ...item.event, id: entryId }, peekList)}
+                              />
+                            </li>
+                          );
+                        })}
+                        {overflow > 0 ? (
+                          <li className={styles.moreLabel} data-testid="home-month-overflow">
+                            +{overflow} 更多
+                          </li>
+                        ) : null}
+                      </ul>
+                    </div>
+                  );
+                })}
               </div>
-            );
-          })}
+            ))}
+          </div>
         </div>
       </div>
     </>

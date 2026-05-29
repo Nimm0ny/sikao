@@ -17,6 +17,15 @@
   overflow: hidden;
 }
 
+/* SIK-139 W4: the role="grid" wrapper is display:contents so it generates no
+ * box — the day-of-week header (sticky) and the scroll body keep flowing as
+ * direct flex children of .root exactly as before (zero layout shift), while
+ * the accessibility tree gains the single grid ancestor that makes the
+ * header row + week rows valid (grid → row / grid → rowgroup → row). */
+.gridRoot {
+  display: contents;
+}
+
 .dowRow {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -46,6 +55,14 @@
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   grid-auto-rows: var(--month-row-h);
+}
+
+/* SIK-139 W4 grid ARIA fix: each week is a role="row" between grid and
+ * gridcell. display:contents makes the row transparent to layout so its 7
+ * cells still flow directly into the parent CSS grid (zero geometry shift)
+ * while the accessibility tree gains the required row. */
+.gridRow {
+  display: contents;
 }
 
 .cell {
@@ -81,6 +98,15 @@
   background: var(--cal-drop-fill);
   outline: 2px solid var(--cal-drop-ring);
   outline-offset: -2px;
+}
+
+/* SIK-139 W4: keyboard-move preview. When the active drag is keyboard-driven
+ * the over cell adds an inner focus ring on top of the drop highlight so the
+ * keyboard landing target reads as a distinct, deliberate preview (contract
+ * §4 keyboard-move preview). box-shadow inset (not border) keeps geometry
+ * fixed. Token --cal-keyboard-ring is single-sourced (= focus-ring). */
+.cell[data-keyboard-over='true'] {
+  box-shadow: inset 0 0 0 2px var(--cal-keyboard-ring);
 }
 
 .dom {

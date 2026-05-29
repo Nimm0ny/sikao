@@ -779,6 +779,12 @@ em, i { font-style: normal; }
    * day cell (`.cell[data-drop-over]`). */
   --cal-drop-ring:     var(--color-focus-ring);
   --cal-drop-fill:     var(--color-state-info-soft);
+  /* SIK-139 W4: keyboard-move preview ring. Contract §4: the keyboard
+   * landing target reuses the focus-ring color but reads as a distinct,
+   * unmistakable solid preview (an inner focus ring atop the drop fill) so a
+   * keyboard user can see exactly where Enter will commit. Single-source in
+   * the --cal-drag family, no new color (Requirement 9). */
+  --cal-keyboard-ring: var(--color-focus-ring);
 }
 
 [data-v5-theme='dark'],

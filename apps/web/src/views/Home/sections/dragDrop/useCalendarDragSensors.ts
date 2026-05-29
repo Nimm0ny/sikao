@@ -24,6 +24,8 @@ import {
   type SensorOptions,
 } from '@dnd-kit/core';
 
+import { dayCellCoordinateGetter } from './keyboardReschedule';
+
 /**
  * PointerSensor activation distance (px). A small drag threshold keeps a
  * plain click on the chip from being swallowed as a drag, so the existing
@@ -37,12 +39,20 @@ export const POINTER_ACTIVATION_DISTANCE_PX = 5;
  * clicks still open the Peek) + KeyboardSensor (a11y reschedule entry).
  * Returned shape is dnd-kit's `SensorDescriptor[]`, fed straight to
  * `<DndContext sensors={...}>`.
+ *
+ * SIK-139 W4: the KeyboardSensor takes a custom `coordinateGetter`
+ * (`dayCellCoordinateGetter`) so arrow keys step by WHOLE DAY cells (one day
+ * left/right, one week up/down) instead of dnd-kit's default fixed-pixel
+ * translate, which can't reliably cross a 7-col grid cell or jump a week
+ * (Requirement 5 / design.md "W4 Keyboard Reschedule Design").
  */
 export function useCalendarDragSensors(): SensorDescriptor<SensorOptions>[] {
   return useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: POINTER_ACTIVATION_DISTANCE_PX },
     }),
-    useSensor(KeyboardSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: dayCellCoordinateGetter,
+    }),
   );
 }

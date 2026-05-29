@@ -50,9 +50,9 @@ import {
 } from './resolveCalendarDrop';
 import { commitReschedule } from './commitReschedule';
 import { useRescheduleEvent } from './useRescheduleEvent';
-import { checkDropConflicts, type ConflictWindow } from './conflictGuard';
-import { buildProposedEvent } from './proposedEvent';
-import { runConflictGate } from './runConflictGate';
+import { type ConflictWindow } from './conflictGuard';
+import { gateRescheduleDrop } from './gateRescheduleDrop';
+import { buildRescheduleAnnouncements } from './keyboardReschedule';
 import { ConflictConfirmDialog } from './ConflictConfirmDialog';
 import type { EventConflictItemV2 } from '@sikao/api-client/types/home';
 import styles from '../MonthCalendarView.module.css';
@@ -82,6 +82,23 @@ export interface MonthGridDndProps {
 /** Stable per-slice entry id — the draggable handle + peek anchor. */
 function entryIdOf(slice: MonthDaySlice['slice']): string {
   return `${slice.occurrenceRef}|${slice.day}`;
+}
+
+/**
+ * Chunk the flat 42-cell month grid into weeks of 7 so each week can be
+ * wrapped in a `role="row"` (SIK-139 W4 grid ARIA fix: grid → row → gridcell
+ * is the valid nesting). The row wrapper uses `display: contents` so the
+ * cells still flow into the parent CSS grid unchanged — ARIA tree gains the
+ * row, layout geometry does not shift.
+ */
+function chunkIntoWeeks(
+  cells: ReadonlyArray<MonthCellModel>,
+): ReadonlyArray<ReadonlyArray<MonthCellModel>> {
+  const weeks: MonthCellModel[][] = [];
+  for (let i = 0; i < cells.length; i += 7) {
+    weeks.push(cells.slice(i, i + 7));
+  }
+  return weeks;
 }
 
 /**
@@ -134,14 +151,18 @@ function DraggableChip({
 
 /**
  * Droppable day cell. `useDroppable` keyed by `cell.stamp` marks the cell as
- * a drop target; `isOver` toggles the Wave 2 highlight hook (visual contract
- * §4). Wave 1 only exposes the attribute — no drop side effects yet.
+ * a drop target; `isOver` toggles the Wave 2 drag-hover highlight (visual
+ * contract §4). SIK-139 W4: when the active drag is keyboard-driven, the
+ * over cell also gets `data-keyboard-over` for the distinct solid focus-ring
+ * preview outline (contract §4 keyboard-move preview).
  */
 function DroppableCell({
   cell,
+  keyboardActive,
   children,
 }: {
   readonly cell: MonthCellModel;
+  readonly keyboardActive: boolean;
   readonly children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: cell.stamp });
@@ -152,6 +173,7 @@ function DroppableCell({
       data-out-of-month={!cell.inMonth || undefined}
       data-today={cell.isToday || undefined}
       data-drop-over={isOver || undefined}
+      data-keyboard-over={(isOver && keyboardActive) || undefined}
       data-testid={`home-month-cell-${cell.stamp}`}
       role="gridcell"
     >
@@ -186,6 +208,18 @@ function MonthGridDndInner({
   // isDragging — kept in local state so onDragEnd can clear it explicitly.
   // This is transient UI state, NOT a reschedule target (Wave 2).
   const [activeDragId, setActiveDragId] = useState<UniqueIdentifier | null>(null);
+
+  // SIK-139 W4: whether the active drag was started by the keyboard (Space/
+  // Enter via KeyboardSensor) rather than the pointer. Drives the distinct
+  // keyboard-move preview outline (data-keyboard-over) on the over cell so
+  // the keyboard landing target is visually unmistakable (contract §4).
+  const [keyboardActive, setKeyboardActive] = useState(false);
+
+  // SIK-139 W4: aria-live announcements for the keyboard reschedule. Built
+  // once (reads the dragged title off active.data per drag) and fed to
+  // DndContext so the live region narrates the candidate date in Chinese
+  // instead of dnd-kit's default English over-id (Requirement 5).
+  const announcements = useMemo(() => buildRescheduleAnnouncements(), []);
 
   // SIK-139 W3: the conflict confirm dialog state. When the pre-check finds
   // conflicts the reschedule is HELD here (decision + conflict list) until the
@@ -222,6 +256,10 @@ function MonthGridDndInner({
 
   function handleDragStart(event: DragStartEvent): void {
     setActiveDragId(event.active.id);
+    // W4: a KeyboardSensor activation carries a KeyboardEvent as the
+    // activatorEvent; pointer drags carry a PointerEvent. This flags the
+    // keyboard-move preview outline without a parallel "mode" store.
+    setKeyboardActive(event.activatorEvent instanceof KeyboardEvent);
   }
 
   // SIK-139 W3: drop → conflict gate → reschedule. After the W2 decision
@@ -235,6 +273,7 @@ function MonthGridDndInner({
   // their W2 behavior.
   function handleDragEnd(event: DragEndEvent): void {
     setActiveDragId(null);
+    setKeyboardActive(false);
     const data = (event.active.data.current ?? null) as DropDragData | null;
     const overId = event.over == null ? null : String(event.over.id);
 
@@ -251,18 +290,17 @@ function MonthGridDndInner({
       return; // 'cancel' (outside / no data) or 'noop' (same day)
     }
 
-    const proposed = buildProposedEvent(
-      { title: data.title, category: data.category ?? '', timezone: data.timezone, recurringRule: data.recurringRule },
-      { startAt: decision.startAt, endAt: decision.endAt },
-      TZ,
-    );
-    void runConflictGate(
-      { proposed, window, timeZone: TZ },
+    // W4 (F-3): the decision→gate→branch wiring lives in the tested
+    // `gateRescheduleDrop` seam (NOT a second commit path — it binds the same
+    // buildProposedEvent + runConflictGate the W3 component used). H7: clear →
+    // commit, conflict → hold + dialog, detect failure → toast, no commit.
+    void gateRescheduleDrop(
+      decision,
+      data,
+      { window, timeZone: TZ },
       {
-        check: (input) => checkDropConflicts(input),
-        onClear: () => runCommit(decision),
-        onConflict: (conflicts) => setPendingConflict({ decision, conflicts }),
-        // H7: a failed detect is an ERROR — surface it and do NOT commit.
+        onCommit: (d) => runCommit(d),
+        onConflict: (d, conflicts) => setPendingConflict({ decision: d, conflicts }),
         onError: () => toast.error('改期失败', '落点冲突校验未完成，请重试'),
       },
     );
@@ -270,6 +308,7 @@ function MonthGridDndInner({
 
   function handleDragCancel(): void {
     setActiveDragId(null);
+    setKeyboardActive(false);
   }
 
   // Dialog confirm: user accepts the conflict → run the held commit (W2 path).
@@ -290,48 +329,63 @@ function MonthGridDndInner({
     <>
       <DndContext
         sensors={sensors}
+        accessibility={{ announcements }}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onDragCancel={handleDragCancel}
       >
-        <div className={styles.dowRow} role="row">
-          {dowLabels.map((label) => (
-            <div key={label} className={styles.dowCell} role="columnheader">{label}</div>
-          ))}
-        </div>
-        <div className={styles.bodyScroll}>
-          <div className={styles.gridBody} role="grid" aria-label="本月日历" data-dnd-active={activeDragId != null || undefined}>
-            {cells.map((cell) => {
-              const items = eventsByDay.get(cell.stamp) ?? [];
-              const visible = items.slice(0, cardLimitPerCell);
-              const overflow = items.length - visible.length;
-              return (
-                <DroppableCell key={cell.stamp} cell={cell}>
-                  <span className={styles.dom}>{cell.dom}</span>
-                  <ul className={styles.eventList}>
-                    {visible.map((item) => {
-                      const entryId = entryIdOf(item.slice);
-                      return (
-                        <li key={entryId} className={styles.eventListItem}>
-                          <DraggableChip
-                            item={item}
-                            entryId={entryId}
-                            visibleProperties={visibleProperties}
-                            optimisticPatch={optimisticEvents.get(item.event.id)}
-                            onOpen={() => peek.open({ ...item.event, id: entryId }, peekList)}
-                          />
-                        </li>
-                      );
-                    })}
-                    {overflow > 0 ? (
-                      <li className={styles.moreLabel} data-testid="home-month-overflow">
-                        +{overflow} 更多
-                      </li>
-                    ) : null}
-                  </ul>
-                </DroppableCell>
-              );
-            })}
+        {/* W4 grid ARIA fix: ONE role="grid" wraps the day-of-week header row
+            and the body rowgroup so every row (header + weeks) has a valid
+            grid ancestor (grid → row → columnheader / grid → rowgroup → row →
+            gridcell). The wrapper is display:contents so the existing
+            sticky-head + scroll-body flex layout is unchanged. */}
+        <div className={styles.gridRoot} role="grid" aria-label="本月日历" data-dnd-active={activeDragId != null || undefined}>
+          <div className={styles.dowRow} role="row">
+            {dowLabels.map((label) => (
+              <div key={label} className={styles.dowCell} role="columnheader">{label}</div>
+            ))}
+          </div>
+          <div className={styles.bodyScroll}>
+            <div className={styles.gridBody} role="rowgroup">
+              {chunkIntoWeeks(cells).map((week) => (
+                // Each week is a role="row" between the rowgroup and the
+                // gridcells. display:contents keeps the cells in the parent
+                // CSS grid (no layout shift) while the ARIA tree gains the row.
+                <div key={week[0]?.stamp ?? 'week'} className={styles.gridRow} role="row">
+                  {week.map((cell) => {
+                    const items = eventsByDay.get(cell.stamp) ?? [];
+                    const visible = items.slice(0, cardLimitPerCell);
+                    const overflow = items.length - visible.length;
+                    return (
+                      <DroppableCell key={cell.stamp} cell={cell} keyboardActive={keyboardActive}>
+                        <span className={styles.dom}>{cell.dom}</span>
+                        <ul className={styles.eventList}>
+                          {visible.map((item) => {
+                            const entryId = entryIdOf(item.slice);
+                            return (
+                              <li key={entryId} className={styles.eventListItem}>
+                                <DraggableChip
+                                  item={item}
+                                  entryId={entryId}
+                                  visibleProperties={visibleProperties}
+                                  optimisticPatch={optimisticEvents.get(item.event.id)}
+                                  onOpen={() => peek.open({ ...item.event, id: entryId }, peekList)}
+                                />
+                              </li>
+                            );
+                          })}
+                          {overflow > 0 ? (
+                            <li className={styles.moreLabel} data-testid="home-month-overflow">
+                              +{overflow} 更多
+                            </li>
+                          ) : null}
+                        </ul>
+                      </DroppableCell>
+                    );
+                  })}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </DndContext>
