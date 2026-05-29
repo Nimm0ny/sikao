@@ -26,7 +26,7 @@ import {
 } from './errors';
 import { assertCalendarCardProperty } from './propertyRegistry';
 
-const VIEW_LITERALS = ['today', 'week', 'month'] as const satisfies readonly CalendarView[];
+const VIEW_LITERALS = ['week', 'month'] as const satisfies readonly CalendarView[];
 const PRESET_LITERALS = [
   'compact',
   'default',
@@ -57,7 +57,6 @@ const PRESET_PROPERTIES: Readonly<
 });
 
 const DEFAULT_LIMIT_PER_VIEW: Readonly<Record<CalendarView, number>> = Object.freeze({
-  today: Number.MAX_SAFE_INTEGER,
   week: 3,
   month: 3,
 });

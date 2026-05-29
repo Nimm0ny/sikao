@@ -1,13 +1,11 @@
 // lint-allow-ui-copy: V5 D.4.1 Calendar panel head copy. CJK strings are
-// visual contract from the V5 prototype (Home v2.1.html panel-head) and
-// sik-fu-a-home-visual-contract.md §2.3.
+// visual contract from the V5 prototype (Home v2.1.html panel-head).
 import { useCallback, useId } from 'react';
 import { useDashboardPreferenceStore, usePlanStore } from '@sikao/domain';
 import type { PlanCalendarView } from '@sikao/domain/plan/usePlanStore';
 
 import { Tabs, type TabItem } from '../../../components/nav/Tabs';
 import { Button } from '../../../components/form';
-import { TodayCalendarView } from './TodayCalendarView';
 import { WeekCalendarView } from './WeekCalendarView';
 import { MonthCalendarView } from './MonthCalendarView';
 import {
@@ -18,10 +16,9 @@ import {
 import type { CalendarViewConfig } from './calendarViewConfig';
 import styles from './CalendarPanel.module.css';
 
-const VIEW_KEYS = ['today', 'week', 'month'] as const satisfies ReadonlyArray<PlanCalendarView>;
+const VIEW_KEYS = ['week', 'month'] as const satisfies ReadonlyArray<PlanCalendarView>;
 
 const SEGMENT_ITEMS: ReadonlyArray<TabItem> = [
-  { key: 'today', label: '今日' },
   { key: 'week', label: '本周' },
   { key: 'month', label: '本月' },
 ];
@@ -30,18 +27,13 @@ function isPlanCalendarView(value: unknown): value is PlanCalendarView {
   return typeof value === 'string' && (VIEW_KEYS as ReadonlyArray<string>).includes(value);
 }
 
-export interface CalendarPanelProps {
-  readonly countdown?: { readonly label: string; readonly daysUntil: number };
-}
-
-function shiftDate(dateStr: string, amount: number, unit: 'day' | 'month'): string {
-  const d = new Date(`${dateStr}T00:00:00`);
-  if (unit === 'day') d.setDate(d.getDate() + amount);
-  else d.setMonth(d.getMonth() + amount);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+function shiftDate(dateStr: string, amount: number): string {
+  const day = new Date(`${dateStr}T00:00:00`);
+  day.setDate(day.getDate() + amount);
+  const y = day.getFullYear();
+  const m = String(day.getMonth() + 1).padStart(2, '0');
+  const d = String(day.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
 }
 
 function todayStamp(): string {
@@ -53,24 +45,22 @@ function todayStamp(): string {
 }
 
 function shiftCalendarAnchor(view: PlanCalendarView, currentDate: string, direction: -1 | 1): string {
-  if (view === 'today') return shiftDate(currentDate, direction, 'day');
-  if (view === 'week') return shiftDate(currentDate, direction * 7, 'day');
-  return shiftDate(currentDate, direction * 21, 'day');
+  if (view === 'week') return shiftDate(currentDate, direction * 7);
+  return shiftDate(currentDate, direction * 21);
 }
 
 function navAriaLabel(view: PlanCalendarView, direction: -1 | 1): string {
-  if (view === 'today') return direction < 0 ? '上一日' : '下一日';
   if (view === 'week') return direction < 0 ? '上一周' : '下一周';
   return direction < 0 ? '上 3 周' : '下 3 周';
 }
 
-export function CalendarPanel({ countdown }: CalendarPanelProps) {
+export function CalendarPanel() {
   const headingId = useId();
-  const currentView = usePlanStore((s) => s.currentView);
-  const currentDate = usePlanStore((s) => s.currentDate);
-  const setCurrentView = usePlanStore((s) => s.setCurrentView);
-  const setCurrentDate = usePlanStore((s) => s.setCurrentDate);
-  const patchPreferences = useDashboardPreferenceStore((s) => s.patchPreferences);
+  const currentView = usePlanStore((state) => state.currentView);
+  const currentDate = usePlanStore((state) => state.currentDate);
+  const setCurrentView = usePlanStore((state) => state.setCurrentView);
+  const setCurrentDate = usePlanStore((state) => state.setCurrentDate);
+  const patchPreferences = useDashboardPreferenceStore((state) => state.patchPreferences);
   const viewConfig = useCalendarViewConfig(currentView);
 
   const handleViewChange = useCallback(
@@ -95,14 +85,8 @@ export function CalendarPanel({ countdown }: CalendarPanelProps) {
     setCurrentDate(todayStamp());
   }, [setCurrentDate]);
 
-  const cd = countdown ?? { label: '国考', daysUntil: 138 };
-
   return (
-    <section
-      className={styles.panel}
-      aria-labelledby={headingId}
-      data-testid="home-calendar-panel"
-    >
+    <section className={styles.panel} aria-labelledby={headingId} data-testid="home-calendar-panel">
       <header className={styles.head}>
         <Tabs
           variant="segmented"
@@ -114,40 +98,18 @@ export function CalendarPanel({ countdown }: CalendarPanelProps) {
           aria-label="日历视图切换"
         />
         <div className={styles.actions}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handlePrev}
-            aria-label={navAriaLabel(currentView, -1)}
-          >
+          <Button variant="ghost" size="sm" onClick={handlePrev} aria-label={navAriaLabel(currentView, -1)}>
             ◀
           </Button>
           <Button variant="ghost" size="sm" onClick={handleToday} aria-label="回到今天">
             ○
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleNext}
-            aria-label={navAriaLabel(currentView, 1)}
-          >
+          <Button variant="ghost" size="sm" onClick={handleNext} aria-label={navAriaLabel(currentView, 1)}>
             ▶
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            disabled
-            aria-label="新建事件 (Plan 创建落 SIK-FU-N)"
-          >
+          <Button variant="ghost" size="sm" disabled aria-label="新建事件 (Plan 创建落 SIK-FU-N)">
             ＋
           </Button>
-          <span
-            className={styles.countdown}
-            aria-label={`${cd.label}倒计时`}
-            data-testid="home-calendar-countdown"
-          >
-            {cd.label} D-<b className={styles.countdownNum}>{cd.daysUntil}</b>
-          </span>
         </div>
       </header>
       <div className={styles.body}>
@@ -164,7 +126,6 @@ function CalendarBody({
   readonly view: PlanCalendarView;
   readonly viewConfig: CalendarViewConfig;
 }) {
-  if (view === 'today') return <TodayCalendarView viewConfig={viewConfig} />;
   if (view === 'week') return <WeekCalendarView viewConfig={viewConfig} />;
   return <MonthCalendarView viewConfig={viewConfig} />;
 }

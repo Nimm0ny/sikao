@@ -17,7 +17,7 @@
  * The list is fixed at exactly three; any new view variant requires a
  * spec change before adoption.
  */
-export type CalendarView = 'today' | 'week' | 'month';
+export type CalendarView = 'week' | 'month';
 
 /**
  * The seven visual channels a calendar event chip may occupy. The names

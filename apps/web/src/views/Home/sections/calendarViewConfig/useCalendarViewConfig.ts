@@ -36,8 +36,7 @@ import type { CalendarView, CalendarViewConfig } from './types';
 /**
  * Resolve the active `CalendarViewConfig` for the supplied view. The
  * returned config is memoized on `(view, profileLoaded, preferences)` so
- * `<TodayCalendarView />`, `<WeekCalendarView />`, and
- * `<MonthCalendarView />` only re-render when their effective config
+ * `<WeekCalendarView />` and `<MonthCalendarView />` only re-render when their effective config
  * actually changes.
  */
 export function useCalendarViewConfig(view: CalendarView): CalendarViewConfig {

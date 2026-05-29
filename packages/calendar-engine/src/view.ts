@@ -33,13 +33,6 @@ export function buildViewRange(
   const anchorDate = parseIsoDay(anchor.anchorDate);
   const startWeekOnMonday = anchor.startWeekOnMonday ?? true;
 
-  if (view === 'today') {
-    return {
-      from: startOfLocalDay(anchor.anchorDate, anchor.timeZone).toISOString(),
-      to: endOfLocalDay(anchor.anchorDate, anchor.timeZone).toISOString(),
-    };
-  }
-
   if (view === 'week') {
     const weekStartDay = startOfWeekUtcDay(anchorDate, startWeekOnMonday);
     const weekEndDay = addUtcDays(weekStartDay, 6);

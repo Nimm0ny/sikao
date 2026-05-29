@@ -27,20 +27,25 @@ import styles from './Home.module.css';
  */
 
 export function Home() {
-  // SIK-90 Wave 2 (2026-05-25): hydrate persisted calendar view from
-  // useDashboardPreferenceStore into usePlanStore once on mount so the
-  // CalendarPanel renders the right view without flashing the store
-  // default. CalendarPanel itself owns the user-driven view changes.
-  // SIK-138 W4 (2026-05-28): narrow via the W3 reader so the literal
-  // membership check lives in one place; behavior is unchanged.
+  const preferences = useDashboardPreferenceStore((state) => state.preferences);
+  const profileLoaded = useDashboardPreferenceStore((state) => state.profileLoaded);
+  const hydrateFromLocalFallback = useDashboardPreferenceStore((state) => state.hydrateFromLocalFallback);
+
   useEffect(() => {
-    const persisted = readHomeCalendarView(
-      useDashboardPreferenceStore.getState().preferences,
-    );
+    hydrateFromLocalFallback();
+  }, [hydrateFromLocalFallback]);
+
+  // Hydrate / normalize persisted calendar view whenever the dashboard
+  // preference store changes. This explicitly covers both delayed profile
+  // bootstrap and legacy localStorage fallback instead of reading once on
+  // mount and silently ignoring later preference arrival.
+  useEffect(() => {
+    void profileLoaded;
+    const persisted = readHomeCalendarView(preferences);
     if (persisted !== null) {
       usePlanStore.getState().setCurrentView(persisted);
     }
-  }, []);
+  }, [preferences, profileLoaded]);
 
   return (
     <ScreenLockShell rows="auto auto minmax(0, 1.6fr) minmax(0, 1fr)" testId="home-view">

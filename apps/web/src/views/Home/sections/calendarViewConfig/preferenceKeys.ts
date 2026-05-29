@@ -59,7 +59,7 @@ export interface HomeCalendarPreferencePatch {
 /** Narrow shape compatible with `dashboardPreferences`. */
 type PreferencesLike = Readonly<Record<string, unknown>> | undefined | null;
 
-const VIEW_LITERALS: ReadonlySet<CalendarView> = new Set(['today', 'week', 'month']);
+const VIEW_LITERALS: ReadonlySet<CalendarView> = new Set(['week', 'month']);
 
 /**
  * Returns the persisted calendar view if it matches one of the locked
@@ -68,6 +68,7 @@ const VIEW_LITERALS: ReadonlySet<CalendarView> = new Set(['today', 'week', 'mont
 export function readHomeCalendarView(preferences: PreferencesLike): CalendarView | null {
   const value = preferences?.['homeCalendarView'];
   if (typeof value !== 'string') return null;
+  if (value === 'today') return 'week';
   return VIEW_LITERALS.has(value as CalendarView) ? (value as CalendarView) : null;
 }
 

@@ -2,7 +2,7 @@ import { create } from 'zustand';
 
 import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 
-export type PlanCalendarView = 'today' | 'week' | 'month';
+export type PlanCalendarView = 'week' | 'month';
 
 export interface SelectedDateRange {
   readonly from: string;

@@ -89,7 +89,7 @@ export interface RecommendationHistoryFilters {
 }
 
 export interface DashboardFullPlanFilters {
-  readonly view: 'today' | 'week' | 'month';
+  readonly view: 'week' | 'month';
   readonly anchorDate?: string;
 }
 

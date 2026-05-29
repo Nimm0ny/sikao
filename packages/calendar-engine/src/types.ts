@@ -52,7 +52,7 @@ export interface CrossDaySlice {
   readonly isEndSlice: boolean;
 }
 
-export type DashboardCalendarView = 'today' | 'week' | 'month';
+export type DashboardCalendarView = 'week' | 'month';
 
 export interface ViewRangeAnchor {
   readonly anchorDate: string;
