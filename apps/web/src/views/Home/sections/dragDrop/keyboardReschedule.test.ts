@@ -92,6 +92,32 @@ describe('stepDayCoordinate (SIK-139 W4 — whole-day cell stepping)', () => {
     });
     expect(next).toBeUndefined();
   });
+
+  it('anchors to the chip-containing cell, not a vertically-closer next-row cell (browser regression)', () => {
+    // Real-browser bug: collisionRect is the DRAGGED CHIP (small, near the
+    // bottom of its 88px cell), so a corner-distance pick wrongly jumped to a
+    // next-row cell. The chip below sits at col2/row0 but near the bottom
+    // (top=70, well inside cell row0 whose top=0/bottom=88). ArrowRight must
+    // step to col3/row0, NOT a row1 cell.
+    const chip: CellRect = { left: 2 * CELL_W + 5, top: 70, right: 2 * CELL_W + 95, bottom: 92, width: 90, height: 22 };
+    const next = stepDayCoordinate(keyEvent(KeyboardCode.Right), {
+      collisionRect: chip,
+      droppableRects: makeRects(),
+    });
+    expect(next).toEqual({ x: 3 * CELL_W, y: 0 });
+  });
+
+  it('honors an explicit overRect anchor over the chip collisionRect', () => {
+    // Once dnd-kit reports an `over` cell, stepping anchors to THAT clean cell
+    // rect (col4/row0 here) regardless of the chip's drifted collisionRect.
+    const chip: CellRect = { left: 999, top: 999, right: 1090, bottom: 1021, width: 90, height: 22 };
+    const next = stepDayCoordinate(keyEvent(KeyboardCode.Right), {
+      collisionRect: chip,
+      droppableRects: makeRects(),
+      overRect: rect(4, 0),
+    });
+    expect(next).toEqual({ x: 5 * CELL_W, y: 0 });
+  });
 });
 
 describe('formatCellDate (SIK-139 W4 — aria-live candidate date)', () => {

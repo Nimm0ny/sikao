@@ -41,6 +41,15 @@ export interface CellRect {
 export interface StepDayContext {
   readonly collisionRect: CellRect | null;
   readonly droppableRects: ReadonlyMap<string, CellRect>;
+  /**
+   * The currently-over day cell's rect, if any. Preferred anchor: it is a
+   * CLEAN cell rect, whereas `collisionRect` is the dragged chip's rect — the
+   * chip is small and sits near the bottom of (or overflows) its 88px cell,
+   * so anchoring stepping to the chip geometry mis-picks a vertically-closer
+   * next-row cell. Falls back to the cell containing the chip's top-left
+   * corner when `over` is not yet set (e.g. the first key after pickup).
+   */
+  readonly overRect?: CellRect | null;
 }
 
 const ARROW_CODES: ReadonlySet<string> = new Set([
@@ -50,31 +59,58 @@ const ARROW_CODES: ReadonlySet<string> = new Set([
   KeyboardCode.Down,
 ]);
 
-/** Squared distance between two rect top-left corners (no sqrt needed). */
-function cornerDistanceSq(a: CellRect, b: CellRect): number {
-  const dx = a.left - b.left;
-  const dy = a.top - b.top;
-  return dx * dx + dy * dy;
+/**
+ * Resolve the anchor CELL to step from: the currently-over cell when known,
+ * otherwise the cell whose bounds contain the chip's top-left corner (the
+ * chip can overflow its cell's bottom, so the top-left is the reliable probe,
+ * not the center). Returns null when neither resolves.
+ */
+function resolveAnchorCell(ctx: StepDayContext): CellRect | null {
+  if (ctx.overRect) return ctx.overRect;
+  const cr = ctx.collisionRect;
+  if (!cr) return null;
+  for (const rect of ctx.droppableRects.values()) {
+    if (cr.left >= rect.left && cr.left < rect.right && cr.top >= rect.top && cr.top < rect.bottom) {
+      return rect;
+    }
+  }
+  return null;
 }
 
 /**
- * Keep only the cells that lie in the pressed direction relative to the
- * current collision rect (mirrors sortableKeyboardCoordinates' directional
- * filter): Right → strictly to the right, Down → strictly below, etc.
+ * Pick the adjacent cell in the pressed direction, stepping by a WHOLE day
+ * (left/right within the same row) or a WHOLE week (up/down within the same
+ * column). Row/column membership is decided by overlap against the anchor's
+ * own height / width so sub-pixel rect noise doesn't split a row.
  */
-function inDirection(code: string, current: CellRect, candidate: CellRect): boolean {
-  switch (code) {
-    case KeyboardCode.Right:
-      return candidate.left > current.left;
-    case KeyboardCode.Left:
-      return candidate.left < current.left;
-    case KeyboardCode.Down:
-      return candidate.top > current.top;
-    case KeyboardCode.Up:
-      return candidate.top < current.top;
-    default:
-      return false;
+function stepFrom(code: string, anchor: CellRect, rects: Iterable<CellRect>): CellRect | null {
+  const rowTol = anchor.height / 2;
+  const colTol = anchor.width / 2;
+  let best: CellRect | null = null;
+  for (const rect of rects) {
+    let candidate = false;
+    switch (code) {
+      case KeyboardCode.Right:
+        candidate = Math.abs(rect.top - anchor.top) < rowTol && rect.left > anchor.left + 1;
+        if (candidate && (best == null || rect.left < best.left)) best = rect;
+        break;
+      case KeyboardCode.Left:
+        candidate = Math.abs(rect.top - anchor.top) < rowTol && rect.left < anchor.left - 1;
+        if (candidate && (best == null || rect.left > best.left)) best = rect;
+        break;
+      case KeyboardCode.Down:
+        candidate = Math.abs(rect.left - anchor.left) < colTol && rect.top > anchor.top + 1;
+        if (candidate && (best == null || rect.top < best.top)) best = rect;
+        break;
+      case KeyboardCode.Up:
+        candidate = Math.abs(rect.left - anchor.left) < colTol && rect.top < anchor.top - 1;
+        if (candidate && (best == null || rect.top > best.top)) best = rect;
+        break;
+      default:
+        break;
+    }
   }
+  return best;
 }
 
 /**
@@ -96,29 +132,27 @@ export function stepDayCoordinate(
   ctx: StepDayContext,
 ): { x: number; y: number } | undefined {
   if (!ARROW_CODES.has(event.code)) return undefined;
-  const { collisionRect } = ctx;
-  if (!collisionRect) return undefined;
+  if (!ctx.collisionRect) return undefined;
 
-  let best: CellRect | null = null;
-  let bestDistSq = Number.POSITIVE_INFINITY;
-  for (const rect of ctx.droppableRects.values()) {
-    if (!inDirection(event.code, collisionRect, rect)) continue;
-    const distSq = cornerDistanceSq(collisionRect, rect);
-    if (distSq < bestDistSq) {
-      bestDistSq = distSq;
-      best = rect;
-    }
-  }
-  if (!best) return undefined;
-  return { x: best.left, y: best.top };
+  const anchor = resolveAnchorCell(ctx);
+  if (!anchor) return undefined;
+
+  const next = stepFrom(event.code, anchor, ctx.droppableRects.values());
+  if (!next) return undefined;
+  return { x: next.left, y: next.top };
 }
 
 /** Adapter: assign this to `KeyboardSensor`'s `coordinateGetter` option. */
-export const dayCellCoordinateGetter: KeyboardCoordinateGetter = (event, args) =>
-  stepDayCoordinate(event, {
+export const dayCellCoordinateGetter: KeyboardCoordinateGetter = (event, args) => {
+  const overId = args.context.over?.id;
+  const droppableRects = args.context.droppableRects as ReadonlyMap<string, CellRect>;
+  const overRect = overId == null ? null : droppableRects.get(String(overId)) ?? null;
+  return stepDayCoordinate(event, {
     collisionRect: args.context.collisionRect,
-    droppableRects: args.context.droppableRects as ReadonlyMap<string, CellRect>,
+    droppableRects,
+    overRect,
   });
+};
 
 const CANDIDATE_DATE_FMT = new Intl.DateTimeFormat('zh-CN', {
   month: 'long',
