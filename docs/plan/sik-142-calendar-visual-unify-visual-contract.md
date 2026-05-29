@@ -281,9 +281,9 @@ SIK-138 chip 占 7 通道（kind 边色 / title / category / status dot / source
 | A11 月+周 cell ≤3 条 | `top3 = slice(0,3)` L1804 | calendarViewConfig cardLimitPerCell | **PASS**（W3：week 默认 `cardLimitPerCell=3`；month/week/DnD 列表窗口都由 `cardLimitPerCell` 真正驱动，custom=2 单测锁定） |
 | A12 格内滑动无滚动条 | `.view-today` 隐藏滚动条 L778-786 | Month/Week cell CSS | **PASS**（W3：month `eventList` / week `dayEventList` 均 `overflow-y:auto` + `scrollbar-width:none` + `::-webkit-scrollbar{display:none}`） |
 | A13 去 `+N 更多` | §5 C3 | MonthCalendarView.tsx | **PASS**（W3：month static + DnD grid 全量渲染事件、`home-month-overflow` 移除，回归测试断言 not present） |
-| A14 删 today 视图 + 类型收窄 | §5 C4 | TodayCalendarView 删 + 3 处 union | 待 W4 |
-| A15 去 countdown chip | §5 C5 | CalendarPanel.tsx | 待 W4 |
-| A16 persisted 'today' 归一 'week' | §5 C4 / H7 | calendarViewConfig preferenceKeys | 待 W4 |
+| A14 删 today 视图 + 类型收窄 | §5 C4 | TodayCalendarView 删 + 3 处 union | **PASS**（W4：TodayCalendarView 整组删除；domain / calendar-engine / api-client / calendarViewConfig 全收窄到 `week|month`） |
+| A15 去 countdown chip | §5 C5 | CalendarPanel.tsx | **PASS**（W4：CalendarPanel head 仅剩 tabs + 4 buttons；`home-calendar-countdown` 删除，browser smoke 证据已归档） |
+| A16 persisted 'today' 归一 'week' | §5 C4 / H7 | calendarViewConfig preferenceKeys | **PASS**（W4：`readHomeCalendarView()` 显式 `today -> week`；Home 订阅真实 hydration 变化，测试 + browser 均证明 persisted month / legacy today 生效） |
 | A17 周 chip 可点 → 只读 Peek | §5 C6 | WeekCalendarView + peek | 待 W5 |
 | A18 Peek V5 对齐 + 3 通道展示 | §6 D4 | CalendarPeekCard 等 | 待 W5 |
 
