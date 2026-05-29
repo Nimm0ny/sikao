@@ -1,21 +1,19 @@
-/*
- * CalendarPeekCard.test.tsx — SIK-138 W6.
- *
- * Why: visual contract §2 + Requirement 12 lock the read-only peek
- *      surface contract:
- *        - 6 head buttons (4 disabled placeholders, prev / next / close
- *          functional)
- *        - 8-row property table
- *        - notes section + read-only banner
- *        - Esc / scrim / close button each close
- *        - ArrowUp / ArrowDown walk inside list scope
- *        - portal-mounted (DOM escapes the consumer subtree)
- */
-import { describe, it, expect } from 'vitest';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { useEffect } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { usePlanStore } from '@sikao/domain';
 
 import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
+
+const mutateAsyncMock = vi.fn();
+
+vi.mock('@sikao/api-client/plansMutations', () => ({
+  useUpdateEvent: (eventId: string | number) => ({
+    mutateAsync: (payload: unknown) => mutateAsyncMock(eventId, payload),
+  }),
+}));
 
 import { CalendarPeekProvider } from './CalendarPeekProvider';
 import { CalendarPeekCard } from './CalendarPeekCard';
@@ -55,8 +53,6 @@ function AutoOpen({ event, list }: AutoOpenProps) {
   const peek = useCalendarPeek();
   useEffect(() => {
     peek.open(event, list);
-    // open is stable per provider (useCallback), exhaustive-deps satisfied
-    // by intentional one-shot effect — re-runs would re-open on every key.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   return null;
@@ -66,13 +62,23 @@ function renderWithPeek(
   event: PlanEventReadV2,
   list: ReadonlyArray<CalendarPeekListEntry>,
 ) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 }, mutations: { retry: false } },
+  });
   return render(
-    <CalendarPeekProvider>
-      <AutoOpen event={event} list={list} />
-      <CalendarPeekCard />
-    </CalendarPeekProvider>,
+    <QueryClientProvider client={client}>
+      <CalendarPeekProvider>
+        <AutoOpen event={event} list={list} />
+        <CalendarPeekCard />
+      </CalendarPeekProvider>
+    </QueryClientProvider>,
   );
 }
+
+afterEach(() => {
+  usePlanStore.getState().resetOptimisticEvents();
+  mutateAsyncMock.mockReset();
+});
 
 describe('CalendarPeekCard', () => {
   it('renders into a portal escaping the consumer subtree', () => {
@@ -89,7 +95,6 @@ describe('CalendarPeekCard', () => {
     expect(screen.getByTestId('home-calendar-peek-copy')).toBeDisabled();
     expect(screen.getByTestId('home-calendar-peek-more')).toBeDisabled();
     expect(screen.getByTestId('home-calendar-peek-close')).toBeEnabled();
-    // prev / next exist but are disabled when list has a single entry
     expect(screen.getByTestId('home-calendar-peek-prev')).toBeDisabled();
     expect(screen.getByTestId('home-calendar-peek-next')).toBeDisabled();
   });
@@ -120,7 +125,7 @@ describe('CalendarPeekCard', () => {
     expect(screen.getByTestId('home-calendar-peek-notes-empty')).toHaveTextContent('暂无备注');
   });
 
-  it('Esc key closes the peek', () => {
+  it('Esc key closes the peek when idle', () => {
     const event = makeEvent('e1');
     renderWithPeek(event, [{ id: 'e1', event }]);
     expect(screen.getByTestId('home-calendar-peek-card')).toBeInTheDocument();
@@ -128,7 +133,7 @@ describe('CalendarPeekCard', () => {
     expect(screen.queryByTestId('home-calendar-peek-card')).toBeNull();
   });
 
-  it('scrim click closes the peek', () => {
+  it('scrim click closes the peek when idle', () => {
     const event = makeEvent('e1');
     renderWithPeek(event, [{ id: 'e1', event }]);
     const overlay = screen.getByTestId('home-calendar-peek-overlay');
@@ -136,7 +141,7 @@ describe('CalendarPeekCard', () => {
     expect(screen.queryByTestId('home-calendar-peek-card')).toBeNull();
   });
 
-  it('close button closes the peek', () => {
+  it('close button closes the peek when idle', () => {
     const event = makeEvent('e1');
     renderWithPeek(event, [{ id: 'e1', event }]);
     fireEvent.click(screen.getByTestId('home-calendar-peek-close'));
@@ -164,9 +169,106 @@ describe('CalendarPeekCard', () => {
     const { unmount } = renderWithPeek(event, [{ id: 'e1', event }]);
     expect(document.body.style.overflow).toBe('hidden');
     fireEvent.keyDown(document, { key: 'Escape' });
-    // After close the lock should release; body.style.overflow is reset
-    // to whatever it was prior (empty string in jsdom default).
     expect(document.body.style.overflow).not.toBe('hidden');
     unmount();
+  });
+
+  it('saves title inline with the real event id', async () => {
+    const user = userEvent.setup();
+    const event = makeEvent('e1');
+    mutateAsyncMock.mockResolvedValueOnce({ ...event, title: 'Renamed title' });
+    renderWithPeek(event, [{ id: 'e1', event }]);
+
+    await user.click(screen.getByRole('button', { name: '编辑标题' }));
+    await user.clear(screen.getByLabelText('编辑标题'));
+    await user.type(screen.getByLabelText('编辑标题'), 'Renamed title');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(mutateAsyncMock).toHaveBeenCalledWith('e1', { title: 'Renamed title' });
+    });
+  });
+
+  it('saves notes inline with Ctrl+Enter', async () => {
+    const user = userEvent.setup();
+    const event = makeEvent('e1');
+    mutateAsyncMock.mockResolvedValueOnce({ ...event, notes: 'Updated note' });
+    renderWithPeek(event, [{ id: 'e1', event }]);
+
+    await user.click(screen.getByRole('button', { name: '编辑备注' }));
+    await user.clear(screen.getByLabelText('编辑备注'));
+    await user.type(screen.getByLabelText('编辑备注'), 'Updated note');
+    await user.keyboard('{Control>}{Enter}{/Control}');
+
+    await waitFor(() => {
+      expect(mutateAsyncMock).toHaveBeenCalledWith('e1', { notes: 'Updated note' });
+    });
+  });
+
+  it('disables the sibling edit trigger while one field is editing', async () => {
+    const user = userEvent.setup();
+    const event = makeEvent('e1');
+    renderWithPeek(event, [{ id: 'e1', event }]);
+
+    await user.click(screen.getByRole('button', { name: '编辑标题' }));
+    expect(screen.getByRole('button', { name: '编辑备注' })).toBeDisabled();
+    expect(screen.getByTestId('home-calendar-peek-prev')).toBeDisabled();
+    expect(screen.getByTestId('home-calendar-peek-next')).toBeDisabled();
+  });
+
+  it('does not save title while IME composition is active', async () => {
+    const user = userEvent.setup();
+    const event = makeEvent('e1');
+    renderWithPeek(event, [{ id: 'e1', event }]);
+
+    await user.click(screen.getByRole('button', { name: '编辑标题' }));
+    const input = screen.getByLabelText('编辑标题');
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true });
+    expect(mutateAsyncMock).not.toHaveBeenCalled();
+  });
+
+  it('rolls back title after a failed save and stays in editing state', async () => {
+    const user = userEvent.setup();
+    const event = makeEvent('e1', { title: 'Original title' });
+    mutateAsyncMock.mockRejectedValueOnce(new Error('boom'));
+    renderWithPeek(event, [{ id: 'e1', event }]);
+
+    await user.click(screen.getByRole('button', { name: '编辑标题' }));
+    await user.clear(screen.getByLabelText('编辑标题'));
+    await user.type(screen.getByLabelText('编辑标题'), 'Broken title');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(screen.getByLabelText('编辑标题')).toHaveValue('Original title');
+    });
+    expect(screen.getByText('保存失败，请重试')).toBeInTheDocument();
+  });
+
+  it('disables head navigation while saving', async () => {
+    const user = userEvent.setup();
+    const event = makeEvent('e1');
+    let resolveSave: (() => void) | null = null;
+    mutateAsyncMock.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          resolveSave = resolve;
+        }),
+    );
+    renderWithPeek(event, [{ id: 'e1', event }]);
+
+    await user.click(screen.getByRole('button', { name: '编辑标题' }));
+    await user.type(screen.getByLabelText('编辑标题'), ' X');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId('home-calendar-peek-close')).toBeDisabled();
+      expect(screen.getByTestId('home-calendar-peek-prev')).toBeDisabled();
+      expect(screen.getByTestId('home-calendar-peek-next')).toBeDisabled();
+    });
+
+    resolveSave?.();
+    await waitFor(() => {
+      expect(screen.getByTestId('home-calendar-peek-close')).toBeEnabled();
+    });
   });
 });
