@@ -773,6 +773,12 @@ em, i { font-style: normal; }
    * literals, no prototype vars, no color-mix percentages. */
   --cal-drag-shadow:   var(--shadow-l2);
   --cal-drag-opacity:  0.85;
+  /* SIK-139 W2: drop-target cell highlight. Contract §4 derives this from
+   * the existing focus-ring (outline) + info-soft (fill) tokens — reuse of
+   * defined semantics, no new color. Surfaced when a chip hovers a droppable
+   * day cell (`.cell[data-drop-over]`). */
+  --cal-drop-ring:     var(--color-focus-ring);
+  --cal-drop-fill:     var(--color-state-info-soft);
 }
 
 [data-v5-theme='dark'],

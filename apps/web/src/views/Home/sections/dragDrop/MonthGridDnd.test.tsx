@@ -1,17 +1,19 @@
 /*
- * MonthGridDnd tests — SIK-139 W1.
+ * MonthGridDnd tests — SIK-139 W1 + W2.
  *
- * Why: plan §7 Wave 1 wires dnd-kit (DndContext + Pointer/Keyboard sensors)
- *      onto the month grid with drop = NO-OP. This suite proves: the grid
- *      still renders chips/cells (no 4-state regression), chips are drag
- *      handles that KEEP their onClick → Peek, cells are drop targets, and —
- *      critically for Wave 1 — a completed drag writes nothing to the store
- *      (no optimistic patch, no mutation). The reschedule write path is
- *      Wave 2.
+ * Why: W1 wired dnd-kit (DndContext + Pointer/Keyboard sensors) onto the
+ *      month grid; W2 turns drop into a reschedule (optimistic patch + PATCH
+ *      + rollback). This suite proves: the grid still renders chips/cells (no
+ *      4-state regression), chips are drag handles that KEEP their onClick →
+ *      Peek, cells are drop targets, and the Wave 0 optimistic merge still
+ *      renders. The reschedule decision branches are unit-tested in
+ *      resolveCalendarDrop.test.ts; this file keeps the dnd integration
+ *      assertions that don't depend on jsdom collision layout.
  */
 import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { usePlanStore } from '@sikao/domain';
 
 import MonthGridDnd, { type MonthCellModel } from './MonthGridDnd';
@@ -60,17 +62,22 @@ function renderGrid(items: ReadonlyArray<MonthDaySlice>) {
     if (bucket) bucket.push(item);
     else eventsByDay.set(item.slice.day, [item]);
   }
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 }, mutations: { retry: false } },
+  });
   return render(
-    <CalendarPeekProvider>
-      <MonthGridDnd
-        cells={makeCells()}
-        eventsByDay={eventsByDay}
-        dowLabels={DOW}
-        cardLimitPerCell={3}
-        visibleProperties={DEFAULT_PROPS}
-      />
-      <CalendarPeekCard />
-    </CalendarPeekProvider>,
+    <QueryClientProvider client={client}>
+      <CalendarPeekProvider>
+        <MonthGridDnd
+          cells={makeCells()}
+          eventsByDay={eventsByDay}
+          dowLabels={DOW}
+          cardLimitPerCell={3}
+          visibleProperties={DEFAULT_PROPS}
+        />
+        <CalendarPeekCard />
+      </CalendarPeekProvider>
+    </QueryClientProvider>,
   );
 }
 
@@ -135,18 +142,16 @@ describe('MonthGridDnd (SIK-139 W1)', () => {
     expect(screen.getByTestId('home-month-event-title')).toHaveTextContent('乐观改期预览');
   });
 
-  it('Wave 1 drop is a no-op: a keyboard-driven pick-up + move + drop writes nothing to the store', async () => {
+  it('a cancelled keyboard pick-up (Esc) writes nothing to the store (W2 cancel branch)', async () => {
     const user = userEvent.setup();
     const item: MonthDaySlice = { slice: makeSlice('m1', DAY), event: makeEvent('m1', '专项练习', DAY) };
     renderGrid([item]);
     const chip = screen.getByTestId('home-month-event');
     chip.focus();
-    // KeyboardSensor: Space picks up, arrow moves over the next cell, Space
-    // drops. Wave 1 onDragEnd is a no-op, so the optimistic store must stay
-    // empty (no upsertOptimisticEvent, no mutation).
+    // KeyboardSensor: Space picks up, Esc cancels. onDragCancel clears the
+    // transient state and the drop never resolves — no optimistic write.
     await user.keyboard('{ }');
-    await user.keyboard('{ArrowRight}');
-    await user.keyboard('{ }');
+    await user.keyboard('{Escape}');
     expect(usePlanStore.getState().optimisticEvents.size).toBe(0);
   });
 });

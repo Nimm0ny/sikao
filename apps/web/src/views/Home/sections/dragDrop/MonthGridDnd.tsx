@@ -9,11 +9,14 @@
  *      MonthGrid renders as the Suspense fallback so LCP never waits on the
  *      dnd chunk.
  *
- *      AGENT-H7 / Wave 1 scope: drop is a NO-OP placeholder. onDragEnd only
- *      clears transient drag state — it does NOT compute a drop date, write
- *      the optimistic store, or fire a mutation. Reschedule math + optimistic
- *      patch + PATCH + rollback all land in Wave 2 (plan §7). No silent catch
- *      anywhere; the no-op is explicit, not a swallowed error path.
+ *      AGENT-H7 / Wave 2: drop now reschedules. onDragEnd resolves the drop
+ *      target day, computes the shifted times via the pure `rescheduleEvent`,
+ *      writes an optimistic patch, and PATCHes the event; success drops the
+ *      placeholder (refetch becomes truth) and failure rolls it back with an
+ *      explicit error toast. No silent catch: drop-outside / same-day are
+ *      explicit no-ops, malformed input throws after a toast, mutation
+ *      rejection rolls back. Conflict pre-check (Requirement 7) + full
+ *      keyboard reschedule (Requirement 5) remain Wave 3 / Wave 4.
  *
  *      Draggable id = the per-slice peek anchor `${occurrenceRef}|${day}`
  *      (visual contract §2), so each cross-day slice of one event gets a
@@ -25,9 +28,11 @@ import {
   DndContext,
   useDraggable,
   useDroppable,
+  type DragEndEvent,
   type DragStartEvent,
   type UniqueIdentifier,
 } from '@dnd-kit/core';
+import { toast } from '@sikao/shared-utils';
 import { usePlanStore } from '@sikao/domain';
 
 import { MonthEventChip } from '../MonthEventChip';
@@ -38,6 +43,12 @@ import {
 import type { MonthDaySlice } from '../calendarEvents';
 import type { CalendarCardProperty } from '../calendarViewConfig';
 import { useCalendarDragSensors } from './useCalendarDragSensors';
+import {
+  resolveCalendarDrop,
+  type CalendarDropDecision,
+  type DropDragData,
+} from './resolveCalendarDrop';
+import { useRescheduleEvent } from './useRescheduleEvent';
 import styles from '../MonthCalendarView.module.css';
 
 export interface MonthCellModel {
@@ -81,7 +92,13 @@ function DraggableChip({
 }) {
   const { setNodeRef, attributes, listeners, isDragging } = useDraggable({
     id: entryId,
-    data: { eventId: item.event.id, day: item.slice.day },
+    data: {
+      eventId: item.event.id,
+      fromDay: item.slice.day,
+      startAt: item.event.startAt,
+      endAt: item.event.endAt,
+      title: item.event.title,
+    },
   });
   return (
     <MonthEventChip
@@ -136,6 +153,12 @@ function MonthGridDndInner({
   // Subscribed reactively (not getState()) so an in-flight reschedule
   // preview re-renders — preserves the Wave 0 merge contract.
   const optimisticEvents = usePlanStore((s) => s.optimisticEvents);
+  // SIK-139 W2: optimistic write + rollback setters. The grid owns the store
+  // write (the reschedule hook stays a thin network wrapper); chips remain
+  // read-only consumers of optimisticEvents.
+  const upsertOptimisticEvent = usePlanStore((s) => s.upsertOptimisticEvent);
+  const removeOptimisticEvent = usePlanStore((s) => s.removeOptimisticEvent);
+  const reschedule = useRescheduleEvent();
   const sensors = useCalendarDragSensors();
 
   // SIK-139 W1: drag id of the chip currently being dragged, used only to
@@ -156,16 +179,60 @@ function MonthGridDndInner({
     return out;
   }, [cells, eventsByDay, cardLimitPerCell]);
 
-  // AGENT-H7 / Wave 1: drop is a NO-OP placeholder. onDragEnd ONLY clears the
-  // transient active-drag id. No drop-date math, no upsertOptimisticEvent, no
-  // useUpdateEvent — those land in Wave 2. The handlers are explicit so the
-  // dnd lifecycle has no swallowed error path.
+  // SIK-139 W2: drop → reschedule. onDragEnd resolves the dragged event +
+  // drop-target day, computes the shifted times (pure rescheduleEvent),
+  // writes an optimistic patch, then PATCHes. On success the optimistic
+  // placeholder is dropped (the invalidated refetch becomes the truth); on
+  // failure it is rolled back and the error is surfaced via toast.
+  //
+  // AGENT-H7 (Requirement 6, no silent catch):
+  //   - drop outside any cell (over == null) → cancel, no side effect
+  //   - same-day drop (delta 0) → no-op, no request
+  //   - rescheduleEvent throws on malformed input → caught ONLY to surface a
+  //     toast + skip the request (not swallowed silently); no optimistic
+  //     write has happened yet at that point
+  //   - mutation reject → removeOptimisticEvent rollback + error toast
   function handleDragStart(event: DragStartEvent): void {
     setActiveDragId(event.active.id);
   }
-  function handleDragEnd(): void {
+
+  function handleDragEnd(event: DragEndEvent): void {
     setActiveDragId(null);
+    const data = (event.active.data.current ?? null) as DropDragData | null;
+    const overId = event.over == null ? null : String(event.over.id);
+
+    let decision: CalendarDropDecision;
+    try {
+      decision = resolveCalendarDrop(data, overId);
+    } catch (err) {
+      // rescheduleEvent threw on malformed times — surface, do not guess.
+      toast.error('改期失败', '事件时间数据异常，已取消改期');
+      throw err instanceof Error ? err : new Error(String(err));
+    }
+
+    if (decision.kind !== 'reschedule') {
+      return; // 'cancel' (outside / no data) or 'noop' (same day)
+    }
+
+    const { eventId, title, startAt, endAt } = decision;
+    // Optimistic preview, then PATCH the real event.
+    upsertOptimisticEvent(eventId, { startAt, endAt });
+    reschedule.mutate(
+      { eventId, startAt, endAt },
+      {
+        onSuccess: () => {
+          // Let the invalidated refetch become the source of truth.
+          removeOptimisticEvent(eventId);
+        },
+        onError: () => {
+          // Roll back the optimistic patch and tell the user (H7).
+          removeOptimisticEvent(eventId);
+          toast.error('改期失败', `「${title}」未能改期，请重试`);
+        },
+      },
+    );
   }
+
   function handleDragCancel(): void {
     setActiveDragId(null);
   }

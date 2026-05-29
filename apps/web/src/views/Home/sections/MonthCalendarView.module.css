@@ -65,12 +65,22 @@
   background: var(--color-brand-soft);
 }
 
-.cell[data-out-of-month='true'] {
-  background: var(--color-bg-elevated);
+.cell[data-out-of-month='true'] {  background: var(--color-bg-elevated);
 }
 .cell[data-out-of-month='true'] .dom {
   color: var(--color-text-meta);
   opacity: 0.6;
+}
+
+/* SIK-139 W2: drop-target highlight. Surfaced while a dragged chip hovers a
+ * droppable day cell (data-drop-over from useDroppable.isOver). Inset outline
+ * (not border) so the cell geometry / grid lines never shift. Tokens from
+ * contract §4: focus-ring outline + info-soft fill — reuse of defined
+ * semantics, no new color. */
+.cell[data-drop-over='true'] {
+  background: var(--cal-drop-fill);
+  outline: 2px solid var(--cal-drop-ring);
+  outline-offset: -2px;
 }
 
 .dom {
