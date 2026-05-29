@@ -4,7 +4,7 @@ import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { homeQueryKeys } from '@sikao/api-client/homeQueryKeys';
 import { useUpdateEvent } from '@sikao/api-client/plansMutations';
-import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
+import type { PlanEventReadV2, PlanEventUpdateRequestV2 } from '@sikao/api-client/types/home';
 import { usePlanStore } from '@sikao/domain';
 import { toast } from '@sikao/shared-utils';
 
@@ -19,8 +19,23 @@ import { useCalendarPeek } from './useCalendarPeek';
 import type { CalendarPeekContextValue } from './types';
 import styles from './CalendarPeekCard.module.css';
 
-type EditableField = 'title' | 'notes' | null;
-type EditablePatch = Partial<Pick<PlanEventReadV2, 'title' | 'notes'>>;
+type EditableField = 'title' | 'notes' | 'status' | 'category' | 'targetId' | null;
+type EditableStatus = NonNullable<PlanEventUpdateRequestV2['status']>;
+type EditablePatch = {
+  readonly title?: string;
+  readonly notes?: string;
+  readonly status?: EditableStatus;
+  readonly category?: string;
+  readonly targetId?: number | null;
+};
+
+const SAVE_FAILURE_MESSAGE_BY_FIELD: Readonly<Record<Exclude<EditableField, null>, string>> = {
+  title: CALENDAR_INLINE.titleSaveFailed,
+  notes: CALENDAR_INLINE.notesSaveFailed,
+  status: CALENDAR_INLINE.statusSaveFailed,
+  category: CALENDAR_INLINE.categorySaveFailed,
+  targetId: CALENDAR_INLINE.targetSaveFailed,
+};
 
 const KIND_VAR_BY_KIND: Readonly<Record<EventKind, string>> = {
   plan: 'var(--cal-kind-plan)',
@@ -34,6 +49,14 @@ interface EditablePeekCardBodyProps {
   readonly peek: CalendarPeekContextValue;
 }
 
+function uniqueSortedStrings(values: ReadonlyArray<string>): string[] {
+  return Array.from(new Set(values.filter((value) => value.trim().length > 0))).sort((a, b) => a.localeCompare(b));
+}
+
+function uniqueSortedNumbers(values: ReadonlyArray<number>): number[] {
+  return Array.from(new Set(values)).sort((a, b) => a - b);
+}
+
 function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
   const optimisticPatch = usePlanStore((state) => state.optimisticEvents.get(event.id));
   const upsertOptimisticEvent = usePlanStore((state) => state.upsertOptimisticEvent);
@@ -43,8 +66,12 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
   const [isSaving, setIsSaving] = useState(false);
   const [draftTitle, setDraftTitle] = useState(event.title);
   const [draftNotes, setDraftNotes] = useState(event.notes ?? '');
+  const [draftStatus, setDraftStatus] = useState<EditableStatus>(event.status as EditableStatus);
+  const [draftCategory, setDraftCategory] = useState(event.category);
+  const [draftTargetId, setDraftTargetId] = useState(
+    event.targetId === null || event.targetId === undefined ? '' : String(event.targetId),
+  );
   const [fieldError, setFieldError] = useState<string | null>(null);
-  const [committedPatch, setCommittedPatch] = useState<EditablePatch | null>(null);
 
   const updateEvent = useUpdateEvent(event.id);
   const queryClient = useQueryClient();
@@ -52,10 +79,9 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
   const displayEvent = useMemo(
     () => ({
       ...event,
-      ...(committedPatch ?? {}),
       ...(optimisticPatch ?? {}),
     }),
-    [committedPatch, event, optimisticPatch],
+    [event, optimisticPatch],
   );
 
   const canStep = peek.listLength > 1;
@@ -64,13 +90,40 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
     background: KIND_VAR_BY_KIND[kind],
   };
 
+  const categoryOptions = useMemo(() => {
+    const values = peek.currentList.map((entry) => entry.event.category);
+    values.push(displayEvent.category);
+    return uniqueSortedStrings(values);
+  }, [displayEvent.category, peek.currentList]);
+
+  const targetOptions = useMemo(() => {
+    const values = peek.currentList
+      .map((entry) => entry.event.targetId)
+      .filter((value): value is number => typeof value === 'number');
+    if (typeof displayEvent.targetId === 'number') values.push(displayEvent.targetId);
+    return uniqueSortedNumbers(values);
+  }, [displayEvent.targetId, peek.currentList]);
+  const canEditCategory = categoryOptions.length > 0;
+  const canEditTarget = typeof displayEvent.targetId === 'number' || targetOptions.length > 0;
+
+  const resetDraftForField = useCallback((field: Exclude<EditableField, null>) => {
+    if (field === 'title') setDraftTitle(displayEvent.title);
+    if (field === 'notes') setDraftNotes(displayEvent.notes ?? '');
+    if (field === 'status') setDraftStatus(displayEvent.status as EditableStatus);
+    if (field === 'category') setDraftCategory(displayEvent.category);
+    if (field === 'targetId') {
+      setDraftTargetId(
+        displayEvent.targetId === null || displayEvent.targetId === undefined ? '' : String(displayEvent.targetId),
+      );
+    }
+  }, [displayEvent.category, displayEvent.notes, displayEvent.status, displayEvent.targetId, displayEvent.title]);
+
   const cancelEditing = useCallback(() => {
     if (activeField === null) return;
-    if (activeField === 'title') setDraftTitle(displayEvent.title);
-    if (activeField === 'notes') setDraftNotes(displayEvent.notes ?? '');
+    resetDraftForField(activeField);
     setFieldError(null);
     setActiveField(null);
-  }, [activeField, displayEvent.notes, displayEvent.title]);
+  }, [activeField, resetDraftForField]);
 
   const handleClose = useCallback(() => {
     if (isSaving) return;
@@ -79,45 +132,39 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
   }, [activeField, cancelEditing, isSaving, peek]);
 
   const handlePrev = useCallback(() => {
-    if (isSaving) return;
-    if (activeField !== null) cancelEditing();
+    if (isSaving || activeField !== null) return;
     peek.prev();
-  }, [activeField, cancelEditing, isSaving, peek]);
+  }, [activeField, isSaving, peek]);
 
   const handleNext = useCallback(() => {
-    if (isSaving) return;
-    if (activeField !== null) cancelEditing();
+    if (isSaving || activeField !== null) return;
     peek.next();
-  }, [activeField, cancelEditing, isSaving, peek]);
+  }, [activeField, isSaving, peek]);
 
-  const beginTitleEdit = useCallback(() => {
+  const beginEdit = useCallback((field: Exclude<EditableField, null>) => {
     if (isSaving) return;
-    setDraftTitle(displayEvent.title);
+    resetDraftForField(field);
     setFieldError(null);
-    setActiveField('title');
-  }, [displayEvent.title, isSaving]);
-
-  const beginNotesEdit = useCallback(() => {
-    if (isSaving) return;
-    setDraftNotes(displayEvent.notes ?? '');
-    setFieldError(null);
-    setActiveField('notes');
-  }, [displayEvent.notes, isSaving]);
+    setActiveField(field);
+  }, [isSaving, resetDraftForField]);
 
   const restorePreviousOptimistic = useCallback(
     (previousPatch: Partial<PlanEventReadV2> | undefined) => {
       removeOptimisticEvent(event.id);
-      if (previousPatch !== undefined) {
-        upsertOptimisticEvent(event.id, previousPatch);
-      }
+      if (previousPatch !== undefined) upsertOptimisticEvent(event.id, previousPatch);
     },
     [event.id, removeOptimisticEvent, upsertOptimisticEvent],
   );
 
   const commitField = useCallback(
     async (field: Exclude<EditableField, null>, payload: EditablePatch) => {
-      const previousTitle = displayEvent.title;
-      const previousNotes = displayEvent.notes ?? '';
+      const previousState = {
+        title: displayEvent.title,
+        notes: displayEvent.notes ?? '',
+        status: displayEvent.status as EditableStatus,
+        category: displayEvent.category,
+        targetId: displayEvent.targetId === null || displayEvent.targetId === undefined ? '' : String(displayEvent.targetId),
+      };
       const previousOptimisticPatch = optimisticPatch;
       setIsSaving(true);
       setFieldError(null);
@@ -125,24 +172,24 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
       try {
         await updateEvent.mutateAsync(payload);
         await queryClient.refetchQueries({ queryKey: homeQueryKeys.plans.all() });
+        peek.commitEvent(event.id, payload);
         restorePreviousOptimistic(previousOptimisticPatch);
-        setCommittedPatch((prev) => ({ ...(prev ?? {}), ...payload }));
         setActiveField(null);
         setFieldError(null);
       } catch {
         restorePreviousOptimistic(previousOptimisticPatch);
-        if (field === 'title') setDraftTitle(previousTitle);
-        if (field === 'notes') setDraftNotes(previousNotes);
+        if (field === 'title') setDraftTitle(previousState.title);
+        if (field === 'notes') setDraftNotes(previousState.notes);
+        if (field === 'status') setDraftStatus(previousState.status);
+        if (field === 'category') setDraftCategory(previousState.category);
+        if (field === 'targetId') setDraftTargetId(previousState.targetId);
         setFieldError(CALENDAR_INLINE.saveFailed);
-        toast.error(
-          CALENDAR_INLINE.saveFailed,
-          field === 'title' ? CALENDAR_INLINE.titleSaveFailed : CALENDAR_INLINE.notesSaveFailed,
-        );
+        toast.error(CALENDAR_INLINE.saveFailed, SAVE_FAILURE_MESSAGE_BY_FIELD[field]);
       } finally {
         setIsSaving(false);
       }
     },
-    [displayEvent.notes, displayEvent.title, event.id, optimisticPatch, queryClient, restorePreviousOptimistic, updateEvent, upsertOptimisticEvent],
+    [displayEvent.category, displayEvent.notes, displayEvent.status, displayEvent.targetId, displayEvent.title, event.id, optimisticPatch, peek, queryClient, restorePreviousOptimistic, updateEvent, upsertOptimisticEvent],
   );
 
   const saveTitle = useCallback(async () => {
@@ -167,6 +214,52 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
     }
     await commitField('notes', { notes: draftNotes });
   }, [commitField, displayEvent.notes, draftNotes]);
+
+  const saveStatus = useCallback(async () => {
+    if (draftStatus === displayEvent.status) {
+      setActiveField(null);
+      setFieldError(null);
+      return;
+    }
+    await commitField('status', { status: draftStatus });
+  }, [commitField, displayEvent.status, draftStatus]);
+
+  const saveCategory = useCallback(async () => {
+    if (!categoryOptions.includes(draftCategory)) {
+      setFieldError(CALENDAR_INLINE.invalidCategory);
+      return;
+    }
+    if (draftCategory === displayEvent.category) {
+      setActiveField(null);
+      setFieldError(null);
+      return;
+    }
+    await commitField('category', { category: draftCategory });
+  }, [categoryOptions, commitField, displayEvent.category, draftCategory]);
+
+  const saveTarget = useCallback(async () => {
+    const trimmed = draftTargetId.trim();
+    if (trimmed.length === 0) {
+      if (displayEvent.targetId === null || displayEvent.targetId === undefined) {
+        setActiveField(null);
+        setFieldError(null);
+        return;
+      }
+      await commitField('targetId', { targetId: null });
+      return;
+    }
+    const parsed = Number(trimmed);
+    if (!Number.isInteger(parsed) || parsed <= 0 || !targetOptions.includes(parsed)) {
+      setFieldError(CALENDAR_INLINE.invalidTarget);
+      return;
+    }
+    if (parsed === displayEvent.targetId) {
+      setActiveField(null);
+      setFieldError(null);
+      return;
+    }
+    await commitField('targetId', { targetId: parsed });
+  }, [commitField, displayEvent.targetId, draftTargetId, targetOptions]);
 
   useEffect(() => {
     function handleKeyDown(event_: KeyboardEvent) {
@@ -284,7 +377,7 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={beginTitleEdit}
+                    onClick={() => beginEdit('title')}
                     disabled={isSaving || activeField !== null}
                     aria-label="编辑标题"
                     title="edit-title"
@@ -294,7 +387,32 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
                 </>
               )}
             </div>
-            <CalendarPeekProperties event={displayEvent} />
+            <CalendarPeekProperties
+              event={displayEvent}
+              activeField={activeField === 'status' || activeField === 'category' || activeField === 'targetId' ? activeField : null}
+              isSaving={isSaving}
+              draftStatus={draftStatus}
+              draftCategory={draftCategory}
+              draftTargetId={draftTargetId}
+              fieldError={activeField === 'status' || activeField === 'category' || activeField === 'targetId' ? fieldError ?? undefined : undefined}
+              editDisabled={activeField !== null}
+              categoryOptions={categoryOptions}
+              targetOptions={targetOptions}
+              canEditCategory={canEditCategory}
+              canEditTarget={canEditTarget}
+              onEditStatus={() => beginEdit('status')}
+              onEditCategory={() => beginEdit('category')}
+              onEditTarget={() => beginEdit('targetId')}
+              onStatusChange={setDraftStatus}
+              onCategoryChange={setDraftCategory}
+              onTargetChange={setDraftTargetId}
+              onSave={() => {
+                if (activeField === 'status') void saveStatus();
+                if (activeField === 'category') void saveCategory();
+                if (activeField === 'targetId') void saveTarget();
+              }}
+              onCancel={cancelEditing}
+            />
             <CalendarPeekNotes
               event={displayEvent}
               isEditing={activeField === 'notes'}
@@ -304,7 +422,7 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
               bannerMode={activeField === null ? 'partial' : 'hidden'}
               editDisabled={activeField !== null}
               onDraftChange={setDraftNotes}
-              onEdit={beginNotesEdit}
+              onEdit={() => beginEdit('notes')}
               onCancel={cancelEditing}
               onSave={() => {
                 void saveNotes();

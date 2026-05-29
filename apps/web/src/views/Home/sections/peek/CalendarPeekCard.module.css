@@ -176,6 +176,11 @@
   word-break: break-word;
 }
 
+.propError {
+  color: var(--color-state-danger);
+  font-size: var(--font-meta);
+}
+
 .notesSection {
   display: flex;
   flex-direction: column;

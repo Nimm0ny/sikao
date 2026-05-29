@@ -24,9 +24,9 @@ import type { CalendarPeekContextValue, CalendarPeekListEntry } from './types';
  *      body scroll lock live in CalendarPeekCard so server-rendered
  *      consumers can read provider state without forcing a portal mount.
  *
- *      AGENT-H7 (read-only): provider exposes no mutation API; D20 says
- *      `optimisticEvents` may be merged at the chip layer but V1 must
- *      not introduce new write paths.
+ *      SIK-140 follow-up: successful inline edits must patch the provider
+ *      snapshot too, otherwise next/prev round-trips would rehydrate stale
+ *      event values from the original open() list.
  */
 
 export interface CalendarPeekProviderProps {
@@ -92,18 +92,44 @@ export function CalendarPeekProvider({ children }: CalendarPeekProviderProps) {
     });
   }, []);
 
+  const commitEvent = useCallback((eventId: string, patch: Partial<PlanEventReadV2>) => {
+    setState((current) => {
+      if (current === null) {
+        throw new Error('CalendarPeekProvider: commitEvent() requires an open peek state');
+      }
+      let found = false;
+      const list = current.list.map((entry) => {
+        if (entry.event.id !== eventId) return entry;
+        found = true;
+        return {
+          ...entry,
+          event: {
+            ...entry.event,
+            ...patch,
+          },
+        };
+      });
+      if (!found) {
+        throw new Error(`CalendarPeekProvider: commitEvent() could not find event ${eventId}`);
+      }
+      return { list, index: current.index };
+    });
+  }, []);
+
   const value = useMemo<CalendarPeekContextValue>(
     () => ({
       open,
       close,
       next,
       prev,
+      commitEvent,
       isOpen: state !== null,
       currentEvent: state ? state.list[state.index].event : null,
+      currentList: state ? state.list : [],
       currentIndex: state ? state.index : -1,
       listLength: state ? state.list.length : 0,
     }),
-    [open, close, next, prev, state],
+    [open, close, next, prev, commitEvent, state],
   );
 
   return (

@@ -24,6 +24,7 @@ import type {
   EventWindowResponseV2,
   OverviewResponseV2,
   PlanEventReadV2,
+  PlanEventUpdateRequestV2,
   WeeklyProgressSummaryV2,
 } from '@sikao/api-client/types/home';
 
@@ -90,6 +91,7 @@ function defaultEvents(): PlanEventReadV2[] {
       endAt: `${day}T10:00:00+08:00`,
       category: 'yanyu',
       status: 'done',
+      targetId: 1001,
     }),
     makeEvent({
       id: 'evt-ziliao-mid',
@@ -98,6 +100,7 @@ function defaultEvents(): PlanEventReadV2[] {
       endAt: `${day}T11:30:00+08:00`,
       category: 'ziliao',
       status: 'done',
+      targetId: 1002,
     }),
     makeEvent({
       id: 'evt-mock-pm',
@@ -110,9 +113,35 @@ function defaultEvents(): PlanEventReadV2[] {
   ];
 }
 
+let transientEvents: PlanEventReadV2[] | null = null;
+let transientEventsStamp = '';
+let transientEventsExpiresAt = 0;
+
+function cloneEvents(events: ReadonlyArray<PlanEventReadV2>): PlanEventReadV2[] {
+  return events.map((event) => ({
+    ...event,
+    recurringExceptionDates: [...(event.recurringExceptionDates ?? [])],
+  }));
+}
+
+function currentEvents(): PlanEventReadV2[] {
+  const stamp = todayLocalStamp();
+  if (
+    transientEvents !== null &&
+    transientEventsStamp === stamp &&
+    Date.now() < transientEventsExpiresAt
+  ) {
+    return cloneEvents(transientEvents);
+  }
+  transientEvents = null;
+  transientEventsStamp = '';
+  transientEventsExpiresAt = 0;
+  return defaultEvents();
+}
+
 export const homeHandlers = [
   http.get('/api/v2/plans/events', () => {
-    const events = defaultEvents();
+    const events = currentEvents();
     const response: EventWindowResponseV2 = {
       data: { events, practiceBlocks: [] },
       meta: {
@@ -125,8 +154,34 @@ export const homeHandlers = [
     return HttpResponse.json(response);
   }),
 
+  http.patch('/api/v2/plans/events/:eventId', async ({ params, request }) => {
+    const payload = await request.json() as PlanEventUpdateRequestV2;
+    if (params.eventId === 'evt-mock-pm') {
+      return HttpResponse.json(
+        { detail: 'Mock event update failure for browser rollback smoke.' },
+        { status: 500 },
+      );
+    }
+    const events = currentEvents();
+    const index = events.findIndex((event) => event.id === params.eventId);
+    if (index === -1) {
+      return HttpResponse.json({ detail: 'Event not found.' }, { status: 404 });
+    }
+    const nextEvent: PlanEventReadV2 = { ...events[index] };
+    if (payload.title !== undefined && payload.title !== null) nextEvent.title = payload.title;
+    if (payload.notes !== undefined && payload.notes !== null) nextEvent.notes = payload.notes;
+    if (payload.category !== undefined && payload.category !== null) nextEvent.category = payload.category;
+    if (payload.status !== undefined && payload.status !== null) nextEvent.status = payload.status;
+    if (payload.targetId !== undefined) nextEvent.targetId = payload.targetId;
+    events[index] = nextEvent;
+    transientEvents = cloneEvents(events);
+    transientEventsStamp = todayLocalStamp();
+    transientEventsExpiresAt = Date.now() + 5_000;
+    return HttpResponse.json(nextEvent);
+  }),
+
   http.get('/api/v2/dashboard/today', () => {
-    const events = defaultEvents();
+    const events = currentEvents();
     const response: DashboardTodayResponseV2 = {
       date: todayLocalStamp(),
       planId: 1,
@@ -140,14 +195,15 @@ export const homeHandlers = [
 
   http.get('/api/v2/dashboard/weekly-plan', () => {
     const day = todayLocalStamp();
+    const events = currentEvents();
     const response: DashboardWeeklyPlanResponseV2 = {
       planId: 1,
-      events: defaultEvents(),
+      events,
       practiceBlocks: [],
       nearestExamTarget: null,
       weekStart: day,
       weekEnd: day,
-      summary: emptySummary(defaultEvents().length),
+      summary: emptySummary(events.length),
     };
     return HttpResponse.json(response);
   }),

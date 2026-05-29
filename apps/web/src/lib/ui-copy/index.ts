@@ -29,4 +29,9 @@ export const CALENDAR_INLINE = {
   titleSaveFailed: '标题未能保存，请重试',
   notesSaveFailed: '备注未能保存，请重试',
   emptyTitle: '标题不能为空',
+  invalidCategory: '分类选项无效，请重新选择',
+  invalidTarget: '目标 ID 必须为正整数',
+  statusSaveFailed: '状态未能保存，请重试',
+  categorySaveFailed: '分类未能保存，请重试',
+  targetSaveFailed: '目标未能保存，请重试',
 } as const;

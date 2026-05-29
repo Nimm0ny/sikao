@@ -1,23 +1,10 @@
-// lint-allow-ui-copy: SIK-138 W6 Peek properties copy comes from visual
-// contract §2 (8-row property table) + §3 channel labels.
-import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
+// lint-allow-ui-copy: SIK-140 W2 editable property row labels and edit CTA
+// are issue-scoped and aligned with the define-first contract.
+import type { PlanEventReadV2, PlanEventUpdateRequestV2 } from '@sikao/api-client/types/home';
 
+import { Button, Select } from '../../../../components/form';
 import { eventKindLabel, eventKindOf } from '../eventKind';
 import styles from './CalendarPeekCard.module.css';
-
-/*
- * CalendarPeekProperties — SIK-138 W6.
- *
- * Why: visual contract §2 locks exactly 8 read-only rows in the peek
- *      property table. Mirrors the prototype mock at
- *      .tmp_review/out/Tab1-Home-mock/home-calendar-notion-like-mock.html
- *      lines 1424–1445 but stays read-only per Requirement 12.
- *
- *      AGENT-H7 read-only: every row renders the value verbatim or a
- *      neutral placeholder; no inline edit. The "—" placeholder is the
- *      documented "no value" cue (visual contract §6 SSOT conflicts row
- *      "mock Peek 可编辑 vs V1 read-only" — V1 read-only is authority).
- */
 
 const STATUS_LABEL: Readonly<Record<string, string>> = {
   planned: '待办',
@@ -32,7 +19,15 @@ const SOURCE_LABEL: Readonly<Record<string, string>> = {
   import: '外部导入',
 };
 
+const STATUS_OPTIONS = [
+  { value: 'planned', label: '待办' },
+  { value: 'in_progress', label: '进行中' },
+  { value: 'done', label: '已完成' },
+  { value: 'skipped', label: '跳过' },
+] as const;
+
 const PLACEHOLDER = '—';
+type EditableStatus = NonNullable<PlanEventUpdateRequestV2['status']>;
 
 function formatTimeRange(event: PlanEventReadV2): string {
   const start = new Date(event.startAt);
@@ -49,77 +44,211 @@ function formatTimeRange(event: PlanEventReadV2): string {
     : `${datePart} ${fmt(start)} → ${end.getFullYear()}-${pad(end.getMonth() + 1)}-${pad(end.getDate())} ${fmt(end)}`;
 }
 
+type EditablePropField = 'status' | 'category' | 'targetId' | null;
+
 export interface CalendarPeekPropertiesProps {
   readonly event: PlanEventReadV2;
+  readonly activeField: EditablePropField;
+  readonly isSaving: boolean;
+  readonly draftStatus: EditableStatus;
+  readonly draftCategory: string;
+  readonly draftTargetId: string;
+  readonly fieldError?: string;
+  readonly editDisabled?: boolean;
+  readonly categoryOptions: readonly string[];
+  readonly targetOptions: readonly number[];
+  readonly canEditCategory: boolean;
+  readonly canEditTarget: boolean;
+  readonly onEditStatus: () => void;
+  readonly onEditCategory: () => void;
+  readonly onEditTarget: () => void;
+  readonly onStatusChange: (value: EditableStatus) => void;
+  readonly onCategoryChange: (value: string) => void;
+  readonly onTargetChange: (value: string) => void;
+  readonly onSave: () => void;
+  readonly onCancel: () => void;
 }
 
-interface PropertyRow {
-  readonly key: string;
-  readonly label: string;
-  readonly value: string;
-  readonly testId: string;
-}
-
-function buildRows(event: PlanEventReadV2): ReadonlyArray<PropertyRow> {
+function renderReadonlyValue(event: PlanEventReadV2, key: string): string {
   const kind = eventKindOf(event);
-  return [
-    { key: 'time', label: '时间', value: formatTimeRange(event), testId: 'home-calendar-peek-time' },
-    { key: 'kind', label: '类型', value: eventKindLabel(kind), testId: 'home-calendar-peek-kind' },
-    {
-      key: 'category',
-      label: '分类',
-      value: event.category || PLACEHOLDER,
-      testId: 'home-calendar-peek-category',
-    },
-    {
-      key: 'status',
-      label: '状态',
-      value: STATUS_LABEL[event.status] ?? event.status,
-      testId: 'home-calendar-peek-status',
-    },
-    {
-      key: 'source',
-      label: '来源',
-      value: SOURCE_LABEL[event.source] ?? event.source,
-      testId: 'home-calendar-peek-source',
-    },
-    {
-      key: 'linkedSession',
-      label: '关联会话',
-      value: event.linkedSessionId === null || event.linkedSessionId === undefined
+  switch (key) {
+    case 'time':
+      return formatTimeRange(event);
+    case 'kind':
+      return eventKindLabel(kind);
+    case 'category':
+      return event.category || PLACEHOLDER;
+    case 'status':
+      return STATUS_LABEL[event.status] ?? event.status;
+    case 'source':
+      return SOURCE_LABEL[event.source] ?? event.source;
+    case 'linkedSession':
+      return event.linkedSessionId === null || event.linkedSessionId === undefined
         ? PLACEHOLDER
-        : String(event.linkedSessionId),
-      testId: 'home-calendar-peek-linked',
-    },
-    {
-      key: 'target',
-      label: '目标',
-      value: event.targetId === null || event.targetId === undefined
+        : String(event.linkedSessionId);
+    case 'target':
+      return event.targetId === null || event.targetId === undefined
         ? PLACEHOLDER
-        : String(event.targetId),
-      testId: 'home-calendar-peek-target',
-    },
-    {
-      key: 'recurring',
-      label: '重复',
-      value: event.recurringRule ?? PLACEHOLDER,
-      testId: 'home-calendar-peek-recurring',
-    },
-  ];
+        : String(event.targetId);
+    case 'recurring':
+      return event.recurringRule ?? PLACEHOLDER;
+    default:
+      return PLACEHOLDER;
+  }
 }
 
-export function CalendarPeekProperties({ event }: CalendarPeekPropertiesProps) {
-  const rows = buildRows(event);
+function fieldActions(
+  onSave: () => void,
+  onCancel: () => void,
+  isSaving: boolean,
+  saveTitle: string,
+  cancelTitle: string,
+) {
+  return (
+    <div className={styles.fieldActions}>
+      <Button variant="primary" size="sm" onClick={onSave} disabled={isSaving} title={saveTitle}>
+        Save
+      </Button>
+      <Button variant="secondary" size="sm" onClick={onCancel} disabled={isSaving} title={cancelTitle}>
+        Cancel
+      </Button>
+    </div>
+  );
+}
+
+export function CalendarPeekProperties({
+  event,
+  activeField,
+  isSaving,
+  draftStatus,
+  draftCategory,
+  draftTargetId,
+  fieldError,
+  editDisabled = false,
+  categoryOptions,
+  targetOptions,
+  canEditCategory,
+  canEditTarget,
+  onEditStatus,
+  onEditCategory,
+  onEditTarget,
+  onStatusChange,
+  onCategoryChange,
+  onTargetChange,
+  onSave,
+  onCancel,
+}: CalendarPeekPropertiesProps) {
+  const rows = [
+    { key: 'time', label: '时间', testId: 'home-calendar-peek-time' },
+    { key: 'kind', label: '类型', testId: 'home-calendar-peek-kind' },
+    { key: 'category', label: '分类', testId: 'home-calendar-peek-category' },
+    { key: 'status', label: '状态', testId: 'home-calendar-peek-status' },
+    { key: 'source', label: '来源', testId: 'home-calendar-peek-source' },
+    { key: 'linkedSession', label: '关联会话', testId: 'home-calendar-peek-linked' },
+    { key: 'target', label: '目标', testId: 'home-calendar-peek-target' },
+    { key: 'recurring', label: '重复', testId: 'home-calendar-peek-recurring' },
+  ] as const;
+
   return (
     <dl className={styles.props} data-testid="home-calendar-peek-properties">
-      {rows.map((row) => (
-        <div key={row.key} className={styles.propRow}>
-          <dt className={styles.propLabel}>{row.label}</dt>
-          <dd className={styles.propValue} data-testid={row.testId}>
-            {row.value}
-          </dd>
-        </div>
-      ))}
+      {rows.map((row) => {
+        const editingStatus = row.key === 'status' && activeField === 'status';
+        const editingCategory = row.key === 'category' && activeField === 'category';
+        const editingTarget = row.key === 'target' && activeField === 'targetId';
+        const rowEditDisabled = isSaving || editDisabled;
+
+        return (
+          <div key={row.key} className={styles.propRow}>
+            <dt className={styles.propLabel}>{row.label}</dt>
+            <dd className={styles.propValue} data-testid={row.testId}>
+              {editingStatus ? (
+                <div className={styles.editorBlock} data-testid="home-calendar-peek-status-editor">
+                  <Select
+                    value={draftStatus}
+                    onChange={onStatusChange}
+                    options={STATUS_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
+                    aria-label="编辑状态"
+                    disabled={isSaving}
+                  />
+                  {fieldError ? <span className={styles.propError}>{fieldError}</span> : null}
+                  {fieldActions(onSave, onCancel, isSaving, 'save-status', 'cancel-status')}
+                </div>
+              ) : editingCategory ? (
+                <div className={styles.editorBlock} data-testid="home-calendar-peek-category-editor">
+                  <Select
+                    value={draftCategory}
+                    onChange={onCategoryChange}
+                    options={categoryOptions.map((option) => ({ value: option, label: option }))}
+                    aria-label="编辑分类"
+                    disabled={isSaving}
+                  />
+                  {fieldError ? <span className={styles.propError}>{fieldError}</span> : null}
+                  {fieldActions(onSave, onCancel, isSaving, 'save-category', 'cancel-category')}
+                </div>
+              ) : editingTarget ? (
+                <div className={styles.editorBlock} data-testid="home-calendar-peek-target-editor">
+                  <Select
+                    value={draftTargetId}
+                    onChange={onTargetChange}
+                    options={[
+                      { value: '', label: '无' },
+                      ...targetOptions.map((option) => ({ value: String(option), label: String(option) })),
+                    ]}
+                    aria-label="编辑目标"
+                    disabled={isSaving}
+                  />
+                  {fieldError ? <span className={styles.propError}>{fieldError}</span> : null}
+                  {fieldActions(onSave, onCancel, isSaving, 'save-target', 'cancel-target')}
+                </div>
+              ) : row.key === 'status' ? (
+                <div className={styles.sectionHead}>
+                  <span>{renderReadonlyValue(event, row.key)}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onEditStatus}
+                    disabled={rowEditDisabled}
+                    aria-label="编辑状态"
+                    title="edit-status"
+                  >
+                    Edit
+                  </Button>
+                </div>
+              ) : row.key === 'category' ? (
+                <div className={styles.sectionHead}>
+                  <span>{renderReadonlyValue(event, row.key)}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onEditCategory}
+                    disabled={rowEditDisabled || !canEditCategory}
+                    aria-label="编辑分类"
+                    title="edit-category"
+                  >
+                    Edit
+                  </Button>
+                </div>
+              ) : row.key === 'target' ? (
+                <div className={styles.sectionHead}>
+                  <span>{renderReadonlyValue(event, row.key)}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onEditTarget}
+                    disabled={rowEditDisabled || !canEditTarget}
+                    aria-label="编辑目标"
+                    title="edit-target"
+                  >
+                    Edit
+                  </Button>
+                </div>
+              ) : (
+                renderReadonlyValue(event, row.key)
+              )}
+            </dd>
+          </div>
+        );
+      })}
     </dl>
   );
 }

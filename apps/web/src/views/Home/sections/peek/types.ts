@@ -31,8 +31,10 @@ export interface CalendarPeekContextValue {
   readonly close: () => void;
   readonly next: () => void;
   readonly prev: () => void;
+  readonly commitEvent: (eventId: string, patch: Partial<PlanEventReadV2>) => void;
   readonly isOpen: boolean;
   readonly currentEvent: PlanEventReadV2 | null;
+  readonly currentList: ReadonlyArray<CalendarPeekListEntry>;
   readonly currentIndex: number;
   readonly listLength: number;
 }

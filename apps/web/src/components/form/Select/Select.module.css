@@ -101,6 +101,10 @@
   min-width: 160px;
 }
 
+.popoverPanel {
+  z-index: var(--z-modal);
+}
+
 .searchInput {
   width: 100%;
   height: 32px;

@@ -195,6 +195,7 @@ export function Select<T = string>({
         width="trigger"
         side="bottom"
         align="start"
+        panelClassName={styles.popoverPanel}
       >
         <div className={styles.panel}>
           {searchable ? (
