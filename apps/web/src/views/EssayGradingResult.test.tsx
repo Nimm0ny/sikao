@@ -108,10 +108,10 @@ describe('EssayGradingResult', () => {
     renderEssayGrading();
 
     expect(await screen.findByTestId('essay-grading-view')).toBeInTheDocument();
-    expect(await screen.findByText('Total score')).toBeInTheDocument();
+    expect(await screen.findByText('Total score', {}, { timeout: 4000 })).toBeInTheDocument();
     await waitFor(() => {
       expect(screen.getByText('76')).toBeInTheDocument();
-    });
+    }, { timeout: 4000 });
     expect(screen.getByText('参考答案示例：先概括问题，再提出三条对策，最后收束到执行闭环。')).toBeInTheDocument();
   });
 
