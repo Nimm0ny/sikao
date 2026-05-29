@@ -111,5 +111,9 @@ prototype-baseline: .tmp_review/out/Tab1-Home-mock/home-calendar-notion-like-moc
 | notes owner fixed to notes section | current readonly notes section | `CalendarPeekNotes.tsx` | PASS (W0 design) |
 | partial-editable banner policy defined | old readonly banner baseline | `CalendarPeekNotes.tsx` future W1/W2 | PASS (W0 design) |
 | keyboard ownership defined | current global Esc/Arrow behavior | requirements/design | PASS (W0 design) |
-| 1440/1920 screenshot archive path | `.tmp_review/visual-diff/sik-140/` | W1+ browser smoke | 待 W1 |
-| axe command/log path recorded | `npm run test` / `test:a11y` alias | W1+ evidence | 待 W1 |
+| title inline edit opens in place | read-only title baseline | `CalendarPeekCard.tsx` | PASS (W1) |
+| notes inline edit opens in place | read-only notes baseline | `CalendarPeekNotes.tsx` | PASS (W1) |
+| editing hides partial banner | partial banner baseline | `CalendarPeekNotes.tsx` | PASS (W1) |
+| explicit Save/Cancel present | none | title/notes editor actions | PASS (W1) |
+| 1440/1920 screenshot archive path | `.tmp_review/visual-diff/sik-140/` | browser smoke archive exists | PASS (W1) |
+| axe command/log path recorded | `npm run test` / `test:a11y` alias | W1 evidence references root test pass; edit-state axe remains待 W3 closeout | PASS (W1 scoped) |
