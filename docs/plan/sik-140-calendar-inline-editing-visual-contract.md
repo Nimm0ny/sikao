@@ -117,3 +117,12 @@ prototype-baseline: .tmp_review/out/Tab1-Home-mock/home-calendar-notion-like-moc
 | explicit Save/Cancel present | none | title/notes editor actions | PASS (W1) |
 | 1440/1920 screenshot archive path | `.tmp_review/visual-diff/sik-140/` | browser smoke archive exists | PASS (W1) |
 | axe command/log path recorded | `npm run test` / `test:a11y` alias | W1 evidence references root test pass; edit-state axe remains待 W3 closeout | PASS (W1 scoped) |
+| status inline edit works in place | read-only `status` row baseline | `CalendarPeekProperties.tsx` | PASS (W2) |
+| category inline edit works in place | read-only `category` row baseline | `CalendarPeekProperties.tsx` | PASS (W2) |
+| target inline edit works in place | read-only `target` row baseline | `CalendarPeekProperties.tsx` | PASS (W2) |
+| select panel stays above peek action row | W1/W2 modal-inline select baseline | `Select.module.css` + `Popover` layering | PASS (W2) |
+| provider snapshot keeps saved value across next/prev round-trip | original peek list snapshot baseline | `CalendarPeekProvider.tsx` + `CalendarPeekCard.test.tsx` | PASS (W2) |
+| transient browser-smoke write path remains deterministic | old GET-only Home MSW baseline | `apps/web/src/mocks/handlers/home.ts` | PASS (W2) |
+| 1440 target edit/save screenshots archived | `.tmp_review/visual-diff/sik-140/` | `w2-1440-target-edit.png` / `w2-1440-target-saved.png` | PASS (W2) |
+| 1920 failure rollback screenshots archived | `.tmp_review/visual-diff/sik-140/` | `w2-1920-status-edit.png` / `w2-1920-status-failure.png` | PASS (W2) |
+| edit-state axe passes for prop editor | edit-state a11y requirement | `CalendarPeekCard.test.tsx` (`axe.run(...)`) | PASS (W2) |
