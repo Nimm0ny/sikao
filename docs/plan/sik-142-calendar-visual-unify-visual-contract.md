@@ -268,13 +268,13 @@ SIK-138 chip 占 7 通道（kind 边色 / title / category / status dot / source
 
 | 项 | 原型行号 | 实现位置 | 状态 |
 |---|---|---|---|
-| A1 月 chip 几何 5/3/11px | `.m-event` L895-903 | MonthEventChip.module.css | 待 W1 |
-| A2 周 chip 复用月 chip | `.day-event` L632-643 | WeekCalendarView.tsx | 待 W1 |
-| A3 chip 时间状态配色 tone | §6 D1（偏离 kind） | deriveChipTone.ts + tokens.css §8 | 待 W1 |
-| A4 done ✓ 勾双重编码 | §6 D2（原型无） | MonthEventChip.tsx | 待 W1 |
-| A5 skipped 删除线 / overdue 无 | §6 D3（原型无） | MonthEventChip.module.css | 待 W1 |
-| A6 kind 中性 leading 图标 | §6 D1 | MonthEventChip.tsx + eventKind 图标表 | 待 W1 |
-| A7 source/link/target 移出 chip | §6 D4 | MonthEventChip.tsx（删通道） | 待 W1 |
+| A1 月 chip 几何 5/3/11px | `.m-event` L895-903 | MonthEventChip.module.css | **PASS**（W1：browser smoke 实测 border-left 3px / radius 5px / font 11px，对齐原型基准） |
+| A2 周 chip 复用月 chip | `.day-event` L632-643 | WeekCalendarView.tsx | **PASS**（W1：`.dayEvent` span → `MonthEventChip`，只读不传 drag/onClick；几何/配色统一） |
+| A3 chip 时间状态配色 tone | §6 D1（偏离 kind） | deriveChipTone.ts + tokens.css §8.4 | **PASS**（W1：15 token 全转引 V5 语义；smoke 实测 done 绿/today 黄正确解析） |
+| A4 done ✓ 勾双重编码 | §6 D2（原型无） | MonthEventChip.tsx | **PASS**（W1：done tone 才渲染 `Check`，smoke 实测仅 done chip 有勾） |
+| A5 skipped 删除线 / overdue 无 | §6 D3（原型无） | MonthEventChip.module.css | **PASS**（W1：`.titleText[data-skipped]` line-through；overdue 无删除线，单测覆盖） |
+| A6 kind 中性 leading 图标 | §6 D1 | MonthEventChip.tsx + EventKindIcon.tsx | **PASS**（W1：lucide CalendarDays/Dumbbell/FileCheck/Flag，`--color-text-meta` 中性色） |
+| A7 source/link/target 移出 chip | §6 D4 | MonthEventChip.tsx（删通道） | **PASS**（W1：chip 仅 tone/kind-icon/title/done；category/dot/source/link/target 全移除，单测断言 null） |
 | A8 月视图 3 周 rolling（21 格） | renderMonth L1789-1815 | buildMonthCells | 待 W2 |
 | A9 月视图 `repeat(3,1fr)` + overflow hidden | `.view-month .cal-body` L862-866 | MonthCalendarView.module.css | 待 W2 |
 | A10 prev/next ±3 周翻页 | n/a（原型 anchor 推导） | CalendarPanel handlePrev/Next | 待 W2 |
