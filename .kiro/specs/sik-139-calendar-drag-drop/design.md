@@ -156,10 +156,10 @@ H11 要求"对应原型已存在于 `.tmp_review/out/**`"时实现前必落 visu
 - `--cal-*` token 家族（kind / chip / peek）已存在
 - Design-System §B 卡片状态词表**已含 `dragging` 态**（5 卡型 × 9 态）
 
-裁决请求（lhr）：Phase 3 交互态无独立原型，建议**视觉契约以"扩展 Design-System §B
-dragging 态 + 复用 focus-ring/cal token 推导 drop/keyboard 态"为基准**，原型对照表
-仅覆盖静态月视图布局不回归，交互态走 token 推导 + 实现即契约。等 lhr 确认后再开
-Wave 0 视觉契约落档。
+裁决（lhr 已认可 2026-05-29）：Phase 3 交互态无独立原型，**视觉契约以"扩展
+Design-System §B dragging 态 + 复用 focus-ring/cal token 推导 drop/keyboard 态"
+为基准**，原型对照表仅覆盖静态月视图布局不回归，交互态走 token 推导 + 实现即契约。
+Wave 0 视觉契约据此落档（`docs/plan/sik-139-calendar-drag-drop-visual-contract.md`）。
 
 ## References
 
