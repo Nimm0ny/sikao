@@ -284,8 +284,8 @@ SIK-138 chip 占 7 通道（kind 边色 / title / category / status dot / source
 | A14 删 today 视图 + 类型收窄 | §5 C4 | TodayCalendarView 删 + 3 处 union | **PASS**（W4：TodayCalendarView 整组删除；domain / calendar-engine / api-client / calendarViewConfig 全收窄到 `week|month`） |
 | A15 去 countdown chip | §5 C5 | CalendarPanel.tsx | **PASS**（W4：CalendarPanel head 仅剩 tabs + 4 buttons；`home-calendar-countdown` 删除，browser smoke 证据已归档） |
 | A16 persisted 'today' 归一 'week' | §5 C4 / H7 | calendarViewConfig preferenceKeys | **PASS**（W4：`readHomeCalendarView()` 显式 `today -> week`；Home 订阅真实 hydration 变化，测试 + browser 均证明 persisted month / legacy today 生效） |
-| A17 周 chip 可点 → 只读 Peek | §5 C6 | WeekCalendarView + peek | 待 W5 |
-| A18 Peek V5 对齐 + 3 通道展示 | §6 D4 | CalendarPeekCard 等 | 待 W5 |
+| A17 周 chip 可点 → 只读 Peek | §5 C6 | WeekCalendarView + peek | **PASS**（W5：week chip 接 `onClick`，browser smoke 证实 click 后 peek 打开；只读 banner 仍在） |
+| A18 Peek V5 对齐 + 3 通道展示 | §6 D4 | CalendarPeekCard 等 | **PASS**（W5：source / linked / target / notes 在 Peek 中可见；peek radius token 改回有效 V5 token，规范审查通过） |
 
 ### 7.2 截图归档
 
