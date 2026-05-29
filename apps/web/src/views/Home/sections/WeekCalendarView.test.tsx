@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { describe, it, expect } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse, delay } from 'msw';
 
@@ -102,6 +103,53 @@ describe('WeekCalendarView', () => {
     expect(chip).toHaveAttribute('data-tone');
     expect(chip).not.toHaveAttribute('aria-roledescription', 'draggable');
     expect(chip).not.toHaveAttribute('data-dragging');
+  });
+
+  it('opens the read-only peek when a week chip is clicked', async () => {
+    const user = userEvent.setup();
+    server.use(http.get('/api/v2/plans/events', () => response([{
+      ...READY_EVENT,
+      notes: 'Week peek note',
+      targetId: 'target-1',
+      linkedSessionId: 'session-9',
+    }])));
+    renderWithClient();
+    await waitFor(() => expect(screen.getByTestId('home-month-event')).toBeInTheDocument());
+    await user.click(screen.getByTestId('home-month-event'));
+    await waitFor(() => expect(screen.getByTestId('home-calendar-peek-card')).toBeInTheDocument());
+    expect(screen.getByTestId('home-calendar-peek-readonly-banner')).toBeInTheDocument();
+    expect(screen.getByTestId('home-calendar-peek-source')).toBeInTheDocument();
+    expect(screen.getByTestId('home-calendar-peek-target')).toBeInTheDocument();
+    expect(screen.getByTestId('home-calendar-peek-linked')).toBeInTheDocument();
+    expect(screen.getByTestId('home-calendar-peek-notes')).toBeInTheDocument();
+  });
+
+  it('preserves the real event id on the chip and uses peekAnchorId separately', async () => {
+    server.use(http.get('/api/v2/plans/events', () => response([READY_EVENT])));
+    renderWithClient();
+    await waitFor(() => expect(screen.getByTestId('home-month-event')).toBeInTheDocument());
+    const chip = screen.getByTestId('home-month-event');
+    expect(chip).toHaveAttribute('data-event-id', READY_EVENT.id);
+    expect(chip.getAttribute('data-peek-anchor')).toContain(READY_EVENT.id);
+    expect(chip.getAttribute('data-peek-anchor')).not.toBe(READY_EVENT.id);
+  });
+
+  it('builds the week peek list in chronological order', async () => {
+    const user = userEvent.setup();
+    const monday = '2026-05-25';
+    const tuesday = '2026-05-26';
+    server.use(http.get('/api/v2/plans/events', () => response([
+      { ...READY_EVENT, id: 'mon-noon', title: 'Monday noon', startAt: `${monday}T12:00:00+08:00`, endAt: `${monday}T13:00:00+08:00` },
+      { ...READY_EVENT, id: 'mon-evening', title: 'Monday evening', startAt: `${monday}T18:00:00+08:00`, endAt: `${monday}T19:00:00+08:00` },
+      { ...READY_EVENT, id: 'tue-morning', title: 'Tuesday morning', startAt: `${tuesday}T08:00:00+08:00`, endAt: `${tuesday}T09:00:00+08:00` },
+      { ...READY_EVENT, id: 'tue-noon', title: 'Tuesday noon', startAt: `${tuesday}T12:00:00+08:00`, endAt: `${tuesday}T13:00:00+08:00` },
+    ])));
+    renderWithClient();
+    await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(4));
+    await user.click(screen.getByText('Monday noon'));
+    await waitFor(() => expect(screen.getByTestId('home-calendar-peek-card')).toBeInTheDocument());
+    await user.click(screen.getByTestId('home-calendar-peek-next'));
+    expect(screen.getByRole('heading', { name: 'Monday evening' })).toBeInTheDocument();
   });
 
   it('renders Sunday-first DOW labels when startWeekOnMonday=false', async () => {
