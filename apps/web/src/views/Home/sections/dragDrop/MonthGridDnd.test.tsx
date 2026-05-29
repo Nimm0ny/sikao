@@ -162,7 +162,7 @@ describe('MonthGridDnd (SIK-139 W1)', () => {
       </QueryClientProvider>,
     );
     expect(screen.getByTestId(`home-month-event-list-${DAY}`)).toHaveStyle({
-      maxHeight: 'calc(2 * var(--space-6) + 1 * var(--space-1))',
+      maxHeight: 'calc(2 * var(--space-8) + 1 * var(--space-1))',
     });
   });
 
@@ -171,6 +171,51 @@ describe('MonthGridDnd (SIK-139 W1)', () => {
     const item: MonthDaySlice = { slice: makeSlice('m1', DAY), event: makeEvent('m1', '原始标题', DAY) };
     renderGrid([item]);
     expect(screen.getByTestId('home-month-event-title')).toHaveTextContent('乐观改期预览');
+  });
+
+  it('keeps aggregate text on the month dnd path', () => {
+    const item: MonthDaySlice = { slice: makeSlice('m1', DAY), event: makeEvent('m1', '专区练习', DAY) };
+    const eventsByDay = new Map<string, MonthDaySlice[]>([[DAY, [item]]]);
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 }, mutations: { retry: false } },
+    });
+    render(
+      <QueryClientProvider client={client}>
+        <CalendarPeekProvider>
+          <MonthGridDnd
+            cells={makeCells()}
+            eventsByDay={eventsByDay}
+            dowLabels={DOW}
+            cardLimitPerCell={3}
+            visibleProperties={DEFAULT_PROPS}
+            aggregateState={{
+              byEventId: new Map([
+                [
+                  'm1',
+                  {
+                    eventId: 'm1',
+                    linkedSessionId: 2001,
+                    availability: 'ready',
+                    metrics: {
+                      attemptedCount: 12,
+                      correctCount: 9,
+                      accuracy: 0.75,
+                      activeSeconds: 1800,
+                      sourceKind: 'practice_session',
+                    },
+                  },
+                ],
+              ]),
+              isLoaded: true,
+              isError: false,
+            }}
+            window={{ from: '2026-04-30T16:00:00.000Z', to: '2026-05-31T15:59:59.999Z' }}
+          />
+          <CalendarPeekCard />
+        </CalendarPeekProvider>
+      </QueryClientProvider>,
+    );
+    expect(screen.getByTestId('home-month-event-aggregate')).toHaveTextContent('练 12 · 准 75%');
   });
 
   it('a cancelled keyboard pick-up (Esc) writes nothing to the store (W2 cancel branch)', async () => {

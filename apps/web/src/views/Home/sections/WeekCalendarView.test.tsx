@@ -91,7 +91,7 @@ describe('WeekCalendarView', () => {
 
     await waitFor(() => expect(screen.getAllByTestId('home-week-event')).toHaveLength(4));
     expect(screen.getByTestId(`home-week-event-list-${today}-0`)).toHaveStyle({
-      maxHeight: 'calc(2 * var(--space-6) + 1 * var(--space-1))',
+      maxHeight: 'calc(2 * var(--space-8) + 1 * var(--space-1))',
     });
   });
 
@@ -121,6 +121,24 @@ describe('WeekCalendarView', () => {
             },
           ]),
       ),
+      http.post('/api/v2/plans/events/aggregates', () =>
+        HttpResponse.json({
+          items: [
+            {
+              eventId: READY_EVENT.id,
+              linkedSessionId: 9,
+              availability: 'ready',
+              metrics: {
+                attemptedCount: 12,
+                correctCount: 9,
+                accuracy: 0.75,
+                activeSeconds: 1800,
+                sourceKind: 'mock_exam',
+              },
+            },
+          ],
+        }),
+      ),
     );
     renderWithClient();
 
@@ -133,6 +151,33 @@ describe('WeekCalendarView', () => {
     expect(screen.getByTestId('home-calendar-peek-target')).toBeInTheDocument();
     expect(screen.getByTestId('home-calendar-peek-linked')).toBeInTheDocument();
     expect(screen.getByTestId('home-calendar-peek-notes')).toBeInTheDocument();
+    expect(screen.getByTestId('home-calendar-peek-aggregation')).toHaveTextContent('练习量');
+    expect(screen.getByText('75%')).toBeInTheDocument();
+  });
+
+  it('renders an explicit aggregation empty state in peek', async () => {
+    const user = userEvent.setup();
+    server.use(
+      http.get('/api/v2/plans/events', () => response([{ ...READY_EVENT, id: 'agg-empty' }])),
+      http.post('/api/v2/plans/events/aggregates', () =>
+        HttpResponse.json({
+          items: [
+            {
+              eventId: 'agg-empty',
+              linkedSessionId: 901,
+              availability: 'not_submitted',
+              metrics: null,
+            },
+          ],
+        }),
+      ),
+    );
+    renderWithClient();
+
+    await waitFor(() => expect(screen.getByTestId('home-month-event')).toBeInTheDocument());
+    await user.click(screen.getByTestId('home-month-event'));
+    await waitFor(() => expect(screen.getByTestId('home-calendar-peek-aggregation-empty')).toBeInTheDocument());
+    expect(screen.getByTestId('home-calendar-peek-aggregation-empty')).toHaveTextContent('未提交');
   });
 
   it('preserves the real event id on the chip and uses peekAnchorId separately', async () => {

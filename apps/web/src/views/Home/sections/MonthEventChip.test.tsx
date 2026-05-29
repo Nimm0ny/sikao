@@ -1,16 +1,4 @@
-/*
- * MonthEventChip tests — SIK-142 W1 (visual contract §3.1 / §3.2).
- *
- * Why: the chip surface collapses to FOUR channels (tone color / kind icon /
- *      title / done ✓). This suite pins:
- *        - tone is driven by deriveChipTone and surfaced via data-tone
- *        - done ✓ + skipped strikethrough double-encoding
- *        - kind renders a NEUTRAL leading icon (no per-kind color attr)
- *        - the removed channels (category / status dot / source / link /
- *          target) are gone from the chip surface (→ Peek, W5)
- *        - the SIK-139 anchor / optimistic-patch contract is unchanged
- */
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import type { ComponentProps } from 'react';
 import { render, screen } from '@testing-library/react';
 
@@ -36,18 +24,24 @@ const BASE_EVENT: PlanEventReadV2 = {
   planId: 1,
   isRecurringInstance: false,
   deletedAt: null,
-  linkedSessionId: 'sess-1',
+  linkedSessionId: 17,
   parentId: null,
   recurringExceptionDates: [],
   recurringParentId: null,
   recurringRule: null,
-  targetId: 'tgt-1',
+  targetId: 23,
 } as PlanEventReadV2;
 
 const COMPACT: ReadonlyArray<CalendarCardProperty> = ['title', 'kind'];
 const DEFAULT: ReadonlyArray<CalendarCardProperty> = ['title', 'kind', 'status'];
 const DETAIL: ReadonlyArray<CalendarCardProperty> = [
-  'title', 'kind', 'status', 'category', 'source', 'linkedSession', 'target',
+  'title',
+  'kind',
+  'status',
+  'category',
+  'source',
+  'linkedSession',
+  'target',
 ];
 
 function renderChip(props: Partial<ComponentProps<typeof MonthEventChip>> = {}) {
@@ -67,13 +61,13 @@ describe('MonthEventChip tone channel (§3.2)', () => {
     expect(screen.getByTestId('home-month-event')).toHaveAttribute('data-tone', 'today');
   });
 
-  it('tags data-tone=done and renders the ✓ check for a done event', () => {
+  it('tags data-tone=done and renders the done check for a done event', () => {
     renderChip({ event: { ...BASE_EVENT, status: 'done' } });
     expect(screen.getByTestId('home-month-event')).toHaveAttribute('data-tone', 'done');
     expect(screen.getByTestId('home-month-event-done')).toBeInTheDocument();
   });
 
-  it('does not render the ✓ check for a non-done tone', () => {
+  it('does not render the done check for a non-done tone', () => {
     renderChip();
     expect(screen.queryByTestId('home-month-event-done')).toBeNull();
   });
@@ -84,7 +78,7 @@ describe('MonthEventChip tone channel (§3.2)', () => {
     expect(screen.getByTestId('home-month-event-title')).toHaveAttribute('data-skipped', 'true');
   });
 
-  it('tags data-tone=overdue for a past, unfinished occurrence (no strikethrough)', () => {
+  it('tags data-tone=overdue for a past unfinished occurrence', () => {
     renderChip({
       event: { ...BASE_EVENT, status: 'planned', startAt: at('2026-05-20'), endAt: at('2026-05-21') },
     });
@@ -119,6 +113,45 @@ describe('MonthEventChip kind channel (§4.3 neutral leading icon)', () => {
   });
 });
 
+describe('MonthEventChip aggregation channel (SIK-141)', () => {
+  it('renders the ready aggregation microline', () => {
+    renderChip({
+      aggregate: {
+        eventId: 'e1',
+        linkedSessionId: 2001,
+        availability: 'ready',
+        metrics: {
+          attemptedCount: 30,
+          correctCount: 18,
+          accuracy: 0.6,
+          activeSeconds: 1500,
+          sourceKind: 'practice_session',
+        },
+      },
+    });
+
+    expect(screen.getByTestId('home-month-event-aggregate')).toHaveTextContent('练 30 · 准 60%');
+  });
+
+  it('renders the empty-state aggregation label', () => {
+    renderChip({
+      aggregate: {
+        eventId: 'e1',
+        linkedSessionId: 2001,
+        availability: 'not_submitted',
+        metrics: null,
+      },
+    });
+
+    expect(screen.getByTestId('home-month-event-aggregate')).toHaveTextContent('未提交');
+  });
+
+  it('renders a query error aggregation label', () => {
+    renderChip({ aggregateState: { isLoaded: true, isError: true } });
+    expect(screen.getByTestId('home-month-event-aggregate')).toHaveTextContent('聚合不可用');
+  });
+});
+
 describe('MonthEventChip removed channels (§3.1 → Peek)', () => {
   it('does not render category / status dot / source / link / target on the chip', () => {
     renderChip({ visibleProperties: DETAIL });
@@ -133,19 +166,25 @@ describe('MonthEventChip removed channels (§3.1 → Peek)', () => {
 describe('MonthEventChip cross-day (§3.2 slice anchor)', () => {
   it('marks data-cross-day for a partial slice', () => {
     const slice: CrossDaySlice = {
-      occurrenceRef: 'e1:2026-05-27', day: '2026-05-27',
-      sliceStartAt: at('2026-05-27', '00:00'), sliceEndAt: at('2026-05-27', '23:59'),
-      isStartSlice: false, isEndSlice: false,
+      occurrenceRef: 'e1:2026-05-27',
+      day: '2026-05-27',
+      sliceStartAt: at('2026-05-27', '00:00'),
+      sliceEndAt: at('2026-05-27', '23:59'),
+      isStartSlice: false,
+      isEndSlice: false,
     };
     renderChip({ slice });
     expect(screen.getByTestId('home-month-event')).toHaveAttribute('data-cross-day', 'true');
   });
 
-  it('anchors tone on slice.day (future cell of a multi-day occurrence)', () => {
+  it('anchors tone on slice.day for a future cell of a multi-day occurrence', () => {
     const slice: CrossDaySlice = {
-      occurrenceRef: 'e1:2026-05-28', day: '2026-05-28',
-      sliceStartAt: at('2026-05-28', '00:00'), sliceEndAt: at('2026-05-28', '12:00'),
-      isStartSlice: false, isEndSlice: true,
+      occurrenceRef: 'e1:2026-05-28',
+      day: '2026-05-28',
+      sliceStartAt: at('2026-05-28', '00:00'),
+      sliceEndAt: at('2026-05-28', '12:00'),
+      isStartSlice: false,
+      isEndSlice: true,
     };
     renderChip({
       event: { ...BASE_EVENT, status: 'planned', startAt: at('2026-05-25'), endAt: at('2026-05-28', '12:00') },
@@ -156,9 +195,12 @@ describe('MonthEventChip cross-day (§3.2 slice anchor)', () => {
 
   it('omits data-cross-day when the slice is single-day', () => {
     const slice: CrossDaySlice = {
-      occurrenceRef: 'e1:2026-05-26', day: TODAY,
-      sliceStartAt: at(TODAY, '08:00'), sliceEndAt: at(TODAY, '09:30'),
-      isStartSlice: true, isEndSlice: true,
+      occurrenceRef: 'e1:2026-05-26',
+      day: TODAY,
+      sliceStartAt: at(TODAY, '08:00'),
+      sliceEndAt: at(TODAY, '09:30'),
+      isStartSlice: true,
+      isEndSlice: true,
     };
     renderChip({ slice });
     expect(screen.getByTestId('home-month-event')).not.toHaveAttribute('data-cross-day');
@@ -173,9 +215,7 @@ describe('MonthEventChip anchors / optimistic (SIK-139 contract unchanged)', () 
 
   it('uses peekAnchorId for data-peek-anchor when provided', () => {
     renderChip({ peekAnchorId: 'e1:2026-05-27|2026-05-27' });
-    expect(screen.getByTestId('home-month-event')).toHaveAttribute(
-      'data-peek-anchor', 'e1:2026-05-27|2026-05-27',
-    );
+    expect(screen.getByTestId('home-month-event')).toHaveAttribute('data-peek-anchor', 'e1:2026-05-27|2026-05-27');
   });
 
   it('falls back to the event id for data-peek-anchor', () => {

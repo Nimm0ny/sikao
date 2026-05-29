@@ -9,11 +9,59 @@ import axe from 'axe-core';
 import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
 
 const mutateAsyncMock = vi.fn();
+const aggregateItemsMock = vi.fn(() => []);
+const aggregateStateMock = vi.fn(() => ({ isLoaded: true, isError: false }));
 
 vi.mock('@sikao/api-client/plansMutations', () => ({
   useUpdateEvent: (eventId: string | number) => ({
     mutateAsync: (payload: unknown) => mutateAsyncMock(eventId, payload),
   }),
+}));
+
+vi.mock('../eventAggregates', () => ({
+  chipAggregateLabel: (aggregate: { availability: string; metrics: { attemptedCount: number; accuracy: number } | null } | undefined, state: { isLoaded: boolean; isError: boolean }) => {
+    if (state.isError) return '聚合不可用';
+    if (!state.isLoaded) return null;
+    if (aggregate === undefined) return '聚合缺失';
+    if (aggregate.availability !== 'ready' || aggregate.metrics === null) {
+      const labels: Record<string, string> = {
+        event_unavailable: '事件不可用',
+        missing_linked_session: '未关联',
+        session_not_found: '关联失效',
+        not_submitted: '未提交',
+        unsupported_track: '暂不支持',
+        no_graded_items: '无判题数据',
+      };
+      return labels[aggregate.availability];
+    }
+    return `练 ${aggregate.metrics.attemptedCount} · 准 ${Math.round(aggregate.metrics.accuracy * 1000) / 10}%`;
+  },
+  peekAggregateEmptyLabel: (aggregate: { availability: string; metrics: object | null } | undefined, state: { isLoaded: boolean; isError: boolean }) => {
+    if (state.isError) return '聚合不可用';
+    if (!state.isLoaded) return null;
+    if (aggregate === undefined) return '聚合缺失';
+    if (aggregate.availability === 'ready') return null;
+    const labels: Record<string, string> = {
+      event_unavailable: '事件不可用',
+      missing_linked_session: '未关联',
+      session_not_found: '关联失效',
+      not_submitted: '未提交',
+      unsupported_track: '暂不支持',
+      no_graded_items: '无判题数据',
+    };
+    return labels[aggregate.availability];
+  },
+  formatActiveSeconds: (activeSeconds: number | null) => {
+    if (activeSeconds === null || activeSeconds <= 0) return null;
+    return `${Math.round(activeSeconds / 60)}分`;
+  },
+  useCalendarEventAggregates: () => {
+    const items = aggregateItemsMock() as Array<{ eventId: string }>;
+    return {
+      byEventId: new Map(items.map((item) => [item.eventId, item])),
+      ...aggregateStateMock(),
+    };
+  },
 }));
 
 import { CalendarPeekProvider } from './CalendarPeekProvider';
@@ -88,6 +136,10 @@ function renderWithPeek(event: PlanEventReadV2, list: ReadonlyArray<CalendarPeek
 afterEach(() => {
   usePlanStore.getState().resetOptimisticEvents();
   mutateAsyncMock.mockReset();
+  aggregateItemsMock.mockReset();
+  aggregateItemsMock.mockReturnValue([]);
+  aggregateStateMock.mockReset();
+  aggregateStateMock.mockReturnValue({ isLoaded: true, isError: false });
 });
 
 describe('CalendarPeekCard', () => {
@@ -130,6 +182,80 @@ describe('CalendarPeekCard', () => {
 
     expect(screen.getByTestId('home-calendar-peek-notes')).toHaveTextContent('Focus on main idea');
     expect(screen.queryByTestId('home-calendar-peek-readonly-banner')).toBeNull();
+  });
+
+  it('renders a ready aggregation block in peek', () => {
+    aggregateItemsMock.mockReturnValue([
+      {
+        eventId: 'e1',
+        linkedSessionId: 2001,
+        availability: 'ready',
+        metrics: {
+          attemptedCount: 30,
+          correctCount: 18,
+          accuracy: 0.6,
+          activeSeconds: 1500,
+          sourceKind: 'practice_session',
+        },
+      },
+    ]);
+    const event = makeEvent('e1');
+    renderWithPeek(event, [{ id: 'e1', event }]);
+
+    expect(screen.getByTestId('home-calendar-peek-aggregation')).toBeInTheDocument();
+    expect(screen.getByText('练习量')).toBeInTheDocument();
+    expect(screen.getByText('30')).toBeInTheDocument();
+    expect(screen.getByText('60%')).toBeInTheDocument();
+  });
+
+  it('has no axe violations while a ready aggregation block is rendered', async () => {
+    aggregateItemsMock.mockReturnValue([
+      {
+        eventId: 'e1',
+        linkedSessionId: 2001,
+        availability: 'ready',
+        metrics: {
+          attemptedCount: 30,
+          correctCount: 18,
+          accuracy: 0.6,
+          activeSeconds: 1500,
+          sourceKind: 'practice_session',
+        },
+      },
+    ]);
+    const event = makeEvent('e1');
+    renderWithPeek(event, [{ id: 'e1', event }]);
+
+    const results = await axe.run(screen.getByTestId('home-calendar-peek-card'), AXE_OPTIONS);
+    expect(results.violations).toEqual([]);
+  });
+
+  it('renders an explicit aggregation empty state in peek', () => {
+    aggregateItemsMock.mockReturnValue([
+      {
+        eventId: 'e1',
+        linkedSessionId: null,
+        availability: 'missing_linked_session',
+        metrics: null,
+      },
+    ]);
+    const event = makeEvent('e1');
+    renderWithPeek(event, [{ id: 'e1', event }]);
+
+    expect(screen.getByTestId('home-calendar-peek-aggregation-empty')).toHaveTextContent('未关联');
+  });
+
+  it('renders a query error label instead of silently hiding aggregation', () => {
+    aggregateStateMock.mockReturnValue({ isLoaded: true, isError: true });
+    const event = makeEvent('e1');
+    renderWithPeek(event, [{ id: 'e1', event }]);
+    expect(screen.getByTestId('home-calendar-peek-aggregation-empty')).toHaveTextContent('聚合不可用');
+  });
+
+  it('renders a missing-item label instead of silently hiding aggregation', () => {
+    const event = makeEvent('e1');
+    renderWithPeek(event, [{ id: 'e1', event }]);
+    expect(screen.getByTestId('home-calendar-peek-aggregation-empty')).toHaveTextContent('聚合缺失');
   });
 
   it('falls back to the empty notes cue when notes is blank', () => {

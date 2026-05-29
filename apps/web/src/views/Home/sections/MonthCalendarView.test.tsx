@@ -78,6 +78,35 @@ describe('MonthCalendarView', () => {
     expect(cell).toContainElement(screen.getByTestId('home-month-event'));
   });
 
+  it('renders the aggregation microline on a month chip', async () => {
+    server.use(
+      http.get('/api/v2/plans/events', () => response([makeEvent('evt-yanyu-am', 'Focused drill')])),
+      http.post('/api/v2/plans/events/aggregates', () =>
+        HttpResponse.json({
+          items: [
+            {
+              eventId: 'evt-yanyu-am',
+              linkedSessionId: 2001,
+              availability: 'ready',
+              metrics: {
+                attemptedCount: 30,
+                correctCount: 18,
+                accuracy: 0.6,
+                activeSeconds: 1500,
+                sourceKind: 'practice_session',
+              },
+            },
+          ],
+        }),
+      ),
+    );
+    renderWithClient();
+    await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(1));
+    await waitFor(() =>
+      expect(screen.getByTestId('home-month-event-aggregate')).toHaveTextContent('练 30 · 准 60%'),
+    );
+  });
+
   it('renders a 21-cell rolling window from the anchor week start', async () => {
     usePlanStore.setState({ currentDate: fixedAnchor });
     server.use(http.get('/api/v2/plans/events', () => response([makeEvent('m1', 'Anchor event', fixedAnchor)])));
@@ -107,7 +136,7 @@ describe('MonthCalendarView', () => {
     );
     await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(5));
     expect(screen.getByTestId(`home-month-event-list-${today}`)).toHaveStyle({
-      maxHeight: 'calc(2 * var(--space-6) + 1 * var(--space-1))',
+      maxHeight: 'calc(2 * var(--space-8) + 1 * var(--space-1))',
     });
   });
 
