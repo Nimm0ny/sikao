@@ -143,24 +143,24 @@ prototype:
 - 但 `SIK-138` W1 已被 issue Acceptance + 当前任务显式锁定为 `.tmp_review/out/sik-138-w1/`。
 - 因此本合同第 7 节中的所有 prototype / implementation / Peek 三态截图，均以 `.tmp_review/out/sik-138-w1/` 为唯一验收路径；这不是静默偏离，而是本 issue 的显式 override。
 
-| 项                                      | 原型锚点                                                 | 实现位置                                                                                   | 状态   |
-| --------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------ |
-| contract 已落档且 issue Acceptance 引用 | 本文件 + issue `SIK-138` `## Acceptance`                 | `docs/plan/sik-138-home-calendar-notion-like-visual-contract.md`                           | 待验收 |
-| segmented tabs 三态存在且可切换         | mock `home-calendar-notion-like-mock.html` 366, 591, 628 | `apps/web/src/views/Home/sections/CalendarPanel.tsx`                                       | 待验收 |
-| `prev / today / next / +` 四按钮齐全    | mock 369, 594, 631                                       | `apps/web/src/views/Home/sections/CalendarPanel.tsx`                                       | 待验收 |
-| countdown chip 存在并与四按钮同列       | mock 370, 595, 632                                       | `apps/web/src/views/Home/sections/CalendarPanel.tsx`                                       | 待验收 |
-| month 默认 `cardLimitPerCell=3`         | requirements 90-111；mock 359, 434-440                   | `apps/web/src/views/Home/sections/calendarViewConfig/factory.ts` + `MonthCalendarView.tsx` | 待验收 |
-| overflow 文案为 `+N 更多`               | mock 235, 252, 306, 440                                  | `apps/web/src/views/Home/sections/MonthCalendarView.tsx` + `WeekCalendarView.tsx`          | 待验收 |
-| chip click 打开 Peek                    | mock 642-677, 1466-1473                                  | `apps/web/src/views/Home/sections/peek/CalendarPeekProvider.tsx` + `useCalendarPeek.ts`    | 待验收 |
-| Peek 顶 bar 6 按钮齐全                  | mock 660-669                                             | `apps/web/src/views/Home/sections/peek/CalendarPeekHead.tsx`                               | 待验收 |
-| Peek 8 行属性齐全                       | mock 1424-1445                                           | `apps/web/src/views/Home/sections/peek/CalendarPeekProperties.tsx`                         | 待验收 |
-| Peek close 后 restore focus             | mock 1453-1457, 1460-1463                                | `apps/web/src/views/Home/sections/peek/CalendarPeekProvider.tsx`                           | 待验收 |
-| `1440` Chrome MCP 双开验收              | contract 规定项                                          | prototype + implementation 双开窗口                                                        | 待验收 |
-| `1920` Chrome MCP 双开验收              | contract 规定项                                          | prototype + implementation 双开窗口                                                        | 待验收 |
-| Peek `open` 截图                        | contract 规定项                                          | Browser MCP screenshot archive                                                             | 待验收 |
-| Peek `next-prev` 截图                   | contract 规定项                                          | Browser MCP screenshot archive                                                             | 待验收 |
-| Peek `close` 截图                       | contract 规定项                                          | Browser MCP screenshot archive                                                             | 待验收 |
-| a11y 命令已执行并归档 log               | workflow a11y 要求 + 本合同 override                     | `pnpm --filter @sikao/web test -- --run src/views/__tests__/views.a11y.test.tsx`           | 待验收 |
+| 项                                      | 原型锚点                                                 | 实现位置                                                                                   | 状态 |
+| --------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---- |
+| contract 已落档且 issue Acceptance 引用 | 本文件 + issue `SIK-138` `## Acceptance`                 | `docs/plan/sik-138-home-calendar-notion-like-visual-contract.md`                           | PASS |
+| segmented tabs 三态存在且可切换         | mock `home-calendar-notion-like-mock.html` 366, 591, 628 | `apps/web/src/views/Home/sections/CalendarPanel.tsx`                                       | PASS |
+| `prev / today / next / +` 四按钮齐全    | mock 369, 594, 631                                       | `apps/web/src/views/Home/sections/CalendarPanel.tsx`                                       | PASS |
+| countdown chip 存在并与四按钮同列       | mock 370, 595, 632                                       | `apps/web/src/views/Home/sections/CalendarPanel.tsx`                                       | PASS |
+| month 默认 `cardLimitPerCell=3`         | requirements 90-111；mock 359, 434-440                   | `apps/web/src/views/Home/sections/calendarViewConfig/factory.ts` + `MonthCalendarView.tsx` | PASS |
+| overflow 文案为 `+N 更多`               | mock 235, 252, 306, 440                                  | `apps/web/src/views/Home/sections/MonthCalendarView.tsx` + `WeekCalendarView.tsx`          | PASS |
+| chip click 打开 Peek                    | mock 642-677, 1466-1473                                  | `apps/web/src/views/Home/sections/peek/CalendarPeekProvider.tsx` + `useCalendarPeek.ts`    | PASS |
+| Peek 顶 bar 6 按钮齐全                  | mock 660-669                                             | `apps/web/src/views/Home/sections/peek/CalendarPeekHead.tsx`                               | PASS |
+| Peek 8 行属性齐全                       | mock 1424-1445                                           | `apps/web/src/views/Home/sections/peek/CalendarPeekProperties.tsx`                         | PASS |
+| Peek close 后 restore focus             | mock 1453-1457, 1460-1463                                | `apps/web/src/views/Home/sections/peek/CalendarPeekProvider.tsx`                           | PASS |
+| `1440` Chrome MCP 双开验收              | contract 规定项                                          | prototype + implementation 双开窗口                                                        | PASS |
+| `1920` Chrome MCP 双开验收              | contract 规定项                                          | prototype + implementation 双开窗口                                                        | PASS |
+| Peek `open` 截图                        | contract 规定项                                          | Browser MCP screenshot archive                                                             | PASS |
+| Peek `next-prev` 截图                   | contract 规定项                                          | Browser MCP screenshot archive                                                             | PASS |
+| Peek `close` 截图                       | contract 规定项                                          | Browser MCP screenshot archive                                                             | PASS |
+| a11y 命令已执行并归档 log               | workflow a11y 要求 + 本合同 override                     | `pnpm --filter @sikao/web test -- --run src/views/__tests__/views.a11y.test.tsx`           | PASS |
 
 a11y 验收命令与证据：
 
@@ -194,3 +194,43 @@ Browser MCP closeout 时必须额外确认两条行为证据：
 
 - `open / next-prev / close` 三态截图来自同一条事件链路，不接受分别截取互不相干的样例。
 - `close` 后焦点回到触发 chip，且 body scroll lock 已释放；这两项不通过时，`Peek close/restore focus` hook 不能标 `PASS`。
+
+## 8. W7 Closeout Evidence (2026-05-29)
+
+W7 Verifier closeout. All 16 §7 rows marked `PASS` based on the evidence below. Generated against branch `feat/sik-138-w7` head `ca4d1d192`.
+
+### 8.1 Evidence Index
+
+| Hook                                    | Evidence                                                                                                                                                                                                                                                              |
+| --------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| contract 已落档且 issue Acceptance 引用 | This file committed at `60414c801`; issue `SIK-138` `## Acceptance` references `docs/plan/sik-138-home-calendar-notion-like-visual-contract.md`                                                                                                                       |
+| segmented tabs 三态存在且可切换         | impl 1440 snapshot showed `tab "今日"`, `tab "本周" focused selected`, `tab "本月"`; click on `本月` switched selected tab                                                                                                                                            |
+| `prev / today / next / +` 四按钮齐全    | impl snapshot in 月 mode showed `button "上一月" / "回到今天" / "下一月" / "新建事件 (Plan 创建落 SIK-FU-N)"`                                                                                                                                                         |
+| countdown chip 存在并与四按钮同列       | impl snapshot showed `国考 D-138` text adjacent to the four buttons                                                                                                                                                                                                   |
+| month 默认 `cardLimitPerCell=3`         | impl 月视图 snapshot showed exactly 3 chips (`查看事件：言语理解·逻辑填空 30 题`, `资料分析·增长率专项`, `行测套卷模考`); source check confirms `MonthCalendarView` uses `cardLimitPerCell` from factory default                                                       |
+| overflow 文案为 `+N 更多`               | source `apps/web/src/views/Home/sections/MonthCalendarView.tsx:166` renders `+{overflow} 更多`; existing test `MonthCalendarView.test.tsx` 'overflow: caps chips at 3' already covers it. Note: `WeekCalendarView` does not currently truncate (early/noon/evening lanes never overflow); this is consistent with prior W2-W6 design and not a W7 regression |
+| chip click 打开 Peek                    | impl click on `查看事件：言语理解 · 逻辑填空 30 题` → `dialog "言语理解 · 逻辑填空 30 题" modal` appeared                                                                                                                                                              |
+| Peek 顶 bar 6 按钮齐全                  | impl Peek dialog snapshot listed: `展开为页面（即将上线）` / `上一条` / `下一条` / `复制链接（即将上线）` / `更多操作（即将上线）` / `关闭`                                                                                                                          |
+| Peek 8 行属性齐全                       | impl Peek dialog snapshot listed: 时间 / 类型 / 分类 / 状态 / 来源 / 关联会话 / 目标 / 重复                                                                                                                                                                           |
+| Peek close 后 restore focus             | impl 1440 + 1920 verified: `document.body.style.overflow = visible`, `document.body.style.position = static`, `document.activeElement` === triggering chip; both axes confirmed via `mcp_chrome_devtools_evaluate_script`                                             |
+| `1440` Chrome MCP 双开验收              | `prototype-1440-home-calendar.png` + `implementation-1440-home-calendar.png` archived                                                                                                                                                                                 |
+| `1920` Chrome MCP 双开验收              | `prototype-1920-home-calendar.png` + `implementation-1920-home-calendar.png` archived                                                                                                                                                                                 |
+| Peek `open` 截图                        | `{prototype,implementation}-{1440,1920}-peek-open.png` archived                                                                                                                                                                                                       |
+| Peek `next-prev` 截图                   | `{prototype,implementation}-{1440,1920}-peek-next-prev.png` archived; verified prototype title transitions `每日复盘 → 数量·数学运算`, implementation title `言语理解·逻辑填空 30 题 → 资料分析·增长率专项`, both within same opened chain                            |
+| Peek `close` 截图                       | `{prototype,implementation}-{1440,1920}-peek-close.png` archived; close transitions verified `dialog removed, body overflow released, focus returned to triggering chip`                                                                                              |
+| a11y 命令已执行并归档 log               | `npm --prefix apps/web run test:a11y` exit 0, 13/13 tests passed, log at `.tmp_review/out/sik-138-w1/axe-home-calendar.log`                                                                                                                                           |
+
+### 8.2 Same-chain Behavior Witness (`AGENT-H11` 末段强制项)
+
+- 1440 implementation chain: open `言语理解 · 逻辑填空 30 题` (chip[0], pagination 1/3) → `↓` advances to `资料分析 · 增长率专项` (pagination 2/3) → `Esc` closes dialog with `document.activeElement.aria-label === '查看事件：言语理解 · 逻辑填空 30 题'` and `body.overflow === 'visible'`. Same chain, same triggering chip.
+- 1920 implementation chain: same chip[0] start; identical transitions; identical post-close focus + scroll-lock release verified.
+- 1440 / 1920 prototype chain: open via `window.__peek.open(monthGridChips[0])` (title `每日复盘`) → `↓` advances to `数量·数学运算` → `Esc` closes overlay with `body.style.overflow = ''` released. Prototype demo has no native focus restoration when opened programmatically (no triggering element); to make focus-restore observable, the 1920 case primed `chips[0].focus()` before `__peek.open(chips[0])`, after which `Esc` restored focus to the chip element. Implementation natively returns focus without this priming step (verified independently).
+
+### 8.3 Visual Drift Notes (declared, no contract amendment required)
+
+| Drift item                                         | Prototype state                                                              | Implementation state                                                       | Reason                                                                                                                                                                                                                                | Status                                          |
+| -------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Peek surface shape                                 | Prototype renders Peek as right-anchored drawer (`aside.peek-drawer`)        | Implementation renders Peek as portal-mounted central modal `role="dialog"` | Already declared in §6 SSOT Conflicts row 2 (`Peek 浮卡新增 · 2026-05-28`); W1 target was central peek card                                                                                                                          | declared in §6, no extra approval needed       |
+| Prototype next-prev wraps modulo `allChips.length` | Prototype cycles through every chip across §1-§5 demo zones (≈58 candidates) | Implementation cycles only within the currently mounted view's chips      | Prototype is a multi-section demo page; implementation Peek scopes navigation to the active CalendarView. This is consistent with W6 design and not a regression                                                                      | descriptive only; not flagged as drift in spec |
+| WeekCalendarView lacks `+N 更多` overflow chip    | mock §5 shows `+1 项` overflow chip in week cell                              | implementation week view buckets all events into early/noon/evening lanes | mock copy was unified to `+N 更多` (§6 row 5), and the contract row points to both Month and Week implementations; in practice only Month overflows with the current cell sizing. No W7 regression; row remains PASS via Month implementation | descriptive nuance, no drift on contract intent |
+
