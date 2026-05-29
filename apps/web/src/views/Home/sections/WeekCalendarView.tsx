@@ -14,6 +14,7 @@ import {
   type CalendarViewConfig,
 } from './calendarViewConfig';
 import { MonthEventChip } from './MonthEventChip';
+import { useCalendarEventAggregates, type CalendarAggregateQueryState } from './eventAggregates';
 import {
   CalendarPeekCard,
   CalendarPeekProvider,
@@ -35,7 +36,7 @@ const localStamp = (value: Date) =>
   `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
 const todayStamp = () => localStamp(new Date());
 const buildVisibleRowsMaxHeight = (visibleRows: number) =>
-  `calc(${visibleRows} * var(--space-6) + ${Math.max(visibleRows - 1, 0)} * var(--space-1))`;
+  `calc(${visibleRows} * var(--space-8) + ${Math.max(visibleRows - 1, 0)} * var(--space-1))`;
 
 interface WeekDay {
   readonly stamp: string;
@@ -110,6 +111,7 @@ function WeekGrid({
   visibleProperties,
   today,
   cardLimitPerCell,
+  aggregateState,
 }: {
   readonly days: ReadonlyArray<WeekDay>;
   readonly eventsByCell: ReadonlyMap<string, ReadonlyArray<EnrichedOccurrence>>;
@@ -117,6 +119,7 @@ function WeekGrid({
   readonly visibleProperties: CalendarViewConfig['visibleProperties'];
   readonly today: string;
   readonly cardLimitPerCell: number;
+  readonly aggregateState: CalendarAggregateQueryState;
 }) {
   const peek = useCalendarPeek();
   const peekList = useMemo<ReadonlyArray<CalendarPeekListEntry>>(() => {
@@ -183,6 +186,8 @@ function WeekGrid({
                         >
                           <MonthEventChip
                             event={item.event}
+                            aggregate={aggregateState.byEventId.get(item.event.id)}
+                            aggregateState={aggregateState}
                             slice={weekDaySlice(item)}
                             visibleProperties={visibleProperties}
                             today={today}
@@ -243,6 +248,8 @@ function WeekCalendarViewBody({ viewConfig }: WeekCalendarViewProps) {
     () => expandPlanEventsForView(query.data?.data.events ?? [], window),
     [query.data, window],
   );
+  const aggregateEventIds = useMemo(() => occurrences.map((item) => item.event.id), [occurrences]);
+  const aggregateState = useCalendarEventAggregates(aggregateEventIds);
   const eventsByCell = useMemo(() => bucketEvents(occurrences), [occurrences]);
   const total = query.data?.data.events.length ?? 0;
 
@@ -292,6 +299,7 @@ function WeekCalendarViewBody({ viewConfig }: WeekCalendarViewProps) {
           visibleProperties={config.visibleProperties}
           today={zonedDateKey(new Date().toISOString(), TZ)}
           cardLimitPerCell={config.cardLimitPerCell}
+          aggregateState={aggregateState}
         />
       ) : null}
     </div>

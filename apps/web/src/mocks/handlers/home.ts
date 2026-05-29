@@ -23,6 +23,7 @@ import type {
   DashboardWeeklyPlanResponseV2,
   EventWindowResponseV2,
   OverviewResponseV2,
+  PlanEventAggregateBatchResponseV2,
   PlanEventReadV2,
   PlanEventUpdateRequestV2,
   WeeklyProgressSummaryV2,
@@ -91,6 +92,7 @@ function defaultEvents(): PlanEventReadV2[] {
       endAt: `${day}T10:00:00+08:00`,
       category: 'yanyu',
       status: 'done',
+      linkedSessionId: 2001,
       targetId: 1001,
     }),
     makeEvent({
@@ -100,6 +102,7 @@ function defaultEvents(): PlanEventReadV2[] {
       endAt: `${day}T11:30:00+08:00`,
       category: 'ziliao',
       status: 'done',
+      linkedSessionId: 2002,
       targetId: 1002,
     }),
     makeEvent({
@@ -204,6 +207,49 @@ export const homeHandlers = [
       weekStart: day,
       weekEnd: day,
       summary: emptySummary(events.length),
+    };
+    return HttpResponse.json(response);
+  }),
+
+  http.post('/api/v2/plans/events/aggregates', async ({ request }) => {
+    const body = await request.json() as { eventIds: string[] };
+    const response: PlanEventAggregateBatchResponseV2 = {
+      items: body.eventIds.map((eventId) => {
+        if (eventId === 'evt-yanyu-am') {
+          return {
+            eventId,
+            linkedSessionId: 2001,
+            availability: 'ready',
+            metrics: {
+              attemptedCount: 30,
+              correctCount: 18,
+              accuracy: 0.6,
+              activeSeconds: 1500,
+              sourceKind: 'practice_session',
+            },
+          };
+        }
+        if (eventId === 'evt-ziliao-mid') {
+          return {
+            eventId,
+            linkedSessionId: 2002,
+            availability: 'ready',
+            metrics: {
+              attemptedCount: 20,
+              correctCount: 14,
+              accuracy: 0.7,
+              activeSeconds: 1200,
+              sourceKind: 'practice_session',
+            },
+          };
+        }
+        return {
+          eventId,
+          linkedSessionId: null,
+          availability: 'missing_linked_session',
+          metrics: null,
+        };
+      }),
     };
     return HttpResponse.json(response);
   }),

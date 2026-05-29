@@ -105,6 +105,15 @@
   text-overflow: ellipsis;
 }
 
+.aggregateLine {
+  font-size: var(--font-meta);
+  line-height: var(--line-height-meta);
+  color: var(--color-text-meta);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* skipped tone: strikethrough title (§3.2 — distinguishes skipped from the
  * same-gray overdue tone; the line is the colorblind-safe primary cue). */
 .titleText[data-skipped='true'] {

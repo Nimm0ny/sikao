@@ -4,7 +4,10 @@ import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { homeQueryKeys } from '@sikao/api-client/homeQueryKeys';
 import { useUpdateEvent } from '@sikao/api-client/plansMutations';
-import type { PlanEventReadV2, PlanEventUpdateRequestV2 } from '@sikao/api-client/types/home';
+import type {
+  PlanEventReadV2,
+  PlanEventUpdateRequestV2,
+} from '@sikao/api-client/types/home';
 import { usePlanStore } from '@sikao/domain';
 import { toast } from '@sikao/shared-utils';
 
@@ -12,6 +15,8 @@ import { Button, Input } from '../../../../components/form';
 import { CALENDAR_INLINE } from '../../../../lib/ui-copy';
 import { FocusTrap } from '../../../../components/system/FocusTrap';
 import { eventKindOf, type EventKind } from '../eventKind';
+import { useCalendarEventAggregates } from '../eventAggregates';
+import { CalendarPeekAggregation } from './CalendarPeekAggregation';
 import { CalendarPeekHead } from './CalendarPeekHead';
 import { CalendarPeekNotes } from './CalendarPeekNotes';
 import { CalendarPeekProperties } from './CalendarPeekProperties';
@@ -75,6 +80,7 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
 
   const updateEvent = useUpdateEvent(event.id);
   const queryClient = useQueryClient();
+  const aggregateState = useCalendarEventAggregates(peek.currentList.map((entry) => entry.event.id));
 
   const displayEvent = useMemo(
     () => ({
@@ -86,6 +92,7 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
 
   const canStep = peek.listLength > 1;
   const kind = eventKindOf(displayEvent);
+  const aggregate = aggregateState.byEventId.get(event.id);
   const kindBarStyle: CSSProperties = {
     background: KIND_VAR_BY_KIND[kind],
   };
@@ -437,6 +444,7 @@ function EditablePeekCardBody({ event, peek }: EditablePeekCardBodyProps) {
               }}
               onCancel={cancelEditing}
             />
+            <CalendarPeekAggregation aggregate={aggregate} aggregateState={aggregateState} />
             <CalendarPeekNotes
               event={displayEvent}
               isEditing={activeField === 'notes'}

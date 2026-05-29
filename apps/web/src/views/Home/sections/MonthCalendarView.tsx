@@ -18,6 +18,7 @@ import {
   type CalendarViewConfig,
 } from './calendarViewConfig';
 import { MonthEventChip } from './MonthEventChip';
+import { useCalendarEventAggregates, type CalendarAggregateQueryState } from './eventAggregates';
 import {
   CalendarPeekCard,
   CalendarPeekProvider,
@@ -37,7 +38,7 @@ const localStamp = (value: Date) =>
   `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
 const todayStamp = () => localStamp(new Date());
 const buildVisibleRowsMaxHeight = (visibleRows: number) =>
-  `calc(${visibleRows} * var(--space-6) + ${Math.max(visibleRows - 1, 0)} * var(--space-1))`;
+  `calc(${visibleRows} * var(--space-8) + ${Math.max(visibleRows - 1, 0)} * var(--space-1))`;
 
 interface MonthCell {
   readonly stamp: string;
@@ -92,12 +93,14 @@ function MonthGrid({
   dowLabels,
   cardLimitPerCell,
   visibleProperties,
+  aggregateState,
 }: {
   readonly cells: ReadonlyArray<MonthCell>;
   readonly eventsByDay: ReadonlyMap<string, ReadonlyArray<MonthDaySlice>>;
   readonly dowLabels: ReadonlyArray<string>;
   readonly cardLimitPerCell: number;
   readonly visibleProperties: readonly CalendarCardProperty[];
+  readonly aggregateState: CalendarAggregateQueryState;
 }) {
   const peek = useCalendarPeek();
   const optimisticEvents = usePlanStore((state) => state.optimisticEvents);
@@ -153,6 +156,8 @@ function MonthGrid({
                           <li key={entryId} className={styles.eventListItem}>
                             <MonthEventChip
                               event={item.event}
+                              aggregate={aggregateState.byEventId.get(item.event.id)}
+                              aggregateState={aggregateState}
                               slice={item.slice}
                               visibleProperties={visibleProperties}
                               peekAnchorId={entryId}
@@ -214,6 +219,8 @@ function MonthCalendarViewBody({ viewConfig }: MonthCalendarViewProps) {
     const events = query.data?.data.events ?? [];
     return sliceMonthOccurrencesByDay(expandPlanEventsForView(events, window));
   }, [query.data, window]);
+  const aggregateEventIds = useMemo(() => slices.map((item) => item.event.id), [slices]);
+  const aggregateState = useCalendarEventAggregates(aggregateEventIds);
   const eventsByDay = useMemo(() => bucketEventsByDay(slices), [slices]);
   const total = query.data?.data.events.length ?? 0;
 
@@ -264,6 +271,7 @@ function MonthCalendarViewBody({ viewConfig }: MonthCalendarViewProps) {
               dowLabels={dowLabels}
               cardLimitPerCell={config.cardLimitPerCell}
               visibleProperties={config.visibleProperties}
+              aggregateState={aggregateState}
             />
           }
         >
@@ -273,6 +281,7 @@ function MonthCalendarViewBody({ viewConfig }: MonthCalendarViewProps) {
             dowLabels={dowLabels}
             cardLimitPerCell={config.cardLimitPerCell}
             visibleProperties={config.visibleProperties}
+            aggregateState={aggregateState}
             window={window}
           />
         </Suspense>

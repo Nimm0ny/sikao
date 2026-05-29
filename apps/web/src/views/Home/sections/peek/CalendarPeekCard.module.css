@@ -216,3 +216,46 @@
   color: var(--color-text-meta);
 }
 
+.aggregationSection {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.aggregationGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-2);
+}
+
+.aggregationCell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-10);
+  background: var(--card-bg-elevated);
+}
+
+.aggregationLabel {
+  font-size: var(--font-meta);
+  color: var(--color-text-meta);
+}
+
+.aggregationValue {
+  font-size: var(--font-body);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text-primary);
+}
+
+.aggregationEmpty {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: var(--radius-10);
+  background: var(--card-bg-elevated);
+  color: var(--color-text-meta);
+  font-size: var(--font-meta);
+}
+

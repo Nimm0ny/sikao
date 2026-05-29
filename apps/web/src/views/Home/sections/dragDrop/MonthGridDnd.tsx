@@ -11,11 +11,12 @@ import {
 import { toast } from '@sikao/shared-utils';
 import { usePlanStore } from '@sikao/domain';
 
-import type { EventConflictItemV2 } from '@sikao/api-client/types/home';
+import type { EventConflictItemV2, PlanEventAggregateReadV2 } from '@sikao/api-client/types/home';
 import type { MonthDaySlice } from '../calendarEvents';
 import type { CalendarCardProperty } from '../calendarViewConfig';
+import type { CalendarAggregateQueryState } from '../eventAggregates';
 import { MonthEventChip } from '../MonthEventChip';
-import { useCalendarPeek, type CalendarPeekListEntry } from '../peek';
+import { type CalendarPeekListEntry, useCalendarPeek } from '../peek';
 import styles from '../MonthCalendarView.module.css';
 import { commitReschedule } from './commitReschedule';
 import { type ConflictWindow } from './conflictGuard';
@@ -32,7 +33,7 @@ import { useRescheduleEvent } from './useRescheduleEvent';
 
 const TZ = 'Asia/Shanghai';
 const buildVisibleRowsMaxHeight = (visibleRows: number) =>
-  `calc(${visibleRows} * var(--space-6) + ${Math.max(visibleRows - 1, 0)} * var(--space-1))`;
+  `calc(${visibleRows} * var(--space-8) + ${Math.max(visibleRows - 1, 0)} * var(--space-1))`;
 
 export interface MonthCellModel {
   readonly stamp: string;
@@ -47,6 +48,7 @@ export interface MonthGridDndProps {
   readonly dowLabels: ReadonlyArray<string>;
   readonly cardLimitPerCell: number;
   readonly visibleProperties: readonly CalendarCardProperty[];
+  readonly aggregateState?: CalendarAggregateQueryState;
   readonly window: ConflictWindow;
 }
 
@@ -68,12 +70,16 @@ function DraggableChip({
   item,
   entryId,
   visibleProperties,
+  aggregate,
+  aggregateState,
   optimisticPatch,
   onOpen,
 }: {
   readonly item: MonthDaySlice;
   readonly entryId: string;
   readonly visibleProperties: readonly CalendarCardProperty[];
+  readonly aggregate?: PlanEventAggregateReadV2;
+  readonly aggregateState?: Pick<CalendarAggregateQueryState, 'isLoaded' | 'isError'>;
   readonly optimisticPatch: Partial<MonthDaySlice['event']> | undefined;
   readonly onOpen: () => void;
 }) {
@@ -94,6 +100,8 @@ function DraggableChip({
   return (
     <MonthEventChip
       event={item.event}
+      aggregate={aggregate}
+      aggregateState={aggregateState}
       slice={item.slice}
       visibleProperties={visibleProperties}
       peekAnchorId={entryId}
@@ -114,6 +122,7 @@ function DroppableCell({
   readonly children: React.ReactNode;
 }) {
   const { setNodeRef, isOver } = useDroppable({ id: cell.stamp });
+
   return (
     <div
       ref={setNodeRef}
@@ -136,6 +145,7 @@ function MonthGridDndInner({
   dowLabels,
   cardLimitPerCell,
   visibleProperties,
+  aggregateState = { byEventId: new Map(), isLoaded: false, isError: false },
   window,
 }: MonthGridDndProps) {
   const peek = useCalendarPeek();
@@ -192,9 +202,7 @@ function MonthGridDndInner({
       throw err instanceof Error ? err : new Error(String(err));
     }
 
-    if (decision.kind !== 'reschedule' || data == null) {
-      return;
-    }
+    if (decision.kind !== 'reschedule' || data == null) return;
 
     void gateRescheduleDrop(
       decision,
@@ -269,6 +277,8 @@ function MonthGridDndInner({
                                   item={item}
                                   entryId={entryId}
                                   visibleProperties={visibleProperties}
+                                  aggregate={aggregateState.byEventId.get(item.event.id)}
+                                  aggregateState={aggregateState}
                                   optimisticPatch={optimisticEvents.get(item.event.id)}
                                   onOpen={() => peek.open({ ...item.event, id: entryId }, peekList)}
                                 />
