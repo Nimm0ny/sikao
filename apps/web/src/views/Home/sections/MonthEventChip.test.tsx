@@ -159,3 +159,52 @@ describe('MonthEventChip channels', () => {
     }
   });
 });
+
+describe('MonthEventChip Phase 3 anchors (SIK-139 W0)', () => {
+  it('exposes the real event id via data-event-id (mutation target)', () => {
+    render(<MonthEventChip event={BASE_EVENT} visibleProperties={DEFAULT} />);
+    expect(screen.getByTestId('home-month-event')).toHaveAttribute('data-event-id', 'e1');
+  });
+
+  it('uses peekAnchorId for data-peek-anchor when provided (per-slice drag/peek anchor)', () => {
+    render(
+      <MonthEventChip
+        event={BASE_EVENT}
+        visibleProperties={DEFAULT}
+        peekAnchorId="e1:2026-05-27|2026-05-27"
+      />,
+    );
+    expect(screen.getByTestId('home-month-event')).toHaveAttribute(
+      'data-peek-anchor',
+      'e1:2026-05-27|2026-05-27',
+    );
+  });
+
+  it('falls back to the event id for data-peek-anchor when no peekAnchorId given', () => {
+    render(<MonthEventChip event={BASE_EVENT} visibleProperties={DEFAULT} />);
+    expect(screen.getByTestId('home-month-event')).toHaveAttribute('data-peek-anchor', 'e1');
+  });
+
+  it('merges optimisticPatch over the source event for rendering (D20 read-time placeholder)', () => {
+    render(
+      <MonthEventChip
+        event={BASE_EVENT}
+        visibleProperties={['title', 'kind', 'status']}
+        optimisticPatch={{ title: '言语·乐观改期预览', status: 'planned' }}
+      />,
+    );
+    expect(screen.getByTestId('home-month-event-title')).toHaveTextContent('言语·乐观改期预览');
+    expect(screen.getByLabelText('状态：待办')).toBeInTheDocument();
+  });
+
+  it('renders the source event unchanged when optimisticPatch is undefined', () => {
+    render(
+      <MonthEventChip
+        event={BASE_EVENT}
+        visibleProperties={['title', 'kind', 'status']}
+      />,
+    );
+    expect(screen.getByTestId('home-month-event-title')).toHaveTextContent('言语·片段阅读');
+    expect(screen.getByLabelText('状态：进行中')).toBeInTheDocument();
+  });
+});

@@ -2,10 +2,11 @@
  * MonthCalendarView tests — SIK-90 Home M-A wave 2 commit 2 (2026-05-24).
  * 4-state coverage + overflow chip "+N 更多" assertion.
  */
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { http, HttpResponse, delay } from 'msw';
+import { usePlanStore } from '@sikao/domain';
 import { server } from '../../../mocks/server';
 import { MonthCalendarView } from './MonthCalendarView';
 import { createCalendarViewConfig } from './calendarViewConfig';
@@ -126,5 +127,34 @@ describe('MonthCalendarView (Home M-A wave 2 commit 2)', () => {
       expect(screen.getAllByTestId('home-month-event').length).toBeGreaterThan(0),
     );
     expect(screen.getAllByTestId('home-month-event')).toHaveLength(3);
+  });
+});
+
+describe('MonthCalendarView Phase 3 anchors + optimistic merge (SIK-139 W0)', () => {
+  afterEach(() => {
+    // Reset the shared plan store so an optimistic patch from one test
+    // never bleeds into another.
+    usePlanStore.getState().resetOptimisticEvents();
+  });
+
+  it('stamps data-event-id + data-peek-anchor on each rendered chip', async () => {
+    server.use(http.get('/api/v2/plans/events', () => r([makeEvent('m1', '专项练习')])));
+    renderWithClient();
+    await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(1));
+    const chip = screen.getByTestId('home-month-event');
+    expect(chip).toHaveAttribute('data-event-id', 'm1');
+    // peek anchor is the per-slice entry id `${occurrenceRef}|${day}`,
+    // which embeds the real event id but is distinct from it.
+    const anchor = chip.getAttribute('data-peek-anchor');
+    expect(anchor).toContain('m1');
+    expect(anchor).not.toBe('m1');
+  });
+
+  it('renders the optimistic patch title when the store holds a patch for that event', async () => {
+    usePlanStore.getState().upsertOptimisticEvent('m1', { title: '乐观改期预览' });
+    server.use(http.get('/api/v2/plans/events', () => r([makeEvent('m1', '原始标题')])));
+    renderWithClient();
+    await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(1));
+    expect(screen.getByTestId('home-month-event-title')).toHaveTextContent('乐观改期预览');
   });
 });
