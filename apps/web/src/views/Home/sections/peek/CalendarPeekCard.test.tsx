@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { useEffect } from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -61,20 +61,20 @@ interface AutoOpenProps {
 
 function AutoOpen({ event, list }: AutoOpenProps) {
   const peek = useCalendarPeek();
+
   useEffect(() => {
     peek.open(event, list);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
   return null;
 }
 
-function renderWithPeek(
-  event: PlanEventReadV2,
-  list: ReadonlyArray<CalendarPeekListEntry>,
-) {
+function renderWithPeek(event: PlanEventReadV2, list: ReadonlyArray<CalendarPeekListEntry>) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 }, mutations: { retry: false } },
   });
+
   return render(
     <QueryClientProvider client={client}>
       <CalendarPeekProvider>
@@ -94,6 +94,7 @@ describe('CalendarPeekCard', () => {
   it('renders into a portal escaping the consumer subtree', () => {
     const event = makeEvent('e1');
     const { container } = renderWithPeek(event, [{ id: 'e1', event }]);
+
     expect(container.querySelector('[data-testid="home-calendar-peek-card"]')).toBeNull();
     expect(screen.getByTestId('home-calendar-peek-card')).toBeInTheDocument();
   });
@@ -101,6 +102,7 @@ describe('CalendarPeekCard', () => {
   it('renders all six head buttons with placeholder disabled state', () => {
     const event = makeEvent('e1');
     renderWithPeek(event, [{ id: 'e1', event }]);
+
     expect(screen.getByTestId('home-calendar-peek-expand')).toBeDisabled();
     expect(screen.getByTestId('home-calendar-peek-copy')).toBeDisabled();
     expect(screen.getByTestId('home-calendar-peek-more')).toBeDisabled();
@@ -109,10 +111,11 @@ describe('CalendarPeekCard', () => {
     expect(screen.getByTestId('home-calendar-peek-next')).toBeDisabled();
   });
 
-  it('renders the eight property rows + notes section + banner', () => {
+  it('renders the eight property rows + notes section without a static banner in W3', () => {
     const event = makeEvent('e1');
     renderWithPeek(event, [{ id: 'e1', event }]);
-    const expectedTestIds = [
+
+    for (const testId of [
       'home-calendar-peek-time',
       'home-calendar-peek-kind',
       'home-calendar-peek-category',
@@ -121,23 +124,25 @@ describe('CalendarPeekCard', () => {
       'home-calendar-peek-linked',
       'home-calendar-peek-target',
       'home-calendar-peek-recurring',
-    ];
-    for (const id of expectedTestIds) {
-      expect(screen.getByTestId(id)).toBeInTheDocument();
+    ]) {
+      expect(screen.getByTestId(testId)).toBeInTheDocument();
     }
+
     expect(screen.getByTestId('home-calendar-peek-notes')).toHaveTextContent('Focus on main idea');
-    expect(screen.getByTestId('home-calendar-peek-readonly-banner')).toBeInTheDocument();
+    expect(screen.queryByTestId('home-calendar-peek-readonly-banner')).toBeNull();
   });
 
   it('falls back to the empty notes cue when notes is blank', () => {
     const event = makeEvent('e1', { notes: '' });
     renderWithPeek(event, [{ id: 'e1', event }]);
+
     expect(screen.getByTestId('home-calendar-peek-notes-empty')).toHaveTextContent('暂无备注');
   });
 
   it('Esc key closes the peek when idle', () => {
     const event = makeEvent('e1');
     renderWithPeek(event, [{ id: 'e1', event }]);
+
     expect(screen.getByTestId('home-calendar-peek-card')).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(screen.queryByTestId('home-calendar-peek-card')).toBeNull();
@@ -146,6 +151,7 @@ describe('CalendarPeekCard', () => {
   it('scrim click closes the peek when idle', () => {
     const event = makeEvent('e1');
     renderWithPeek(event, [{ id: 'e1', event }]);
+
     const overlay = screen.getByTestId('home-calendar-peek-overlay');
     fireEvent.click(overlay, { target: overlay, currentTarget: overlay });
     expect(screen.queryByTestId('home-calendar-peek-card')).toBeNull();
@@ -154,6 +160,7 @@ describe('CalendarPeekCard', () => {
   it('close button closes the peek when idle', () => {
     const event = makeEvent('e1');
     renderWithPeek(event, [{ id: 'e1', event }]);
+
     fireEvent.click(screen.getByTestId('home-calendar-peek-close'));
     expect(screen.queryByTestId('home-calendar-peek-card')).toBeNull();
   });
@@ -164,6 +171,7 @@ describe('CalendarPeekCard', () => {
       { id: 'b', event: makeEvent('b', { title: 'Event B' }) },
       { id: 'c', event: makeEvent('c', { title: 'Event C' }) },
     ];
+
     renderWithPeek(list[0].event, list);
     expect(screen.getByText('Event A')).toBeInTheDocument();
     fireEvent.keyDown(document, { key: 'ArrowDown' });
@@ -177,6 +185,7 @@ describe('CalendarPeekCard', () => {
   it('locks body scroll while open and restores it on close', () => {
     const event = makeEvent('e1');
     const { unmount } = renderWithPeek(event, [{ id: 'e1', event }]);
+
     expect(document.body.style.overflow).toBe('hidden');
     fireEvent.keyDown(document, { key: 'Escape' });
     expect(document.body.style.overflow).not.toBe('hidden');
@@ -190,8 +199,7 @@ describe('CalendarPeekCard', () => {
     renderWithPeek(event, [{ id: 'e1', event }]);
 
     await user.click(screen.getByTitle('edit-title'));
-    const editor = screen.getByTestId('home-calendar-peek-title-editor');
-    const input = within(editor).getByRole('textbox');
+    const input = within(screen.getByTestId('home-calendar-peek-title-editor')).getByRole('textbox');
     await user.clear(input);
     await user.type(input, 'Renamed title');
     await user.keyboard('{Enter}');
@@ -208,8 +216,7 @@ describe('CalendarPeekCard', () => {
     renderWithPeek(event, [{ id: 'e1', event }]);
 
     await user.click(screen.getByTitle('edit-notes'));
-    const editor = screen.getByTestId('home-calendar-peek-notes-editor');
-    const textarea = within(editor).getByRole('textbox');
+    const textarea = within(screen.getByTestId('home-calendar-peek-notes-editor')).getByRole('textbox');
     await user.clear(textarea);
     await user.type(textarea, 'Updated note');
     await user.keyboard('{Control>}{Enter}{/Control}');
@@ -275,6 +282,46 @@ describe('CalendarPeekCard', () => {
     await waitFor(() => {
       expect(mutateAsyncMock).toHaveBeenCalledWith('e1', { status: 'done' });
     });
+  });
+
+  it('focuses the prop editor combobox when entering edit mode', async () => {
+    const user = userEvent.setup();
+    const event = makeEvent('e1');
+    renderWithPeek(event, [{ id: 'e1', event }]);
+
+    await user.click(screen.getByTitle('edit-status'));
+    expect(within(screen.getByTestId('home-calendar-peek-status-editor')).getByRole('combobox')).toHaveFocus();
+  });
+
+  it('saves a prop editor with keyboard-only ArrowDown + Enter', async () => {
+    const user = userEvent.setup();
+    const event = makeEvent('e1');
+    mutateAsyncMock.mockResolvedValueOnce({ ...event, status: 'done' });
+    renderWithPeek(event, [{ id: 'e1', event }]);
+
+    await user.click(screen.getByTitle('edit-status'));
+    const combo = within(screen.getByTestId('home-calendar-peek-status-editor')).getByRole('combobox');
+    fireEvent.keyDown(combo, { key: 'ArrowDown' });
+    fireEvent.keyDown(combo, { key: 'Enter' });
+
+    await waitFor(() => {
+      expect(mutateAsyncMock).toHaveBeenCalledWith('e1', { status: 'done' });
+    });
+  });
+
+  it('cancels a prop editor on Escape without closing the peek', async () => {
+    const user = userEvent.setup();
+    const event = makeEvent('e1');
+    renderWithPeek(event, [{ id: 'e1', event }]);
+
+    await user.click(screen.getByTitle('edit-status'));
+    const combo = within(screen.getByTestId('home-calendar-peek-status-editor')).getByRole('combobox');
+    fireEvent.keyDown(combo, { key: 'Escape' });
+
+    await waitFor(() => {
+      expect(screen.queryByTestId('home-calendar-peek-status-editor')).toBeNull();
+    });
+    expect(screen.getByTestId('home-calendar-peek-card')).toBeInTheDocument();
   });
 
   it('rolls back status after a failed save and stays in editing state', async () => {
@@ -380,7 +427,7 @@ describe('CalendarPeekCard', () => {
     });
   });
 
-  it('has no axe violations while a W2 property editor is open', async () => {
+  it('has no axe violations while a prop editor is open', async () => {
     const user = userEvent.setup();
     const event = makeEvent('e1');
     renderWithPeek(event, [{ id: 'e1', event }]);

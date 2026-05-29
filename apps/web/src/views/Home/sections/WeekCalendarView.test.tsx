@@ -1,27 +1,26 @@
 import type { ReactNode } from 'react';
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { http, HttpResponse, delay } from 'msw';
+import { delay, http, HttpResponse } from 'msw';
 
 import { server } from '../../../mocks/server';
-import { WeekCalendarView } from './WeekCalendarView';
 import { createCalendarViewConfig } from './calendarViewConfig';
+import { WeekCalendarView } from './WeekCalendarView';
 
-function renderWithClient(
-  ui: ReactNode = <WeekCalendarView />,
-) {
+function renderWithClient(ui: ReactNode = <WeekCalendarView />) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0, staleTime: 0 } },
   });
+
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
 const pad = (n: number) => String(n).padStart(2, '0');
 const today = (() => {
-  const d = new Date();
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  const date = new Date();
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 })();
 
 const READY_EVENT = {
@@ -55,6 +54,7 @@ describe('WeekCalendarView', () => {
   it('renders the event in the matching early slot cell', async () => {
     server.use(http.get('/api/v2/plans/events', () => response([READY_EVENT])));
     renderWithClient();
+
     await waitFor(() => expect(screen.getAllByTestId('home-week-event')).toHaveLength(1));
     expect(screen.getByTestId(`home-week-cell-${today}-0`)).toContainElement(
       screen.getByTestId('home-week-event'),
@@ -71,6 +71,7 @@ describe('WeekCalendarView', () => {
     }));
     server.use(http.get('/api/v2/plans/events', () => response(events)));
     renderWithClient();
+
     await waitFor(() => expect(screen.getAllByTestId('home-week-event')).toHaveLength(4));
     expect(screen.getByTestId(`home-week-event-list-${today}-0`)).toHaveAttribute('data-scrollable', 'true');
   });
@@ -85,10 +86,9 @@ describe('WeekCalendarView', () => {
     }));
     server.use(http.get('/api/v2/plans/events', () => response(events)));
     renderWithClient(
-      <WeekCalendarView
-        viewConfig={createCalendarViewConfig({ view: 'week', cardLimitPerCell: 2 })}
-      />,
+      <WeekCalendarView viewConfig={createCalendarViewConfig({ view: 'week', cardLimitPerCell: 2 })} />,
     );
+
     await waitFor(() => expect(screen.getAllByTestId('home-week-event')).toHaveLength(4));
     expect(screen.getByTestId(`home-week-event-list-${today}-0`)).toHaveStyle({
       maxHeight: 'calc(2 * var(--space-6) + 1 * var(--space-1))',
@@ -98,6 +98,7 @@ describe('WeekCalendarView', () => {
   it('reuses MonthEventChip read-only', async () => {
     server.use(http.get('/api/v2/plans/events', () => response([READY_EVENT])));
     renderWithClient();
+
     await waitFor(() => expect(screen.getByTestId('home-month-event')).toBeInTheDocument());
     const chip = screen.getByTestId('home-month-event');
     expect(chip).toHaveAttribute('data-tone');
@@ -105,19 +106,29 @@ describe('WeekCalendarView', () => {
     expect(chip).not.toHaveAttribute('data-dragging');
   });
 
-  it('opens the read-only peek when a week chip is clicked', async () => {
+  it('opens the fully-editable peek when a week chip is clicked', async () => {
     const user = userEvent.setup();
-    server.use(http.get('/api/v2/plans/events', () => response([{
-      ...READY_EVENT,
-      notes: 'Week peek note',
-      targetId: 'target-1',
-      linkedSessionId: 'session-9',
-    }])));
+    server.use(
+      http.get(
+        '/api/v2/plans/events',
+        () =>
+          response([
+            {
+              ...READY_EVENT,
+              notes: 'Week peek note',
+              targetId: 23,
+              linkedSessionId: 9,
+            },
+          ]),
+      ),
+    );
     renderWithClient();
+
     await waitFor(() => expect(screen.getByTestId('home-month-event')).toBeInTheDocument());
     await user.click(screen.getByTestId('home-month-event'));
     await waitFor(() => expect(screen.getByTestId('home-calendar-peek-card')).toBeInTheDocument());
-    expect(screen.getByTestId('home-calendar-peek-readonly-banner')).toBeInTheDocument();
+
+    expect(screen.queryByTestId('home-calendar-peek-readonly-banner')).toBeNull();
     expect(screen.getByTestId('home-calendar-peek-source')).toBeInTheDocument();
     expect(screen.getByTestId('home-calendar-peek-target')).toBeInTheDocument();
     expect(screen.getByTestId('home-calendar-peek-linked')).toBeInTheDocument();
@@ -127,6 +138,7 @@ describe('WeekCalendarView', () => {
   it('preserves the real event id on the chip and uses peekAnchorId separately', async () => {
     server.use(http.get('/api/v2/plans/events', () => response([READY_EVENT])));
     renderWithClient();
+
     await waitFor(() => expect(screen.getByTestId('home-month-event')).toBeInTheDocument());
     const chip = screen.getByTestId('home-month-event');
     expect(chip).toHaveAttribute('data-event-id', READY_EVENT.id);
@@ -138,13 +150,20 @@ describe('WeekCalendarView', () => {
     const user = userEvent.setup();
     const monday = '2026-05-25';
     const tuesday = '2026-05-26';
-    server.use(http.get('/api/v2/plans/events', () => response([
-      { ...READY_EVENT, id: 'mon-noon', title: 'Monday noon', startAt: `${monday}T12:00:00+08:00`, endAt: `${monday}T13:00:00+08:00` },
-      { ...READY_EVENT, id: 'mon-evening', title: 'Monday evening', startAt: `${monday}T18:00:00+08:00`, endAt: `${monday}T19:00:00+08:00` },
-      { ...READY_EVENT, id: 'tue-morning', title: 'Tuesday morning', startAt: `${tuesday}T08:00:00+08:00`, endAt: `${tuesday}T09:00:00+08:00` },
-      { ...READY_EVENT, id: 'tue-noon', title: 'Tuesday noon', startAt: `${tuesday}T12:00:00+08:00`, endAt: `${tuesday}T13:00:00+08:00` },
-    ])));
+    server.use(
+      http.get(
+        '/api/v2/plans/events',
+        () =>
+          response([
+            { ...READY_EVENT, id: 'mon-noon', title: 'Monday noon', startAt: `${monday}T12:00:00+08:00`, endAt: `${monday}T13:00:00+08:00` },
+            { ...READY_EVENT, id: 'mon-evening', title: 'Monday evening', startAt: `${monday}T18:00:00+08:00`, endAt: `${monday}T19:00:00+08:00` },
+            { ...READY_EVENT, id: 'tue-morning', title: 'Tuesday morning', startAt: `${tuesday}T08:00:00+08:00`, endAt: `${tuesday}T09:00:00+08:00` },
+            { ...READY_EVENT, id: 'tue-noon', title: 'Tuesday noon', startAt: `${tuesday}T12:00:00+08:00`, endAt: `${tuesday}T13:00:00+08:00` },
+          ]),
+      ),
+    );
     renderWithClient();
+
     await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(4));
     await user.click(screen.getByText('Monday noon'));
     await waitFor(() => expect(screen.getByTestId('home-calendar-peek-card')).toBeInTheDocument());
@@ -155,26 +174,27 @@ describe('WeekCalendarView', () => {
   it('renders Sunday-first DOW labels when startWeekOnMonday=false', async () => {
     server.use(http.get('/api/v2/plans/events', () => response([READY_EVENT])));
     renderWithClient(
-      <WeekCalendarView
-        viewConfig={createCalendarViewConfig({ view: 'week', startWeekOnMonday: false })}
-      />,
+      <WeekCalendarView viewConfig={createCalendarViewConfig({ view: 'week', startWeekOnMonday: false })} />,
     );
+
     await waitFor(() => expect(screen.getAllByRole('columnheader')).toHaveLength(7));
     const labels = screen
       .getAllByRole('columnheader')
-      .map((el) => (el.querySelector('span:first-child')?.textContent ?? '').replace(' · 今日', ''));
+      .map((element) => (element.querySelector('span:first-child')?.textContent ?? '').replace(' · 今日', ''));
     expect(labels).toEqual(['周日', '周一', '周二', '周三', '周四', '周五', '周六']);
   });
 
   it('renders EmptyState when API returns []', async () => {
     server.use(http.get('/api/v2/plans/events', () => response([])));
     renderWithClient();
+
     await waitFor(() => expect(screen.getByTestId('home-week-empty')).toBeInTheDocument());
   });
 
   it('renders ErrorCard on 500', async () => {
     server.use(http.get('/api/v2/plans/events', () => HttpResponse.json({}, { status: 500 })));
     renderWithClient();
+
     await waitFor(() => expect(screen.getByTestId('home-week-error')).toBeInTheDocument());
     expect(screen.getByRole('button', { name: '重试' })).toBeInTheDocument();
   });
@@ -187,6 +207,7 @@ describe('WeekCalendarView', () => {
       }),
     );
     renderWithClient();
+
     expect(screen.getByTestId('home-week-loading')).toBeInTheDocument();
     await waitFor(() => expect(screen.queryByTestId('home-week-loading')).not.toBeInTheDocument());
   });
