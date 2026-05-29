@@ -46,6 +46,24 @@
   border-right: 1px dashed var(--color-border-default);
 }
 
+/* SIK-139 W1: dragging state (visual contract §4). The chip lifts one
+ * shadow layer (--cal-drag-shadow = --shadow-l2) and softens opacity so it
+ * reads as "picked up", with geometry unchanged. dnd-kit applies an inline
+ * transform during the drag; this rule only owns the surface treatment. */
+.chip[data-dragging='true'] {
+  box-shadow: var(--cal-drag-shadow);
+  opacity: var(--cal-drag-opacity);
+  cursor: grabbing;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* NF-A11y §7.2: drop the drag opacity shift when the user prefers reduced
+   * motion; the lift shadow alone signals the dragging state. */
+  .chip[data-dragging='true'] {
+    opacity: 1;
+  }
+}
+
 .titles {
   display: flex;
   flex-direction: column;
