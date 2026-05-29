@@ -763,6 +763,16 @@ em, i { font-style: normal; }
   --cal-chip-padding-x:   var(--space-2);
   --cal-status-dot-size:  8px;
   --cal-icon-size:        12px;
+
+  /* §8.3 calendar drag tokens — SIK-139 W1 (Phase 3 drag-drop).
+   * Visual contract docs/plan/sik-139-calendar-drag-drop-visual-contract.md
+   * §4 derives the dragging chip from Design-System §B `dragging` state:
+   * lift one shadow layer (--shadow-l2 = the card-hover lift) and drop a
+   * touch of opacity so the chip reads as "picked up" without changing
+   * geometry. Token single-source per Requirement 9 — no per-component
+   * literals, no prototype vars, no color-mix percentages. */
+  --cal-drag-shadow:   var(--shadow-l2);
+  --cal-drag-opacity:  0.85;
 }
 
 [data-v5-theme='dark'],
