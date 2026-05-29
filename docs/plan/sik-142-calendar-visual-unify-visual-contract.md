@@ -278,9 +278,9 @@ SIK-138 chip 占 7 通道（kind 边色 / title / category / status dot / source
 | A8 月视图 3 周 rolling（21 格） | renderMonth L1789-1815 | buildMonthCells | **PASS**（W2：42→21；Monday-first 默认窗口 2026-05-25→2026-06-14，Sunday-first 配置窗口 2026-05-24→2026-06-13，单测锁定） |
 | A9 月视图 `repeat(3,1fr)` + overflow hidden | `.view-month .cal-body` L862-866 | MonthCalendarView.module.css | **PASS**（W2：browser smoke 1440/1920 均为 3 rows，`bodyOverflow=hidden`，grid rows 等比分配） |
 | A10 prev/next ±3 周翻页 | n/a（原型 anchor 推导） | CalendarPanel handlePrev/Next | **PASS**（W2：month 模式 aria-label=`上 3 周/下 3 周`，anchor 按 21 天步进；CalendarPanel.test.tsx 覆盖） |
-| A11 月+周 cell ≤3 条 | `top3 = slice(0,3)` L1804 | calendarViewConfig cardLimitPerCell | 待 W3 |
-| A12 格内滑动无滚动条 | `.view-today` 隐藏滚动条 L778-786 | Month/Week cell CSS | 待 W3 |
-| A13 去 `+N 更多` | §5 C3 | MonthCalendarView.tsx | 待 W3 |
+| A11 月+周 cell ≤3 条 | `top3 = slice(0,3)` L1804 | calendarViewConfig cardLimitPerCell | **PASS**（W3：week 默认 `cardLimitPerCell=3`；month/week/DnD 列表窗口都由 `cardLimitPerCell` 真正驱动，custom=2 单测锁定） |
+| A12 格内滑动无滚动条 | `.view-today` 隐藏滚动条 L778-786 | Month/Week cell CSS | **PASS**（W3：month `eventList` / week `dayEventList` 均 `overflow-y:auto` + `scrollbar-width:none` + `::-webkit-scrollbar{display:none}`） |
+| A13 去 `+N 更多` | §5 C3 | MonthCalendarView.tsx | **PASS**（W3：month static + DnD grid 全量渲染事件、`home-month-overflow` 移除，回归测试断言 not present） |
 | A14 删 today 视图 + 类型收窄 | §5 C4 | TodayCalendarView 删 + 3 处 union | 待 W4 |
 | A15 去 countdown chip | §5 C5 | CalendarPanel.tsx | 待 W4 |
 | A16 persisted 'today' 归一 'week' | §5 C4 / H7 | calendarViewConfig preferenceKeys | 待 W4 |
