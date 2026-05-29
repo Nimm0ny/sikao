@@ -35,4 +35,14 @@ describe('useCalendarDragSensors (SIK-139 W1)', () => {
     });
     expect(POINTER_ACTIVATION_DISTANCE_PX).toBeGreaterThan(0);
   });
+
+  it('wires the KeyboardSensor with the custom day-cell coordinateGetter (W4 whole-day stepping)', () => {
+    const { result } = renderHook(() => useCalendarDragSensors());
+    const keyboard = result.current.find((d) => d.sensor === KeyboardSensor);
+    expect(keyboard).toBeDefined();
+    // Requirement 5: arrow keys must step by whole day cells, so the sensor
+    // carries a custom coordinateGetter rather than dnd-kit's pixel default.
+    const options = keyboard?.options as { coordinateGetter?: unknown };
+    expect(typeof options.coordinateGetter).toBe('function');
+  });
 });
