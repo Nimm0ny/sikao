@@ -85,23 +85,13 @@
   opacity: 0.6;
 }
 
-.dayEvent {
-  display: block;
-  font-size: 10.5px; /* spacing-allow: prototype week chip 10.5px */
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-10);
-  background: var(--color-bg-elevated);
-  border-left: 2px solid var(--color-text-meta);
-  color: var(--color-text-primary);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+.dayEventSlot {
+  /* SIK-142 W1: week reuses MonthEventChip; the slot is just a width-100%
+   * flex wrapper so the chip fills the cell. Geometry / tone / color live in
+   * MonthEventChip + the --cal-* tokens (no per-kind selectors here). */
+  display: flex;
+  min-width: 0;
 }
-
-.dayEvent[data-kind='plan']      { background: var(--color-bg-elevated); border-left-color: var(--color-text-primary); }
-.dayEvent[data-kind='practice']  { background: var(--color-brand-soft); border-left-color: var(--color-brand-primary); }
-.dayEvent[data-kind='mock']      { background: var(--color-brand-primary); border-left-color: var(--color-text-primary); }
-.dayEvent[data-kind='milestone'] { background: var(--color-state-err-soft); border-left-color: var(--color-state-err); color: var(--color-text-primary); }
 
 .stateWrap {
   padding: var(--space-5) var(--space-4);

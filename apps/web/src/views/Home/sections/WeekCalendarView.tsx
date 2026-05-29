@@ -2,11 +2,11 @@
 // visual contract from `.tmp_review/out/Tab1-Home/Home v2.1.html`.
 import { useMemo } from 'react';
 import { useEvents } from '@sikao/api-client/plansQueries';
-import { buildViewRange } from '@sikao/calendar-engine';
+import { buildViewRange, type CrossDaySlice } from '@sikao/calendar-engine';
 import { usePlanStore } from '@sikao/domain';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
-import { eventKindOf } from './eventKind';
+import { MonthEventChip } from './MonthEventChip';
 import { expandPlanEventsForView, type EnrichedOccurrence } from './calendarEvents';
 import {
   createDefaultCalendarViewConfig,
@@ -75,6 +75,24 @@ function slotForHour(hour: number): SlotIndex {
   return 2; // 晚上 (18-23 + 0-5)
 }
 
+/**
+ * Build a single-day slice for a week occurrence so MonthEventChip can anchor
+ * its tone (§3.2) on the occurrence's local day. The week buckets one chip per
+ * (day, slot) and never spans cells, so `day` = the occurrence start day and
+ * both slice ends mark a complete (non-cross-day) slice.
+ */
+function weekDaySlice(item: EnrichedOccurrence): CrossDaySlice {
+  const day = localStamp(new Date(item.occurrence.startAt));
+  return {
+    occurrenceRef: item.occurrence.occurrenceRef,
+    day,
+    sliceStartAt: item.occurrence.startAt,
+    sliceEndAt: item.occurrence.endAt,
+    isStartSlice: true,
+    isEndSlice: true,
+  };
+}
+
 function bucketEvents(items: ReadonlyArray<EnrichedOccurrence>): Map<string, EnrichedOccurrence[]> {
   // Key = `{stamp}|{slotIndex}` — one bucket per (day, time-of-day slot).
   const map = new Map<string, EnrichedOccurrence[]>();
@@ -88,15 +106,12 @@ function bucketEvents(items: ReadonlyArray<EnrichedOccurrence>): Map<string, Enr
   return map;
 }
 
-function formatChip(item: EnrichedOccurrence): string {
-  const start = new Date(item.occurrence.startAt);
-  return `${item.event.title} · ${pad(start.getHours())}:${pad(start.getMinutes())}`;
-}
-
-function WeekGrid({ days, eventsByCell, dowLabels }: {
+function WeekGrid({ days, eventsByCell, dowLabels, visibleProperties, today }: {
   readonly days: ReadonlyArray<WeekDay>;
   readonly eventsByCell: ReadonlyMap<string, ReadonlyArray<EnrichedOccurrence>>;
   readonly dowLabels: ReadonlyArray<string>;
+  readonly visibleProperties: CalendarViewConfig['visibleProperties'];
+  readonly today: string;
 }) {
   // Cells are laid out row-first: slot 0 across all 7 days, slot 1, slot 2.
   const slotIndices: ReadonlyArray<SlotIndex> = [0, 1, 2];
@@ -135,15 +150,21 @@ function WeekGrid({ days, eventsByCell, dowLabels }: {
                   <span className={styles.dcEmpty}>无安排</span>
                 ) : (
                   bucket.map((item) => (
-                    <span
+                    // SIK-142 W1: week reuses MonthEventChip for unified
+                    // geometry / tone / channels. Read-only here (no drag, no
+                    // onClick); W5 wires onClick → read-only Peek.
+                    <div
                       key={item.occurrence.id}
-                      className={styles.dayEvent}
-                      data-kind={eventKindOf(item.event)}
+                      className={styles.dayEventSlot}
                       data-testid="home-week-event"
-                      title={item.event.title}
                     >
-                      {formatChip(item)}
-                    </span>
+                      <MonthEventChip
+                        event={item.event}
+                        slice={weekDaySlice(item)}
+                        visibleProperties={visibleProperties}
+                        today={today}
+                      />
+                    </div>
                   ))
                 )}
               </div>
@@ -200,7 +221,13 @@ export function WeekCalendarView({ viewConfig }: WeekCalendarViewProps = {}) {
         </div>
       ) : null}
       {query.isSuccess && total > 0 ? (
-        <WeekGrid days={days} eventsByCell={eventsByCell} dowLabels={dowLabels} />
+        <WeekGrid
+          days={days}
+          eventsByCell={eventsByCell}
+          dowLabels={dowLabels}
+          visibleProperties={config.visibleProperties}
+          today={todayStamp()}
+        />
       ) : null}
     </div>
   );
