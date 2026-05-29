@@ -273,6 +273,7 @@ function MonthCalendarViewBody({ viewConfig }: MonthCalendarViewProps) {
             dowLabels={dowLabels}
             cardLimitPerCell={config.cardLimitPerCell}
             visibleProperties={config.visibleProperties}
+            window={window}
           />
         </Suspense>
       ) : null}

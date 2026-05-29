@@ -74,6 +74,7 @@ function renderGrid(items: ReadonlyArray<MonthDaySlice>) {
           dowLabels={DOW}
           cardLimitPerCell={3}
           visibleProperties={DEFAULT_PROPS}
+          window={{ from: '2026-04-30T16:00:00.000Z', to: '2026-05-31T15:59:59.999Z' }}
         />
         <CalendarPeekCard />
       </CalendarPeekProvider>

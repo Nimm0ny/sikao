@@ -50,7 +50,15 @@ import {
 } from './resolveCalendarDrop';
 import { commitReschedule } from './commitReschedule';
 import { useRescheduleEvent } from './useRescheduleEvent';
+import { checkDropConflicts, type ConflictWindow } from './conflictGuard';
+import { buildProposedEvent } from './proposedEvent';
+import { runConflictGate } from './runConflictGate';
+import { ConflictConfirmDialog } from './ConflictConfirmDialog';
+import type { EventConflictItemV2 } from '@sikao/api-client/types/home';
 import styles from '../MonthCalendarView.module.css';
+
+/** Calendar render zone — drives the conflict window date mapping (H6). */
+const TZ = 'Asia/Shanghai';
 
 export interface MonthCellModel {
   readonly stamp: string;
@@ -65,6 +73,10 @@ export interface MonthGridDndProps {
   readonly dowLabels: ReadonlyArray<string>;
   readonly cardLimitPerCell: number;
   readonly visibleProperties: readonly CalendarCardProperty[];
+  // SIK-139 W3: the month view window (ISO datetimes from buildViewRange),
+  // forwarded so the conflict pre-check can scope `detectEventConflicts` to
+  // what the grid actually shows.
+  readonly window: ConflictWindow;
 }
 
 /** Stable per-slice entry id — the draggable handle + peek anchor. */
@@ -99,6 +111,12 @@ function DraggableChip({
       startAt: item.event.startAt,
       endAt: item.event.endAt,
       title: item.event.title,
+      // SIK-139 W3: descriptive fields the conflict pre-check builds the
+      // proposed event from (alongside the shifted times). Carried on the
+      // drag data so the gate stays off the chip's render path.
+      category: item.event.category,
+      timezone: item.event.timezone,
+      recurringRule: item.event.recurringRule,
     },
   });
   return (
@@ -148,6 +166,7 @@ function MonthGridDndInner({
   dowLabels,
   cardLimitPerCell,
   visibleProperties,
+  window,
 }: MonthGridDndProps) {
   const peek = useCalendarPeek();
   // SIK-139 W0 (D20): read-time optimistic patches keyed by real event id.
@@ -168,6 +187,14 @@ function MonthGridDndInner({
   // This is transient UI state, NOT a reschedule target (Wave 2).
   const [activeDragId, setActiveDragId] = useState<UniqueIdentifier | null>(null);
 
+  // SIK-139 W3: the conflict confirm dialog state. When the pre-check finds
+  // conflicts the reschedule is HELD here (decision + conflict list) until the
+  // user confirms (commit) or cancels (drop it — no store write, no PATCH).
+  const [pendingConflict, setPendingConflict] = useState<{
+    readonly decision: Extract<CalendarDropDecision, { kind: 'reschedule' }>;
+    readonly conflicts: readonly EventConflictItemV2[];
+  } | null>(null);
+
   const peekList = useMemo<ReadonlyArray<CalendarPeekListEntry>>(() => {
     const out: CalendarPeekListEntry[] = [];
     for (const cell of cells) {
@@ -180,23 +207,32 @@ function MonthGridDndInner({
     return out;
   }, [cells, eventsByDay, cardLimitPerCell]);
 
-  // SIK-139 W2: drop → reschedule. onDragEnd resolves the dragged event +
-  // drop-target day, computes the shifted times (pure rescheduleEvent),
-  // writes an optimistic patch, then PATCHes. On success the optimistic
-  // placeholder is dropped (the invalidated refetch becomes the truth); on
-  // failure it is rolled back and the error is surfaced via toast.
-  //
-  // AGENT-H7 (Requirement 6, no silent catch):
-  //   - drop outside any cell (over == null) → cancel, no side effect
-  //   - same-day drop (delta 0) → no-op, no request
-  //   - rescheduleEvent throws on malformed input → caught ONLY to surface a
-  //     toast + skip the request (not swallowed silently); no optimistic
-  //     write has happened yet at that point
-  //   - mutation reject → removeOptimisticEvent rollback + error toast
+  // SIK-139 W2 commit: optimistic write → PATCH → success-clear / reject
+  // rollback + toast. Extracted (W2 review M-1) so it is unit-tested without a
+  // real dnd drop. W3 reuses it verbatim from BOTH the conflict-clear path and
+  // the post-confirm path — the W2 contract is unchanged.
+  function runCommit(decision: Extract<CalendarDropDecision, { kind: 'reschedule' }>): void {
+    commitReschedule(decision, {
+      upsertOptimisticEvent,
+      removeOptimisticEvent,
+      mutate: (variables, callbacks) => reschedule.mutate(variables, callbacks),
+      notifyError: (title) => toast.error('改期失败', `「${title}」未能改期，请重试`),
+    });
+  }
+
   function handleDragStart(event: DragStartEvent): void {
     setActiveDragId(event.active.id);
   }
 
+  // SIK-139 W3: drop → conflict gate → reschedule. After the W2 decision
+  // resolves a reschedule, a landing-conflict pre-check runs BEFORE any commit
+  // (design "W3 Conflict Check Design"). The three outcomes are kept strictly
+  // apart (AGENT-H7 / design Decisions 1):
+  //   - no conflicts        → commit straight away (W2 path unchanged)
+  //   - conflicts found     → hold the decision + open the confirm dialog
+  //   - detect request FAILS → toast + DO NOT commit (never "no conflict")
+  // Non-reschedule decisions (cancel / noop) and malformed-time throws keep
+  // their W2 behavior.
   function handleDragEnd(event: DragEndEvent): void {
     setActiveDragId(null);
     const data = (event.active.data.current ?? null) as DropDragData | null;
@@ -211,73 +247,101 @@ function MonthGridDndInner({
       throw err instanceof Error ? err : new Error(String(err));
     }
 
-    if (decision.kind !== 'reschedule') {
+    if (decision.kind !== 'reschedule' || data == null) {
       return; // 'cancel' (outside / no data) or 'noop' (same day)
     }
 
-    // Orchestration extracted to commitReschedule (W2 review M-1) so the
-    // optimistic-write → PATCH → success-clear / reject-rollback path is
-    // unit-tested without driving a real dnd drop. Behavior is unchanged.
-    commitReschedule(decision, {
-      upsertOptimisticEvent,
-      removeOptimisticEvent,
-      mutate: (variables, callbacks) => reschedule.mutate(variables, callbacks),
-      notifyError: (title) => toast.error('改期失败', `「${title}」未能改期，请重试`),
-    });
+    const proposed = buildProposedEvent(
+      { title: data.title, category: data.category ?? '', timezone: data.timezone, recurringRule: data.recurringRule },
+      { startAt: decision.startAt, endAt: decision.endAt },
+      TZ,
+    );
+    void runConflictGate(
+      { proposed, window, timeZone: TZ },
+      {
+        check: (input) => checkDropConflicts(input),
+        onClear: () => runCommit(decision),
+        onConflict: (conflicts) => setPendingConflict({ decision, conflicts }),
+        // H7: a failed detect is an ERROR — surface it and do NOT commit.
+        onError: () => toast.error('改期失败', '落点冲突校验未完成，请重试'),
+      },
+    );
   }
 
   function handleDragCancel(): void {
     setActiveDragId(null);
   }
 
+  // Dialog confirm: user accepts the conflict → run the held commit (W2 path).
+  function handleConflictConfirm(): void {
+    if (pendingConflict == null) return;
+    const { decision } = pendingConflict;
+    setPendingConflict(null);
+    runCommit(decision);
+  }
+
+  // Dialog cancel / Esc / scrim: drop the held decision — no store write, no
+  // PATCH (AGENT-H7 clean exit).
+  function handleConflictCancel(): void {
+    setPendingConflict(null);
+  }
+
   return (
-    <DndContext
-      sensors={sensors}
-      onDragStart={handleDragStart}
-      onDragEnd={handleDragEnd}
-      onDragCancel={handleDragCancel}
-    >
-      <div className={styles.dowRow} role="row">
-        {dowLabels.map((label) => (
-          <div key={label} className={styles.dowCell} role="columnheader">{label}</div>
-        ))}
-      </div>
-      <div className={styles.bodyScroll}>
-        <div className={styles.gridBody} role="grid" aria-label="本月日历" data-dnd-active={activeDragId != null || undefined}>
-          {cells.map((cell) => {
-            const items = eventsByDay.get(cell.stamp) ?? [];
-            const visible = items.slice(0, cardLimitPerCell);
-            const overflow = items.length - visible.length;
-            return (
-              <DroppableCell key={cell.stamp} cell={cell}>
-                <span className={styles.dom}>{cell.dom}</span>
-                <ul className={styles.eventList}>
-                  {visible.map((item) => {
-                    const entryId = entryIdOf(item.slice);
-                    return (
-                      <li key={entryId} className={styles.eventListItem}>
-                        <DraggableChip
-                          item={item}
-                          entryId={entryId}
-                          visibleProperties={visibleProperties}
-                          optimisticPatch={optimisticEvents.get(item.event.id)}
-                          onOpen={() => peek.open({ ...item.event, id: entryId }, peekList)}
-                        />
-                      </li>
-                    );
-                  })}
-                  {overflow > 0 ? (
-                    <li className={styles.moreLabel} data-testid="home-month-overflow">
-                      +{overflow} 更多
-                    </li>
-                  ) : null}
-                </ul>
-              </DroppableCell>
-            );
-          })}
+    <>
+      <DndContext
+        sensors={sensors}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={handleDragCancel}
+      >
+        <div className={styles.dowRow} role="row">
+          {dowLabels.map((label) => (
+            <div key={label} className={styles.dowCell} role="columnheader">{label}</div>
+          ))}
         </div>
-      </div>
-    </DndContext>
+        <div className={styles.bodyScroll}>
+          <div className={styles.gridBody} role="grid" aria-label="本月日历" data-dnd-active={activeDragId != null || undefined}>
+            {cells.map((cell) => {
+              const items = eventsByDay.get(cell.stamp) ?? [];
+              const visible = items.slice(0, cardLimitPerCell);
+              const overflow = items.length - visible.length;
+              return (
+                <DroppableCell key={cell.stamp} cell={cell}>
+                  <span className={styles.dom}>{cell.dom}</span>
+                  <ul className={styles.eventList}>
+                    {visible.map((item) => {
+                      const entryId = entryIdOf(item.slice);
+                      return (
+                        <li key={entryId} className={styles.eventListItem}>
+                          <DraggableChip
+                            item={item}
+                            entryId={entryId}
+                            visibleProperties={visibleProperties}
+                            optimisticPatch={optimisticEvents.get(item.event.id)}
+                            onOpen={() => peek.open({ ...item.event, id: entryId }, peekList)}
+                          />
+                        </li>
+                      );
+                    })}
+                    {overflow > 0 ? (
+                      <li className={styles.moreLabel} data-testid="home-month-overflow">
+                        +{overflow} 更多
+                      </li>
+                    ) : null}
+                  </ul>
+                </DroppableCell>
+              );
+            })}
+          </div>
+        </div>
+      </DndContext>
+      <ConflictConfirmDialog
+        open={pendingConflict != null}
+        conflicts={pendingConflict?.conflicts ?? []}
+        onConfirm={handleConflictConfirm}
+        onCancel={handleConflictCancel}
+      />
+    </>
   );
 }
 
