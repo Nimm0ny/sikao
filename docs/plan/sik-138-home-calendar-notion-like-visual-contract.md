@@ -150,7 +150,7 @@ prototype:
 | `prev / today / next / +` 四按钮齐全    | mock 369, 594, 631                                       | `apps/web/src/views/Home/sections/CalendarPanel.tsx`                                       | PASS |
 | countdown chip 存在并与四按钮同列       | mock 370, 595, 632                                       | `apps/web/src/views/Home/sections/CalendarPanel.tsx`                                       | PASS |
 | month 默认 `cardLimitPerCell=3`         | requirements 90-111；mock 359, 434-440                   | `apps/web/src/views/Home/sections/calendarViewConfig/factory.ts` + `MonthCalendarView.tsx` | PASS |
-| overflow 文案为 `+N 更多`               | mock 235, 252, 306, 440                                  | `apps/web/src/views/Home/sections/MonthCalendarView.tsx` + `WeekCalendarView.tsx`          | PASS |
+| overflow 文案为 `+N 更多`               | mock 235, 252, 306, 440                                  | `apps/web/src/views/Home/sections/MonthCalendarView.tsx`（Month only，见 §8.3 row 3）       | PASS |
 | chip click 打开 Peek                    | mock 642-677, 1466-1473                                  | `apps/web/src/views/Home/sections/peek/CalendarPeekProvider.tsx` + `useCalendarPeek.ts`    | PASS |
 | Peek 顶 bar 6 按钮齐全                  | mock 660-669                                             | `apps/web/src/views/Home/sections/peek/CalendarPeekHead.tsx`                               | PASS |
 | Peek 8 行属性齐全                       | mock 1424-1445                                           | `apps/web/src/views/Home/sections/peek/CalendarPeekProperties.tsx`                         | PASS |
@@ -234,3 +234,12 @@ W7 Verifier closeout. All 16 §7 rows marked `PASS` based on the evidence below.
 | Prototype next-prev wraps modulo `allChips.length` | Prototype cycles through every chip across §1-§5 demo zones (≈58 candidates) | Implementation cycles only within the currently mounted view's chips      | Prototype is a multi-section demo page; implementation Peek scopes navigation to the active CalendarView. This is consistent with W6 design and not a regression                                                                      | descriptive only; not flagged as drift in spec |
 | WeekCalendarView lacks `+N 更多` overflow chip    | mock §5 shows `+1 项` overflow chip in week cell                              | implementation week view buckets all events into early/noon/evening lanes | mock copy was unified to `+N 更多` (§6 row 5), and the contract row points to both Month and Week implementations; in practice only Month overflows with the current cell sizing. No W7 regression; row remains PASS via Month implementation | descriptive nuance, no drift on contract intent |
 
+
+### 8.4 Independent Review Disposition (W7)
+
+Independent review: `docs/reviews/sik-138-w7.md` — Decision `review pass`, `0 high / 0 medium / 2 low`.
+
+| Finding | Severity | Disposition                                                                                                                                                                                            |
+| ------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| F1      | low      | a11y command wording differs across §7 note (`pnpm --filter`), §8.1 (`npm --prefix apps/web run test:a11y`), and the log (`vitest run ...`). All three resolve to the same vitest a11y suite / target file; log shows `13 passed (13)` exit 0. Documentation wording only, no evidence gap. Left as-is by design (both invocation styles are valid in this repo). |
+| F2      | low      | §7 row 6 implementation cell previously listed both `MonthCalendarView.tsx` and `WeekCalendarView.tsx`; only Month has an overflow render path. Fixed: §7 row 6 now reads `MonthCalendarView.tsx（Month only，见 §8.3 row 3）`. |
