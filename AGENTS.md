@@ -35,7 +35,7 @@
    If conflict: 未声明模式，不得实现。
 
 3. `AGENT-H3 Capability Preflight`
-   Trigger: 每个任务开工前，尤其是 browser / subagent / MCP / Multica / shell 相关任务。
+   Trigger: 每个任务开工前，尤其是 browser / subagent / MCP / Notion / shell 相关任务。
    Must: 先确认能力边界，不得假装工具可用。
    If conflict: 工具不可用时 fail-fast；不得静默降级。
 
@@ -96,7 +96,7 @@
 
 1. 声明模式。
 2. 跑 Tool Capability Preflight。
-3. 任务来自 Multica 时，先做 intake：`issue get/comment list/runs`，再切 `in_progress`。
+3. 任务来自 Notion 时，先做 intake：`mcp_notion_notion_search` 找 page → `mcp_notion_notion_fetch(include_discussions=true)` 读 issue + comments → 按 Issues relation filter Work Log，再切 `Status=In Progress`（详见 `docs/engineering/notion-workflow.md` §Standard 4-Action）。
 4. 命中稳定边界变更时先 Define-First；命中实现任务时按 `RED -> GREEN -> REFACTOR` 走 TDD。
 5. 交付前必须过：review gate、validation gate、Evidence Block / 状态回写 gate。
 
@@ -110,7 +110,7 @@
 - [ ] 视觉/前端任务已附 实现 vs 原型 对照表（PASS / 偏离）+ `1440/1920` Chrome MCP 双开 diff 截图（H11）
 - [ ] 需要时已完成独立 subagent review，且 review 报告落档到 `docs/reviews/<sik>-<wave>.md`
 - [ ] `typecheck / lint / tests / browser smoke`（适用项）都有 PASS 证据
-- [ ] Multica 任务已回写 Evidence Block
+- [ ] Notion 任务已回写 Evidence Block（issue body + Work Log Type=Evidence）
 - [ ] 若修改 `AGENTS.md` / `CLAUDE.md`，两份文件已同步
 - [ ] 若存在硬规则冲突，已显式指出并处理，而不是静默继续
 
@@ -119,9 +119,9 @@
 本节是可直接执行的根级说明，不依赖链接或脚本解释。
 
 1. Preflight
-   - 必须确认当前 agent 类型、shell、git、Multica、subagent、MCP、browser MCP、dev server 能力。
+   - 必须确认当前 agent 类型、shell、git、Notion MCP、subagent、MCP、browser MCP、dev server 能力。
    - 必须确认 `AGENTS.md` / `CLAUDE.md` 同步。
-   - 任务来自 Multica 时必须先读 issue / comments / runs。
+   - 任务来自 Notion 时必须先读 issue page + discussions + 关联 Work Log。
 
 2. Review Gate
    - 文档新增 `>50` 行、代码改动 `>100` 行、鉴权 / DB / API schema / 状态机 / 安全敏感 / 跨服务改动，必须独立 subagent review。
@@ -152,9 +152,9 @@
 ### 0.6 详细规则索引
 
 - `docs/engineering/agent-hard-rules.md` — 顶层硬规则速查
-- `docs/engineering/gate-automation.md` — Multica / review / validation / git 自动化门禁
+- `docs/engineering/gate-automation.md` — Notion / review / validation / git 自动化门禁
 - `docs/engineering/master-role.md` — Master 角色细则
-- `docs/engineering/multica-workflow.md` — Multica intake / Evidence Block / Completion Gate
+- `docs/engineering/notion-workflow.md` — Notion intake / Status 流转 / Evidence Block / Issue Authoring
 - `docs/engineering/visual-contract-workflow.md` — 视觉契约 Define-First 流程（H11）
 - `docs/engineering/git-workflow.md` — 本地 git / push / VPS 约束
 - `docs/engineering/fail-fast-exceptions.md` — Fail-Fast 例外登记
@@ -222,12 +222,12 @@
 每次任务前必须确认：
 
 - 当前 agent 类型
-- 是否在 Multica workspace 内
+- 是否支持 Notion MCP（`mcp_notion_notion_search` / `mcp_notion_notion_fetch` / `mcp_notion_notion_update_page` 等）
 - 是否支持 subagent spawn
 - 是否支持 MCP
 - 是否支持 browser MCP，以及具体类型
 - 是否允许 shell
-- 是否能访问 `git / gh / multica CLI`
+- 是否能访问 `git / gh CLI`
 - 是否能跑本地 dev server
 - 是否能做 browser smoke
 
@@ -238,11 +238,11 @@
 - 如果当前工具不支持 subagent，高风险任务必须停止并请求独立 review。
 - 普通任务在 subagent 不可用时可以自检，但 Evidence Block 必须写：`Independent subagent review: not available`。
 
-### 2.4 Multica 与 Master
+### 2.4 Notion 与 Master
 
-- Multica 是任务账本，不替代工程门禁。
-- `done` 只能在 Evidence Block 完整、验证通过、review gate 通过后设置。
-- 任务来自 Multica 时，不能跳过：Define-First、TDD、Fail-Fast、Subagent review、browser smoke、Evidence Block。
+- Notion 是任务账本 SSOT，不替代工程门禁（Multica 已废弃，仅历史 Identifier 沿用）。
+- `Status=Done` 只能在 Evidence Block 完整、验证通过、review gate 通过后设置。
+- 任务来自 Notion 时，不能跳过：Define-First、TDD、Fail-Fast、Subagent review、browser smoke、Evidence Block。
 
 ---
 
@@ -368,17 +368,19 @@
 - 每个新增行为都要有测试
 - 测试必须离线可跑，优先 mock / fixture
 
-### 5.5 Multica Intake
+### 5.5 Notion Intake
 
-任务来自 Multica issue 时，开工最少执行：
+任务来自 Notion issue 时，开工最少执行 4 步（详见 `docs/engineering/notion-workflow.md` §Standard 4-Action）：
 
-```bash
-multica issue get <issue-id> --output json
-multica issue comment list <issue-id>
-multica issue runs <issue-id> --output json
+```text
+A. 找 issue：mcp_notion_notion_search({query: "SIK-<id>", page_size: 5})
+B. Intake：mcp_notion_notion_fetch({id: <page_id>, include_discussions: true})
+   并按 Issues relation filter Work Log DB 拿历史 run 记录
+C. 改 Status：mcp_notion_notion_update_page(... Status: "In Progress")
+D. 收尾：在 issue body 末尾追加 ## Evidence Block + 在 Work Log 建 Type=Evidence 关联条目
 ```
 
-然后提取 requirement / acceptance / non-goals / 风险 / blocker / plan 状态。
+然后从 issue body / discussions / Work Log 提取 requirement / acceptance / non-goals / 风险 / blocker / plan 状态。新建 issue 见 §Issue Authoring（字段表 + 5 类模板）。
 
 ---
 
@@ -411,12 +413,13 @@ multica issue runs <issue-id> --output json
 
 review 报告必须落档到 `docs/reviews/<sik>-<wave>.md`，含：检查范围 / 发现项（编号·严重度·证据行号）/ 建议处理 / 风险等级。commit message 单写 "review pass" 不算。
 
-### 6.4 Completion Gate（Multica）
+### 6.4 Completion Gate（Notion）
 
-Multica 任务完成前必须回写 Evidence Block，最少包含：
+Notion 任务完成前必须回写 Evidence Block，最少包含：
 
 - Mode
-- Issue
+- Notion issue URL
+- Identifier
 - Branch / commits
 - Changed files
 - Requirement source
@@ -429,10 +432,16 @@ Multica 任务完成前必须回写 Evidence Block，最少包含：
 - Rollback notes
 - Next owner
 
+回写动作：
+
+- issue body 末尾追加 `## Evidence Block` section（`mcp_notion_notion_update_page` `insert_content` `position={type:"end"}`）
+- Work Log DB 建一条 Type=`Evidence`、Issues relation 指向本 issue 的记录（`mcp_notion_notion_create_pages`）
+
 铁律：
 
-- 没有 PASS 证据，不得标 `done`
-- 验证失败只能修复或标 `blocked`
+- 没有 PASS 证据，不得标 `Status=Done`
+- 验证失败只能修复或回退到 `Status=Backlog` 并在 Work Log 建 Type=Blocker 记录
+- MCP 回写失败不得伪造已回写；保留本地 Evidence Block 草稿并报告
 - CLI 回写失败必须保留本地 Evidence Block 并报告
 
 ---
@@ -467,7 +476,7 @@ Multica 任务完成前必须回写 Evidence Block，最少包含：
 - `docs/vault/05-migration/Migration-Status.md`
 - `docs/engineering/agent-hard-rules.md`
 - `docs/engineering/master-role.md`
-- `docs/engineering/multica-workflow.md`
+- `docs/engineering/notion-workflow.md` — Notion 工作流（intake / Status / Evidence Block / Issue Authoring）
 - `docs/engineering/visual-contract-workflow.md` — 视觉契约 Define-First 流程（H11）
 - `docs/engineering/git-workflow.md`
 - `docs/engineering/fail-fast-exceptions.md`
