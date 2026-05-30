@@ -1,9 +1,10 @@
 import type { ReactNode } from 'react';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { delay, http, HttpResponse } from 'msw';
+import { usePlanStore } from '@sikao/domain';
 
 import { server } from '../../../mocks/server';
 import { createCalendarViewConfig } from './calendarViewConfig';
@@ -49,6 +50,13 @@ const response = (events: ReadonlyArray<unknown>) =>
     data: { events, practiceBlocks: [] },
     meta: { from: '', to: '', tz: 'Asia/Shanghai', includePracticeBlocks: false },
   });
+
+const fixedAnchor = '2026-05-30';
+
+afterEach(() => {
+  usePlanStore.setState({ currentDate: today, currentView: 'week', selectedRange: null });
+  usePlanStore.getState().resetOptimisticEvents();
+});
 
 describe('WeekCalendarView', () => {
   it('renders the event in the matching early slot cell', async () => {
@@ -217,7 +225,23 @@ describe('WeekCalendarView', () => {
   });
 
   it('renders Sunday-first DOW labels when startWeekOnMonday=false', async () => {
-    server.use(http.get('/api/v2/plans/events', () => response([READY_EVENT])));
+    usePlanStore.setState({ currentDate: fixedAnchor });
+    let seenFrom = '';
+    let seenTo = '';
+    server.use(
+      http.get('/api/v2/plans/events', ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        seenFrom = params.get('from') ?? '';
+        seenTo = params.get('to') ?? '';
+        return response([
+          {
+            ...READY_EVENT,
+            startAt: '2026-05-24T09:00:00+08:00',
+            endAt: '2026-05-24T11:00:00+08:00',
+          },
+        ]);
+      }),
+    );
     renderWithClient(
       <WeekCalendarView viewConfig={createCalendarViewConfig({ view: 'week', startWeekOnMonday: false })} />,
     );
@@ -227,6 +251,8 @@ describe('WeekCalendarView', () => {
       .getAllByRole('columnheader')
       .map((element) => (element.querySelector('span:first-child')?.textContent ?? '').replace(' · 今日', ''));
     expect(labels).toEqual(['周日', '周一', '周二', '周三', '周四', '周五', '周六']);
+    expect(seenFrom).toBe('2026-05-23T16:00:00.000Z');
+    expect(seenTo).toBe('2026-05-30T16:00:00.000Z');
   });
 
   it('renders EmptyState when API returns []', async () => {
@@ -234,6 +260,23 @@ describe('WeekCalendarView', () => {
     renderWithClient();
 
     await waitFor(() => expect(screen.getByTestId('home-week-empty')).toBeInTheDocument());
+  });
+
+  it('renders EmptyState when recurring events project to zero visible occurrences', async () => {
+    usePlanStore.setState({ currentDate: '2026-05-15' });
+    const skippedRecurring = {
+      ...READY_EVENT,
+      id: 'week-empty',
+      startAt: '2026-05-15T09:00:00+08:00',
+      endAt: '2026-05-15T11:00:00+08:00',
+      recurringRule: 'RRULE:FREQ=DAILY;COUNT=1',
+      recurringExceptionDates: ['2026-05-15'],
+    };
+    server.use(http.get('/api/v2/plans/events', () => response([skippedRecurring])));
+    renderWithClient();
+
+    await waitFor(() => expect(screen.getByTestId('home-week-empty')).toBeInTheDocument());
+    expect(screen.queryByTestId('home-week-event')).not.toBeInTheDocument();
   });
 
   it('renders ErrorCard on 500', async () => {

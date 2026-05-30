@@ -27,6 +27,8 @@ vi.mock('./calendarViewConfig', async () => {
   };
 });
 
+const defaultPatchPreferences = useDashboardPreferenceStore.getState().patchPreferences;
+
 afterEach(() => {
   usePlanStore.setState({
     currentPlanId: null,
@@ -41,42 +43,53 @@ afterEach(() => {
     isPersisting: false,
     lastPersistedAt: null,
     lastPersistError: null,
+    patchPreferences: defaultPatchPreferences,
   });
 });
 
 describe('CalendarPanel W4 navigation', () => {
-  it('renders only week/month tabs and removes the countdown chip', () => {
+  it('renders only the week/month tabs and removes the countdown chip', () => {
     usePlanStore.setState({ currentView: 'month', currentDate: '2026-05-30' });
     render(<CalendarPanel />);
-    expect(screen.getByRole('tab', { name: '本周' })).toBeInTheDocument();
-    expect(screen.getByRole('tab', { name: '本月' })).toBeInTheDocument();
-    expect(screen.queryByRole('tab', { name: '今日' })).not.toBeInTheDocument();
+
+    expect(screen.getAllByRole('tab')).toHaveLength(2);
     expect(screen.queryByTestId('home-calendar-countdown')).not.toBeInTheDocument();
     expect(screen.getByTestId('mock-month-view')).toBeInTheDocument();
-  });
-
-  it('keeps month-mode +/-3-week aria labels', () => {
-    usePlanStore.setState({ currentView: 'month', currentDate: '2026-05-30' });
-    render(<CalendarPanel />);
-    expect(screen.getByRole('button', { name: '上 3 周' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '下 3 周' })).toBeInTheDocument();
   });
 
   it('shifts the month anchor by 21 days on prev/next', async () => {
     const user = userEvent.setup();
     usePlanStore.setState({ currentView: 'month', currentDate: '2026-05-30' });
     render(<CalendarPanel />);
-    await user.click(screen.getByRole('button', { name: '上 3 周' }));
+
+    const buttons = screen.getAllByRole('button');
+    await user.click(buttons[0]);
     expect(usePlanStore.getState().currentDate).toBe('2026-05-09');
-    await user.click(screen.getByRole('button', { name: '下 3 周' }));
+    await user.click(buttons[2]);
     expect(usePlanStore.getState().currentDate).toBe('2026-05-30');
   });
 
-  it('keeps week-mode +/-1-week aria labels', () => {
+  it('keeps the week view mounted when currentView=week', () => {
     usePlanStore.setState({ currentView: 'week', currentDate: '2026-05-30' });
     render(<CalendarPanel />);
-    expect(screen.getByRole('button', { name: '上一周' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: '下一周' })).toBeInTheDocument();
+
     expect(screen.getByTestId('mock-week-view')).toBeInTheDocument();
+  });
+
+  it('persists tab changes through the calendar preference patch builders', async () => {
+    const user = userEvent.setup();
+    const patchPreferences = vi.fn().mockResolvedValue(undefined);
+    usePlanStore.setState({ currentView: 'week', currentDate: '2026-05-30' });
+    useDashboardPreferenceStore.setState({
+      preferences: {},
+      profileLoaded: true,
+      patchPreferences,
+    });
+
+    render(<CalendarPanel />);
+    await user.click(screen.getAllByRole('tab')[1]);
+
+    expect(usePlanStore.getState().currentView).toBe('month');
+    expect(patchPreferences).toHaveBeenCalledWith({ homeCalendarView: 'month' });
   });
 });

@@ -251,7 +251,7 @@ function WeekCalendarViewBody({ viewConfig }: WeekCalendarViewProps) {
   const aggregateEventIds = useMemo(() => occurrences.map((item) => item.event.id), [occurrences]);
   const aggregateState = useCalendarEventAggregates(aggregateEventIds);
   const eventsByCell = useMemo(() => bucketEvents(occurrences), [occurrences]);
-  const total = query.data?.data.events.length ?? 0;
+  const visibleOccurrenceCount = occurrences.length;
 
   return (
     <div className={styles.root} data-testid="home-week-calendar">
@@ -283,7 +283,7 @@ function WeekCalendarViewBody({ viewConfig }: WeekCalendarViewProps) {
           </div>
         </div>
       ) : null}
-      {query.isSuccess && total === 0 ? (
+      {query.isSuccess && visibleOccurrenceCount === 0 ? (
         <div className={styles.stateWrap} data-testid="home-week-empty">
           <EmptyState
             title="本周尚无事件"
@@ -291,7 +291,7 @@ function WeekCalendarViewBody({ viewConfig }: WeekCalendarViewProps) {
           />
         </div>
       ) : null}
-      {query.isSuccess && total > 0 ? (
+      {query.isSuccess && visibleOccurrenceCount > 0 ? (
         <WeekGrid
           days={days}
           eventsByCell={eventsByCell}

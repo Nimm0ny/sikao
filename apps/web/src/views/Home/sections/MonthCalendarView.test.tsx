@@ -149,7 +149,16 @@ describe('MonthCalendarView', () => {
 
   it('renders Sunday-first DOW labels when startWeekOnMonday=false', async () => {
     usePlanStore.setState({ currentDate: fixedAnchor });
-    server.use(http.get('/api/v2/plans/events', () => response([makeEvent('m1', 'Sunday event', '2026-05-24')])));
+    let seenFrom = '';
+    let seenTo = '';
+    server.use(
+      http.get('/api/v2/plans/events', ({ request }) => {
+        const params = new URL(request.url).searchParams;
+        seenFrom = params.get('from') ?? '';
+        seenTo = params.get('to') ?? '';
+        return response([makeEvent('m1', 'Sunday event', '2026-05-24')]);
+      }),
+    );
     renderWithClient(
       <MonthCalendarView
         viewConfig={createCalendarViewConfig({ view: 'month', startWeekOnMonday: false })}
@@ -163,12 +172,27 @@ describe('MonthCalendarView', () => {
       screen.getByTestId('home-month-event'),
     );
     expect(screen.getByTestId('home-month-cell-2026-06-13')).toBeInTheDocument();
+    expect(seenFrom).toBe('2026-05-23T16:00:00.000Z');
+    expect(seenTo).toBe('2026-06-13T16:00:00.000Z');
   });
 
   it('renders EmptyState when API returns []', async () => {
     server.use(http.get('/api/v2/plans/events', () => response([])));
     renderWithClient();
     await waitFor(() => expect(screen.getByTestId('home-month-empty')).toBeInTheDocument());
+  });
+
+  it('renders EmptyState when recurring events project to zero visible slices', async () => {
+    usePlanStore.setState({ currentDate: '2026-05-15' });
+    const skippedRecurring = {
+      ...makeEvent('r-empty', 'Skipped recurring', '2026-05-15'),
+      recurringRule: 'RRULE:FREQ=DAILY;COUNT=1',
+      recurringExceptionDates: ['2026-05-15'],
+    };
+    server.use(http.get('/api/v2/plans/events', () => response([skippedRecurring])));
+    renderWithClient();
+    await waitFor(() => expect(screen.getByTestId('home-month-empty')).toBeInTheDocument());
+    expect(screen.queryByTestId('home-month-event')).not.toBeInTheDocument();
   });
 
   it('renders ErrorCard on 500', async () => {

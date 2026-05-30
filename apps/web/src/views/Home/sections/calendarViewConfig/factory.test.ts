@@ -22,6 +22,25 @@ import type { CalendarView } from './types';
 
 const ALL_VIEWS: readonly CalendarView[] = ['week', 'month'];
 
+function expectStructuredError<TError extends Error & { readonly value: unknown }>(
+  action: () => unknown,
+  ErrorCtor: new (...args: never[]) => TError,
+  expectedValue: unknown,
+  expectedMessageFragment: string | null = String(expectedValue),
+) {
+  try {
+    action();
+    throw new Error('expected action to throw');
+  } catch (error) {
+    expect(error).toBeInstanceOf(ErrorCtor);
+    expect((error as TError).value).toEqual(expectedValue);
+    expect((error as TError).name).toBe(ErrorCtor.name);
+    if (expectedMessageFragment !== null) {
+      expect((error as TError).message).toContain(expectedMessageFragment);
+    }
+  }
+}
+
 describe('createCalendarViewConfigPreset', () => {
   it('compact preset locks visibleProperties to ["title", "kind"]', () => {
     for (const view of ALL_VIEWS) {
@@ -52,6 +71,15 @@ describe('createCalendarViewConfigPreset', () => {
     }
   });
 
+  it('detail preset stays aligned with the property registry order', async () => {
+    const { CALENDAR_CARD_PROPERTIES } = await import('./propertyRegistry');
+    for (const view of ALL_VIEWS) {
+      expect(createCalendarViewConfigPreset(view, 'detail').visibleProperties).toEqual(
+        CALENDAR_CARD_PROPERTIES,
+      );
+    }
+  });
+
   it('default cardLimitPerCell is 3 for month/week', () => {
     expect(createCalendarViewConfigPreset('month', 'default').cardLimitPerCell).toBe(3);
     expect(createCalendarViewConfigPreset('week', 'default').cardLimitPerCell).toBe(3);
@@ -76,25 +104,37 @@ describe('createCalendarViewConfigPreset', () => {
   });
 
   it('throws InvalidCalendarViewError for non-literal views', () => {
-    expect(() =>
-      // @ts-expect-error invalid view literal is rejected at runtime
-      createCalendarViewConfigPreset('year', 'default'),
-    ).toThrow(InvalidCalendarViewError);
-    expect(() =>
-      // @ts-expect-error invalid view type is rejected at runtime
-      createCalendarViewConfigPreset(undefined, 'default'),
-    ).toThrow(InvalidCalendarViewError);
+    expectStructuredError(
+      () =>
+        // @ts-expect-error invalid view literal is rejected at runtime
+        createCalendarViewConfigPreset('year', 'default'),
+      InvalidCalendarViewError,
+      'year',
+    );
+    expectStructuredError(
+      () =>
+        // @ts-expect-error invalid view type is rejected at runtime
+        createCalendarViewConfigPreset(undefined, 'default'),
+      InvalidCalendarViewError,
+      undefined,
+    );
   });
 
   it('throws UnknownCalendarPresetError for unknown preset names', () => {
-    expect(() =>
-      // @ts-expect-error invalid preset literal is rejected at runtime
-      createCalendarViewConfigPreset('month', 'dense'),
-    ).toThrow(UnknownCalendarPresetError);
-    expect(() =>
-      // @ts-expect-error invalid preset type is rejected at runtime
-      createCalendarViewConfigPreset('month', null),
-    ).toThrow(UnknownCalendarPresetError);
+    expectStructuredError(
+      () =>
+        // @ts-expect-error invalid preset literal is rejected at runtime
+        createCalendarViewConfigPreset('month', 'dense'),
+      UnknownCalendarPresetError,
+      'dense',
+    );
+    expectStructuredError(
+      () =>
+        // @ts-expect-error invalid preset type is rejected at runtime
+        createCalendarViewConfigPreset('month', null),
+      UnknownCalendarPresetError,
+      null,
+    );
   });
 });
 
@@ -108,10 +148,13 @@ describe('createDefaultCalendarViewConfig', () => {
   });
 
   it('rejects invalid view literals', () => {
-    expect(() =>
-      // @ts-expect-error invalid view literal is rejected at runtime
-      createDefaultCalendarViewConfig('quarter'),
-    ).toThrow(InvalidCalendarViewError);
+    expectStructuredError(
+      () =>
+        // @ts-expect-error invalid view literal is rejected at runtime
+        createDefaultCalendarViewConfig('quarter'),
+      InvalidCalendarViewError,
+      'quarter',
+    );
   });
 });
 
@@ -134,13 +177,17 @@ describe('createCalendarViewConfig (overrides)', () => {
   it('throws InvalidCalendarLimitError for non-integer or non-positive limits', () => {
     const invalidLimits: ReadonlyArray<unknown> = [0, -1, 1.5, Number.NaN, Number.POSITIVE_INFINITY, '3'];
     for (const limit of invalidLimits) {
-      expect(() =>
-        createCalendarViewConfig({
-          view: 'month',
-          // @ts-expect-error verify the runtime guard rejects arbitrary inputs
-          cardLimitPerCell: limit,
-        }),
-      ).toThrow(InvalidCalendarLimitError);
+      expectStructuredError(
+        () =>
+          createCalendarViewConfig({
+            view: 'month',
+            // @ts-expect-error verify the runtime guard rejects arbitrary inputs
+            cardLimitPerCell: limit,
+          }),
+        InvalidCalendarLimitError,
+        limit,
+        Number.isFinite(limit as number) || typeof limit !== 'number' ? String(limit) : null,
+      );
     }
   });
 
@@ -154,13 +201,16 @@ describe('createCalendarViewConfig (overrides)', () => {
   });
 
   it('throws UnknownCalendarPropertyError when visibleProperties contains an unknown name', () => {
-    expect(() =>
-      createCalendarViewConfig({
-        view: 'week',
-        // @ts-expect-error invalid property name is rejected at runtime
-        visibleProperties: ['title', 'duration'],
-      }),
-    ).toThrow(UnknownCalendarPropertyError);
+    expectStructuredError(
+      () =>
+        createCalendarViewConfig({
+          view: 'week',
+          // @ts-expect-error invalid property name is rejected at runtime
+          visibleProperties: ['title', 'duration'],
+        }),
+      UnknownCalendarPropertyError,
+      'duration',
+    );
   });
 
   it('rejects an invalid dateField override', () => {
@@ -184,11 +234,14 @@ describe('createCalendarViewConfig (overrides)', () => {
   });
 
   it('rejects an invalid view literal up front', () => {
-    expect(() =>
-      createCalendarViewConfig({
-        // @ts-expect-error invalid view is rejected at runtime
-        view: 'year',
-      }),
-    ).toThrow(InvalidCalendarViewError);
+    expectStructuredError(
+      () =>
+        createCalendarViewConfig({
+          // @ts-expect-error invalid view is rejected at runtime
+          view: 'year',
+        }),
+      InvalidCalendarViewError,
+      'year',
+    );
   });
 });

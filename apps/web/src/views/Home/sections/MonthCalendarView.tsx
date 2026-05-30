@@ -222,7 +222,7 @@ function MonthCalendarViewBody({ viewConfig }: MonthCalendarViewProps) {
   const aggregateEventIds = useMemo(() => slices.map((item) => item.event.id), [slices]);
   const aggregateState = useCalendarEventAggregates(aggregateEventIds);
   const eventsByDay = useMemo(() => bucketEventsByDay(slices), [slices]);
-  const total = query.data?.data.events.length ?? 0;
+  const visibleSliceCount = slices.length;
 
   return (
     <div className={styles.root} data-testid="home-month-calendar">
@@ -254,7 +254,7 @@ function MonthCalendarViewBody({ viewConfig }: MonthCalendarViewProps) {
           </div>
         </div>
       ) : null}
-      {query.isSuccess && total === 0 ? (
+      {query.isSuccess && visibleSliceCount === 0 ? (
         <div className={styles.stateWrap} data-testid="home-month-empty">
           <EmptyState
             title="本月尚无事件"
@@ -262,7 +262,7 @@ function MonthCalendarViewBody({ viewConfig }: MonthCalendarViewProps) {
           />
         </div>
       ) : null}
-      {query.isSuccess && total > 0 ? (
+      {query.isSuccess && visibleSliceCount > 0 ? (
         <Suspense
           fallback={
             <MonthGrid
