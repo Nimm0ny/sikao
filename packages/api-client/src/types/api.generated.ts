@@ -464,6 +464,125 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v2/notes/community": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Community Notes */
+        get: operations["list_community_notes_api_v2_notes_community_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Upload Image */
+        post: operations["upload_image_api_v2_notes_images_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/search": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Search Notes */
+        get: operations["search_notes_api_v2_notes_search_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List Tags */
+        get: operations["list_tags_api_v2_notes_tags_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/tags/merge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Merge Tags */
+        post: operations["merge_tags_api_v2_notes_tags_merge_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/tags/rename": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Rename Tag */
+        patch: operations["rename_tag_api_v2_notes_tags_rename_patch"];
+        trace?: never;
+    };
+    "/api/v2/notes/weekly-review/generate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Weekly Review */
+        post: operations["generate_weekly_review_api_v2_notes_weekly_review_generate_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v2/notes/{note_id}": {
         parameters: {
             query?: never;
@@ -476,10 +595,113 @@ export interface paths {
         /** Update Note */
         put: operations["update_note_api_v2_notes__note_id__put"];
         post?: never;
+        /** Delete Note */
+        delete: operations["delete_note_api_v2_notes__note_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/{note_id}/ai-summary": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Generate Ai Summary */
+        post: operations["generate_ai_summary_api_v2_notes__note_id__ai_summary_post"];
         delete?: never;
         options?: never;
         head?: never;
         patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/{note_id}/ai-summary/confirm": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Confirm Ai Summary */
+        post: operations["confirm_ai_summary_api_v2_notes__note_id__ai_summary_confirm_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/{note_id}/export": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Export Note */
+        get: operations["export_note_api_v2_notes__note_id__export_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/{note_id}/tags": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Add Tag */
+        post: operations["add_tag_api_v2_notes__note_id__tags_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/{note_id}/tags/{tag_name}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Remove Tag */
+        delete: operations["remove_tag_api_v2_notes__note_id__tags__tag_name__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v2/notes/{note_id}/visibility": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /** Update Note Visibility */
+        patch: operations["update_note_visibility_api_v2_notes__note_id__visibility_patch"];
         trace?: never;
     };
     "/api/v2/plans": {
@@ -2747,6 +2969,13 @@ export interface components {
             /** Verificationcode */
             verificationCode: string;
         };
+        /** Body_upload_image_api_v2_notes_images_post */
+        Body_upload_image_api_v2_notes_images_post: {
+            /** Image */
+            image: string;
+            /** Note Id */
+            note_id?: number | null;
+        };
         /** BootstrapResponseV2 */
         BootstrapResponseV2: {
             /** Appname */
@@ -2986,6 +3215,51 @@ export interface components {
         CauseTagListResponseV2: {
             /** Items */
             items: components["schemas"]["CauseTagItemV2"][];
+            /** Total */
+            total: number;
+        };
+        /** CommunityNoteItemV2 */
+        CommunityNoteItemV2: {
+            /** Authorname */
+            authorName?: string | null;
+            /** Bodypreview */
+            bodyPreview: string;
+            /**
+             * Commentcount
+             * @default 0
+             */
+            commentCount: number;
+            /** Createdat */
+            createdAt: string;
+            /** Id */
+            id: number;
+            /**
+             * Isfeatured
+             * @default false
+             */
+            isFeatured: boolean;
+            /** Linkedquestionid */
+            linkedQuestionId?: number | null;
+            /**
+             * Reactioncount
+             * @default 0
+             */
+            reactionCount: number;
+            /** Tags */
+            tags?: string[];
+            /** Title */
+            title: string;
+            /** Wordcount */
+            wordCount: number;
+        };
+        /** CommunityNoteListResponseV2 */
+        CommunityNoteListResponseV2: {
+            /** Items */
+            items?: components["schemas"]["CommunityNoteItemV2"][];
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
             /** Total */
             total: number;
         };
@@ -3647,17 +3921,53 @@ export interface components {
             /** Sessions */
             sessions?: components["schemas"]["MockExamHistoryItem"][];
         };
+        /** NoteAiSummaryCardV2 */
+        NoteAiSummaryCardV2: {
+            /**
+             * Editable
+             * @default true
+             */
+            editable: boolean;
+            /** Index */
+            index: number;
+            /** Text */
+            text: string;
+        };
+        /** NoteAiSummaryConfirmRequestV2 */
+        NoteAiSummaryConfirmRequestV2: {
+            /** Cards */
+            cards: components["schemas"]["NoteAiSummaryCardV2"][];
+        };
+        /** NoteAiSummaryConfirmResponseV2 */
+        NoteAiSummaryConfirmResponseV2: {
+            /** Message */
+            message: string;
+            /** Reviewitemids */
+            reviewItemIds?: number[];
+        };
+        /** NoteAiSummaryPreviewResponseV2 */
+        NoteAiSummaryPreviewResponseV2: {
+            /** Cached */
+            cached: boolean;
+            /** Cards */
+            cards: components["schemas"]["NoteAiSummaryCardV2"][];
+            /** Notecontenthash */
+            noteContentHash: string;
+        };
         /** NoteCreateRequestV2 */
         NoteCreateRequestV2: {
-            /**
-             * Body
-             * @default
-             */
-            body: string;
+            /** Bodyjson */
+            bodyJson: {
+                [key: string]: unknown;
+            };
             /** Linkedquestionid */
             linkedQuestionId?: number | null;
+            /** Tags */
+            tags?: string[];
             /** Title */
             title: string;
+            /** Type */
+            type?: string | null;
             /**
              * Visibility
              * @default private
@@ -3666,47 +3976,109 @@ export interface components {
         };
         /** NoteDetailV2 */
         NoteDetailV2: {
-            /** Body */
-            body: string;
+            /** Authorname */
+            authorName?: string | null;
+            /** Bodyjson */
+            bodyJson?: {
+                [key: string]: unknown;
+            } | null;
+            /** Bodytext */
+            bodyText: string;
+            /**
+             * Bookmarkcount
+             * @default 0
+             */
+            bookmarkCount: number;
+            /**
+             * Commentcount
+             * @default 0
+             */
+            commentCount: number;
             /** Createdat */
             createdAt: string;
             /** Id */
             id: number;
+            /**
+             * Isbookmarked
+             * @default false
+             */
+            isBookmarked: boolean;
+            /**
+             * Isfeatured
+             * @default false
+             */
+            isFeatured: boolean;
+            /**
+             * Isreacted
+             * @default false
+             */
+            isReacted: boolean;
+            linkedQuestionBrief?: components["schemas"]["QuestionBriefV2"] | null;
             /** Linkedquestionid */
             linkedQuestionId?: number | null;
-            /** Status */
-            status: string;
+            /**
+             * Reactioncount
+             * @default 0
+             */
+            reactionCount: number;
+            /** Tags */
+            tags?: string[];
             /** Title */
             title: string;
+            /** Type */
+            type: string;
             /** Updatedat */
             updatedAt: string;
-            /**
-             * Visibility
-             * @default private
-             */
+            /** Visibility */
             visibility: string;
+            /** Wordcount */
+            wordCount: number;
+        };
+        /** NoteImageUploadResponseV2 */
+        NoteImageUploadResponseV2: {
+            /** Filename */
+            fileName: string;
+            /** Filesize */
+            fileSize: number;
+            /** Height */
+            height?: number | null;
+            /** Id */
+            id: number;
+            /** Mimetype */
+            mimeType: string;
+            /** Url */
+            url: string;
+            /** Width */
+            width?: number | null;
         };
         /** NoteItemV2 */
         NoteItemV2: {
-            /** Createdat */
-            createdAt: string;
-            /** Excerpt */
-            excerpt: string;
+            /** Bodypreview */
+            bodyPreview: string;
+            /**
+             * Commentcount
+             * @default 0
+             */
+            commentCount: number;
             /** Id */
             id: number;
             /** Linkedquestionid */
             linkedQuestionId?: number | null;
-            /** Status */
-            status: string;
+            /**
+             * Reactioncount
+             * @default 0
+             */
+            reactionCount: number;
+            /** Tags */
+            tags?: string[];
             /** Title */
             title: string;
+            /** Type */
+            type: string;
             /** Updatedat */
             updatedAt: string;
-            /**
-             * Visibility
-             * @default private
-             */
-            visibility: string;
+            /** Wordcount */
+            wordCount: number;
         };
         /** NoteListResponseV2 */
         NoteListResponseV2: {
@@ -3719,24 +4091,85 @@ export interface components {
             /** Total */
             total: number;
         };
-        /** NoteUpdateRequestV2 */
-        NoteUpdateRequestV2: {
-            /**
-             * Body
-             * @default
-             */
-            body: string;
+        /** NoteSearchItemV2 */
+        NoteSearchItemV2: {
+            /** Bodypreview */
+            bodyPreview: string;
+            /** Highlights */
+            highlights?: string[];
+            /** Id */
+            id: number;
             /** Linkedquestionid */
             linkedQuestionId?: number | null;
-            /**
-             * Status
-             * @default active
-             */
-            status: string;
+            /** Tags */
+            tags?: string[];
             /** Title */
             title: string;
+            /** Type */
+            type: string;
+            /** Updatedat */
+            updatedAt: string;
+            /** Visibility */
+            visibility: string;
+        };
+        /** NoteSearchResponseV2 */
+        NoteSearchResponseV2: {
+            /** Facetdistribution */
+            facetDistribution?: {
+                [key: string]: {
+                    [key: string]: number;
+                };
+            };
+            /** Items */
+            items?: components["schemas"]["NoteSearchItemV2"][];
+            /** Page */
+            page: number;
+            /** Pagesize */
+            pageSize: number;
+            /** Total */
+            total: number;
+        };
+        /** NoteTagMutationRequestV2 */
+        NoteTagMutationRequestV2: {
+            /** Tagname */
+            tagName: string;
+        };
+        /** NoteUpdateRequestV2 */
+        NoteUpdateRequestV2: {
+            /** Bodyjson */
+            bodyJson?: {
+                [key: string]: unknown;
+            } | null;
+            /** Linkedquestionid */
+            linkedQuestionId?: number | null;
+            /** Tags */
+            tags?: string[] | null;
+            /** Title */
+            title?: string | null;
             /** Visibility */
             visibility?: string | null;
+        };
+        /** NoteVisibilityUpdateRequestV2 */
+        NoteVisibilityUpdateRequestV2: {
+            /**
+             * Visibility
+             * @enum {string}
+             */
+            visibility: "private" | "public";
+        };
+        /** NoteVisibilityUpdateResponseV2 */
+        NoteVisibilityUpdateResponseV2: {
+            /** Id */
+            id: number;
+            /** Updatedat */
+            updatedAt: string;
+            /** Visibility */
+            visibility: string;
+        };
+        /** NoteWeeklyReviewGenerateRequestV2 */
+        NoteWeeklyReviewGenerateRequestV2: {
+            /** Week */
+            week?: string | null;
         };
         /** OnboardingStatusV2 */
         OnboardingStatusV2: {
@@ -4829,6 +5262,17 @@ export interface components {
             /** Title */
             title: string;
         };
+        /** QuestionBriefV2 */
+        QuestionBriefV2: {
+            /** Categoryl1 */
+            categoryL1?: string | null;
+            /** Categoryl2 */
+            categoryL2?: string | null;
+            /** Id */
+            id: number;
+            /** Prompt */
+            prompt: string;
+        };
         /** QuestionFavoriteCountV2 */
         QuestionFavoriteCountV2: {
             /** Count */
@@ -5711,6 +6155,29 @@ export interface components {
             tone: string;
             /** Value */
             value: string;
+        };
+        /** TagMergeRequestV2 */
+        TagMergeRequestV2: {
+            /** Sourcetags */
+            sourceTags: string[];
+            /** Targettag */
+            targetTag: string;
+        };
+        /** TagRenameV2 */
+        TagRenameV2: {
+            /** Newname */
+            newName: string;
+            /** Oldname */
+            oldName: string;
+        };
+        /** TagWithCountV2 */
+        TagWithCountV2: {
+            /** Issystem */
+            isSystem: boolean;
+            /** Tagname */
+            tagName: string;
+            /** Usagecount */
+            usageCount: number;
         };
         /** TimingBaselineResponseV2 */
         TimingBaselineResponseV2: {
@@ -6651,7 +7118,17 @@ export interface operations {
     };
     list_notes_api_v2_notes_get: {
         parameters: {
-            query?: never;
+            query?: {
+                page?: number;
+                size?: number;
+                type?: string | null;
+                visibility?: string | null;
+                linkedQuestionId?: number | null;
+                hasLinkedQuestion?: boolean | null;
+                tags?: string | null;
+                sort?: string;
+                order?: string;
+            };
             header?: never;
             path?: never;
             cookie?: never;
@@ -6665,6 +7142,15 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NoteListResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
                 };
             };
         };
@@ -6689,6 +7175,230 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NoteDetailV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_community_notes_api_v2_notes_community_get: {
+        parameters: {
+            query?: {
+                page?: number;
+                size?: number;
+                sort?: string;
+                linked_question_id?: number | null;
+                linkedQuestionId?: number | null;
+                tags?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CommunityNoteListResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    upload_image_api_v2_notes_images_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": components["schemas"]["Body_upload_image_api_v2_notes_images_post"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteImageUploadResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    search_notes_api_v2_notes_search_get: {
+        parameters: {
+            query: {
+                q: string;
+                filters?: string | null;
+                page?: number;
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteSearchResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_tags_api_v2_notes_tags_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["TagWithCountV2"][];
+                };
+            };
+        };
+    };
+    merge_tags_api_v2_notes_tags_merge_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagMergeRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    rename_tag_api_v2_notes_tags_rename_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["TagRenameV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_weekly_review_api_v2_notes_weekly_review_generate_post: {
+        parameters: {
+            query?: never;
+            header?: {
+                "Idempotency-Key"?: string | null;
+            };
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteWeeklyReviewGenerateRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
                 };
             };
             /** @description Validation Error */
@@ -6755,6 +7465,236 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["NoteDetailV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_note_api_v2_notes__note_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    generate_ai_summary_api_v2_notes__note_id__ai_summary_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteAiSummaryPreviewResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    confirm_ai_summary_api_v2_notes__note_id__ai_summary_confirm_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteAiSummaryConfirmRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteAiSummaryConfirmResponseV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    export_note_api_v2_notes__note_id__export_get: {
+        parameters: {
+            query: {
+                format: string;
+            };
+            header?: never;
+            path: {
+                note_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": unknown;
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    add_tag_api_v2_notes__note_id__tags_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteTagMutationRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    remove_tag_api_v2_notes__note_id__tags__tag_name__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: number;
+                tag_name: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["OperationAckV2"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_note_visibility_api_v2_notes__note_id__visibility_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                note_id: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["NoteVisibilityUpdateRequestV2"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NoteVisibilityUpdateResponseV2"];
                 };
             };
             /** @description Validation Error */
