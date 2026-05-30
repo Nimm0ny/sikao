@@ -3,6 +3,8 @@ import { resolve, extname, basename } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '..', '..', '..');
 const QUERIES_DIR = resolve(ROOT, 'packages', 'api-client', 'src', 'queries');
+const LEGACY_QUERY_FILES = [resolve(ROOT, 'packages', 'api-client', 'src', 'apiQueries.ts')];
+const LEGACY_PRACTICE_PREFIXES = new Set(['practice-history']);
 
 function walk(dir) {
   const results = [];
@@ -20,22 +22,31 @@ function walk(dir) {
   return results;
 }
 
-const files = walk(QUERIES_DIR).filter((file) => !file.includes(`${resolve(QUERIES_DIR, '__tests__')}`));
+const files = [
+  ...walk(QUERIES_DIR).filter((file) => !file.includes(`${resolve(QUERIES_DIR, '__tests__')}`)),
+  ...LEGACY_QUERY_FILES,
+];
 const seen = new Map();
 const duplicates = [];
 
 for (const file of files) {
   const source = readFileSync(file, 'utf8');
-  const match = source.match(/all:\s*\[\s*'([^']+)'/);
-  if (!match) {
+  const matches = [...source.matchAll(/all:\s*\[\s*'([^']+)'/g)];
+  if (matches.length === 0) {
     continue;
   }
-  const prefix = match[1];
-  const previous = seen.get(prefix);
-  if (previous) {
-    duplicates.push({ prefix, first: previous, second: basename(file) });
-  } else {
-    seen.set(prefix, basename(file));
+
+  for (const match of matches) {
+    const prefix = match[1];
+    if (file.endsWith('apiQueries.ts') && !LEGACY_PRACTICE_PREFIXES.has(prefix)) {
+      continue;
+    }
+    const previous = seen.get(prefix);
+    if (previous) {
+      duplicates.push({ prefix, first: previous, second: basename(file) });
+    } else {
+      seen.set(prefix, basename(file));
+    }
   }
 }
 
