@@ -72,7 +72,7 @@
   position: relative;
   display: block;
   height: 5px;
-  border-radius: 9999px;
+  border-radius: var(--radius-999);
   background: var(--color-bg-sunken);
   overflow: hidden;
 }
@@ -80,7 +80,7 @@
 .barFill {
   display: block;
   height: 100%;
-  border-radius: 9999px;
+  border-radius: var(--radius-999);
   background: var(--color-state-ok);
   transition: width var(--dur-base) var(--ease-out);
 }

@@ -97,7 +97,7 @@
   font-size: 10px; /* spacing-allow: prototype feed-pill 10px */
   font-weight: var(--font-weight-bold);
   padding: 2px 6px; /* spacing-allow: prototype pill padding 2/6 */
-  border-radius: 9999px;
+  border-radius: var(--radius-999);
   flex-shrink: 0;
   background: var(--color-state-ok-soft);
   color: var(--color-state-ok);

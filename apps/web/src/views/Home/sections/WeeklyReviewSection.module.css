@@ -64,7 +64,7 @@
   font-weight: var(--font-weight-bold);
   color: var(--color-state-ok);
   background: var(--color-state-ok-soft);
-  border-radius: 9999px;
+  border-radius: var(--radius-999);
   padding: 2px 6px; /* spacing-allow: prototype pill padding 2/6 */
   white-space: nowrap;
   flex-shrink: 0;
