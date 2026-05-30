@@ -12,6 +12,7 @@ import { describe, it, expect } from 'vitest';
 import {
   eventToCalendarInput,
   expandPlanEventsForView,
+  mergePlanEventsWithOptimisticPatches,
   sliceMonthOccurrencesByDay,
 } from './calendarEvents';
 import type { PlanEventReadV2 } from '@sikao/api-client/types/home';
@@ -159,5 +160,41 @@ describe('sliceMonthOccurrencesByDay', () => {
     expect(slices[1].slice.isEndSlice).toBe(false);
     expect(slices[2].slice.isStartSlice).toBe(false);
     expect(slices[2].slice.isEndSlice).toBe(true);
+  });
+});
+
+describe('mergePlanEventsWithOptimisticPatches', () => {
+  it('materializes new optimistic-only events without overriding existing server rows', () => {
+    const existing = makeEvent({
+      id: 'e1',
+      title: 'Original',
+      startAt: '2026-05-26T09:00:00+08:00',
+      endAt: '2026-05-26T10:00:00+08:00',
+    });
+    const optimistic = new Map<string, Partial<PlanEventReadV2>>([
+      ['e1', { title: 'Optimistic rename' }],
+      ['e2', {
+        id: 'e2',
+        title: 'New optimistic event',
+        category: 'custom',
+        status: 'planned',
+        source: 'ai_generated',
+        timezone: TZ,
+        startAt: '2026-05-27T18:00:00+08:00',
+        endAt: '2026-05-27T18:20:00+08:00',
+        notes: 'Generated from recommendation',
+      }],
+    ]);
+
+    const merged = mergePlanEventsWithOptimisticPatches([existing], optimistic);
+    expect(merged).toHaveLength(2);
+    expect(merged.find((event) => event.id === 'e1')?.title).toBe('Original');
+    expect(merged.find((event) => event.id === 'e2')).toMatchObject({
+      title: 'New optimistic event',
+      category: 'custom',
+      source: 'ai_generated',
+      startAt: '2026-05-27T18:00:00+08:00',
+      endAt: '2026-05-27T18:20:00+08:00',
+    });
   });
 });

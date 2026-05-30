@@ -262,6 +262,25 @@ describe('WeekCalendarView', () => {
     await waitFor(() => expect(screen.getByTestId('home-week-empty')).toBeInTheDocument());
   });
 
+  it('renders an optimistic-only event before refetch lands', async () => {
+    usePlanStore.getState().upsertOptimisticEvent('w-opt', {
+      id: 'w-opt',
+      title: 'Optimistic week event',
+      startAt: `${today}T18:00:00+08:00`,
+      endAt: `${today}T18:20:00+08:00`,
+      category: 'custom',
+      status: 'planned',
+      source: 'ai_generated',
+      timezone: 'Asia/Shanghai',
+      notes: 'Generated from recommendation',
+    });
+    server.use(http.get('/api/v2/plans/events', () => response([])));
+    renderWithClient();
+
+    await waitFor(() => expect(screen.getAllByTestId('home-week-event')).toHaveLength(1));
+    expect(screen.queryByTestId('home-week-empty')).toBeNull();
+  });
+
   it('renders EmptyState when recurring events project to zero visible occurrences', async () => {
     usePlanStore.setState({ currentDate: '2026-05-15' });
     const skippedRecurring = {

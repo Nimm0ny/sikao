@@ -245,4 +245,22 @@ describe('MonthCalendarView optimistic anchors', () => {
     await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(1));
     expect(screen.getByTestId('home-month-event-title')).toHaveTextContent('Optimistic preview');
   });
+
+  it('renders an optimistic-only event before refetch lands', async () => {
+    usePlanStore.getState().upsertOptimisticEvent('m-opt', {
+      id: 'm-opt',
+      title: 'Optimistic preview',
+      startAt: `${today}T18:00:00+08:00`,
+      endAt: `${today}T18:20:00+08:00`,
+      category: 'custom',
+      status: 'planned',
+      source: 'ai_generated',
+      timezone: 'Asia/Shanghai',
+      notes: 'Generated from recommendation',
+    });
+    server.use(http.get('/api/v2/plans/events', () => response([])));
+    renderWithClient();
+    await waitFor(() => expect(screen.getAllByTestId('home-month-event')).toHaveLength(1));
+    expect(screen.getByTestId('home-month-event-title')).toHaveTextContent('Optimistic preview');
+  });
 });
