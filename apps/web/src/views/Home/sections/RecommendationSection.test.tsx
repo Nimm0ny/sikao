@@ -172,6 +172,33 @@ describe('RecommendationSection (SIK-92)', () => {
     expect(screen.getByRole('button', { name: '刷新推荐' })).toBeInTheDocument();
   });
 
+  it('SIK-143 W6: feed list is marked scrollable when items exceed the visible cap', async () => {
+    // 4 recs > 3-row visible cap → list opts into scroll + bottom-fade
+    // (data-scrollable). The fade/hidden-scrollbar is CSS; we assert the
+    // attribute contract the CSS keys off so the behavior stays tested.
+    server.use(
+      http.get('/api/v2/recommendations/today', () =>
+        HttpResponse.json({ items: READY_RECS, total: READY_RECS.length }),
+      ),
+    );
+    renderWithEnv();
+    await waitFor(() => expect(screen.getByTestId('home-recommendation')).toBeInTheDocument());
+    const list = screen.getByTestId('home-recommendation').querySelector('ul');
+    expect(list).toHaveAttribute('data-scrollable', 'true');
+  });
+
+  it('SIK-143 W6: feed list is not scrollable when within the visible cap', async () => {
+    server.use(
+      http.get('/api/v2/recommendations/today', () =>
+        HttpResponse.json({ items: [READY_RECS[0]], total: 1 }),
+      ),
+    );
+    renderWithEnv();
+    await waitFor(() => expect(screen.getByTestId('home-recommendation')).toBeInTheDocument());
+    const list = screen.getByTestId('home-recommendation').querySelector('ul');
+    expect(list).not.toHaveAttribute('data-scrollable');
+  });
+
   it('error: renders EmptyState on 500', async () => {
     server.use(http.get('/api/v2/recommendations/today', () => HttpResponse.json({}, { status: 500 })));
     renderWithEnv();

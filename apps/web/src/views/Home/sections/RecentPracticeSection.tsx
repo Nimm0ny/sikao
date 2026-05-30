@@ -29,6 +29,10 @@ function formatRelativeTime(isoDate: string): string {
   return `${days} 天前`;
 }
 
+// Visible feed cap before the list switches to scroll + bottom-fade.
+// ~1.5 rows show in the right-stack cell; a 2nd row peeks under the fade.
+const RECENT_VISIBLE_ITEMS = 1;
+
 export function RecentPracticeSection() {
   const query = useProfileRecords({ page: 1, size: 2 });
   const items = query.data?.items ?? [];
@@ -44,7 +48,10 @@ export function RecentPracticeSection() {
       {query.isLoading ? (
         <Skeleton variant="text" lines={2} />
       ) : (
-        <ul className={styles.list}>
+        <ul
+          className={styles.list}
+          data-scrollable={items.length > RECENT_VISIBLE_ITEMS || undefined}
+        >
           {items.map((item) => (
             <li key={item.id} className={styles.feedItem} data-testid="home-recent-item">
               <span className={styles.feedIcon}>

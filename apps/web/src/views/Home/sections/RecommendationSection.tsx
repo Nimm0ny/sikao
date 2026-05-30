@@ -28,6 +28,10 @@ import styles from './RecommendationSection.module.css';
  *      mutation errors propagate via the mutation result; not silenced.
  */
 
+// Visible feed cap before the list switches to scroll + bottom-fade.
+// 3 full rows show; a 4th+ row peeks ~20% under the fade as a "more below" cue.
+const RECOMMENDATION_VISIBLE_ITEMS = 3;
+
 export function RecommendationSection() {
   const query = useRecommendationsToday();
   const refresh = useRefreshRecommendations();
@@ -92,7 +96,10 @@ export function RecommendationSection() {
   return (
     <div className={styles.root} data-testid="home-recommendation">
       {head}
-      <ul className={styles.list}>
+      <ul
+        className={styles.list}
+        data-scrollable={items.length > RECOMMENDATION_VISIBLE_ITEMS || undefined}
+      >
         {items.map((rec) => (
           <RecommendationCard key={rec.id} recommendation={rec} />
         ))}

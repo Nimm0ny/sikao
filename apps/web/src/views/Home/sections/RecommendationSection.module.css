@@ -68,13 +68,34 @@
   list-style: none;
   flex: 1 1 auto;
   min-height: 0;
+  /* Pin the visible feed to ~3.2 rows (row ≈ 50px + gap 8px): 3 full rows +
+     a 20% peek of the 4th under the bottom fade. spacing-allow: derived from
+     the measured feed-item height, not on the 8px step. */
+  max-height: calc(3 * 50px + 2 * var(--space-2) + 0.2 * 50px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  scrollbar-width: none; /* Firefox: hide scrollbar, keep scroll */
+  -ms-overflow-style: none; /* legacy Edge */
+}
+
+.list::-webkit-scrollbar {
+  display: none; /* WebKit: hide scrollbar, keep scroll */
+}
+
+/*
+ * Bottom fade — only when the list actually overflows (data-scrollable).
+ * Last in-view row peeks ~20% under the fade as a "more below" cue; without
+ * the gate, a short list would clip its final row behind the gradient.
+ */
+.list[data-scrollable] {
+  -webkit-mask-image: linear-gradient(to bottom, black calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to bottom, black calc(100% - 28px), transparent);
 }
 
 .feedItem {
   border-radius: var(--radius-10);
   overflow: hidden;
+  flex: 0 0 auto;
 }
 
 .feedButton {
@@ -83,7 +104,7 @@
   gap: var(--space-3);
   align-items: center;
   width: 100%;
-  padding: var(--space-3);
+  padding: 6px var(--space-3); /* spacing-allow: prototype feed-item vertical 6px (SIK-143 W6 density) */
   border: 1px solid var(--color-border-subtle);
   border-radius: var(--radius-10);
   background: var(--color-bg-elevated);
@@ -122,7 +143,7 @@
 .feedMain {
   display: flex;
   flex-direction: column;
-  gap: var(--space-1);
+  gap: 2px; /* spacing-allow: tighten feed name/sub stack (SIK-143 W6 density) */
   min-width: 0;
 }
 
@@ -137,6 +158,7 @@
 
 .feedSub {
   font-size: var(--font-meta);
+  line-height: 1.25; /* spacing-allow: tighten sub line for feed density (SIK-143 W6) */
   color: var(--color-text-secondary);
   overflow: hidden;
   text-overflow: ellipsis;
