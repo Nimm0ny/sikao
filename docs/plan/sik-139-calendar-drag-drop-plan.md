@@ -1,8 +1,8 @@
 ---
 type: feature
-status: planned
+status: archived
 owner: lhr
-last-reviewed: 2026-05-29
+last-reviewed: 2026-05-30
 notion-issue-url: https://www.notion.so/36fbc174f6c881ee9e7bdae2a9e3b29a
 notion-issue-identifier: SIK-139
 parent-issue: SIK-138
@@ -10,9 +10,12 @@ parent-issue-url: https://www.notion.so/36ebc174f6c88187840ac2623a1666f7
 spec: .kiro/specs/sik-139-calendar-drag-drop/
 depends-on: SIK-138
 related: SIK-140, SIK-141, SIK-112
+archived-at: 2026-05-30
 ---
 
 # Calendar Drag-Drop (Phase 3 / dnd-kit) Plan
+
+> **2026-05-30 repo-local closeout note**：`W0-W4` 已全部收口，`docs/plan/sik-139-calendar-drag-drop-visual-contract.md` 已回填最终 Acceptance。本文件改归档，仅保留为历史 define-first / wave 切分记录。本次未回写 Notion issue / Work Log。
 
 > Define-First 立项文档（H6）。本文件只定义边界、复用面、wave 切分与验收骨架；
 > 不含任何运行时实现。Runner 进场前以本文件 + spec 为准。

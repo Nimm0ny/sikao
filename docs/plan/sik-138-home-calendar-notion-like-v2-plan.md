@@ -1,17 +1,20 @@
 ---
 type: feature
-status: planned
+status: archived
 owner: lhr
-last-reviewed: 2026-05-28
+last-reviewed: 2026-05-30
 notion-issue-url: https://www.notion.so/36ebc174f6c88187840ac2623a1666f7
 notion-issue-identifier: SIK-138
 spec: .kiro/specs/sik-138-home-calendar-v2/
 visual-contract: docs/plan/sik-138-home-calendar-notion-like-visual-contract.md
 supersedes: docs/plan/sik-home-calendar-notion-like-plan.md
 supersedes-issue: SIK-137
+archived-at: 2026-05-30
 ---
 
 # Home Calendar Notion-Like V2 Plan
+
+> **2026-05-30 repo-local closeout note**：`W1-W7` 实现、验收与独立 review 已在 `main` 上收口；本文件改归档，仅保留为历史 define-first / execution slicing 记录。本次只完成仓内 ledger 对齐，未在当前会话回写 Notion issue / Work Log。
 
 ## 1. Why V2 Exists
 
@@ -195,4 +198,3 @@ Each wave must stay independently revertable.
   - implementation waves
 - Verifier:
   - final browser acceptance and evidence
-

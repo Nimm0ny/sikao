@@ -2,7 +2,7 @@
 type: visual-contract
 status: active
 owner: lhr
-last-reviewed: 2026-05-28
+last-reviewed: 2026-05-30
 issue: SIK-138
 spec: .kiro/specs/sik-138-home-calendar-v2/
 plan: docs/plan/sik-138-home-calendar-notion-like-v2-plan.md
@@ -12,6 +12,8 @@ prototype:
 ---
 
 # SIK-138 Home Calendar Notion-like 视觉契约
+
+> **2026-05-30 closeout note**：`W1-W7` 已全部验收通过。本文件继续保留 `active`，因为它仍是 Home calendar base surface 的视觉 SSOT，不代表对应 issue 仍在执行中。
 
 > 本文件以 issue `SIK-138` 的 `## Acceptance` 为验收锚点。W1 只定义 Home `CalendarPanel` 的视觉与交互合同，不授权实现侧新增写路径，也不覆盖其它 Home 区块的 owner。
 

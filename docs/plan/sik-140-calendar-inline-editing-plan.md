@@ -1,8 +1,8 @@
 ---
 type: feature
-status: planned
+status: archived
 owner: lhr
-last-reviewed: 2026-05-29
+last-reviewed: 2026-05-30
 notion-issue-url: https://www.notion.so/36fbc174f6c881bbb1e9db67b249de43
 notion-issue-identifier: SIK-140
 parent-issue: SIK-138
@@ -10,9 +10,12 @@ parent-issue-url: https://www.notion.so/36ebc174f6c88187840ac2623a1666f7
 spec: .kiro/specs/sik-140-calendar-inline-editing/
 depends-on: SIK-138, SIK-139
 related: SIK-139, SIK-141, SIK-112
+archived-at: 2026-05-30
 ---
 
 # Calendar Inline Editing (Phase 4) Plan
+
+> **2026-05-30 repo-local closeout note**：`W0-W3` 已在 `main` 上收口，验收锚点已回填到 visual contract。本文件改归档，仅保留为历史 define-first / wave 规划记录。本次未回写 Notion issue / Work Log。
 
 > Define-First 立项文档（H6）。只定义边界与依赖；不含实现。
 > 本 Phase 比 SIK-139 更晚就绪——见 §3 关键 blocker。

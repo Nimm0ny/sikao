@@ -11,6 +11,8 @@ prototype-baseline: .tmp_review/out/Tab1-Home-mock/home-calendar-notion-like-moc
 
 # SIK-141 Calendar Aggregation Visual Contract (H11)
 
+> **2026-05-30 closeout note**：`W1-W3` 已全部验收通过。本文件继续保留 `active`，因为它仍是当前 calendar aggregation channel 的视觉 SSOT，不代表 issue 仍在执行中。
+
 > 原型 baseline 没有 aggregation channel。本契约定义的是“在现有 chip / Peek 信息预算内，未来如何加聚合信息”。
 
 ## 1. Layout Topology

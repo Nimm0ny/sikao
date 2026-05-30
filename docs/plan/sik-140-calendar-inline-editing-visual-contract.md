@@ -11,6 +11,8 @@ prototype-baseline: .tmp_review/out/Tab1-Home-mock/home-calendar-notion-like-moc
 
 # SIK-140 Calendar Inline Editing Visual Contract (H11)
 
+> **2026-05-30 closeout note**：`W1-W3` 已全部验收通过。本文件继续保留 `active`，因为它仍是当前 Peek inline editing 的视觉 SSOT，不代表 issue 仍在执行中。
+
 > 原型 baseline 仍是现有只读 Peek mock。编辑态不是新原型，而是对该只读态的 define-first 扩展。
 
 ## 1. Layout Topology

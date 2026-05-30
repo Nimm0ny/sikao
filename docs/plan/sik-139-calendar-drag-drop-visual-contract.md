@@ -2,7 +2,7 @@
 type: visual-contract
 status: active
 owner: lhr
-last-reviewed: 2026-05-29
+last-reviewed: 2026-05-30
 notion-issue-url: https://www.notion.so/36fbc174f6c881ee9e7bdae2a9e3b29a
 notion-issue-identifier: SIK-139
 spec: .kiro/specs/sik-139-calendar-drag-drop/
@@ -12,6 +12,8 @@ token-derivation-approved-by: lhr (2026-05-29)
 ---
 
 # SIK-139 Calendar Drag-Drop Visual Contract (H11)
+
+> **2026-05-30 closeout note**：`W0-W4` 已全部通过，本文件继续保留 `active` 作为当前 Home calendar 拖拽 / 键盘改期行为的视觉 SSOT；这里的 `active` 不是“仍在执行”。
 
 > H11 Define-First 视觉契约。Phase 3 拖拽交互态**无独立原型**（月视图原型只有静态
 > 布局 + DayDetailDialog）。经 lhr 2026-05-29 认可，本契约以

@@ -1,6 +1,6 @@
 ---
 type: feature
-status: active
+status: archived
 owner: lhr
 last-reviewed: 2026-05-30
 notion-issue-url: https://www.notion.so/36fbc174f6c8816e8108f53a93765ebc
@@ -10,9 +10,12 @@ parent-issue-url: https://www.notion.so/36ebc174f6c88187840ac2623a1666f7
 spec: .kiro/specs/sik-141-calendar-aggregation-properties/
 depends-on: SIK-138, SIK-139, SIK-140
 related: SIK-112, SIK-139, SIK-140
+archived-at: 2026-05-30
 ---
 
 # Calendar Aggregation Properties Plan
+
+> **2026-05-30 repo-local closeout note**：`W0-W3` 已在 `main` 上收口，visual contract 的验收项也已回填为 PASS。本文件改归档，仅保留为历史 define-first / 契约切分记录。本次未回写 Notion issue / Work Log。
 
 > Define-First 文档。当前波次只定义跨服务聚合契约、性能边界、空值语义和视觉通道，不进入实现。
 

@@ -2,7 +2,7 @@
 type: visual-contract
 status: active
 owner: lhr
-last-reviewed: 2026-05-29
+last-reviewed: 2026-05-30
 notion-issue-url: https://www.notion.so/36fbc174f6c88157b064e4f1939b2e71
 notion-issue-identifier: SIK-142
 parent-issue: SIK-138 (Calendar Notion-like V2, Done)
@@ -12,6 +12,8 @@ chip-color-semantic-approved-by: lhr (2026-05-29)
 ---
 
 # SIK-142 Calendar 视觉统一 + 三周布局收敛 视觉契约 (H11)
+
+> **2026-05-30 closeout note**：`W1-W5` 已全部验收通过。本文件继续保留 `active`，因为它仍是当前 Home calendar 视觉统一后的设计 SSOT，不代表 issue 仍在执行中。
 
 > H11 Define-First 视觉契约。本 issue 在 SIK-138（Calendar V2）/ SIK-139（拖拽 Phase 3/4）
 > 之上收敛 Home 日历的视觉与布局债：chip 配色语义统一、月视图 3 周 rolling window、
