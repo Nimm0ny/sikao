@@ -1,10 +1,13 @@
 import { create } from 'zustand';
 
-import type { RecommendationRejectRequestV2 } from '@sikao/api-client/types/home';
-
 const STORAGE_KEY = 'sikao.home.recommendation-drafts';
 
-type RecommendationDraft = RecommendationRejectRequestV2;
+export interface RecommendationRejectDraft {
+  readonly reason: string;
+  readonly note: string | null;
+}
+
+type RecommendationDraft = RecommendationRejectDraft;
 
 interface RecommendationDraftStoreState {
   readonly draftsByRecommendationId: Readonly<Record<string, RecommendationDraft>>;

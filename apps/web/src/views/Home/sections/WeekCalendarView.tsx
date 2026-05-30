@@ -8,7 +8,11 @@ import { zonedDateKey } from '@sikao/shared-utils';
 
 import { EmptyState } from '../../../components/atom/EmptyState';
 import { Skeleton } from '../../../components/atom/Skeleton';
-import { expandPlanEventsForView, type EnrichedOccurrence } from './calendarEvents';
+import {
+  expandPlanEventsForView,
+  mergePlanEventsWithOptimisticPatches,
+  type EnrichedOccurrence,
+} from './calendarEvents';
 import {
   createDefaultCalendarViewConfig,
   type CalendarViewConfig,
@@ -223,6 +227,7 @@ export function WeekCalendarView({ viewConfig }: WeekCalendarViewProps = {}) {
 
 function WeekCalendarViewBody({ viewConfig }: WeekCalendarViewProps) {
   const anchorDate = usePlanStore((state) => state.currentDate);
+  const optimisticEvents = usePlanStore((state) => state.optimisticEvents);
   const config = viewConfig ?? createDefaultCalendarViewConfig('week');
   const window = useMemo(
     () =>
@@ -244,9 +249,13 @@ function WeekCalendarViewBody({ viewConfig }: WeekCalendarViewProps) {
     [anchorDate, config.startWeekOnMonday],
   );
   const dowLabels = config.startWeekOnMonday ? DOW_LABELS_MON_FIRST : DOW_LABELS_SUN_FIRST;
+  const mergedEvents = useMemo(
+    () => mergePlanEventsWithOptimisticPatches(query.data?.data.events ?? [], optimisticEvents),
+    [optimisticEvents, query.data],
+  );
   const occurrences = useMemo(
-    () => expandPlanEventsForView(query.data?.data.events ?? [], window),
-    [query.data, window],
+    () => expandPlanEventsForView(mergedEvents, window),
+    [mergedEvents, window],
   );
   const aggregateEventIds = useMemo(() => occurrences.map((item) => item.event.id), [occurrences]);
   const aggregateState = useCalendarEventAggregates(aggregateEventIds);

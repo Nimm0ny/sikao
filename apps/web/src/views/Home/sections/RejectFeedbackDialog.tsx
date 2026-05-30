@@ -7,15 +7,12 @@ import { Modal } from '../../../components/overlay/Modal';
 import { Textarea } from '../../../components/form';
 
 /*
- * RejectFeedbackDialog — SIK-92 wave 2.
+ * RejectFeedbackDialog — SIK-92 closeout.
  *
- * Why: replaces the wave 1 stub reject (fixed reason=not-interested).
- *      Lets the user pick a reason + add an optional note. Draft is
- *      mirrored into useRecommendationDraftStore so closing/cancelling
- *      restores the draft on next open (per spec acceptance).
- *
- *      AGENT-H7: reason field is mandatory; submit disabled until non-
- *      empty. Mutation errors surface via the mutation result.
+ * Why: reject is reason-first, but draft restore must preserve note-only
+ *      input across close/reopen. Draft state is mirrored on every edit,
+ *      and invalid submit surfaces an inline error instead of silently
+ *      returning.
  */
 
 const REASONS: ReadonlyArray<{ readonly value: string; readonly label: string }> = [
@@ -28,52 +25,51 @@ const REASONS: ReadonlyArray<{ readonly value: string; readonly label: string }>
 
 interface RejectFeedbackDialogProps {
   readonly recommendation: RecommendationReadV2;
+  readonly initialDraft: { readonly reason: string; readonly note: string | null } | null;
   readonly open: boolean;
   readonly onClose: () => void;
 }
 
-export function RejectFeedbackDialog({ recommendation, open, onClose }: RejectFeedbackDialogProps) {
+export function RejectFeedbackDialog({ recommendation, initialDraft, open, onClose }: RejectFeedbackDialogProps) {
   const rejectMutation = useRejectRecommendation(recommendation.id);
   const setDraft = useRecommendationDraftStore((s) => s.setDraft);
   const clearDraft = useRecommendationDraftStore((s) => s.clearDraft);
-  const getDraft = useRecommendationDraftStore((s) => s.getDraft);
-  // Lazy-init from the saved draft so we don't need a setState-in-effect
-  // hydrate (which trips eslint react-hooks). The dialog re-mounts when
-  // `open` flips false→true (RecommendationCard remounts the dialog
-  // after close), so this also picks up store changes naturally.
-  const initialDraft = getDraft(recommendation.id);
   const [reason, setReason] = useState<string>(initialDraft?.reason ?? '');
   const [note, setNote] = useState<string>(initialDraft?.note ?? '');
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // Mirror form state into the draft store on every change so cancel
-  // → reopen restores the user's last input. Direct call (no effect)
-  // because the store write is debounced internally and avoids a
-  // setState-in-effect cascade.
+  const persistDraft = (nextReason: string, nextNote: string) => {
+    setDraft(recommendation.id, {
+      reason: nextReason,
+      note: nextNote.trim().length > 0 ? nextNote : null,
+    });
+  };
+
   const handleReasonChange = (next: string) => {
     setReason(next);
-    if (next.length > 0) {
-      setDraft(recommendation.id, { reason: next, note: note.length > 0 ? note : null });
-    }
+    setSubmitError(null);
+    persistDraft(next, note);
   };
 
   const handleNoteChange = (next: string) => {
     setNote(next);
-    if (reason.length > 0) {
-      setDraft(recommendation.id, { reason, note: next.length > 0 ? next : null });
-    }
+    persistDraft(reason, next);
   };
 
-  const isValid = reason.length > 0;
-
   const handleSubmit = () => {
-    if (!isValid) return;
+    if (reason.length === 0) {
+      setSubmitError('请选择原因后再提交反馈。');
+      return;
+    }
+    const trimmedNote = note.trim();
     rejectMutation.mutate(
-      { reason, note: note.length > 0 ? note : null },
+      { reason, note: trimmedNote.length > 0 ? trimmedNote : null },
       {
         onSuccess: () => {
           clearDraft(recommendation.id);
           setReason('');
           setNote('');
+          setSubmitError(null);
           onClose();
         },
       },
@@ -115,11 +111,15 @@ export function RejectFeedbackDialog({ recommendation, open, onClose }: RejectFe
           <span style={{ fontSize: 'var(--font-meta)', color: 'var(--color-text-secondary)' }}>补充说明（可选）</span>
           <Textarea
             value={note}
-            onChange={(v) => handleNoteChange(v)}
-            data-testid="reject-note"
+            onChange={(value) => handleNoteChange(value)}
             rows={3}
           />
         </label>
+        {submitError !== null ? (
+          <p role="alert" style={{ margin: 0, color: 'var(--color-state-err)', fontSize: 'var(--font-meta)' }}>
+            {submitError}
+          </p>
+        ) : null}
       </div>
     </Modal>
   );

@@ -1,52 +1,26 @@
 // lint-allow-ui-copy: V5 D.4.1 Section C feed-item copy. CJK strings are
 // visual contract from sik-fu-d §2.2.
 import { useState } from 'react';
+import { useRecommendationDraftStore } from '@sikao/domain';
 import type { RecommendationReadV2 } from '@sikao/api-client/types/home';
 import { SpriteIcon } from '../../../components/atom/SpriteIcon';
 import { AcceptOptionMenu } from './AcceptOptionMenu';
 import { RejectFeedbackDialog } from './RejectFeedbackDialog';
+import { recommendationVisualSpec } from './recommendationActionType';
 import styles from './RecommendationSection.module.css';
 
 /*
- * RecommendationCard — single feed-item with kind 染色 + 整条点击.
+ * RecommendationCard — single feed-item with kind tint + whole-row click.
  *
- * Why: sik-fu-d §2.2 — feed-item visual:
- *        feed-icon (24x24 rounded, kind-colored border) +
- *        feed-main (name + sub) +
- *        feed-pill (right badge: estimatedMinutes or sessionLength)
+ * Why: Home Section C now follows the live backend actionType contract:
+ *        continue       -> k-practice
+ *        review         -> k-review
+ *        rest           -> k-rest
+ *        review_session -> k-review (legacy pending-row compatibility)
  *
- *      Entire card is a <button> that opens AcceptOptionMenu on click.
- *      AcceptOptionMenu now contains both accept and reject paths.
- *
- *      Kind -> visual encoding (data-kind attribute drives CSS):
- *        practice-session -> k-practice
- *        mock-exam        -> k-mock
- *        review           -> k-review
- *        milestone        -> k-milestone
- *
- *      AGENT-H7: actionType is rendered as-is from the API; no fallback
- *      mapping for unknown types (they get default styling).
+ *      AGENT-H7: unsupported actionType throws immediately; we do not
+ *      silently coerce unknown backend values into a default card.
  */
-
-function kindFromActionType(actionType: string): string {
-  switch (actionType) {
-    case 'practice-session': return 'k-practice';
-    case 'mock-exam': return 'k-mock';
-    case 'review': return 'k-review';
-    case 'milestone': return 'k-milestone';
-    default: return 'k-default';
-  }
-}
-
-function iconForKind(kind: string): string {
-  switch (kind) {
-    case 'k-practice': return 'nav-practice';
-    case 'k-mock': return 'nav-practice';
-    case 'k-review': return 'nav-review';
-    case 'k-milestone': return 'nav-home';
-    default: return 'nav-practice';
-  }
-}
 
 interface RecommendationCardProps {
   readonly recommendation: RecommendationReadV2;
@@ -55,7 +29,10 @@ interface RecommendationCardProps {
 export function RecommendationCard({ recommendation }: RecommendationCardProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
-  const kind = kindFromActionType(recommendation.actionType);
+  const [rejectCycle, setRejectCycle] = useState(0);
+  const [rejectDraftSnapshot, setRejectDraftSnapshot] = useState<{ reason: string; note: string | null } | null>(null);
+  const getDraft = useRecommendationDraftStore((state) => state.getDraft);
+  const { kind, icon } = recommendationVisualSpec(recommendation.actionType);
   const pillText = recommendation.estimatedMinutes
     ? `${recommendation.estimatedMinutes} 分钟`
     : null;
@@ -70,7 +47,7 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
           aria-label={`${recommendation.title} — 点击查看操作`}
         >
           <span className={styles.feedIcon} data-kind={kind} aria-hidden="true">
-            <SpriteIcon id={iconForKind(kind)} size={14} />
+            <SpriteIcon id={icon} size={14} />
           </span>
           <span className={styles.feedMain}>
             <span className={styles.feedName}>{recommendation.title}</span>
@@ -85,10 +62,17 @@ export function RecommendationCard({ recommendation }: RecommendationCardProps) 
         recommendation={recommendation}
         open={menuOpen}
         onClose={() => setMenuOpen(false)}
-        onReject={() => { setMenuOpen(false); setRejectOpen(true); }}
+        onReject={() => {
+          setRejectDraftSnapshot(getDraft(recommendation.id));
+          setRejectCycle((cycle) => cycle + 1);
+          setMenuOpen(false);
+          setRejectOpen(true);
+        }}
       />
       <RejectFeedbackDialog
+        key={`reject-${recommendation.id}-${rejectCycle}`}
         recommendation={recommendation}
+        initialDraft={rejectDraftSnapshot}
         open={rejectOpen}
         onClose={() => setRejectOpen(false)}
       />

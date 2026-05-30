@@ -20,7 +20,6 @@ import type {
 function invalidateRecommendationQueries(queryClient: ReturnType<typeof useQueryClient>): void {
   void queryClient.invalidateQueries({ queryKey: homeQueryKeys.recommendations.all() });
   void queryClient.invalidateQueries({ queryKey: homeQueryKeys.dashboard.all() });
-  void queryClient.invalidateQueries({ queryKey: homeQueryKeys.plans.all() });
 }
 
 export function fetchRecommendationsToday(): Promise<RecommendationListResponseV2> {

@@ -94,3 +94,56 @@ export function sliceMonthOccurrencesByDay(
   }
   return out;
 }
+
+function canMaterializeOptimisticEvent(
+  patch: Partial<PlanEventReadV2>,
+): patch is Pick<
+  PlanEventReadV2,
+  'id' | 'title' | 'category' | 'status' | 'source' | 'timezone' | 'startAt' | 'endAt'
+> & Partial<PlanEventReadV2> {
+  return typeof patch.id === 'string'
+    && typeof patch.title === 'string'
+    && typeof patch.category === 'string'
+    && typeof patch.status === 'string'
+    && typeof patch.source === 'string'
+    && typeof patch.timezone === 'string'
+    && typeof patch.startAt === 'string'
+    && typeof patch.endAt === 'string';
+}
+
+export function mergePlanEventsWithOptimisticPatches(
+  events: ReadonlyArray<PlanEventReadV2>,
+  optimisticEvents: ReadonlyMap<string, Partial<PlanEventReadV2>>,
+): PlanEventReadV2[] {
+  const merged = [...events];
+  const existingIds = new Set(merged.map((event) => event.id));
+
+  for (const [eventId, patch] of optimisticEvents.entries()) {
+    if (existingIds.has(eventId)) continue;
+    const candidate = { ...patch, id: patch.id ?? eventId };
+    if (!canMaterializeOptimisticEvent(candidate)) continue;
+    merged.push({
+      id: candidate.id,
+      title: candidate.title,
+      category: candidate.category,
+      status: candidate.status,
+      source: candidate.source,
+      timezone: candidate.timezone,
+      startAt: candidate.startAt,
+      endAt: candidate.endAt,
+      notes: candidate.notes ?? '',
+      planId: candidate.planId ?? 0,
+      isRecurringInstance: candidate.isRecurringInstance ?? false,
+      deletedAt: candidate.deletedAt ?? null,
+      linkedSessionId: candidate.linkedSessionId ?? null,
+      parentId: candidate.parentId ?? null,
+      recurringExceptionDates: candidate.recurringExceptionDates ?? [],
+      recurringParentId: candidate.recurringParentId ?? null,
+      recurringRule: candidate.recurringRule ?? null,
+      targetId: candidate.targetId ?? null,
+    });
+  }
+
+  merged.sort((left, right) => new Date(left.startAt).getTime() - new Date(right.startAt).getTime());
+  return merged;
+}

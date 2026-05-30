@@ -9,6 +9,7 @@ import { EmptyState } from '../../../components/atom/EmptyState';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import {
   expandPlanEventsForView,
+  mergePlanEventsWithOptimisticPatches,
   sliceMonthOccurrencesByDay,
   type MonthDaySlice,
 } from './calendarEvents';
@@ -194,6 +195,7 @@ export function MonthCalendarView(props: MonthCalendarViewProps = {}) {
 
 function MonthCalendarViewBody({ viewConfig }: MonthCalendarViewProps) {
   const anchorDate = usePlanStore((state) => state.currentDate);
+  const optimisticEvents = usePlanStore((state) => state.optimisticEvents);
   const config = viewConfig ?? createDefaultCalendarViewConfig('month');
   const window = useMemo(
     () =>
@@ -215,10 +217,13 @@ function MonthCalendarViewBody({ viewConfig }: MonthCalendarViewProps) {
     [anchorDate, config.startWeekOnMonday],
   );
   const dowLabels = config.startWeekOnMonday ? DOW_LABELS_MON_FIRST : DOW_LABELS_SUN_FIRST;
+  const mergedEvents = useMemo(
+    () => mergePlanEventsWithOptimisticPatches(query.data?.data.events ?? [], optimisticEvents),
+    [optimisticEvents, query.data],
+  );
   const slices = useMemo(() => {
-    const events = query.data?.data.events ?? [];
-    return sliceMonthOccurrencesByDay(expandPlanEventsForView(events, window));
-  }, [query.data, window]);
+    return sliceMonthOccurrencesByDay(expandPlanEventsForView(mergedEvents, window));
+  }, [mergedEvents, window]);
   const aggregateEventIds = useMemo(() => slices.map((item) => item.event.id), [slices]);
   const aggregateState = useCalendarEventAggregates(aggregateEventIds);
   const eventsByDay = useMemo(() => bucketEventsByDay(slices), [slices]);

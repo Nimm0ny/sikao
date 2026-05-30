@@ -1,8 +1,6 @@
 /*
- * RecommendationSection — Home Section C · 今日推荐 mini panel.
- * Why: sik-fu-d §2.2 — feed-item visual with kind 染色 + 整条点击.
- *      Each feed-item: feed-icon (24x24 kind-colored) + feed-main (name + sub)
- *      + feed-pill (right badge). Entire row is a button.
+ * RecommendationSection — Home Section C mini panel.
+ * Why: feed-item visual with kind tint + whole-row click.
  */
 
 .root {
@@ -54,11 +52,18 @@
   flex: 0 0 auto;
 }
 
-/* Kind 染色 per sik-fu-d §2.2 actionType -> visual encoding */
-.feedIcon[data-kind='k-practice'] { border-color: var(--color-text-primary); }
-.feedIcon[data-kind='k-mock']     { border-color: var(--color-brand-primary); }
-.feedIcon[data-kind='k-review']   { border-color: var(--color-state-info); }
-.feedIcon[data-kind='k-milestone'] { background: var(--color-state-err-soft); border-color: var(--color-state-err); }
+.feedIcon[data-kind='k-practice'] {
+  border-color: var(--color-text-primary);
+}
+
+.feedIcon[data-kind='k-review'] {
+  border-color: var(--color-state-info);
+}
+
+.feedIcon[data-kind='k-rest'] {
+  background: var(--color-state-warn-soft);
+  border-color: var(--color-state-warn);
+}
 
 .feedMain {
   display: flex;
