@@ -101,7 +101,7 @@
 .track {
   position: relative;
   height: 6px;
-  border-radius: 9999px;
+  border-radius: var(--radius-999);
   background: var(--color-bg-sunken);
   overflow: hidden;
   margin-top: var(--space-2);
