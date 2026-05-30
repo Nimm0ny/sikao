@@ -117,9 +117,11 @@ html, body { height: 100%; overflow: hidden; }
 |---|---|---|
 | `AppShell` 高度模型（一屏锁死父链） | `docs/plan/sik-fu-a-home-visual-contract.md` | 任何 view |
 | 桌面 Rail 结构（4-tab + RailMe trigger/popover） | `docs/plan/sik-rail-v5-visual-contract.md` | 其它 view 不得回滚到 5-tab，也不得改 sidebar 结构；后续只允许补 Me 内容 |
+| Home `bottomRow` 3 列分配（列宽 + overflow + 卡头收口） | SIK-143（`docs/plan/sik-143-home-bottomrow-density-visual-contract.md`，supersede SIK-127 的 `1.4/1.2/1fr`，lhr 2026-05-30 拍板 `minmax(0,1.4fr) minmax(0,1.4fr) minmax(0,1fr)`） | 其它 issue 不得改列定义；跨格改列需先更新本表 + 契约 |
 | Home `bottomRow #1`（占第 1 格） | SIK-FU-A | SIK-91/92 不得改 |
 | Home `bottomRow #2` Progress | SIK-91 | - |
 | Home `bottomRow #3` Recommendation | SIK-92 | - |
+| Home 底栏 4 卡列表滚动密度（今日推荐 ~3.2 行 / 最近练习 ~1.5 行 + 底部渐隐 + 隐藏滚动条） | SIK-143 | 其它 issue 不得改列表 `max-height` / `data-scrollable` fade 约定 |
 | ProfileRecords timeline 视觉 | SIK-FU-C | - |
 | ProfileLearning KPI / 知识树 / 热力图 | SIK-FU-B | - |
 

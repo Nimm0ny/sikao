@@ -124,6 +124,21 @@ prototype:
 - weak-list / feed-list（今日推荐）走 `min-height:0 + overflow-y:auto` 局部滚，内容多时不撑破卡。
 - 每卡 `overflow: hidden`（`.bottomCard`），收窄时裁在卡内而非撑破 row。
 
+### 3.1 列表滚动密度（W6，lhr 2026-05-30 追加）
+
+底栏两个 feed 卡的可视密度 + 滚动体验约定：
+
+| 卡 | 可视条数 | 行为 |
+|---|---|---|
+| 今日推荐 feed-list | ~3.2 行（3 满 + 第 4 行 ~20% peek） | `max-height: calc(3 * 50px + 2 * var(--space-2) + 0.2 * 50px)`；超出滚动 |
+| 最近练习 feed-list | ~1.5 行（右栈窄格自然约束） | 由 rightStack 格高约束；超出滚动 |
+
+- **隐藏滚动条保留滚动**：`scrollbar-width:none` + `-ms-overflow-style:none` + `::-webkit-scrollbar{display:none}`。
+- **底部渐隐**：仅当 `data-scrollable`（item 数 > 可视 cap）时挂 `mask-image: linear-gradient(to bottom, black calc(100% - Npx), transparent)`，最后一行 ~20% 在渐隐下露头，提示"还有更多"；不溢出时不挂 mask，避免裁掉末行。
+- **density**：feed-item 垂直 padding 收到 6px、feedMain gap 2px、feedSub line-height 1.25，缓解卡内拥挤；item 高 ≈ 50–51px。
+- **a11y**：mask 仅视觉遮罩，DOM 内容与键盘/SR 可达性不变；列表可滚动到末行。
+- `data-scrollable` 属性由 section 组件按 `items.length > VISIBLE_CAP` 计算（今日推荐 cap=3 / 最近练习 cap=1），是 CSS fade 的开关，并有 vitest 断言守护。
+
 ## 4. Token Map
 
 引用 `docs/vault/04-design/Prototype-Token-Map.md`（H11 强制查表）。本次涉及的映射：
