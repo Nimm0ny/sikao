@@ -14,6 +14,7 @@
 > **2026-05-22 更新**：`M0.5 / SIK-31` 已解锁前端 full typecheck blocker。旧 Home 前端仍未自动重启；`M7-M12` 继续保持 paused reference track，直到新的前端重构计划显式接管。
 > **2026-05-22 restart baseline**：前端 runtime 轨已在 `main` 上显式重启，并已完成 `M7 / SIK-38`、`M8 / SIK-39`、`M9 / SIK-40` 与 `M10 / SIK-41`。
 > **2026-05-23 closeout**：`M11-M12` 已完成，canonical `"/"` Home、`/profile/records`、4-tab nav + RailMe 唯一入口、legacy redirect 收口、a11y 自动化与 Browser smoke 已补齐；Home Phase 当前实现面已收口到完成态。
+> **2026-05-30 ledger note**：Home calendar follow-up `SIK-138~SIK-142` 也已在 `main` 上全部收口；本地 `docs/plan` 执行文档已归档、对应 review frontmatter 已收敛。本次只完成 repo-local ledger 对齐，未在当前会话回写 Notion issue / Work Log。
 
 ---
 
