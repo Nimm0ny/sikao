@@ -5,42 +5,66 @@ import {
 } from '@sikao/api-client/recommendationsQueries';
 import { Skeleton } from '../../../components/atom/Skeleton';
 import { EmptyState } from '../../../components/atom/EmptyState';
-import { Button } from '../../../components/form';
 import { RecommendationCard } from './RecommendationCard';
 import styles from './RecommendationSection.module.css';
 
 /*
  * RecommendationSection — Home Section C · 今日推荐.
  *
- * Why: bottom row #3 (per Home v2.1.html). Lists today's recommendations
- *      with accept(session) / reject actions. accept(plan) date picker
- *      and the full RejectFeedbackDialog with draft restore land in
- *      SIK-92 wave 2.
+ * Why: bottom row card (per Home v2.1.html .bottom-card / .feed-list).
+ *      Lists today's recommendations with accept(session) / reject
+ *      actions via RecommendationCard. accept(plan) date picker and the
+ *      full RejectFeedbackDialog live under RecommendationCard.
  *
- *      4-state contract (loading / error / empty / ready). Refresh CTA
- *      is always visible in non-loading states so the user can pull a
- *      fresh batch.
+ *      SIK-143: the card no longer sits inside a <Panel> 57px header.
+ *      It owns its own bc-head (h4 "今日推荐" + refresh icon-btn) shared
+ *      across all 4 states, matching the right-stack cards' bc-head spec.
+ *      The refresh control moved from a floating bottom Button into the
+ *      bc-head as an icon-only button (aria-label "刷新推荐"). The list is
+ *      a local-scroll region (min-height:0 + overflow-y:auto) so a long
+ *      batch scrolls inside the card instead of overflowing the row.
  *
- *      AGENT-H7: wave 1 reject path posts a fixed reason
- *      ('not-interested') without prompting; wave 2 wires the dialog.
- *      Errors from the mutation propagate via the mutation result;
- *      not silenced.
+ *      4-state contract (loading / error / empty / ready). AGENT-H7:
+ *      mutation errors propagate via the mutation result; not silenced.
  */
 
 export function RecommendationSection() {
   const query = useRecommendationsToday();
   const refresh = useRefreshRecommendations();
-  // useRejectRecommendation is hook-bound to a single recommendation id.
-  // For wave 1 we call it via card-level handlers (RecommendationCard
-  // accepts an onReject callback receiving the rec). To keep the cards
-  // pure and avoid one mutation per row, we lift the call here and key
-  // the mutation key by id at the section level via the lazy-init form.
-  // Wave 2 swaps this for the dialog flow + draft store.
   const items = query.data?.items ?? [];
+
+  const head = (
+    <header className={styles.head}>
+      <h4 className={styles.title}>今日推荐</h4>
+      <button
+        type="button"
+        className={styles.refreshBtn}
+        aria-label="刷新推荐"
+        disabled={query.isLoading || refresh.isPending}
+        onClick={() => refresh.mutate({})}
+      >
+        {/* inline SVG: sprite has no refresh glyph; follows SVG-only stroke
+            contract (viewBox 24 / fill none / currentColor / round caps). */}
+        <svg
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M3 12a9 9 0 1 0 9-9" />
+          <path d="M3 4v5h5" />
+        </svg>
+      </button>
+    </header>
+  );
 
   if (query.isLoading) {
     return (
       <div className={styles.root} role="status" aria-label="今日推荐加载中" data-testid="home-recommendation-loading">
+        {head}
         <Skeleton variant="rect" height={32} />
         <Skeleton variant="rect" height={64} />
       </div>
@@ -49,7 +73,8 @@ export function RecommendationSection() {
 
   if (query.isError) {
     return (
-      <div data-testid="home-recommendation-error">
+      <div className={styles.root} data-testid="home-recommendation-error">
+        {head}
         <EmptyState title="无法加载推荐" description={String((query.error as Error | null)?.message ?? '稍后再试')} />
       </div>
     );
@@ -57,29 +82,21 @@ export function RecommendationSection() {
 
   if (items.length === 0) {
     return (
-      <div data-testid="home-recommendation-empty" className={styles.root}>
+      <div className={styles.root} data-testid="home-recommendation-empty">
+        {head}
         <EmptyState title="今日暂无推荐" description="完成更多练习后系统会生成新的推荐。" />
-        <div className={styles.refreshRow}>
-          <Button variant="secondary" size="sm" disabled={refresh.isPending} onClick={() => refresh.mutate({})}>
-            刷新推荐
-          </Button>
-        </div>
       </div>
     );
   }
 
   return (
     <div className={styles.root} data-testid="home-recommendation">
+      {head}
       <ul className={styles.list}>
         {items.map((rec) => (
           <RecommendationCard key={rec.id} recommendation={rec} />
         ))}
       </ul>
-      <div className={styles.refreshRow}>
-        <Button variant="secondary" size="sm" disabled={refresh.isPending} onClick={() => refresh.mutate({})}>
-          刷新推荐
-        </Button>
-      </div>
     </div>
   );
 }

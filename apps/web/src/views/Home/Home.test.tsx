@@ -125,6 +125,19 @@ describe('Home view (D.4.1)', () => {
     expect(panels.length).toBe(4);
   });
 
+  it('SIK-143: 4 bottom-row cards each carry an aria-label (Panel header removed)', () => {
+    // SIK-143: left two cards moved from <Panel title> (aria-labelledby) to
+    // bare .bottomCard sections; a11y name is now provided via aria-label so
+    // the cards stay screen-reader-labelled without the 57px Panel header.
+    renderHome();
+    const root = screen.getByTestId('home-view');
+    const panels = within(root).getAllByTestId('panel');
+    const labels = panels.map((p) => p.getAttribute('aria-label'));
+    expect(labels).toEqual(
+      expect.arrayContaining(['今日推荐', '学习进度', '本周备考回顾', '最近练习']),
+    );
+  });
+
   it('exposes a primary CTA in the page header', () => {
     renderHome();
     const cta = screen.getByRole('button', { name: '开始今日练习' });

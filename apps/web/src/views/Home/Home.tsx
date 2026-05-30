@@ -3,7 +3,7 @@
 // Phase 6+. Real strings will land via @/lib/ui-copy when business Phase
 // integrations replace the placeholders.
 import { useEffect } from 'react';
-import { Panel, ScreenLockShell, ScrollRegion } from '../../components/layout';
+import { ScreenLockShell, ScrollRegion } from '../../components/layout';
 import { useDashboardPreferenceStore, usePlanStore } from '@sikao/domain';
 import { CalendarPanel } from './sections/CalendarPanel';
 import { readHomeCalendarView } from './sections/calendarViewConfig';
@@ -58,19 +58,19 @@ export function Home() {
       </ScrollRegion>
 
       <section className={styles.bottomRow} aria-label="底部模块">
-        <Panel title="今日推荐">
+        <section className={styles.bottomCard} data-testid="panel" aria-label="今日推荐">
           <RecommendationSection />
-        </Panel>
+        </section>
 
-        <Panel title="学习进度">
+        <section className={styles.bottomCard} data-testid="panel" aria-label="学习进度">
           <ProgressSection />
-        </Panel>
+        </section>
 
         <div className={styles.rightStack}>
-          <section className={styles.bottomCard} data-testid="panel">
+          <section className={styles.bottomCard} data-testid="panel" aria-label="本周备考回顾">
             <WeeklyReviewSection />
           </section>
-          <section className={styles.bottomCard} data-testid="panel">
+          <section className={styles.bottomCard} data-testid="panel" aria-label="最近练习">
             <RecentPracticeSection />
           </section>
         </div>

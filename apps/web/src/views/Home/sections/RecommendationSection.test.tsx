@@ -156,6 +156,22 @@ describe('RecommendationSection (SIK-92)', () => {
     expect(screen.getByRole('button', { name: '刷新推荐' })).toBeInTheDocument();
   });
 
+  it('SIK-143: renders bc-head 今日推荐 + refresh icon-btn (ready state)', async () => {
+    // SIK-143: refresh moved from a floating bottom Button into the bc-head
+    // as an icon-only button. The visible label is dropped but aria-label
+    // "刷新推荐" is preserved, and a bc-head h4 "今日推荐" replaces the
+    // removed 57px Panel header title.
+    server.use(
+      http.get('/api/v2/recommendations/today', () =>
+        HttpResponse.json({ items: [READY_RECS[1]], total: 1 }),
+      ),
+    );
+    renderWithEnv();
+    await waitFor(() => expect(screen.getByTestId('home-recommendation')).toBeInTheDocument());
+    expect(screen.getByRole('heading', { name: '今日推荐', level: 4 })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '刷新推荐' })).toBeInTheDocument();
+  });
+
   it('error: renders EmptyState on 500', async () => {
     server.use(http.get('/api/v2/recommendations/today', () => HttpResponse.json({}, { status: 500 })));
     renderWithEnv();
